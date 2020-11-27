@@ -1,3 +1,9 @@
+# Build temporary files
+**build
+
+# VSCode
+.vscode
+
 # Prerequisites
 *.d
 
