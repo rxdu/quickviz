@@ -1,3 +1,7 @@
-add_executable(sample main.cpp)
-target_link_libraries(sample PRIVATE imtoolkit)
-target_compile_definitions(sample PRIVATE "-DIMGUI_IMPL_OPENGL_LOADER_GL3W")
+add_executable(imgui_sample imgui_sample.cpp)
+target_link_libraries(imgui_sample PRIVATE imtoolkit)
+target_compile_definitions(imgui_sample PRIVATE "-DIMGUI_IMPL_OPENGL_LOADER_GL3W")
+
+add_executable(implot_sample implot_sample.cpp)
+target_link_libraries(implot_sample PRIVATE imtoolkit)
+target_compile_definitions(implot_sample PRIVATE "-DIMGUI_IMPL_OPENGL_LOADER_GL3W")
