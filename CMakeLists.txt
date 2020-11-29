@@ -78,10 +78,6 @@ endif()
 ## Add source directory
 add_subdirectory(src)
 
-# group all libraries into a single one
-# add_library(imtoolkit INTERFACE)
-# target_link_libraries(imtoolkit INTERFACE loggers utility)
-
 ## Installation setup
 message(STATUS "Project will be installed to ${CMAKE_INSTALL_PREFIX} with 'make install'")
 
