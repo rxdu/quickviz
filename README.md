@@ -1,5 +1,7 @@
 # Immediate Mode UI Toolkit (imtoolkit)
 
+![GitHub Workflow Status](https://github.com/rxdu/imtoolkit/workflows/CMake/badge.svg)
+
 This repository contains the following libraries:
 
 * imgui
