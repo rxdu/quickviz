@@ -28,7 +28,7 @@ $ git submodule update --init --recursive
 Install dependencies
 
 ```
-$ sudo apt-get install libgl1-mesa-dev libglfw3-dev
+$ sudo apt-get install libgl1-mesa-dev libglfw3-dev libcairo2-dev
 ```
 
 Configure and compile
