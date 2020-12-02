@@ -23,7 +23,7 @@ set(IMPLOT_SRC
 )
 add_library(imtoolkit ${IMGUI_CORE_SRC} ${IMGUI_BACKEND_SRC} ${GL_LOADER_SRC} ${IMPLOT_SRC})
 target_link_libraries(imtoolkit PUBLIC glfw OpenGL::GL ${GLFW3_LIBRARY} ${CMAKE_DL_LIBS})
-target_compile_definitions(imtoolkit PRIVATE "-DIMGUI_IMPL_OPENGL_LOADER_GL3W")
+target_compile_definitions(imtoolkit PUBLIC "-DIMGUI_IMPL_OPENGL_LOADER_GL3W")
 target_include_directories(imtoolkit PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/imgui>
@@ -32,3 +32,4 @@ target_include_directories(imtoolkit PUBLIC
     $<INSTALL_INTERFACE:include>)
 
 add_subdirectory(sample)
+add_subdirectory(canvas)
