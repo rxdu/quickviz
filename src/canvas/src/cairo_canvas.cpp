@@ -4,6 +4,12 @@
  * Created on: Dec 03, 2020 21:27
  * Description:
  *
+ * Reference:
+ * [1]
+ * https://stackoverflow.com/questions/6108094/render-cairo-surface-directly-to-opengl-texture
+ * [2]
+ * https://stackoverflow.com/questions/36275507/how-to-speed-up-drawing-with-cairo-on-opengl-windows
+ *
  * Copyright (c) 2020 Ruixiang Du (rdu)
  */
 
@@ -40,6 +46,18 @@ CairoCanvas::~CairoCanvas() {
   glDeleteTextures(1, &image_texture_);
   cairo_surface_destroy(surface);
   cairo_destroy(cr);
+}
+
+void CairoCanvas::SetBackgroundColor(Color color) { background_color_ = color; }
+
+void CairoCanvas::EraseAll() {
+  int tex_w = cairo_image_surface_get_width(surface);
+  int tex_h = cairo_image_surface_get_height(surface);
+
+  cairo_rectangle(cr, 0, 0, tex_w, tex_h);
+  cairo_set_source_rgba(cr, background_color_.r, background_color_.g,
+                        background_color_.b, background_color_.a);
+  cairo_fill(cr);
 }
 
 void CairoCanvas::Draw() {

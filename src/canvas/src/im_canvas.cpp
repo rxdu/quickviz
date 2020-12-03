@@ -80,6 +80,8 @@ void ImCanvas::Show() {
     // Poll and handle events (inputs, window resize, etc.)
     glfwPollEvents();
 
+    if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape))) break;
+
     // Start the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();

@@ -21,6 +21,14 @@
 namespace rdu {
 class CairoCanvas : public ImCanvas {
  public:
+  struct Color {
+    double r = 0.0;
+    double g = 0.0;
+    double b = 0.0;
+    double a = 1.0;
+  };
+
+ public:
   CairoCanvas(uint32_t width = 640, uint32_t height = 480,
               std::string title = "Canvas");
   ~CairoCanvas();
@@ -31,9 +39,13 @@ class CairoCanvas : public ImCanvas {
   CairoCanvas(const CairoCanvas&& other) = delete;
   CairoCanvas& operator=(const CairoCanvas&& other) = delete;
 
+  void SetBackgroundColor(Color color);
+
+  void EraseAll();
   virtual void Paint(cairo_t* cr) {}
 
  private:
+  Color background_color_ = {1.0, 1.0, 1.0, 1.0};
   cairo_surface_t* surface = nullptr;
   cairo_t* cr = nullptr;
   GLuint image_texture_;
