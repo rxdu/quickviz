@@ -2,12 +2,9 @@
 
 ![GitHub Workflow Status](https://github.com/rxdu/imtoolkit/workflows/CMake/badge.svg)
 
-This repository contains the following libraries:
+The "imgui" and "implot" are used as the base of other immediate-mode UI components in this repository. Additional features include:
 
-* imgui
-* implot
-
-and the main purpose is to provide a CMake configuration so that the two libraries can be easily intergrated into a larger project.
+* CairoCanvas: ImGui + Cairo 2D graphics library
 
 ## Build 
 
