@@ -7,7 +7,7 @@
  * Copyright (c) 2020 Ruixiang Du (rdu)
  */
 
-#include "canvas/imcanvas.hpp"
+#include "canvas/im_canvas.hpp"
 
 namespace rdu {
 namespace {
@@ -16,7 +16,8 @@ static void glfw_error_callback(int error, const char* description) {
 }
 }  // namespace
 
-ImCanvas::ImCanvas(uint32_t width, uint32_t height, std::string title) {
+ImCanvas::ImCanvas(uint32_t width, uint32_t height, std::string title)
+    : width_(width), height_(height) {
   // Setup window
   glfwSetErrorCallback(glfw_error_callback);
   if (!glfwInit()) return;
@@ -78,6 +79,8 @@ void ImCanvas::Show() {
   while (!glfwWindowShouldClose(window_)) {
     // Poll and handle events (inputs, window resize, etc.)
     glfwPollEvents();
+
+    if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape))) break;
 
     // Start the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame();

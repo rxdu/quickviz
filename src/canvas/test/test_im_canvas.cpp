@@ -7,7 +7,7 @@
  * Copyright (c) 2020 Ruixiang Du (rdu)
  */
 
-#include "canvas/imcanvas.hpp"
+#include "canvas/im_canvas.hpp"
 
 using namespace rdu;
 
