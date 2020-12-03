@@ -9,11 +9,16 @@
 #include <cairo.h>
 #include <cairo-svg.h>
 
-#include "canvas/imcanvas.hpp"
+#include "canvas/im_canvas.hpp"
 
 using namespace rdu;
 
 struct CairoCanvas : public ImCanvas {
+  GLuint image_texture;
+  CairoCanvas() { glGenTextures(1, &image_texture); }
+
+  ~CairoCanvas() { glDeleteTextures(1, &image_texture); }
+
   void Draw() override {
     // cairo_surface_t* surface = 0L;
     // cairo_t* cr = 0L;
@@ -103,8 +108,6 @@ struct CairoCanvas : public ImCanvas {
     cairo_stroke(cr);
     /**/
 
-    GLuint image_texture;
-    glGenTextures(1, &image_texture);
     glBindTexture(GL_TEXTURE_2D, image_texture);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -123,16 +126,24 @@ struct CairoCanvas : public ImCanvas {
 
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-    // ImGui::Begin("foobar", NULL, ImVec2(0, 0), 0.0f,
+
+    // ImGui::Begin("OpenGL Texture Text", NULL,
     //              ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
     //                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
     //                  ImGuiWindowFlags_NoScrollWithMouse);
 
-    ImGui::Begin("OpenGL Texture Text", NULL,
-                 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
-                     ImGuiWindowFlags_NoScrollWithMouse);
-    ImGui::Image((void*)(intptr_t)image_texture, ImVec2(640, 480));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
+
+    ImGui::Begin("Canvas", NULL,
+                 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar |
+                     ImGuiWindowFlags_NoBringToFrontOnFocus |
+                     ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoCollapse |
+                     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
+    // ImGui::Image((void*)(intptr_t)image_texture, ImVec2(640, 480));
+    ImGui::Image((void*)(intptr_t)image_texture,
+                 ImGui::GetContentRegionAvail());
+
     ImGui::End();
 
     cairo_surface_destroy(surface);

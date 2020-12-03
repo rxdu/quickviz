@@ -6,3 +6,6 @@ target_link_libraries(test_cairo PRIVATE canvas)
 
 add_executable(test_ccanvas test_ccanvas.cpp)
 target_link_libraries(test_ccanvas PRIVATE canvas)
+
+add_executable(test_cairo_canvas test_cairo_canvas.cpp)
+target_link_libraries(test_cairo_canvas PRIVATE canvas)

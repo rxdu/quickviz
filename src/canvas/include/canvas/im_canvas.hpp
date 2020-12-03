@@ -1,5 +1,5 @@
 /*
- * imcanvas.hpp
+ * im_canvas.hpp
  *
  * Created on: Dec 02, 2020 21:20
  * Description:
@@ -7,8 +7,8 @@
  * Copyright (c) 2020 Ruixiang Du (rdu)
  */
 
-#ifndef IMCANVAS_HPP
-#define IMCANVAS_HPP
+#ifndef IM_CANVAS_HPP
+#define IM_CANVAS_HPP
 
 #include <stdio.h>
 
@@ -44,9 +44,12 @@ class ImCanvas {
 
  protected:
   bool initialized_ = false;
+  uint32_t width_ = 640;
+  uint32_t height_ = 480;
+  
   GLFWwindow* window_;
   ImVec4 background_color_;
 };
 }  // namespace rdu
 
-#endif /* IMCANVAS_HPP */
+#endif /* IM_CANVAS_HPP */
