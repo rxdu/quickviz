@@ -51,13 +51,9 @@ CairoCanvas::~CairoCanvas() {
 void CairoCanvas::SetBackgroundColor(Color color) { background_color_ = color; }
 
 void CairoCanvas::EraseAll() {
-  int tex_w = cairo_image_surface_get_width(surface);
-  int tex_h = cairo_image_surface_get_height(surface);
-
-  cairo_rectangle(cr, 0, 0, tex_w, tex_h);
   cairo_set_source_rgba(cr, background_color_.r, background_color_.g,
                         background_color_.b, background_color_.a);
-  cairo_fill(cr);
+  cairo_paint(cr);
 }
 
 void CairoCanvas::Draw() {

@@ -90,6 +90,7 @@ struct DrawArc : public CairoCanvas {
 
 int main(int argc, const char* argv[]) {
   DrawArc cc;
+  //   cc.SetBackgroundColor({0.5, 0.5, 0.5, 0.5});
   cc.Show();
   return 0;
 }
