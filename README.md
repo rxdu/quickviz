@@ -2,9 +2,11 @@
 
 ![GitHub Workflow Status](https://github.com/rxdu/imtoolkit/workflows/CMake/badge.svg)
 
-This repository constains a set of packages built on top of the [imgui](https://github.com/ocornut/imgui) library. The targeted use case is creating data visualization and basic UI for assisting development and debugging of robotics software. This toolkit is meant to be very lightweight (minimal dependent libraries required, easy to be integrated and built), which differentiates it from other more feature-rich but much heavier libraries (such as OpenCV, VTK, ROS/RViz). Currently the following features are supported:
+This repository constains a set of packages built on top of the [imgui](https://github.com/ocornut/imgui) library. The targeted use case is creating data visualization and basic UI for assisting development and debugging of robotics software. This toolkit is designed to be very lightweight (minimal dependent libraries required, easy to be integrated and built), which differentiates it from other more feature-rich but much heavier libraries (such as OpenCV, VTK, ROS/RViz). 
 
-* Plot: ImGui + ImPlot
+Currently the following features are supported:
+
+* DataPlotter: ImGui + ImPlot
 * CairoCanvas: ImGui + Cairo 2D graphics library
 
 ## Build 
@@ -17,7 +19,7 @@ The code in this repository should build on any recent linux distributions with 
 $ sudo apt install build-essential cmake
 ```
 
-If the version of cmake bundled with your system is too low, you can install a newer version from [kitware ppa](https://apt.kitware.com/) or build & install from [source](https://cmake.org/download/). 
+If the version of cmake bundled with your system is too low, you can install a newer version from [kitware ppa](https://apt.kitware.com/) or build and install from [source](https://cmake.org/download/). 
 
 **Install dependencies**
 
@@ -47,3 +49,14 @@ $ mkdir build && cd build
 $ cmake ..
 $ make -j8
 ```
+
+## Use the toolkit
+
+This toolkit offers a number of convenience wrappers/helper functions to allow you create more specialized visualization/UI tools for your project easily. Initially it helps you put all pieces together and get started quickly, but eventually you would probably need to get familar with the underlying building blocks in order to create tools that fits your hand most.
+
+* imgui demo: src/imcore/imgui/imgui_demo.cpp
+* implot demo: src/imcore/implot/implot_demo.cpp
+* cairo docs: https://cairographics.org/documentation/
+
+* [imgui demo](https://greggman.github.io/doodles/glfw-imgui/out/glfw-imgui.html)  
+* [implot demo](https://traineq.org/implot_demo/src/implot_demo.html)

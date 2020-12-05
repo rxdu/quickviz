@@ -30,7 +30,7 @@ class CairoCanvas : public ImCanvas {
 
  public:
   CairoCanvas(uint32_t width = 640, uint32_t height = 480,
-              std::string title = "Canvas");
+              std::string title = "Cairo");
   ~CairoCanvas();
 
   // do not allow copy

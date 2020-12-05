@@ -41,6 +41,7 @@ ImCanvas::ImCanvas(uint32_t width, uint32_t height, std::string title)
   // Setup Dear ImGui context
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
+  ImPlot::CreateContext();
   ImGuiIO& io = ImGui::GetIO();
   (void)io;
   // Enable Keyboard Controls
@@ -67,6 +68,7 @@ ImCanvas::~ImCanvas() {
   // Cleanup
   ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplGlfw_Shutdown();
+  ImPlot::DestroyContext();
   ImGui::DestroyContext();
 
   glfwDestroyWindow(window_);
