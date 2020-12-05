@@ -6,7 +6,7 @@ pkg_check_modules(Cairo REQUIRED IMPORTED_TARGET cairo)
 add_library(canvas 
     src/im_canvas.cpp
     src/cairo_canvas.cpp)
-target_link_libraries(canvas PUBLIC imtoolkit PkgConfig::Cairo)
+target_link_libraries(canvas PUBLIC imcore PkgConfig::Cairo)
 target_include_directories(canvas PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>

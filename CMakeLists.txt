@@ -100,7 +100,7 @@ foreach(p LIB BIN INCLUDE CMAKE)
 endforeach()
 
 # targets to install
-install(TARGETS imtoolkit
+install(TARGETS imcore canvas
     EXPORT imtoolkitTargets
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
@@ -108,8 +108,9 @@ install(TARGETS imtoolkit
     INCLUDES DESTINATION include)
 
 install(DIRECTORY src/imgui src/implot
+                src/canvas/include
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    PATTERN "*.h")
+    PATTERN "*.h*")
 
 # export target configuration 
 include(CMakePackageConfigHelpers)
