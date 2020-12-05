@@ -1,6 +1,6 @@
-[submodule "src/implot"]
-	path = src/implot
-	url = https://github.com/rxdu/implot.git
-[submodule "src/imgui"]
-	path = src/imgui
-	url = https://github.com/rxdu/imgui.git
+[submodule "src/imcore/imgui"]
+	path = src/imcore/imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "src/imcore/implot"]
+	path = src/imcore/implot
+	url = https://github.com/epezent/implot.git
