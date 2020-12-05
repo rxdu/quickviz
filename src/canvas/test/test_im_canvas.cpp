@@ -11,8 +11,14 @@
 
 using namespace rdu;
 
+struct ImDraw : public ImCanvas {
+  void Draw() override {
+    // do nothing
+  }
+};
+
 int main(int argc, char *argv[]) {
-  ImCanvas canvas;
+  ImDraw canvas;
   canvas.Show();
   return 0;
 }

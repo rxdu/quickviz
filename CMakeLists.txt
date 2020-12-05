@@ -11,9 +11,8 @@ project(imtoolkit VERSION 0.1.0)
 set(BUILD_TESTING on)
 
 ## Project Options
-option(BUILD_TESTING ON)
-option(STATIC_CHECK OFF)
-option(ENABLE_LOGGING ON)
+option(BUILD_TESTING "Build tests" ON)
+option(STATIC_CHECK "Perform static check" OFF)
 
 ## Check if code compiles on x86_64 platform
 if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
@@ -107,7 +106,8 @@ install(TARGETS imcore canvas
     RUNTIME DESTINATION bin
     INCLUDES DESTINATION include)
 
-install(DIRECTORY src/imgui src/implot
+install(DIRECTORY src/imcore/imgui 
+                src/imcore/implot
                 src/canvas/include
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     PATTERN "*.h*")
@@ -135,13 +135,13 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Immediate-Mode Toolkit")
 set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
 set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
-# set(CPACK_PACKAGING_INSTALL_PREFIX "/opt/imtoolkit")
-# set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENCE")
+set(CPACK_PACKAGING_INSTALL_PREFIX "/opt/imtoolkit")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
 
 set(CPACK_GENERATOR "DEB")
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Ruixiang Du") 
-# set(CPACK_DEBIAN_PACKAGE_DEPENDS )
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libgl1-mesa-dev, libglfw3-dev, libcairo2-dev")
 set(CPACK_SOURCE_IGNORE_FILES .git dist .*build.* \\\\.DS_Store)
 include(CPack)

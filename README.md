@@ -9,6 +9,16 @@ This repository constains a set of packages built on top of the [imgui](https://
 
 ## Build 
 
+The code in this repository should build on any recent linux distributions with a compiler supporting C++11/14.
+
+**Setup toolchain**
+
+```
+$ sudo apt install build-essential cmake
+```
+
+If the version of cmake bundled with your system is too low, you can install a newer version from [kitware ppa](https://apt.kitware.com/) or build & install from [source](https://cmake.org/download/). 
+
 **Install dependencies**
 
 ```

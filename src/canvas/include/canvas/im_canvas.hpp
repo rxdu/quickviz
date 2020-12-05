@@ -42,7 +42,7 @@ class ImCanvas {
   void SetBackgroundColor(ImVec4 bk);
 
   // draw on canvas
-  virtual void Draw(){};
+  virtual void Draw() = 0;
   void Show();
 
  protected:
