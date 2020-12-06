@@ -12,19 +12,26 @@
 
 #include "implot/implot.h"
 #include "canvas/im_canvas.hpp"
+#include "plotter/data_buffer.hpp"
 
 namespace rdu {
 class DataPlotter : public ImCanvas {
  public:
-  struct DataPoint {};
+  struct DataPoint {
+    std::string line;
+    float x;
+    float y;
+  };
 
  public:
-  DataPlotter(uint32_t width = 640, uint32_t height = 480,
+  DataPlotter(uint32_t width = 960, uint32_t height = 640,
               std::string title = "Plotter")
       : ImCanvas(width, height, title){};
 
+  void AddDataPoint(const DataPoint& dp);
+
  private:
-  void Draw() override{};
+  void Draw() override;
 };
 }  // namespace rdu
 

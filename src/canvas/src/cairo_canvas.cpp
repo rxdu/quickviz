@@ -73,6 +73,13 @@ void CairoCanvas::Draw() {
 
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
   ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
+  ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 0);
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0);
+  ImGui::PushStyleVar(ImGuiStyleVar_GrabRounding, 0);
+  ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, 0);
+  ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarRounding, 0);
 
   ImGui::Begin("Cairo Canvas", NULL,
                ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar |
