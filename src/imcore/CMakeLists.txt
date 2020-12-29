@@ -23,12 +23,11 @@ set(IMGUI_CORE_SRC
     imgui/imgui.cpp
     imgui/imgui_draw.cpp
     imgui/imgui_widgets.cpp
-    imgui/imgui_tables.cpp
     imgui/imgui_demo.cpp
 )
 set(IMGUI_BACKEND_SRC
-    imgui/backends/imgui_impl_glfw.cpp 
-    imgui/backends/imgui_impl_opengl3.cpp
+    imgui/examples/imgui_impl_glfw.cpp 
+    imgui/examples/imgui_impl_opengl3.cpp
 )
 set(GL_LOADER_SRC
     imgui/examples/libs/gl3w/GL/gl3w.c
@@ -49,7 +48,7 @@ target_compile_definitions(imcore PUBLIC "-DIMGUI_IMPL_OPENGL_LOADER_GL3W")
 target_include_directories(imcore PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/imgui>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/imgui/examples>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/imgui/examples/libs/gl3w>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/imtui/include>
     $<INSTALL_INTERFACE:include>)
