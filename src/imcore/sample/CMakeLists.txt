@@ -3,3 +3,6 @@ target_link_libraries(imgui_sample PRIVATE imcore)
 
 add_executable(implot_sample implot_sample.cpp)
 target_link_libraries(implot_sample PRIVATE imcore)
+
+add_executable(imtui_sample imtui_sample.cpp)
+target_link_libraries(imtui_sample PRIVATE imcore)

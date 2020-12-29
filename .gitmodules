@@ -4,3 +4,6 @@
 [submodule "src/imcore/implot"]
 	path = src/imcore/implot
 	url = https://github.com/epezent/implot.git
+[submodule "src/imcore/imtui"]
+	path = src/imcore/imtui
+	url = https://github.com/ggerganov/imtui.git
