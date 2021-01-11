@@ -24,15 +24,15 @@ void DataPlotter::Draw() {
   float plot_area_width = display_size[0];
   float plot_area_height = display_size[1] - plot_area_pos[1];
 
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
-  ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 0);
-  ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0);
-  ImGui::PushStyleVar(ImGuiStyleVar_GrabRounding, 0);
-  ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, 0);
-  ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarRounding, 0);
+  ImGuiStyle& style = ImGui::GetStyle();
+  style.WindowPadding = ImVec2(0, 0);
+  style.WindowBorderSize = 0;
+  style.WindowRounding = 0;
+  style.ChildRounding = 0;
+  style.FrameRounding = 0;
+  style.GrabRounding = 0;
+  style.PopupRounding = 0;
+  style.ScrollbarRounding = 0;
 
   /**********************************************************************/
   // show settings area
@@ -50,9 +50,10 @@ void DataPlotter::Draw() {
   ImGui::SliderFloat("History", &history, 1, 60, "%.1f s");
   ImGui::PopItemWidth();
 
-//   ImGui::BulletText("Move your mouse to change the data!");
-//   ImGui::BulletText(
-//       "This example assumes 60 FPS. Higher FPS requires larger buffer size.");
+  //   ImGui::BulletText("Move your mouse to change the data!");
+  //   ImGui::BulletText(
+  //       "This example assumes 60 FPS. Higher FPS requires larger buffer
+  //       size.");
 
   ImGui::Text("Road Map:");
   ImGui::Checkbox("Show Centerline", &show_center_line);
