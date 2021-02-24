@@ -11,4 +11,4 @@ find_dependency(glfw3 REQUIRED)
 # Any extra setup
 
 # Add the targets file
-include("${CMAKE_CURRENT_LIST_DIR}/imtookitTargets.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/imtoolkitTargets.cmake")

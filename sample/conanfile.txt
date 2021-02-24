@@ -1,0 +1,5 @@
+ [requires]
+ imtoolkit/0.1.0
+
+ [generators]
+ cmake_paths

@@ -108,7 +108,7 @@ install(TARGETS imcore canvas
 
 install(DIRECTORY src/imcore/imgui 
                 src/imcore/implot
-                src/canvas/include
+                src/canvas/include/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     PATTERN "*.h*")
 

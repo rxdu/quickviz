@@ -44,7 +44,7 @@ $ git submodule update --init --recursive
 **Configure and compile**
 
 ```
-$ cd imtookit
+$ cd imtoolkit
 $ mkdir build && cd build
 $ cmake ..
 $ make -j8
