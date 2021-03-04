@@ -22,6 +22,9 @@ namespace rdu {
 class CairoCanvas : public ImCanvas {
  public:
   struct Color {
+    Color(double _r, double _g, double _b, double _a)
+        : r(_r), g(_g), b(_b), a(_a) {}
+
     double r = 0.0;
     double g = 0.0;
     double b = 0.0;
@@ -31,7 +34,7 @@ class CairoCanvas : public ImCanvas {
  public:
   CairoCanvas(uint32_t width = 640, uint32_t height = 480,
               std::string title = "Cairo");
-  ~CairoCanvas();
+  virtual ~CairoCanvas();
 
   // do not allow copy
   CairoCanvas(const CairoCanvas& other) = delete;
