@@ -41,6 +41,7 @@ class ImCanvas {
 
   // customization
   void SetBackgroundColor(ImVec4 bk);
+  ImVec4 GetBackgroundColor() const { return background_color_; }
 
   // draw on canvas
   virtual void Draw() = 0;
