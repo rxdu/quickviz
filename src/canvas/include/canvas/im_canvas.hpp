@@ -28,7 +28,7 @@ class ImCanvas {
  public:
   ImCanvas(uint32_t width = 640, uint32_t height = 480,
            std::string title = "Canvas");
-  ~ImCanvas();
+  virtual ~ImCanvas();
 
   // do not allow copy
   ImCanvas(const ImCanvas& other) = delete;
