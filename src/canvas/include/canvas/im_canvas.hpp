@@ -26,6 +26,19 @@
 namespace rdu {
 class ImCanvas {
  public:
+  struct Color {
+    Color(double _r, double _g, double _b, double _a)
+        : r(_r), g(_g), b(_b), a(_a) {}
+
+    double r = 0.0;
+    double g = 0.0;
+    double b = 0.0;
+    double a = 1.0;
+
+    ImVec4 ToImVec4() { return ImVec4(r, g, b, a); }
+  };
+
+ public:
   ImCanvas(uint32_t width = 640, uint32_t height = 480,
            std::string title = "Canvas");
   virtual ~ImCanvas();
@@ -41,6 +54,7 @@ class ImCanvas {
 
   // customization
   void SetBackgroundColor(ImVec4 bk);
+  ImVec4 GetBackgroundColor() const { return background_color_; }
 
   // draw on canvas
   virtual void Draw() = 0;

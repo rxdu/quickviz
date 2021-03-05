@@ -7,6 +7,9 @@
  * Copyright (c) 2020 Ruixiang Du (rdu)
  */
 
+#include <memory>
+#include <iostream>
+
 #include "canvas/im_canvas.hpp"
 #include "canvas/cairo_context.hpp"
 

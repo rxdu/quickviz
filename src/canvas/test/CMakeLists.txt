@@ -1,5 +1,5 @@
 add_executable(test_im_canvas test_im_canvas.cpp)
 target_link_libraries(test_im_canvas PRIVATE canvas)
 
-add_executable(test_cairo_canvas test_cairo_canvas.cpp)
-target_link_libraries(test_cairo_canvas PRIVATE canvas)
+add_executable(test_cairo_context test_cairo_context.cpp)
+target_link_libraries(test_cairo_context PRIVATE canvas)
