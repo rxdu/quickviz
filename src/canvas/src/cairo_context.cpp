@@ -12,7 +12,8 @@
 #include <iostream>
 
 namespace rdu {
-CairoContext::CairoContext(uint32_t width, uint32_t height) {
+CairoContext::CairoContext(uint32_t width, uint32_t height)
+    : width_(width), height_(height) {
   // create cairo context
   surface_ = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
   if (cairo_surface_status(surface_) != CAIRO_STATUS_SUCCESS) {
@@ -26,27 +27,37 @@ CairoContext::CairoContext(uint32_t width, uint32_t height) {
     return;
   }
 
-  //   // create and setup OpenGL texture
-  //   glGenTextures(1, &image_texture_);
-  //   glBindTexture(GL_TEXTURE_2D, image_texture_);
-  //   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  //   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  //   // The following two are required on WebGL for non power-of-two textures
-  //   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  //   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
   initialized_ = true;
 }
 
 CairoContext::~CairoContext() {
   // destroy resource
-  //   glDeleteTextures(1, &image_texture_);
+  if (gl_texture_created_) glDeleteTextures(1, &image_texture_);
   cairo_surface_destroy(surface_);
   cairo_destroy(cr_);
 }
 
-void CairoContext::Clear(Color bg_color) {
-  cairo_set_source_rgba(cr_, bg_color.r, bg_color.g, bg_color.b, bg_color.a);
-  cairo_paint(cr_);
+void CairoContext::BindGlTexture() {
+  // create and setup OpenGL texture
+  glGenTextures(1, &image_texture_);
+  glBindTexture(GL_TEXTURE_2D, image_texture_);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  // the following two are required on WebGL for non power-of-two textures
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+  gl_texture_created_ = true;
+}
+
+GLuint CairoContext::RenderToGlTexture() {
+  // convert surface to OpenGL texture
+  int tex_w = cairo_image_surface_get_width(surface_);
+  int tex_h = cairo_image_surface_get_height(surface_);
+  unsigned char* data = cairo_image_surface_get_data(surface_);
+  glTexImage2D(GL_TEXTURE_2D, 0, 4, tex_w, tex_h, 0, GL_BGRA, GL_UNSIGNED_BYTE,
+               data);
+  return image_texture_;
 }
 }  // namespace rdu

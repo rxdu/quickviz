@@ -18,17 +18,6 @@
 namespace rdu {
 class CairoContext {
  public:
-  struct Color {
-    Color(double _r, double _g, double _b, double _a)
-        : r(_r), g(_g), b(_b), a(_a) {}
-
-    double r = 0.0;
-    double g = 0.0;
-    double b = 0.0;
-    double a = 1.0;
-  };
-
- public:
   CairoContext(uint32_t width, uint32_t height);
   ~CairoContext();
 
@@ -38,14 +27,24 @@ class CairoContext {
   CairoContext(const CairoContext&&) = delete;
   CairoContext& operator=(const CairoContext&&) = delete;
 
+  /* public functions */
+  // check whether Cairo context has been initialized correctly
   bool Initialized() const { return initialized_; };
-  void Clear(Color bg_color);
 
+  // GL-related functions can only be called after a GL context has been created
+  void BindGlTexture();
+  GLuint RenderToGlTexture();
+
+  // get object of Cairo context and surface
   cairo_t* GetObject() { return cr_; }
   cairo_surface_t* GetSurface() { return surface_; }
 
  private:
   bool initialized_ = false;
+  bool gl_texture_created_ = false;
+
+  uint32_t width_;
+  uint32_t height_;
 
   cairo_surface_t* surface_ = nullptr;
   cairo_t* cr_ = nullptr;
