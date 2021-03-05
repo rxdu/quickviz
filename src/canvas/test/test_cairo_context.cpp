@@ -8,6 +8,7 @@
  */
 
 #include <memory>
+#include <iostream>
 
 #include "canvas/im_canvas.hpp"
 #include "canvas/cairo_context.hpp"
@@ -24,18 +25,22 @@ struct DrawArc : public ImCanvas {
   std::shared_ptr<CairoContext> ctx_;
 
   void Draw() override {
-    // do nothing
-    Paint(ctx_->GetObject());
-
     // show on imgui
+    ImGui::SetNextWindowPos(ImVec2(0, 0));
+    ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+
     ImGui::Begin("Cairo Canvas", NULL,
                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar |
                      ImGuiWindowFlags_NoBringToFrontOnFocus |
                      ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoCollapse |
                      ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
 
-    auto image = ctx_->RenderToGlTexture();
+    // do paint with cairo
+    Paint(ctx_->GetCairoObject());
+
+    GLuint image = ctx_->RenderToGlTexture();
     ImGui::Image((void*)(intptr_t)image, ImGui::GetContentRegionAvail());
+    // ImGui::Image((void*)(intptr_t)image, {ctx_->GetWidth(), ctx_->GetHeight()});
 
     ImGui::End();
   }
@@ -69,7 +74,7 @@ struct DrawArc : public ImCanvas {
 
 int main(int argc, const char* argv[]) {
   DrawArc cc;
-  cc.SetBackgroundColor({0.2, 0.3, 0.5, 0.2});
+  cc.SetBackgroundColor({0.1, 0.3, 0.5, 0.2});
   cc.Show();
 
   return 0;

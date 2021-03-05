@@ -29,14 +29,16 @@ class CairoContext {
 
   /* public functions */
   // check whether Cairo context has been initialized correctly
-  bool Initialized() const { return initialized_; };
+  bool Initialized() const { return initialized_; }
+  float GetWidth() const { return static_cast<float>(width_); }
+  float GetHeight() const { return static_cast<float>(height_); }
 
   // GL-related functions can only be called after a GL context has been created
   void BindGlTexture();
   GLuint RenderToGlTexture();
 
   // get object of Cairo context and surface
-  cairo_t* GetObject() { return cr_; }
+  cairo_t* GetCairoObject() { return cr_; }
   cairo_surface_t* GetSurface() { return surface_; }
 
  private:

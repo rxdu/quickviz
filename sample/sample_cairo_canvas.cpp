@@ -7,13 +7,45 @@
  * Copyright (c) 2020 Ruixiang Du (rdu)
  */
 
-#include "canvas/cairo_canvas.hpp"
+#include "canvas/im_canvas.hpp"
+#include "canvas/cairo_context.hpp"
 
 using namespace rdu;
 
-struct DrawArc : public CairoCanvas {
-  void Paint(cairo_t* cr) override {
-    EraseAll();
+struct DrawArc : public ImCanvas {
+  DrawArc() {
+    ctx_ = std::make_shared<CairoContext>(640, 480);
+    if (!ctx_->Initialized()) return;
+    ctx_->BindGlTexture();
+  }
+
+  std::shared_ptr<CairoContext> ctx_;
+
+  void Draw() override {
+    // show on imgui
+    ImGui::SetNextWindowPos(ImVec2(0, 0));
+    ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+
+    ImGui::Begin("Cairo Canvas", NULL,
+                 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar |
+                     ImGuiWindowFlags_NoBringToFrontOnFocus |
+                     ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoCollapse |
+                     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
+
+    // do paint with cairo
+    Paint(ctx_->GetCairoObject());
+
+    GLuint image = ctx_->RenderToGlTexture();
+    ImGui::Image((void*)(intptr_t)image, ImGui::GetContentRegionAvail());
+    // ImGui::Image((void*)(intptr_t)image, {ctx_->GetWidth(), ctx_->GetHeight()});
+
+    ImGui::End();
+  }
+
+  void Paint(cairo_t* cr) {
+    cairo_set_source_rgba(cr, background_color_.x, background_color_.y,
+                          background_color_.z, background_color_.w);
+    cairo_paint(cr);
 
     double x = 25.6, y = 128.0;
     double x1 = 102.4, y1 = 230.4, x2 = 153.6, y2 = 25.6, x3 = 230.4,
@@ -39,7 +71,8 @@ struct DrawArc : public CairoCanvas {
 
 int main(int argc, const char* argv[]) {
   DrawArc cc;
-  //   cc.SetBackgroundColor({0.5, 0.5, 0.5, 0.5});
+  cc.SetBackgroundColor({0.1, 0.3, 0.5, 0.2});
   cc.Show();
+
   return 0;
 }

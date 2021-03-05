@@ -15,15 +15,15 @@ namespace rdu {
 CairoContext::CairoContext(uint32_t width, uint32_t height)
     : width_(width), height_(height) {
   // create cairo context
-  surface_ = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
+  surface_ = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width_, height_);
   if (cairo_surface_status(surface_) != CAIRO_STATUS_SUCCESS) {
-    std::cerr << "create_cairo_context() - Couldn't create surface\n";
+    std::cerr << "[ERROR] create_cairo_context() - Couldn't create surface\n";
     return;
   }
 
   cr_ = cairo_create(surface_);
   if (cairo_status(cr_) != CAIRO_STATUS_SUCCESS) {
-    std::cerr << "create_cairo_context() - Couldn't create context\n";
+    std::cerr << "[ERROR] create_cairo_context() - Couldn't create context\n";
     return;
   }
 
