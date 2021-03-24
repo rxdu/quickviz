@@ -12,7 +12,8 @@
 #include <iostream>
 
 namespace rdu {
-CairoContext::CairoContext(uint32_t width, uint32_t height)
+CairoContext::CairoContext(uint32_t width, uint32_t height,
+                           bool normalize_coordinate)
     : width_(width), height_(height) {
   // create cairo context
   surface_ = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width_, height_);
@@ -27,6 +28,10 @@ CairoContext::CairoContext(uint32_t width, uint32_t height)
     return;
   }
 
+  if (normalize_coordinate) cairo_scale(cr_, width_, height_);
+
+  GenGlTexture();
+
   initialized_ = true;
 }
 
@@ -37,7 +42,7 @@ CairoContext::~CairoContext() {
   cairo_destroy(cr_);
 }
 
-void CairoContext::BindGlTexture() {
+void CairoContext::GenGlTexture() {
   // create and setup OpenGL texture
   glGenTextures(1, &image_texture_);
   glBindTexture(GL_TEXTURE_2D, image_texture_);
@@ -51,13 +56,30 @@ void CairoContext::BindGlTexture() {
   gl_texture_created_ = true;
 }
 
+void CairoContext::PushScale(double sx, double sy) {
+  scaler_stack_.push({sx, sy});
+  cairo_scale(cr_, sx, sy);
+}
+
+void CairoContext::PopScale() {
+  if (scaler_stack_.empty()) return;
+  auto scaler = scaler_stack_.top();
+  cairo_scale(cr_, 1.0f / scaler.x, 1.0f / scaler.y);
+  scaler_stack_.pop();
+}
+
 GLuint CairoContext::RenderToGlTexture() {
+  // bind texture
+  glBindTexture(GL_TEXTURE_2D, image_texture_);
+
   // convert surface to OpenGL texture
-  int tex_w = cairo_image_surface_get_width(surface_);
-  int tex_h = cairo_image_surface_get_height(surface_);
   unsigned char* data = cairo_image_surface_get_data(surface_);
-  glTexImage2D(GL_TEXTURE_2D, 0, 4, tex_w, tex_h, 0, GL_BGRA, GL_UNSIGNED_BYTE,
-               data);
+  glTexImage2D(GL_TEXTURE_2D, 0, 4, width_, height_, 0, GL_BGRA,
+               GL_UNSIGNED_BYTE, data);
+
+  // unbind texture
+  glBindTexture(GL_TEXTURE_2D, 0);
+
   return image_texture_;
 }
 }  // namespace rdu

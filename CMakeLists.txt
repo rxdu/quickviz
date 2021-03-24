@@ -6,7 +6,7 @@ if(CCACHE_PROGRAM)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
 endif()
 
-project(imtoolkit VERSION 0.1.0)
+project(imtoolkit VERSION 0.2.0)
 
 set(BUILD_TESTING on)
 

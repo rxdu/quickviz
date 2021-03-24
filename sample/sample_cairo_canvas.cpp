@@ -7,6 +7,8 @@
  * Copyright (c) 2020 Ruixiang Du (rdu)
  */
 
+#include <memory>
+
 #include "canvas/im_canvas.hpp"
 #include "canvas/cairo_context.hpp"
 
@@ -14,32 +16,62 @@ using namespace rdu;
 
 struct DrawArc : public ImCanvas {
   DrawArc() {
-    ctx_ = std::make_shared<CairoContext>(640, 480);
-    if (!ctx_->Initialized()) return;
-    ctx_->BindGlTexture();
+    ctx1_ = std::make_shared<CairoContext>(320, 240);
+    ctx2_ = std::make_shared<CairoContext>(320, 240, true);
   }
 
-  std::shared_ptr<CairoContext> ctx_;
+  std::shared_ptr<CairoContext> ctx1_;
+  std::shared_ptr<CairoContext> ctx2_;
 
   void Draw() override {
+    if (!ctx1_->Initialized()) return;
+    if (!ctx2_->Initialized()) return;
+
+    ImVec2 panel_size = {ImGui::GetIO().DisplaySize.x / 2.0f,
+                         ImGui::GetIO().DisplaySize.y / 2.0f};
+
     // show on imgui
-    ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+    {
+      ImGui::SetNextWindowPos(ImVec2(0, 0));
+      ImGui::SetNextWindowSize(panel_size);
 
-    ImGui::Begin("Cairo Canvas", NULL,
-                 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar |
-                     ImGuiWindowFlags_NoBringToFrontOnFocus |
-                     ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoCollapse |
-                     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
+      ImGui::Begin("Cairo Canvas 1", NULL,
+                   ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar |
+                       ImGuiWindowFlags_NoBringToFrontOnFocus |
+                       ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoCollapse |
+                       ImGuiWindowFlags_NoResize |
+                       ImGuiWindowFlags_NoScrollbar);
 
-    // do paint with cairo
-    Paint(ctx_->GetCairoObject());
+      // do paint with cairo
+      Paint(ctx1_->GetCairoObject());
 
-    GLuint image = ctx_->RenderToGlTexture();
-    ImGui::Image((void*)(intptr_t)image, ImGui::GetContentRegionAvail());
-    // ImGui::Image((void*)(intptr_t)image, {ctx_->GetWidth(), ctx_->GetHeight()});
+      GLuint image = ctx1_->RenderToGlTexture();
+      ImGui::Image((void*)(intptr_t)image, ImGui::GetContentRegionAvail());
 
-    ImGui::End();
+      ImGui::End();
+    }
+
+    {
+      ImGui::SetNextWindowPos(ImVec2(panel_size.x, 0));
+      ImGui::SetNextWindowSize(panel_size);
+
+      ImGui::Begin("Cairo Canvas 2", NULL,
+                   ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar |
+                       ImGuiWindowFlags_NoBringToFrontOnFocus |
+                       ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoCollapse |
+                       ImGuiWindowFlags_NoResize |
+                       ImGuiWindowFlags_NoScrollbar);
+
+      // do paint with cairo
+      ctx2_->ScaleSurface(320, 240);
+
+      ScalePaint(ctx2_->GetCairoObject());
+
+      GLuint image = ctx2_->RenderToGlTexture();
+      ImGui::Image((void*)(intptr_t)image, ImGui::GetContentRegionAvail());
+
+      ImGui::End();
+    }
   }
 
   void Paint(cairo_t* cr) {
@@ -66,6 +98,32 @@ struct DrawArc : public ImCanvas {
     cairo_move_to(cr, x2, y2);
     cairo_line_to(cr, x3, y3);
     cairo_stroke(cr);
+  }
+
+  void ScalePaint(cairo_t* cr) {
+    cairo_set_source_rgba(cr, background_color_.x, background_color_.y,
+                          background_color_.z, background_color_.w);
+    cairo_paint(cr);
+
+    cairo_set_source_rgb(cr, 0, 0, 0);
+    cairo_move_to(cr, 0, 0);
+    cairo_line_to(cr, 1, 1);
+    cairo_move_to(cr, 1, 0);
+    cairo_line_to(cr, 0, 1);
+    cairo_set_line_width(cr, 0.2);
+    cairo_stroke(cr);
+
+    cairo_rectangle(cr, 0, 0, 0.5, 0.5);
+    cairo_set_source_rgba(cr, 1, 0, 0, 0.80);
+    cairo_fill(cr);
+
+    cairo_rectangle(cr, 0, 0.5, 0.5, 0.5);
+    cairo_set_source_rgba(cr, 0, 1, 0, 0.60);
+    cairo_fill(cr);
+
+    cairo_rectangle(cr, 0.5, 0, 0.5, 0.5);
+    cairo_set_source_rgba(cr, 0, 0, 1, 0.40);
+    cairo_fill(cr);
   }
 };
 

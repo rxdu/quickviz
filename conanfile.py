@@ -3,7 +3,7 @@ from conans import ConanFile, CMake
 
 class ImtoolkitConan(ConanFile):
     name = "imtoolkit"
-    version = "0.1.0"
+    version = "0.2.0"
     license = "MIT"
     author = "<Ruixiang Du> <ruixiang.du@gmail.com>"
     url = "<Package recipe repository url here, for issues about the package>"
