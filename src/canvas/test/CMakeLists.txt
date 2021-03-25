@@ -3,3 +3,6 @@ target_link_libraries(test_im_canvas PRIVATE canvas)
 
 add_executable(test_cairo_context test_cairo_context.cpp)
 target_link_libraries(test_cairo_context PRIVATE canvas)
+
+add_executable(test_plot_buffer test_plot_buffer.cpp)
+target_link_libraries(test_plot_buffer PRIVATE canvas)
