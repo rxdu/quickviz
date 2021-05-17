@@ -12,6 +12,7 @@
 using namespace rdu;
 
 struct ImDraw : public ImCanvas {
+  ImDraw() : ImCanvas(640, 480, "imcanvas") {}
   void Draw() override {
     // do nothing
   }

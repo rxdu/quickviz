@@ -16,7 +16,8 @@ static void glfw_error_callback(int error, const char* description) {
 }
 }  // namespace
 
-ImCanvas::ImCanvas(uint32_t width, uint32_t height, std::string title)
+ImCanvas::ImCanvas(uint32_t width, uint32_t height, std::string title,
+                   uint32_t window_hints)
     : width_(width), height_(height) {
   // Setup window
   glfwSetErrorCallback(glfw_error_callback);
@@ -28,6 +29,9 @@ ImCanvas::ImCanvas(uint32_t width, uint32_t height, std::string title)
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
   // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+
   // only glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // 3.0+ only
+
+  // Apply window hints
+  ApplyWindowHints(window_hints);
 
   // Create window with graphics context
   window_ = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
@@ -44,6 +48,7 @@ ImCanvas::ImCanvas(uint32_t width, uint32_t height, std::string title)
   ImPlot::CreateContext();
   ImGuiIO& io = ImGui::GetIO();
   (void)io;
+  
   // Enable Keyboard Controls
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
   //   io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
@@ -73,6 +78,39 @@ ImCanvas::~ImCanvas() {
 
   glfwDestroyWindow(window_);
   glfwTerminate();
+}
+
+void ImCanvas::ApplyWindowHints(uint32_t window_hints) {
+  if (window_hints & WIN_FOCUSED) {
+    glfwWindowHint(GLFW_FOCUSED, GLFW_TRUE);
+  } else {
+    glfwWindowHint(GLFW_FOCUSED, GLFW_FALSE);
+  }
+  if (window_hints & WIN_RESIZABLE) {
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+  } else {
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+  }
+  if (window_hints & WIN_DECORATED) {
+    glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
+  } else {
+    glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+  }
+  if (window_hints & WIN_AUTO_ICONIFY) {
+    glfwWindowHint(GLFW_AUTO_ICONIFY, GLFW_TRUE);
+  } else {
+    glfwWindowHint(GLFW_AUTO_ICONIFY, GLFW_FALSE);
+  }
+  if (window_hints & WIN_FLOATING) {
+    glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
+  } else {
+    glfwWindowHint(GLFW_FLOATING, GLFW_FALSE);
+  }
+  if (window_hints & WIN_MAXIMIZED) {
+    glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+  } else {
+    glfwWindowHint(GLFW_MAXIMIZED, GLFW_FALSE);
+  }
 }
 
 void ImCanvas::SetBackgroundColor(ImVec4 bk) { background_color_ = bk; }

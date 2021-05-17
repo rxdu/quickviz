@@ -38,9 +38,19 @@ class ImCanvas {
     ImVec4 ToImVec4() { return ImVec4(r, g, b, a); }
   };
 
+  enum WINDOW_HINT {
+    WIN_FOCUSED = 0x00000001,
+    WIN_RESIZABLE = 0x00000004,
+    WIN_DECORATED = 0x00000010,
+    WIN_AUTO_ICONIFY = 0x00000020,
+    WIN_FLOATING = 0x00000040,
+    WIN_MAXIMIZED = 0x00000080
+  };
+
  public:
   ImCanvas(uint32_t width = 640, uint32_t height = 480,
-           std::string title = "Canvas");
+           std::string title = "Canvas",
+           uint32_t window_hints = WIN_RESIZABLE | WIN_DECORATED);
   virtual ~ImCanvas();
 
   // do not allow copy
@@ -67,6 +77,8 @@ class ImCanvas {
 
   GLFWwindow* window_;
   ImVec4 background_color_;
+
+  void ApplyWindowHints(uint32_t window_hints);
 };
 }  // namespace rdu
 
