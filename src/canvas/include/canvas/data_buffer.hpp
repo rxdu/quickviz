@@ -4,7 +4,7 @@
  * Created on: Mar 25, 2021 14:29
  * Description: adapted from class ScrollingBuffer from implot_demo.cpp
  *
- * Copyright (c) 2021 Weston Robot Pte. Ltd.
+ * Copyright (c) 2021 Ruixiang Du (rdu)
  */
 
 #ifndef PLOT_BUFFER_HPP

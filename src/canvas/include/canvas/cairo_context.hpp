@@ -4,7 +4,7 @@
  * Created on: Mar 04, 2021 16:44
  * Description:
  *
- * Copyright (c) 2021 Weston Robot Pte. Ltd.
+ * Copyright (c) 2021 Ruixiang Du (rdu)
  */
 
 #ifndef CAIRO_CONTEXT_HPP

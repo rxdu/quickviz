@@ -2,12 +2,12 @@
 
 ![GitHub Workflow Status](https://github.com/rxdu/imtoolkit/workflows/CMake/badge.svg)
 
-This repository constains a set of packages built on top of the [imgui](https://github.com/ocornut/imgui) library. The targeted use case is creating data visualization and basic UI for assisting development and debugging of robotics software. This toolkit is designed to be very lightweight (minimal dependent libraries required, easy to be integrated and built), which differentiates it from other more feature-rich but much heavier libraries (such as OpenCV, VTK, ROS/RViz). 
+This repository constains a set of packages built on top of the [imgui](https://github.com/ocornut/imgui) library. The targeted use case is creating data visualization and basic UI for assisting development and debugging of robotics software. This toolkit is designed to be very lightweight (minimal dependent libraries required, easy to be integrated and built), which differentiates it from other more feature-rich but much heavier libraries (such as OpenCV, VTK, ROS/RViz). It's expected that this toolkit is integrated into an existing project and used to build application-specific visualization tools, rather than used as a standalone and general-purpose visualization application.
 
 Currently the following features are supported:
 
-* DataPlotter: ImGui + ImPlot
-* CairoCanvas: ImGui + Cairo 2D graphics library
+* Data Plot: ImGui + ImPlot
+* Cairo Canvas: ImGui + Cairo 2D graphics library
 
 ## Build 
 

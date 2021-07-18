@@ -4,7 +4,7 @@
  * Created on: Mar 25, 2021 17:39
  * Description:
  *
- * Copyright (c) 2021 Weston Robot Pte. Ltd.
+ * Copyright (c) 2021 Ruixiang Du (rdu)
  */
 
 #include "canvas/data_buffer.hpp"
