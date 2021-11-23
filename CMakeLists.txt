@@ -99,7 +99,7 @@ foreach(p LIB BIN INCLUDE CMAKE)
 endforeach()
 
 # targets to install
-install(TARGETS imcore canvas
+install(TARGETS imcore #canvas
     EXPORT imtoolkitTargets
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib

@@ -34,10 +34,13 @@ struct ImDraw : public ImCanvas {
     ImGui::SliderFloat("History", &history, 1, 30, "%.1f s");
 
     static ImPlotAxisFlags rt_axis = ImPlotAxisFlags_NoTickLabels;
-    ImPlot::SetNextPlotLimitsX(t - history, t, ImGuiCond_Always);
+    static ImPlotAxisFlags flags = ImPlotAxisFlags_NoTickLabels;
 
-    if (ImPlot::BeginPlot("##Scrolling", NULL, NULL, ImVec2(-1, 150), 0,
-                          rt_axis, rt_axis | ImPlotAxisFlags_LockMin)) {
+    if (ImPlot::BeginPlot("##Scrolling", ImVec2(-1,150))) {
+      ImPlot::SetupAxes(NULL, NULL, flags, flags);
+      ImPlot::SetupAxisLimits(ImAxis_X1,t - history, t, ImGuiCond_Always);
+      ImPlot::SetupAxisLimits(ImAxis_Y1,0,1);
+      ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL,0.5f);
       ImPlot::PlotShaded("Data 1", &(sdata1[0].x), &(sdata1[0].y),
                          sdata1.GetSize(), 0, sdata1.GetOffset(),
                          2 * sizeof(float));

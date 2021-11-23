@@ -39,9 +39,6 @@ ImCanvas::ImCanvas(uint32_t width, uint32_t height, std::string title,
   glfwMakeContextCurrent(window_);
   glfwSwapInterval(1);  // Enable vsync
 
-  // Initialize OpenGL loader
-  if (gl3wInit() != 0) return;
-
   // Setup Dear ImGui context
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();

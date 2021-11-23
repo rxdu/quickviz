@@ -14,7 +14,7 @@
 #include <stack>
 
 #include <cairo.h>
-#include <GL/gl3w.h>
+#include <GL/gl.h>
 
 namespace rdu {
 class CairoContext {

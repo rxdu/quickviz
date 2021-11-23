@@ -20,7 +20,7 @@
 #include "imgui_impl_opengl3.h"
 #include "implot/implot.h"
 
-#include <GL/gl3w.h>
+#include <GL/gl.h>
 #include <GLFW/glfw3.h>
 
 namespace rdu {
