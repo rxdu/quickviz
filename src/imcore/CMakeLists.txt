@@ -22,7 +22,7 @@ set(IMPLOT_SRC
     implot/implot.cpp
     implot/implot_items.cpp
 )
-add_library(imcore ${IMGUI_CORE_SRC} ${IMGUI_BACKEND_SRC} ${GL_LOADER_SRC} ${IMPLOT_SRC})
+add_library(imcore ${IMGUI_CORE_SRC} ${IMGUI_BACKEND_SRC} ${IMPLOT_SRC})
 target_link_libraries(imcore PUBLIC glfw OpenGL::GL ${GLFW3_LIBRARY} ${CMAKE_DL_LIBS})
 target_compile_definitions(imcore PUBLIC "-DIMGUI_IMPL_OPENGL_LOADER_GL3W")
 target_include_directories(imcore PUBLIC
