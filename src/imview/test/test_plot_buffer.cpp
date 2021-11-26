@@ -9,8 +9,8 @@
 
 #include <iostream>
 
-#include "canvas/viewer_base.hpp"
-#include "canvas/data_buffer.hpp"
+#include "imview/viewer_base.hpp"
+#include "imview/data_buffer.hpp"
 
 using namespace rdu::wgui;
 

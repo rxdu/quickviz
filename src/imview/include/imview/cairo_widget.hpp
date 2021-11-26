@@ -18,7 +18,7 @@
 
 #include "imgui.h"
 
-#include "canvas/cairo_context.hpp"
+#include "imview/cairo_context.hpp"
 
 namespace rdu {
 namespace wgui {

@@ -99,7 +99,7 @@ foreach(p LIB BIN INCLUDE CMAKE)
 endforeach()
 
 # targets to install
-install(TARGETS imcore #canvas
+install(TARGETS imcore imview
     EXPORT imtoolkitTargets
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
@@ -108,7 +108,7 @@ install(TARGETS imcore #canvas
 
 install(DIRECTORY src/imcore/imgui 
                 src/imcore/implot
-                src/canvas/include/
+                src/imview/include/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     PATTERN "*.h*")
 

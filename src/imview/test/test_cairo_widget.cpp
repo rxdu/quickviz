@@ -9,8 +9,8 @@
 
 #include <iostream>
 
-#include "canvas/viewer_base.hpp"
-#include "canvas/cairo_widget.hpp"
+#include "imview/viewer_base.hpp"
+#include "imview/cairo_widget.hpp"
 
 using namespace rdu::wgui;
 

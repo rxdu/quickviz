@@ -7,7 +7,7 @@
  * Copyright (c) 2021 Ruixiang Du (rdu)
  */
 
-#include "canvas/viewer_base.hpp"
+#include "imview/viewer_base.hpp"
 
 namespace rdu {
 namespace wgui {

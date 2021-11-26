@@ -7,7 +7,7 @@
  * Copyright (c) 2021 Ruixiang Du (rdu)
  */
 
-#include "canvas/data_buffer.hpp"
+#include "imview/data_buffer.hpp"
 
 #include <cmath>
 

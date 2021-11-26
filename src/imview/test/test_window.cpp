@@ -7,7 +7,7 @@
  * Copyright (c) 2021 Ruixiang Du (rdu)
  */
 
-#include "canvas/window.hpp"
+#include "imview/window.hpp"
 
 using namespace rdu;
 

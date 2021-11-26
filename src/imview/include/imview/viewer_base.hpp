@@ -12,7 +12,7 @@
 
 #include <memory>
 
-#include "canvas/window.hpp"
+#include "imview/window.hpp"
 
 namespace rdu {
 namespace wgui {
