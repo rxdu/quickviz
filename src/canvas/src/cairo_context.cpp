@@ -12,27 +12,15 @@
 #include <iostream>
 
 namespace rdu {
+namespace wgui {
 CairoContext::CairoContext(uint32_t width, uint32_t height,
                            bool normalize_coordinate)
-    : width_(width), height_(height) {
+    : width_(width),
+      height_(height),
+      normalize_coordinate_(normalize_coordinate) {
   // create cairo context
-  surface_ = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width_, height_);
-  if (cairo_surface_status(surface_) != CAIRO_STATUS_SUCCESS) {
-    std::cerr << "[ERROR] create_cairo_context() - Couldn't create surface\n";
-    return;
-  }
-
-  cr_ = cairo_create(surface_);
-  if (cairo_status(cr_) != CAIRO_STATUS_SUCCESS) {
-    std::cerr << "[ERROR] create_cairo_context() - Couldn't create context\n";
-    return;
-  }
-
-  if (normalize_coordinate) cairo_scale(cr_, width_, height_);
-
+  CreateSurface();
   GenGlTexture();
-
-  initialized_ = true;
 }
 
 CairoContext::~CairoContext() {
@@ -40,6 +28,43 @@ CairoContext::~CairoContext() {
   if (gl_texture_created_) glDeleteTextures(1, &image_texture_);
   cairo_surface_destroy(surface_);
   cairo_destroy(cr_);
+}
+
+void CairoContext::Resize(uint32_t width, uint32_t height) {
+  // no need to resize
+  if (width_ == width && height_ == height) return;
+
+  // destroy old surface and context
+  cairo_surface_destroy(surface_);
+  cairo_destroy(cr_);
+
+  // create new surface and context
+  width_ = width;
+  height_ = height;
+  CreateSurface();
+}
+
+float CairoContext::GetAspectRatio() const { return aspect_ratio_; }
+
+void CairoContext::CreateSurface() {
+  surface_ = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width_, height_);
+  if (cairo_surface_status(surface_) != CAIRO_STATUS_SUCCESS) {
+    throw std::runtime_error(
+        "[ERROR] create_cairo_context() - Couldn't create surface\n");
+  }
+
+  cr_ = cairo_create(surface_);
+  if (cairo_status(cr_) != CAIRO_STATUS_SUCCESS) {
+    throw std::runtime_error(
+        "[ERROR] create_cairo_context() - Couldn't create context\n");
+  }
+
+  if (normalize_coordinate_) {
+    // auto min = std::min(width_, height_);
+    cairo_scale(cr_, height_, height_);
+  }
+
+  aspect_ratio_ = static_cast<float>(width_) / height_;
 }
 
 void CairoContext::GenGlTexture() {
@@ -82,4 +107,5 @@ GLuint CairoContext::RenderToGlTexture() {
 
   return image_texture_;
 }
+}  // namespace wgui
 }  // namespace rdu

@@ -4,17 +4,17 @@
  * Created on: Mar 25, 2021 17:41
  * Description:
  *
- * Copyright (c) 2021 Weston Robot Pte. Ltd.
+ * Copyright (c) 2021 Ruixiang Du (rdu)
  */
 
 #include <iostream>
 
-#include "canvas/im_canvas.hpp"
+#include "canvas/viewer_base.hpp"
 #include "canvas/data_buffer.hpp"
 
-using namespace rdu;
+using namespace rdu::wgui;
 
-struct ImDraw : public ImCanvas {
+struct ImDraw : public ViewerBase {
   void Draw() override {
     // do nothing
     ImGui::BulletText("Move your mouse to change the data!");
@@ -34,13 +34,9 @@ struct ImDraw : public ImCanvas {
     ImGui::SliderFloat("History", &history, 1, 30, "%.1f s");
 
     static ImPlotAxisFlags rt_axis = ImPlotAxisFlags_NoTickLabels;
-    static ImPlotAxisFlags flags = ImPlotAxisFlags_NoTickLabels;
+    // ImPlot::SetNextPlotLimitsX(t - history, t, ImGuiCond_Always);
 
-    if (ImPlot::BeginPlot("##Scrolling", ImVec2(-1,150))) {
-      ImPlot::SetupAxes(NULL, NULL, flags, flags);
-      ImPlot::SetupAxisLimits(ImAxis_X1,t - history, t, ImGuiCond_Always);
-      ImPlot::SetupAxisLimits(ImAxis_Y1,0,1);
-      ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL,0.5f);
+    if (ImPlot::BeginPlot("##Scrolling")) {
       ImPlot::PlotShaded("Data 1", &(sdata1[0].x), &(sdata1[0].y),
                          sdata1.GetSize(), 0, sdata1.GetOffset(),
                          2 * sizeof(float));
@@ -48,7 +44,7 @@ struct ImDraw : public ImCanvas {
                        sdata2.GetSize(), sdata2.GetOffset(), 2 * sizeof(float));
       ImPlot::EndPlot();
 
-    //   std::cout << "buffer size: " << sdata1.GetSize() << std::endl;
+      //   std::cout << "buffer size: " << sdata1.GetSize() << std::endl;
     }
   }
 };

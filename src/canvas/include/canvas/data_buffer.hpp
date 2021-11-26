@@ -17,6 +17,7 @@
 #include "imgui.h"
 
 namespace rdu {
+namespace wgui {
 class DataBuffer {
  public:
   DataBuffer(uint32_t size = 2048);
@@ -34,6 +35,7 @@ class DataBuffer {
   uint32_t buffer_size_ = 0;
   uint32_t offset_ = 0;
 };
+}  // namespace wgui
 }  // namespace rdu
 
 #endif /* PLOT_BUFFER_HPP */
