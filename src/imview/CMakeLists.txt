@@ -24,3 +24,13 @@ target_include_directories(imview PUBLIC
 if (BUILD_TESTS)
     add_subdirectory(test)
 endif ()
+
+install(TARGETS imview
+    EXPORT quickvizTargets
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    RUNTIME DESTINATION bin
+    INCLUDES DESTINATION include)
+
+install(DIRECTORY include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})

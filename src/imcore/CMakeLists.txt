@@ -35,3 +35,14 @@ target_include_directories(imcore PUBLIC
     $<INSTALL_INTERFACE:include/imgui/examples/libs/gl3w>)
 
 add_subdirectory(sample)
+
+install(TARGETS imcore
+    EXPORT quickvizTargets
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    RUNTIME DESTINATION bin
+    INCLUDES DESTINATION include)
+
+install(DIRECTORY imgui implot
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    PATTERN "*.h*")

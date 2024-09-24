@@ -4,15 +4,7 @@
 
 using namespace xmotion;
 
-int main() {
-  // Mat image;
-  // image = imread("/home/rdu/Workspace/librav/data/intensity.jpg",
-  // cv::IMREAD_COLOR);   // Read the file
-  std::string file_name = "/home/rdu/Pictures/3dr_solo_sim.png";
-  cv::Mat image = cv::imread(file_name, cv::IMREAD_COLOR);  // Read the file
-
-  // CvDraw::ShowImage(file_name, "test greyscale");
-
+int main(int argc, char *argv[]) {
   CvCanvas canvas(600, 400);
 
   // raster mode
@@ -45,8 +37,8 @@ int main() {
     canvas.WriteText("demo1.2", {400, 180}, 1.2);
   }
 
-  canvas.Show();
-  canvas.SavePaint("draw_demo");
+  //  canvas.Show();
+  canvas.SavePaint("draw_demo_raster");
 
   // vector mode
   canvas.Clear();
@@ -98,7 +90,8 @@ int main() {
     canvas.WriteText("demo1.2", {400 / 600.0, 180 / 400.0}, 1.2);
   }
 
-  canvas.Show();
+  //  canvas.Show();
+  canvas.SavePaint("draw_demo_vector");
 
   CvCanvas canvas2(10);
   canvas2.Resize(0, 60, 0, 40);
@@ -133,7 +126,8 @@ int main() {
     canvas2.WriteText("demo1.2", {40.0, 18.0}, 1.2);
   }
 
-  canvas2.Show();
+  //  canvas2.Show();
+  canvas2.SavePaint("draw_demo_ppu");
 
   return 0;
 }

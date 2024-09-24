@@ -18,7 +18,7 @@ if(BUILD_TESTS)
 endif()
 
 install(TARGETS cvdraw
-		EXPORT xmotionTargets
+		EXPORT quickvizTargets
 		LIBRARY DESTINATION lib
 		ARCHIVE DESTINATION lib
 		RUNTIME DESTINATION bin
