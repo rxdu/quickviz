@@ -19,8 +19,8 @@
 
 #include <string>
 
-namespace rdu {
-namespace wgui {
+namespace xmotion {
+namespace swviz {
 enum class FontSize { Tiny, Small, Normal, Big, Large, ExtraLarge };
 
 void Init();
@@ -38,16 +38,16 @@ class Window {
   };
 
  public:
-  Window(uint32_t width = 640, uint32_t height = 480,
-         std::string title = "wgui Window",
+  Window(std::string title = "Window", uint32_t width = 640,
+         uint32_t height = 480,
          uint32_t window_hints = WIN_RESIZABLE | WIN_DECORATED);
   ~Window();
 
   // do not allow copy
-  Window(const Window& other) = delete;
-  Window& operator=(const Window& other) = delete;
-  Window(const Window&& other) = delete;
-  Window& operator=(const Window&& other) = delete;
+  Window(const Window &other) = delete;
+  Window &operator=(const Window &other) = delete;
+  Window(const Window &&other) = delete;
+  Window &operator=(const Window &&other) = delete;
 
   void Show();
 
@@ -55,6 +55,7 @@ class Window {
   void ApplyDarkStyle();
   void ApplyLightStyle();
 
+  void EnableDocking(bool enable);
   void SetBackgroundColor(ImVec4 color);
 
   void EnableKeyboardNav();
@@ -71,29 +72,29 @@ class Window {
   void StartNewFrame();
   void RenderFrame();
 
-  ImFont* GetFont(FontSize size = FontSize::Normal);
-  GLFWwindow* GetGlfwWindow() { return glfw_win_; }
+  ImFont *GetFont(FontSize size = FontSize::Normal);
+  GLFWwindow *GetGlfwWindow() { return glfw_win_; }
 
  private:
-  GLFWwindow* glfw_win_;
+  GLFWwindow *glfw_win_;
   ImVec4 background_color_;
 
-  const char* glsl_version_str = "#version 130";
+  const char *glsl_version_str = "#version 130";
   const int glfw_context_version_major = 3;
   const int glfw_context_version_minor = 0;
 
-  ImFont* font_tiny_;
-  ImFont* font_small_;
-  ImFont* font_normal_;
-  ImFont* font_big_;
-  ImFont* font_large_;
-  ImFont* font_extra_large_;
+  ImFont *font_tiny_;
+  ImFont *font_small_;
+  ImFont *font_normal_;
+  ImFont *font_big_;
+  ImFont *font_large_;
+  ImFont *font_extra_large_;
 
   void ApplyWindowHints(uint32_t window_hints);
   void LoadDefaultStyle();
 };
-}  // namespace wgui
+}  // namespace swviz
 
-}  // namespace rdu
+}  // namespace xmotion
 
 #endif /* WINDOW_HPP */

@@ -1,18 +1,9 @@
-/*
- * test_viewer.cpp
- *
- * Created on: Jul 27, 2021 09:07
- * Description:
- *
- * Copyright (c) 2021 Ruixiang Du (rdu)
- */
-
 #include "imview/viewer.hpp"
 
 using namespace xmotion::swviz;
 
 class MyViewer : public Viewer {
-  void Draw() {
+  void Update() override {
     ImGui::Begin("Canvas", NULL,
                  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove |
                      ImGuiWindowFlags_NoBringToFrontOnFocus |

@@ -14,8 +14,8 @@
 
 #include "imgui.h"
 
-namespace rdu {
-namespace wgui {
+namespace xmotion {
+namespace swviz {
 enum ColorName {
   BLACK = 0,
   WHITE,
@@ -65,7 +65,7 @@ void DrawRing(cairo_t *cr, ImVec2 center, float inner_radius,
 
 void DrawRectangle(cairo_t *cr, ImVec2 pos1, ImVec2 pos2, double thickness = 2,
                    ImVec4 color = colors[BLACK], bool fill = false);
-}  // namespace wgui
-}  // namespace rdu
+}  // namespace swviz
+}  // namespace xmotion
 
 #endif /* CAIRO_DRAW_HPP */

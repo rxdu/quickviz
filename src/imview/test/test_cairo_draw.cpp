@@ -9,18 +9,19 @@
 
 #include <iostream>
 
-#include "imview/viewer_base.hpp"
+#include "imview/viewer.hpp"
 #include "imview/cairo_widget.hpp"
 #include "imview/cairo_draw.hpp"
 
-using namespace rdu::wgui;
+using namespace xmotion::swviz;
 
-const std::string img_file = "../image/fish.png";
+const std::string img_file = "../data/screenshots/sampling/rrts.png";
 
-class MyWin : public ViewerBase {
+class MyWin : public Viewer {
  public:
-  MyWin(uint32_t width, uint32_t height, std::string title = "Canvas")
-      : ViewerBase(width, height, title), cairo_panel_{width, height} {
+  MyWin(std::string title = "Canvas", uint32_t width = 1080,
+        uint32_t height = 720)
+      : Viewer(title, width, height), cairo_panel_{width, height} {
     cairo_panel_.LoadImage(img_file);
   }
 
@@ -29,7 +30,7 @@ class MyWin : public ViewerBase {
   ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
   double b = 0.0001;
 
-  void Draw() override {
+  void Update() override {
     ShowCairoPanel();
     ShowImPanel();
   }
@@ -110,7 +111,7 @@ class MyWin : public ViewerBase {
 
 int main(int argc, char* argv[]) {
   //   MyWin win(1280, 720);
-  MyWin win(1920, 1080);
+  MyWin win("cairo_draw", 1920, 1080);
   //   MyWin win(1080, 720);
 
   win.Show();

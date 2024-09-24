@@ -16,8 +16,8 @@
 #include <cairo.h>
 #include <GL/gl.h>
 
-namespace rdu {
-namespace wgui {
+namespace xmotion {
+namespace swviz {
 class CairoContext {
   struct Scaler {
     double x;
@@ -74,7 +74,7 @@ class CairoContext {
   void CreateSurface();
   void GenGlTexture();
 };
-}  // namespace wgui
-}  // namespace rdu
+}  // namespace swviz
+}  // namespace xmotion
 
 #endif /* CAIRO_CONTEXT_HPP */

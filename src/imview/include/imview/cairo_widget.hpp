@@ -11,6 +11,7 @@
 #define CAIRO_WIDGET_HPP
 
 #include <cmath>
+#include <string>
 #include <cstdint>
 #include <memory>
 #include <functional>
@@ -18,10 +19,10 @@
 
 #include "imgui.h"
 
-#include "imview/cairo_context.hpp"
+#include "imview/details/cairo_context.hpp"
 
-namespace rdu {
-namespace wgui {
+namespace xmotion {
+namespace swviz {
 class CairoWidget {
  public:
   CairoWidget(uint32_t width, uint32_t height,
@@ -67,7 +68,7 @@ class CairoWidget {
 
   cairo_surface_t* GetImageSurface(std::string png_file);
 };
-}  // namespace wgui
-}  // namespace rdu
+}  // namespace swviz
+}  // namespace xmotion
 
 #endif /* CAIRO_WIDGET_HPP */
