@@ -10,8 +10,6 @@
 #ifndef IMVIEW_WINDOW_HPP
 #define IMVIEW_WINDOW_HPP
 
-#include "imgui.h"
-#include "implot/implot.h"
 #include <GL/gl.h>
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <GLES2/gl2.h>
@@ -44,27 +42,15 @@ class Window {
   Window &operator=(const Window &&other) = delete;
 
   // public methods
-  void ApplyDarkColorScheme();
-  void ApplyLightColorScheme();
-  void SetBackgroundColor(float r, float g, float b, float a);
-
-  void EnableDocking(bool enable);
-  void EnableKeyboardNav(bool enable);
-  void EnableGamepadNav(bool enable);
-
   uint32_t GetWidth() const;
   uint32_t GetHeight() const;
 
   bool ShouldClose();
   void CloseWindow();
-
   void PollEvents();
-  void StartNewFrame();
-  void RenderFrame();
+  void SwapBuffers();
 
-  void SampleLoop();
-
- private:
+ protected:
   void ApplyWindowHints(uint32_t window_hints);
   void LoadDefaultStyle();
 

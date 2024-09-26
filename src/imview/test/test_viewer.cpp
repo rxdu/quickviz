@@ -26,6 +26,30 @@ class MyViewer : public Viewer {
                 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
     ImGui::PopStyleColor();
 
+    ImGui::PushFont(GetFont(FontSize::Normal));
+    ImGui::Text("Text Font Normal");
+    ImGui::PopFont();
+
+    ImGui::PushFont(GetFont(FontSize::Tiny));
+    ImGui::Text("Test Font Tiny");
+    ImGui::PopFont();
+
+    ImGui::PushFont(GetFont(FontSize::Small));
+    ImGui::Text("Text Font Small");
+    ImGui::PopFont();
+
+    ImGui::PushFont(GetFont(FontSize::Big));
+    ImGui::Text("Text Font Big");
+    ImGui::PopFont();
+
+    ImGui::PushFont(GetFont(FontSize::Large));
+    ImGui::Text("Text Font Large");
+    ImGui::PopFont();
+
+    ImGui::PushFont(GetFont(FontSize::ExtraLarge));
+    ImGui::Text("Text Font ExtraLarge");
+    ImGui::PopFont();
+
     ImGui::SetCursorPos(ImVec2(180, 200));
     ImGui::PushFont(GetFont(FontSize::Normal));
     ImGui::Text("Canvas");
