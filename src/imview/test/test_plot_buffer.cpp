@@ -12,7 +12,7 @@
 #include "imview/viewer.hpp"
 #include "imview/data_buffer.hpp"
 
-using namespace xmotion::swviz;
+using namespace quickviz::swviz;
 
 struct ImDraw : public Viewer {
   void Update() override {

@@ -1,6 +1,6 @@
 #include "imview/viewer.hpp"
 
-using namespace xmotion::swviz;
+using namespace quickviz::swviz;
 
 class MyViewer : public Viewer {
   void Update() override {

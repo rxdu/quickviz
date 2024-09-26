@@ -12,7 +12,7 @@
 
 #include <opencv2/opencv.hpp>
 
-namespace xmotion {
+namespace quickviz {
 /********************* Common Colors *********************/
 struct CvColors {
   static const cv::Scalar default_pt_color;    // default point color

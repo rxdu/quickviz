@@ -12,7 +12,7 @@
 #include <cmath>
 #include <cassert>
 
-namespace xmotion {
+namespace quickviz {
 using namespace cv;
 
 CvCanvas::CvCanvas(cv::Mat background, std::string name)

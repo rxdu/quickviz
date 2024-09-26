@@ -9,16 +9,12 @@
 
 #include "imview/window.hpp"
 
-using namespace xmotion;
+using namespace quickviz;
 
 int main(int argc, char* argv[]) {
-  swviz::Init();
+  Window win("Test Window", 1920, 1080);
 
-  swviz::Window win;
-
-  win.ApplyDarkStyle();
-
-  while (!win.WindowShouldClose()) {
+  while (!win.ShouldClose()) {
     // handle events
     win.PollEvents();
     if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape))) {
@@ -30,34 +26,34 @@ int main(int argc, char* argv[]) {
 
     {
       ImGui::Begin("Canvas ");
-      //   ImGui::Begin("Canvas ", NULL,
-      //                ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize
-      //                |
-      //                    ImGuiWindowFlags_NoMove);
-
-      ImGui::PushFont(win.GetFont(swviz::FontSize::Normal));
-      ImGui::Text("Canvas ");
-      ImGui::PopFont();
-
-      ImGui::PushFont(win.GetFont(swviz::FontSize::Tiny));
-      ImGui::Text("Canvas ");
-      ImGui::PopFont();
-
-      ImGui::PushFont(win.GetFont(swviz::FontSize::Small));
-      ImGui::Text("Canvas ");
-      ImGui::PopFont();
-
-      ImGui::PushFont(win.GetFont(swviz::FontSize::Big));
-      ImGui::Text("Canvas ");
-      ImGui::PopFont();
-
-      ImGui::PushFont(win.GetFont(swviz::FontSize::Large));
-      ImGui::Text("Canvas ");
-      ImGui::PopFont();
-
-      ImGui::PushFont(win.GetFont(swviz::FontSize::ExtraLarge));
-      ImGui::Text("Canvas ");
-      ImGui::PopFont();
+      //      ImGui::Begin("Canvas ", NULL,
+      //                   ImGuiWindowFlags_NoTitleBar |
+      //                   ImGuiWindowFlags_NoResize |
+      //                       ImGuiWindowFlags_NoMove);
+      ImGui::Text("Text Sample");
+      //      ImGui::PushFont(win.GetFont(FontSize::Normal));
+      //      ImGui::Text("Text Font Normal");
+      //      ImGui::PopFont();
+      //
+      //      ImGui::PushFont(win.GetFont(FontSize::Tiny));
+      //      ImGui::Text("Test Font Tiny");
+      //      ImGui::PopFont();
+      //
+      //      ImGui::PushFont(win.GetFont(FontSize::Small));
+      //      ImGui::Text("Text Font Small");
+      //      ImGui::PopFont();
+      //
+      //      ImGui::PushFont(win.GetFont(FontSize::Big));
+      //      ImGui::Text("Text Font Big");
+      //      ImGui::PopFont();
+      //
+      //      ImGui::PushFont(win.GetFont(FontSize::Large));
+      //      ImGui::Text("Text Font Large");
+      //      ImGui::PopFont();
+      //
+      //      ImGui::PushFont(win.GetFont(FontSize::ExtraLarge));
+      //      ImGui::Text("Text Font ExtraLarge");
+      //      ImGui::PopFont();
 
       ImGui::End();
     }
@@ -65,6 +61,5 @@ int main(int argc, char* argv[]) {
     win.RenderFrame();
   }
 
-  swviz::Terminate();
   return 0;
 }

@@ -12,7 +12,7 @@
 
 #include <opencv2/opencv.hpp>
 
-namespace xmotion {
+namespace quickviz {
 namespace JetColorMap {
 // Input range: 0-1, Output range: 0-255 (OpenCV color)
 cv::Scalar Transform(double val);

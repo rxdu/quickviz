@@ -16,7 +16,7 @@
 #include <cairo.h>
 #include <GL/gl.h>
 
-namespace xmotion {
+namespace quickviz {
 namespace swviz {
 class CairoContext {
   struct Scaler {

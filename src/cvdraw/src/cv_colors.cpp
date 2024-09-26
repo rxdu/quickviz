@@ -9,7 +9,7 @@
 
 #include "cvdraw/cv_colors.hpp"
 
-using namespace xmotion;
+using namespace quickviz;
 using namespace cv;
 
 /********************* Common Colors *********************/

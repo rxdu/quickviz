@@ -12,7 +12,7 @@
 #include "imview/viewer.hpp"
 #include "imview/cairo_widget.hpp"
 
-using namespace xmotion::swviz;
+using namespace quickviz::swviz;
 
 void Paint(cairo_t* cr);
 

@@ -22,46 +22,64 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
-#include "fonts/opensans_regular.hpp"
-#include "fonts/opensans_semibold.hpp"
-#include "fonts/opensans_bold.hpp"
-
-namespace xmotion {
-namespace swviz {
-void Init() {
-  if (!glfwInit()) {
-    throw std::runtime_error("Failed to initialize GLFW library");
-  }
+namespace quickviz {
+void HandleGlfwError(int error, const char *description) {
+  fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
-
-void Terminate() { glfwTerminate(); }
 
 //-------------------------------------------------------------------//
 
 Window::Window(std::string title, uint32_t width, uint32_t height,
                uint32_t window_hints) {
-  // setup GLFW window
+  // initialize GLFW
+  glfwSetErrorCallback(HandleGlfwError);
+  if (!glfwInit()) {
+    throw std::runtime_error("Failed to initialize GLFW library");
+  }
+
+  // apply window hints
   ApplyWindowHints(window_hints);
-  glfw_win_ = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
-  if (glfw_win_ == NULL) {
+
+  // create GLFW window
+  win_ = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
+  if (win_ == NULL) {
     throw std::runtime_error("Failed to create GLFW window");
   }
-  glfwMakeContextCurrent(glfw_win_);
+  glfwMakeContextCurrent(win_);
   glfwSwapInterval(1);
 
-  // setup ImGUI context
-  const char *glsl_version = "#version 130";
+  // setup Dear ImGui context
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
   ImPlot::CreateContext();
 
-  // connect GLFW and ImGUI
-  ImGui_ImplGlfw_InitForOpenGL(glfw_win_, true);
+  // setup Platform/Renderer backends
+  ImGui_ImplGlfw_InitForOpenGL(win_, true);
+#ifdef __EMSCRIPTEN__
+  ImGui_ImplGlfw_InstallEmscriptenCallbacks(window, "#canvas");
+#endif
+
+  // decide GL+GLSL versions
+#if defined(IMGUI_IMPL_OPENGL_ES2)
+  // GL ES 2.0 + GLSL 100
+  const char *glsl_version = "#version 100";
+#elif defined(__APPLE__)
+  // GL 3.2 + GLSL 150
+  const char *glsl_version = "#version 150";
+#else
+  // GL 3.0 + GLSL 130
+  const char *glsl_version = "#version 130";
+#endif
   ImGui_ImplOpenGL3_Init(glsl_version);
 
-  EnableDocking(true);
-
+  // load default style
   LoadDefaultStyle();
+  ApplyDarkColorScheme();
+
+  // enable/disable features
+  EnableDocking(true);
+  EnableKeyboardNav(true);
+  EnableGamepadNav(false);
 }
 
 Window::~Window() {
@@ -70,13 +88,30 @@ Window::~Window() {
   ImPlot::DestroyContext();
   ImGui::DestroyContext();
 
-  glfwDestroyWindow(glfw_win_);
+  glfwDestroyWindow(win_);
+  glfwTerminate();
 }
 
 void Window::ApplyWindowHints(uint32_t window_hints) {
   // default hints
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, glfw_context_version_major);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, glfw_context_version_minor);
+#if defined(IMGUI_IMPL_OPENGL_ES2)
+  // GL ES 2.0 + GLSL 100
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+  glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+#elif defined(__APPLE__)
+  // GL 3.2 + GLSL 150
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
+  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);  // Required on Mac
+#else
+  // GL 3.0 + GLSL 130
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+// glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
+// glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
+#endif
 
   // optional hints
   if (window_hints & WIN_FOCUSED) {
@@ -113,23 +148,10 @@ void Window::ApplyWindowHints(uint32_t window_hints) {
 
 void Window::LoadDefaultStyle() {
   // additional variable initialization
-  background_color_ = ImVec4(1.0f, 1.0f, 1.0f, 1.00f);
-
-  ImGuiIO &io = ImGui::GetIO();
-  // default font (first loaded font)
-  font_normal_ = io.Fonts->AddFontFromMemoryCompressedTTF(
-      OpenSansRegular_compressed_data, OpenSansRegular_compressed_size, 20.f);
-  // additional fonts
-  font_tiny_ = io.Fonts->AddFontFromMemoryCompressedTTF(
-      OpenSansRegular_compressed_data, OpenSansRegular_compressed_size, 16.f);
-  font_small_ = io.Fonts->AddFontFromMemoryCompressedTTF(
-      OpenSansRegular_compressed_data, OpenSansRegular_compressed_size, 18.f);
-  font_big_ = io.Fonts->AddFontFromMemoryCompressedTTF(
-      OpenSansRegular_compressed_data, OpenSansRegular_compressed_size, 28.f);
-  font_large_ = io.Fonts->AddFontFromMemoryCompressedTTF(
-      OpenSansRegular_compressed_data, OpenSansRegular_compressed_size, 32.f);
-  font_extra_large_ = io.Fonts->AddFontFromMemoryCompressedTTF(
-      OpenSansRegular_compressed_data, OpenSansRegular_compressed_size, 40.f);
+  bg_color_[0] = 1.0f;
+  bg_color_[1] = 1.0f;
+  bg_color_[2] = 1.0f;
+  bg_color_[3] = 1.0f;
 
   // disable roundings
   ImGui::GetStyle().WindowRounding = 0.0f;
@@ -141,9 +163,13 @@ void Window::LoadDefaultStyle() {
   ImGui::GetStyle().WindowPadding = {0.0f, 0.0f};
 }
 
-void Window::ApplyDarkStyle() {
-  background_color_ = ImVec4(0.4f, 0.4f, 0.4f, 1.00f);
+void Window::ApplyDarkColorScheme() {
   ImGui::StyleColorsDark();
+
+  bg_color_[0] = 0.31f;
+  bg_color_[1] = 0.31f;
+  bg_color_[2] = 0.31f;
+  bg_color_[3] = 1.00f;
 
   auto &colors = ImGui::GetStyle().Colors;
   colors[ImGuiCol_WindowBg] = ImVec4{0.1f, 0.105f, 0.11f, 1.0f};
@@ -176,9 +202,13 @@ void Window::ApplyDarkStyle() {
   colors[ImGuiCol_TitleBgCollapsed] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
 }
 
-void Window::ApplyLightStyle() {
-  background_color_ = ImVec4(1.0f, 1.0f, 1.0f, 1.00f);
+void Window::ApplyLightColorScheme() {
   ImGui::StyleColorsClassic();
+
+  bg_color_[0] = 1.0f;
+  bg_color_[1] = 1.0f;
+  bg_color_[2] = 1.0f;
+  bg_color_[3] = 1.0f;
 }
 
 void Window::EnableDocking(bool enable) {
@@ -189,28 +219,41 @@ void Window::EnableDocking(bool enable) {
   }
 }
 
-void Window::SetBackgroundColor(ImVec4 color) { background_color_ = color; }
-
-void Window::EnableKeyboardNav() {
-  ImGuiIO &io = ImGui::GetIO();
-  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+void Window::SetBackgroundColor(float r, float g, float b, float a) {
+  bg_color_[0] = r;
+  bg_color_[1] = g;
+  bg_color_[2] = b;
+  bg_color_[3] = a;
 }
 
-void Window::EnableGamepadNav() {
+void Window::EnableKeyboardNav(bool enable) {
   ImGuiIO &io = ImGui::GetIO();
-  io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+  if (enable) {
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+  } else {
+    io.ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
+  }
+}
+
+void Window::EnableGamepadNav(bool enable) {
+  ImGuiIO &io = ImGui::GetIO();
+  if (enable) {
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+  } else {
+    io.ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
+  }
 }
 
 uint32_t Window::GetWidth() const {
   int width, height;
-  glfwGetWindowSize(glfw_win_, &width, &height);
+  glfwGetWindowSize(win_, &width, &height);
   return width;
   //   return ImGui::GetIO().DisplaySize.x;
 }
 
 uint32_t Window::GetHeight() const {
   int width, height;
-  glfwGetWindowSize(glfw_win_, &width, &height);
+  glfwGetWindowSize(win_, &width, &height);
   return height;
   // return ImGui::GetIO().DisplaySize.y;
 }
@@ -220,9 +263,9 @@ void Window::PollEvents() {
   glfwPollEvents();
 }
 
-void Window::CloseWindow() { glfwSetWindowShouldClose(glfw_win_, 1); }
+void Window::CloseWindow() { glfwSetWindowShouldClose(win_, 1); }
 
-bool Window::WindowShouldClose() { return glfwWindowShouldClose(glfw_win_); }
+bool Window::ShouldClose() { return glfwWindowShouldClose(win_); }
 
 void Window::StartNewFrame() {
   ImGui_ImplOpenGL3_NewFrame();
@@ -233,58 +276,28 @@ void Window::StartNewFrame() {
 void Window::RenderFrame() {
   ImGui::Render();
   int display_w, display_h;
-  glfwGetFramebufferSize(glfw_win_, &display_w, &display_h);
+  glfwGetFramebufferSize(win_, &display_w, &display_h);
   glViewport(0, 0, display_w, display_h);
-  glClearColor(background_color_.x, background_color_.y, background_color_.z,
-               background_color_.w);
+  glClearColor(bg_color_[0], bg_color_[1], bg_color_[2], bg_color_[3]);
   glClear(GL_COLOR_BUFFER_BIT);
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-  glfwSwapBuffers(glfw_win_);
+  glfwSwapBuffers(win_);
 }
 
-ImFont *Window::GetFont(FontSize size) {
-  if (size == FontSize::Tiny) {
-    return font_tiny_;
-  } else if (size == FontSize::Small) {
-    return font_small_;
-  } else if (size == FontSize::Big) {
-    return font_big_;
-  } else if (size == FontSize::Large) {
-    return font_large_;
-  } else if (size == FontSize::ExtraLarge) {
-    return font_extra_large_;
-  } else {
-    return font_normal_;
-  }
-}
-
-void Window::Show() {
-  while (!glfwWindowShouldClose(glfw_win_)) {
+void Window::SampleLoop() {
+  while (!ShouldClose()) {
     // Poll and handle events (inputs, window resize, etc.)
     glfwPollEvents();
     if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape))) break;
 
     // Start the Dear ImGui frame
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
+    StartNewFrame();
 
-    // // call draw()
-    // Draw();
+    // you can draw whatever here
 
     // Rendering
-    ImGui::Render();
-    int display_w, display_h;
-    glfwGetFramebufferSize(glfw_win_, &display_w, &display_h);
-    glViewport(0, 0, display_w, display_h);
-    glClearColor(background_color_.x, background_color_.y, background_color_.z,
-                 background_color_.w);
-    glClear(GL_COLOR_BUFFER_BIT);
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-    glfwSwapBuffers(glfw_win_);
+    RenderFrame();
   }
 }
-}  // namespace swviz
-}  // namespace xmotion
+}  // namespace quickviz

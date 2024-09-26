@@ -20,7 +20,7 @@
 
 #include "cvdraw/cv_colors.hpp"
 
-namespace xmotion {
+namespace quickviz {
 struct CPoint {
   CPoint(double _x = 0, double _y = 0) : x(_x), y(_y) {}
 

@@ -14,7 +14,7 @@
 
 #include <fontconfig/fontconfig.h>
 
-namespace xmotion {
+namespace quickviz {
 namespace swviz {
 CairoWidget::CairoWidget(uint32_t width, uint32_t height,
                          bool normalize_coordinate)

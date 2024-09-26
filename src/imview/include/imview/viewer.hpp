@@ -1,36 +1,35 @@
 /*
- * viewer_base.hpp
+ * viewer.hpp
  *
  * Created on: Jul 27, 2021 08:56
- * Description:
+ * Description: base setup for imgui and implot
  *
  * Copyright (c) 2021 Ruixiang Du (rdu)
  */
 
-#ifndef VIEWER_BASE_HPP
-#define VIEWER_BASE_HPP
+#ifndef IMVIEW_VIEWER_HPP
+#define IMVIEW_VIEWER_HPP
 
 #include <memory>
 
 #include "imview/window.hpp"
 
-namespace xmotion {
-namespace swviz {
+namespace quickviz {
+enum class FontSize { Tiny, Small, Normal, Big, Large, ExtraLarge };
+
 struct DisplayRegion {
   ImVec2 pos;
   ImVec2 size;
 };
 
-class Viewer {
+class Viewer : public Window {
  public:
-  Viewer(std::string title = "Viewer", uint32_t width = 640,
-         uint32_t height = 480,
-         uint32_t window_hints = Window::WIN_RESIZABLE | Window::WIN_DECORATED);
+  Viewer(std::string title = "Viewer", uint32_t width = 1920,
+         uint32_t height = 1080,
+         uint32_t window_hints = WIN_RESIZABLE | WIN_DECORATED);
   virtual ~Viewer();
 
   // public API
-  uint32_t GetWidth();
-  uint32_t GetHeight();
   ImFont *GetFont(FontSize size);
 
   void DockSpaceOverMainViewport();
@@ -39,12 +38,19 @@ class Viewer {
   void Show();
 
  protected:
-  std::unique_ptr<swviz::Window> window_;
-
   // draw function (to be implemented in derived classes)
-  virtual void Update() {}
-};
-}  // namespace swviz
-}  // namespace xmotion
+  virtual void Draw() {}
 
-#endif /* VIEWER_BASE_HPP */
+ private:
+  void LoadFonts();
+
+  ImFont *font_tiny_;
+  ImFont *font_small_;
+  ImFont *font_normal_;
+  ImFont *font_big_;
+  ImFont *font_large_;
+  ImFont *font_extra_large_;
+};
+}  // namespace quickviz
+
+#endif /* IMVIEW_VIEWER_HPP */

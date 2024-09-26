@@ -10,7 +10,7 @@
 #include "imview/viewer.hpp"
 #include "imview/panel.hpp"
 
-using namespace xmotion::swviz;
+using namespace quickviz::swviz;
 
 class PanelFixed : public Panel {
  public:

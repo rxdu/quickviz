@@ -11,7 +11,7 @@
 
 #include <iostream>
 
-namespace xmotion {
+namespace quickviz {
 namespace swviz {
 CairoContext::CairoContext(uint32_t width, uint32_t height,
                            bool normalize_coordinate)

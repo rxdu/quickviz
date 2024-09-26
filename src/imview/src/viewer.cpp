@@ -9,44 +9,73 @@
 
 #include "imview/viewer.hpp"
 
-namespace xmotion {
-namespace swviz {
-Viewer::Viewer(std::string title, uint32_t width, uint32_t height,
-               uint32_t window_hints) {
-  swviz::Init();
+#include "fonts/opensans_regular.hpp"
+#include "fonts/opensans_semibold.hpp"
+#include "fonts/opensans_bold.hpp"
 
-  window_ = std::unique_ptr<swviz::Window>(
-      new swviz::Window(title, width, height, window_hints));
-  window_->ApplyDarkStyle();
+namespace quickviz {
+Viewer::Viewer(std::string title, uint32_t width, uint32_t height,
+               uint32_t window_hints)
+    : Window(title, width, height, window_hints) {
+  LoadFonts();
 }
 
-Viewer::~Viewer() { swviz::Terminate(); }
+Viewer::~Viewer() {}
 
-uint32_t Viewer::GetWidth() { return window_->GetWidth(); }
+void Viewer::LoadFonts() {
+  ImGuiIO &io = ImGui::GetIO();
 
-uint32_t Viewer::GetHeight() { return window_->GetHeight(); }
+  // default font (first loaded font)
+  font_normal_ = io.Fonts->AddFontFromMemoryCompressedTTF(
+      OpenSansRegular_compressed_data, OpenSansRegular_compressed_size, 20.f);
 
-ImFont *Viewer::GetFont(FontSize size) { return window_->GetFont(size); }
+  // additional fonts
+  font_tiny_ = io.Fonts->AddFontFromMemoryCompressedTTF(
+      OpenSansRegular_compressed_data, OpenSansRegular_compressed_size, 16.f);
+  font_small_ = io.Fonts->AddFontFromMemoryCompressedTTF(
+      OpenSansRegular_compressed_data, OpenSansRegular_compressed_size, 18.f);
+  font_big_ = io.Fonts->AddFontFromMemoryCompressedTTF(
+      OpenSansRegular_compressed_data, OpenSansRegular_compressed_size, 28.f);
+  font_large_ = io.Fonts->AddFontFromMemoryCompressedTTF(
+      OpenSansRegular_compressed_data, OpenSansRegular_compressed_size, 32.f);
+  font_extra_large_ = io.Fonts->AddFontFromMemoryCompressedTTF(
+      OpenSansRegular_compressed_data, OpenSansRegular_compressed_size, 40.f);
+}
+
+ImFont *Viewer::GetFont(FontSize size) {
+  if (size == FontSize::Tiny) {
+    return font_tiny_;
+  } else if (size == FontSize::Small) {
+    return font_small_;
+  } else if (size == FontSize::Big) {
+    return font_big_;
+  } else if (size == FontSize::Large) {
+    return font_large_;
+  } else if (size == FontSize::ExtraLarge) {
+    return font_extra_large_;
+  } else {
+    return font_normal_;
+  }
+}
 
 void Viewer::DockSpaceOverMainViewport() {
   ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
 }
 
 void Viewer::Show() {
-  while (!window_->WindowShouldClose()) {
+  while (!ShouldClose()) {
     // handle events
-    window_->PollEvents();
+    PollEvents();
     if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape))) {
-      window_->CloseWindow();
+      CloseWindow();
     }
 
     // draw stuff
-    window_->StartNewFrame();
+    StartNewFrame();
 
-    Update();
+    Draw();
 
-    window_->RenderFrame();
+    RenderFrame();
   }
 }
-}  // namespace swviz
-}  // namespace xmotion
+}  // namespace quickviz

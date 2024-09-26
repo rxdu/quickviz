@@ -2,7 +2,7 @@
 
 #include "cvdraw/cv_canvas.hpp"
 
-using namespace xmotion;
+using namespace quickviz;
 
 int main() {
   // Mat image;

@@ -18,7 +18,7 @@
 #include "cvdraw/color_maps.hpp"
 #include "cvdraw/cv_canvas.hpp"
 
-namespace xmotion {
+namespace quickviz {
 namespace CvIO {
 /******************* Basic Input/Output *******************/
 // Read image from file

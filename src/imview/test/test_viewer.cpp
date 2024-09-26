@@ -9,7 +9,7 @@
 
 #include "imview/viewer.hpp"
 
-using namespace xmotion::swviz;
+using namespace quickviz;
 
 class MyViewer : public Viewer {
   void Draw() {
@@ -27,7 +27,7 @@ class MyViewer : public Viewer {
     ImGui::PopStyleColor();
 
     ImGui::SetCursorPos(ImVec2(180, 200));
-    ImGui::PushFont(window_->GetFont(FontSize::Normal));
+    ImGui::PushFont(GetFont(FontSize::Normal));
     ImGui::Text("Canvas");
     ImGui::PopFont();
 

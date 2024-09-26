@@ -2,30 +2,25 @@
  * window.hpp
  *
  * Created on: Mar 04, 2021 15:05
- * Description:
+ * Description: a light wrapper around GLFW
  *
  * Copyright (c) 2021 Ruixiang Du (rdu)
  */
 
-#ifndef WINDOW_HPP
-#define WINDOW_HPP
+#ifndef IMVIEW_WINDOW_HPP
+#define IMVIEW_WINDOW_HPP
 
 #include "imgui.h"
-
 #include "implot/implot.h"
-
 #include <GL/gl.h>
+#if defined(IMGUI_IMPL_OPENGL_ES2)
+#include <GLES2/gl2.h>
+#endif
 #include <GLFW/glfw3.h>
 
 #include <string>
 
-namespace xmotion {
-namespace swviz {
-enum class FontSize { Tiny, Small, Normal, Big, Large, ExtraLarge };
-
-void Init();
-void Terminate();
-
+namespace quickviz {
 class Window {
  public:
   enum WINDOW_HINT {
@@ -38,8 +33,7 @@ class Window {
   };
 
  public:
-  Window(std::string title = "Window", uint32_t width = 640,
-         uint32_t height = 480,
+  Window(std::string title, uint32_t width, uint32_t height,
          uint32_t window_hints = WIN_RESIZABLE | WIN_DECORATED);
   ~Window();
 
@@ -49,52 +43,34 @@ class Window {
   Window(const Window &&other) = delete;
   Window &operator=(const Window &&other) = delete;
 
-  void Show();
-
-  // configuration
-  void ApplyDarkStyle();
-  void ApplyLightStyle();
+  // public methods
+  void ApplyDarkColorScheme();
+  void ApplyLightColorScheme();
+  void SetBackgroundColor(float r, float g, float b, float a);
 
   void EnableDocking(bool enable);
-  void SetBackgroundColor(ImVec4 color);
-
-  void EnableKeyboardNav();
-  void EnableGamepadNav();
+  void EnableKeyboardNav(bool enable);
+  void EnableGamepadNav(bool enable);
 
   uint32_t GetWidth() const;
   uint32_t GetHeight() const;
 
-  // main loop
-  bool WindowShouldClose();
+  bool ShouldClose();
   void CloseWindow();
 
   void PollEvents();
   void StartNewFrame();
   void RenderFrame();
 
-  ImFont *GetFont(FontSize size = FontSize::Normal);
-  GLFWwindow *GetGlfwWindow() { return glfw_win_; }
+  void SampleLoop();
 
  private:
-  GLFWwindow *glfw_win_;
-  ImVec4 background_color_;
-
-  const char *glsl_version_str = "#version 130";
-  const int glfw_context_version_major = 3;
-  const int glfw_context_version_minor = 0;
-
-  ImFont *font_tiny_;
-  ImFont *font_small_;
-  ImFont *font_normal_;
-  ImFont *font_big_;
-  ImFont *font_large_;
-  ImFont *font_extra_large_;
-
   void ApplyWindowHints(uint32_t window_hints);
   void LoadDefaultStyle();
+
+  GLFWwindow *win_;
+  float bg_color_[4];
 };
-}  // namespace swviz
+}  // namespace quickviz
 
-}  // namespace xmotion
-
-#endif /* WINDOW_HPP */
+#endif /* IMVIEW_WINDOW_HPP */

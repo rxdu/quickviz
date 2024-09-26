@@ -2,7 +2,7 @@
 
 #include "cvdraw/cvdraw.hpp"
 
-using namespace xmotion;
+using namespace quickviz;
 
 int main() {
   CvCanvas canvas(10);

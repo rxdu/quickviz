@@ -13,7 +13,7 @@
 #include "imview/cairo_widget.hpp"
 #include "imview/cairo_draw.hpp"
 
-using namespace xmotion::swviz;
+using namespace quickviz::swviz;
 
 const std::string img_file = "../image/fish.png";
 

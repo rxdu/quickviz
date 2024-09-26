@@ -11,7 +11,7 @@
 
 #include "imgui.h"
 
-namespace xmotion {
+namespace quickviz {
 bool swviz::ShowPopupNotification(std::string msg, std::string title,
                                   float width, float height) {
   bool show_popup = true;

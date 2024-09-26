@@ -21,7 +21,7 @@
 
 #include "imview/details/cairo_context.hpp"
 
-namespace xmotion {
+namespace quickviz {
 namespace swviz {
 class CairoWidget {
  public:

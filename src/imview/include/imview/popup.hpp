@@ -13,7 +13,7 @@
 #include <string>
 #include <cstdint>
 
-namespace xmotion {
+namespace quickviz {
 namespace swviz {
 bool ShowPopupNotification(std::string msg, std::string title,
                            float width = 300, float height = 150);

@@ -14,7 +14,7 @@
 
 #include "imgui.h"
 
-namespace xmotion {
+namespace quickviz {
 namespace swviz {
 enum ColorName {
   BLACK = 0,

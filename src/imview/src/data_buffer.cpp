@@ -11,7 +11,7 @@
 
 #include <cmath>
 
-namespace xmotion {
+namespace quickviz {
 namespace swviz {
 DataBuffer::DataBuffer(uint32_t size) : buffer_size_(size) {
   data_.reserve(size);
