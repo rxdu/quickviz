@@ -2,7 +2,8 @@
  * viewer.hpp
  *
  * Created on: Jul 27, 2021 08:56
- * Description: base setup for imgui and implot on top of glfw
+ * Description: Viewer is built on top of Window,
+ *  with base setup for imgui and implot
  *
  * Copyright (c) 2021 Ruixiang Du (rdu)
  */
@@ -11,19 +12,16 @@
 #define IMVIEW_VIEWER_HPP
 
 #include <memory>
+#include <map>
 
 #include "imgui.h"
-#include "implot/implot.h"
+
+#include "imview/fonts.hpp"
 #include "imview/window.hpp"
+#include "imview/layer.hpp"
+#include "implot/implot.h"
 
 namespace quickviz {
-enum class FontSize { Tiny, Small, Normal, Big, Large, ExtraLarge };
-
-struct DisplayRegion {
-  ImVec2 pos;
-  ImVec2 size;
-};
-
 class Viewer : public Window {
  public:
   Viewer(std::string title = "Viewer", uint32_t width = 1920,
@@ -39,12 +37,10 @@ class Viewer : public Window {
   void EnableDocking(bool enable);
   void EnableKeyboardNav(bool enable);
   void EnableGamepadNav(bool enable);
-
   void DockSpaceOverMainViewport();
 
-  ImFont *GetFont(FontSize size);
-
-  // start viewer loop
+  // add renderable layers and start viewer loop
+  bool AddRenderable(uint32_t z_index, std::shared_ptr<Renderable> renderable);
   void Show();
 
  protected:
@@ -56,15 +52,11 @@ class Viewer : public Window {
 
  private:
   void LoadDefaultStyle();
-  void LoadFonts();
-  void Render();
+  void OnResize(GLFWwindow* window, int width, int height);
 
-  ImFont *font_tiny_;
-  ImFont *font_small_;
-  ImFont *font_normal_;
-  ImFont *font_big_;
-  ImFont *font_large_;
-  ImFont *font_extra_large_;
+  std::map<uint32_t, std::shared_ptr<Renderable>, std::greater<uint32_t>>
+      renderables_;
+  std::vector<std::shared_ptr<Layer>> layers_;
 };
 }  // namespace quickviz
 

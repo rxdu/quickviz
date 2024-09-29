@@ -3,6 +3,7 @@
  *
  * Created on: Mar 04, 2021 15:05
  * Description: a light wrapper around GLFW
+ *  Window <- Layer <- Panel <- Renderable
  *
  * Copyright (c) 2021 Ruixiang Du (rdu)
  */

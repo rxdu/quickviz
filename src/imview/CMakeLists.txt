@@ -8,15 +8,19 @@ add_library(imview
     ## internal implementations
     #    src/cairo_context.cpp
     #    src/data_buffer.cpp
+    ## helper classv
+    src/fonts.cpp
+    src/layer.cpp
     ## public class
     src/window.cpp
+    src/panel.cpp
     src/viewer.cpp
     #    src/panel.cpp
     #    src/popup.cpp
     #    src/cairo_widget.cpp
     #    src/cairo_draw.cpp
 )
-target_link_libraries(imview PUBLIC imcore PkgConfig::Cairo PkgConfig::Fontconfig)
+target_link_libraries(imview PUBLIC imcore yogacore PkgConfig::Cairo PkgConfig::Fontconfig)
 if (IMVIEW_WITH_GLAD)
   target_link_libraries(imview PUBLIC glad)
   target_compile_definitions(imview PUBLIC IMVIEW_WITH_GLAD)

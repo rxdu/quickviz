@@ -1,6 +1,9 @@
-[submodule "src/imcore/imgui"]
-	path = src/imcore/imgui
+[submodule "src/third_party/imcore/imgui"]
+	path = src/third_party/imcore/imgui
 	url = https://github.com/ocornut/imgui.git
-[submodule "src/imcore/implot"]
-	path = src/imcore/implot
+[submodule "src/third_party/imcore/implot"]
+	path = src/third_party/imcore/implot
 	url = https://github.com/epezent/implot.git
+[submodule "src/third_party/yoga"]
+	path = src/third_party/yoga
+	url = https://github.com/facebook/yoga.git

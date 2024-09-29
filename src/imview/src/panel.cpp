@@ -1,25 +1,17 @@
-/* 
- * panel.cpp
+/*
+ * @file panel.cpp
+ * @date 9/29/24
+ * @brief
  *
- * Created on 4/3/22 11:07 PM
- * Description:
- *
- * Copyright (c) 2022 Ruixiang Du (rdu)
+ * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
 #include "imview/panel.hpp"
 
 namespace quickviz {
-namespace swviz {
-Panel::Panel(std::string name, Viewer *parent) :
-    name_(name), parent_(parent) {}
+Panel::Panel(std::string name) : name_(name) {}
 
-void Panel::Begin(bool *p_open, ImGuiWindowFlags flags) {
-  ImGui::Begin(name_.c_str(), p_open, flags);
-}
+Panel::~Panel() {}
 
-void Panel::End() {
-  ImGui::End();
-}
-}
-}
+void Panel::OnResize(int width, int height) {}
+}  // namespace quickviz

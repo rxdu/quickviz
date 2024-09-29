@@ -1,37 +1,39 @@
 /*
- * panel.hpp
+ * @file panel.hpp
+ * @date 9/29/24
+ * @brief a panel is defined as a region that contains one or more renderable
+ * objects within a window
  *
- * Created on 4/3/22 11:07 PM
- * Description:
- *
- * Copyright (c) 2022 Ruixiang Du (rdu)
+ * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
-#ifndef ROBOSW_SRC_VISUALIZATION_IMVIEW_INCLUDE_IMVIEW_PANEL_HPP
-#define ROBOSW_SRC_VISUALIZATION_IMVIEW_INCLUDE_IMVIEW_PANEL_HPP
+#ifndef QUICKVIZ_PANEL_HPP
+#define QUICKVIZ_PANEL_HPP
 
 #include <string>
 
-#include "imgui.h"
+#include <yoga/Yoga.h>
+
+#include "imview/interface/resizable.hpp"
 
 namespace quickviz {
-namespace swviz {
-class Viewer;
-
-class Panel {
+class Panel : public Resizable {
  public:
-  Panel(std::string name, Viewer *parent);
+  Panel(std::string name = "Panel");
+  virtual ~Panel();
 
-  virtual void Draw() = 0;
+  // do not allow copy or move
+  Panel(const Panel &other) = delete;
+  Panel(Panel &&other) = delete;
+  Panel &operator=(const Panel &other) = delete;
+  Panel &operator=(Panel &&other) = delete;
 
- protected:
-  void Begin(bool *p_open = NULL, ImGuiWindowFlags flags = 0);
-  void End();
+  // public methods
+  void OnResize(int width, int height) override;
 
+ private:
   std::string name_;
-  Viewer *parent_;
 };
-}  // namespace swviz
-}  // namespace xmotion
+}  // namespace quickviz
 
-#endif  // ROBOSW_SRC_VISUALIZATION_IMVIEW_INCLUDE_IMVIEW_PANEL_HPP
+#endif  // QUICKVIZ_PANEL_HPP

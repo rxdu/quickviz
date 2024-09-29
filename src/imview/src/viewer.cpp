@@ -17,14 +17,31 @@
 
 #include "imview/viewer.hpp"
 
+#include <iostream>
+#include <functional>
+
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
-#include "fonts/opensans_regular.hpp"
-#include "fonts/opensans_semibold.hpp"
-#include "fonts/opensans_bold.hpp"
-
 namespace quickviz {
+namespace {
+template <typename T>
+struct Callback;
+
+template <typename Ret, typename... Params>
+struct Callback<Ret(Params...)> {
+  template <typename... Args>
+  static Ret callback(Args... args) {
+    return func(args...);
+  }
+  static std::function<Ret(Params...)> func;
+};
+
+// Initialize the static member.
+template <typename Ret, typename... Params>
+std::function<Ret(Params...)> Callback<Ret(Params...)>::func;
+}  // namespace
+
 Viewer::Viewer(std::string title, uint32_t width, uint32_t height,
                uint32_t window_hints)
     : Window(title, width, height, window_hints) {
@@ -52,8 +69,18 @@ Viewer::Viewer(std::string title, uint32_t width, uint32_t height,
 #endif
   ImGui_ImplOpenGL3_Init(glsl_version);
 
-  // load additional resources
-  LoadFonts();
+  // set up callbacks
+  // convert callback-function to c-pointer first
+  Callback<void(GLFWwindow *, int, int)>::func =
+      std::bind(&Viewer::OnResize, this, std::placeholders::_1,
+                std::placeholders::_2, std::placeholders::_3);
+  void (*resize_callback_func)(GLFWwindow *, int, int) =
+      static_cast<decltype(resize_callback_func)>(
+          Callback<void(GLFWwindow *, int, int)>::callback);
+  glfwSetFramebufferSizeCallback(win_, resize_callback_func);
+
+  // load fonts
+  Fonts::LoadFonts();
 
   // load default style
   LoadDefaultStyle();
@@ -72,48 +99,9 @@ Viewer::~Viewer() {
   ImGui::DestroyContext();
 }
 
-void Viewer::LoadFonts() {
-  ImGuiIO &io = ImGui::GetIO();
-
-  // default font (first loaded font)
-  font_normal_ = io.Fonts->AddFontFromMemoryCompressedTTF(
-      OpenSansRegular_compressed_data, OpenSansRegular_compressed_size, 20.f);
-
-  // additional fonts
-  font_tiny_ = io.Fonts->AddFontFromMemoryCompressedTTF(
-      OpenSansRegular_compressed_data, OpenSansRegular_compressed_size, 16.f);
-  font_small_ = io.Fonts->AddFontFromMemoryCompressedTTF(
-      OpenSansRegular_compressed_data, OpenSansRegular_compressed_size, 18.f);
-  font_big_ = io.Fonts->AddFontFromMemoryCompressedTTF(
-      OpenSansRegular_compressed_data, OpenSansRegular_compressed_size, 28.f);
-  font_large_ = io.Fonts->AddFontFromMemoryCompressedTTF(
-      OpenSansRegular_compressed_data, OpenSansRegular_compressed_size, 32.f);
-  font_extra_large_ = io.Fonts->AddFontFromMemoryCompressedTTF(
-      OpenSansRegular_compressed_data, OpenSansRegular_compressed_size, 40.f);
-}
-
-ImFont *Viewer::GetFont(FontSize size) {
-  if (size == FontSize::Tiny) {
-    return font_tiny_;
-  } else if (size == FontSize::Small) {
-    return font_small_;
-  } else if (size == FontSize::Big) {
-    return font_big_;
-  } else if (size == FontSize::Large) {
-    return font_large_;
-  } else if (size == FontSize::ExtraLarge) {
-    return font_extra_large_;
-  } else {
-    return font_normal_;
-  }
-}
-
 void Viewer::LoadDefaultStyle() {
   // additional variable initialization
-  bg_color_[0] = 1.0f;
-  bg_color_[1] = 1.0f;
-  bg_color_[2] = 1.0f;
-  bg_color_[3] = 1.0f;
+  SetBackgroundColor(1.0f, 1.0f, 1.0f, 1.0f);
 
   // disable roundings
   ImGui::GetStyle().WindowRounding = 0.0f;
@@ -128,10 +116,7 @@ void Viewer::LoadDefaultStyle() {
 void Viewer::ApplyDarkColorScheme() {
   ImGui::StyleColorsDark();
 
-  bg_color_[0] = 0.31f;
-  bg_color_[1] = 0.31f;
-  bg_color_[2] = 0.31f;
-  bg_color_[3] = 1.00f;
+  SetBackgroundColor(0.31f, 0.31f, 0.31f, 1.0f);
 
   auto &colors = ImGui::GetStyle().Colors;
   colors[ImGuiCol_WindowBg] = ImVec4{0.1f, 0.105f, 0.11f, 1.0f};
@@ -166,11 +151,7 @@ void Viewer::ApplyDarkColorScheme() {
 
 void Viewer::ApplyLightColorScheme() {
   ImGui::StyleColorsClassic();
-
-  bg_color_[0] = 1.0f;
-  bg_color_[1] = 1.0f;
-  bg_color_[2] = 1.0f;
-  bg_color_[3] = 1.0f;
+  SetBackgroundColor(1.0f, 1.0f, 1.0f, 1.0f);
 }
 
 void Viewer::SetBackgroundColor(float r, float g, float b, float a) {
@@ -225,8 +206,27 @@ void Viewer::RenderFrame() {
   glClearColor(bg_color_[0], bg_color_[1], bg_color_[2], bg_color_[3]);
   glClear(GL_COLOR_BUFFER_BIT);
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
 
-  SwapBuffers();
+bool Viewer::AddRenderable(uint32_t z_index,
+                           std::shared_ptr<Renderable> renderable) {
+  if (renderable == nullptr) {
+    std::cerr << "[ERROR] Viewer::AddRenderable: renderable is nullptr"
+              << std::endl;
+    return false;
+  }
+  if (renderable->IsContainer()) {
+    layers_.push_back(std::dynamic_pointer_cast<Layer>(renderable));
+  }
+  renderables_[z_index] = renderable;
+  return true;
+}
+
+void Viewer::OnResize(GLFWwindow *window, int width, int height) {
+  std::cout << "-- Viewer::OnResize: " << width << "x" << height << std::endl;
+  for (auto &layer : layers_) {
+    layer->OnResize(width, height);
+  }
 }
 
 void Viewer::Show() {
@@ -234,14 +234,15 @@ void Viewer::Show() {
     // handle events
     PollEvents();
 
-    if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape))) break;
-
     // draw stuff
     StartNewFrame();
-
-    Draw();
-
+    for (auto &renderable : renderables_) {
+      if (renderable.second->IsVisible()) renderable.second->OnRender();
+    }
     RenderFrame();
+
+    // swap buffers
+    SwapBuffers();
   }
 }
 }  // namespace quickviz

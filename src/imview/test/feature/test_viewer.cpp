@@ -8,59 +8,29 @@
  */
 
 #include "imview/viewer.hpp"
+#include "font_panel.hpp"
 
 using namespace quickviz;
 
-class MyViewer : public Viewer {
-  void Draw() {
-    ImGui::Begin("Canvas", NULL,
-                 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove |
-                     ImGuiWindowFlags_NoBringToFrontOnFocus |
-                     ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoCollapse |
-                     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar |
-                     ImGuiWindowFlags_NoBackground);
+class FirstLayer : public Layer {
+ public:
+  FirstLayer() : Layer("FirstLayer") {}
+};
 
-    ImGui::SetCursorPos(ImVec2(10, 5));
-    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 0, 0, 200));
-    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
-                1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-    ImGui::PopStyleColor();
-
-    ImGui::PushFont(GetFont(FontSize::Normal));
-    ImGui::Text("Text Font Normal");
-    ImGui::PopFont();
-
-    ImGui::PushFont(GetFont(FontSize::Tiny));
-    ImGui::Text("Test Font Tiny");
-    ImGui::PopFont();
-
-    ImGui::PushFont(GetFont(FontSize::Small));
-    ImGui::Text("Text Font Small");
-    ImGui::PopFont();
-
-    ImGui::PushFont(GetFont(FontSize::Big));
-    ImGui::Text("Text Font Big");
-    ImGui::PopFont();
-
-    ImGui::PushFont(GetFont(FontSize::Large));
-    ImGui::Text("Text Font Large");
-    ImGui::PopFont();
-
-    ImGui::PushFont(GetFont(FontSize::ExtraLarge));
-    ImGui::Text("Text Font ExtraLarge");
-    ImGui::PopFont();
-
-    ImGui::SetCursorPos(ImVec2(180, 200));
-    ImGui::PushFont(GetFont(FontSize::Normal));
-    ImGui::Text("Canvas");
-    ImGui::PopFont();
-
-    ImGui::End();
-  }
+class SecondLayer : public Layer {
+ public:
+  SecondLayer() : Layer("SecondLayer") {}
 };
 
 int main(int argc, char* argv[]) {
-  MyViewer viewer;
+  Viewer viewer;
+
+  auto layer1 = std::make_shared<FirstLayer>();
+  viewer.AddRenderable(1, layer1);
+
+  auto layer2 = std::make_shared<SecondLayer>();
+  viewer.AddRenderable(2, layer2);
+
   viewer.Show();
   return 0;
 }
