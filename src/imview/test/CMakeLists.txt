@@ -1,9 +1,9 @@
-## base
-#add_executable(test_window test_window.cpp)
-#target_link_libraries(test_window imview)
+## feature test
+add_subdirectory(feature)
 
-add_executable(test_viewer test_viewer.cpp)
-target_link_libraries(test_viewer imview)
+## additional tests/sample
+add_executable(test_window_gl_triangle test_window_gl_triangle.cpp)
+target_link_libraries(test_window_gl_triangle PRIVATE imview)
 
 #add_executable(test_panel test_panel.cpp)
 #target_link_libraries(test_panel imview)

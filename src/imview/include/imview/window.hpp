@@ -10,10 +10,13 @@
 #ifndef IMVIEW_WINDOW_HPP
 #define IMVIEW_WINDOW_HPP
 
-#include <GL/gl.h>
-#if defined(IMGUI_IMPL_OPENGL_ES2)
-#include <GLES2/gl2.h>
+#ifdef IMVIEW_WITH_GLAD
+#include <glad/glad.h>
 #endif
+//#include <GL/gl.h>
+//#if defined(IMGUI_IMPL_OPENGL_ES2)
+//#include <GLES2/gl2.h>
+//#endif
 #include <GLFW/glfw3.h>
 
 #include <string>

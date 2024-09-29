@@ -36,6 +36,13 @@ Window::Window(std::string title, uint32_t width, uint32_t height,
   }
   glfwMakeContextCurrent(win_);
   glfwSwapInterval(1);
+
+#ifdef IMVIEW_WITH_GLAD
+  // initialize GLAD
+  if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+    throw std::runtime_error("Failed to initialize GLAD");
+  }
+#endif
 }
 
 Window::~Window() {
@@ -112,6 +119,11 @@ uint32_t Window::GetHeight() const {
 void Window::PollEvents() {
   // Poll and handle events (inputs, window resize, etc.)
   glfwPollEvents();
+
+  // exit if ESC is pressed
+  if (glfwGetKey(win_, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+    CloseWindow();
+  }
 }
 
 void Window::SwapBuffers() { glfwSwapBuffers(win_); }

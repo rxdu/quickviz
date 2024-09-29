@@ -1,3 +1,4 @@
+add_subdirectory(glad)
 add_subdirectory(imcore)
 add_subdirectory(imview)
 

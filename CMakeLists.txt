@@ -13,6 +13,7 @@ set(BUILD_TESTING on)
 ## Project Options
 option(BUILD_TESTING "Build tests" ON)
 option(STATIC_CHECK "Perform static check" OFF)
+option(IMVIEW_WITH_GLAD "Integrate glad into imview" ON)
 
 ## Check if code compiles on x86_64 platform
 if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")

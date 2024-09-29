@@ -6,17 +6,21 @@ pkg_check_modules(Fontconfig REQUIRED IMPORTED_TARGET fontconfig)
 # add library
 add_library(imview
     ## internal implementations
-#    src/cairo_context.cpp
+    #    src/cairo_context.cpp
     #    src/data_buffer.cpp
     ## public class
     src/window.cpp
     src/viewer.cpp
-#    src/panel.cpp
-#    src/popup.cpp
-#    src/cairo_widget.cpp
-#    src/cairo_draw.cpp
+    #    src/panel.cpp
+    #    src/popup.cpp
+    #    src/cairo_widget.cpp
+    #    src/cairo_draw.cpp
 )
 target_link_libraries(imview PUBLIC imcore PkgConfig::Cairo PkgConfig::Fontconfig)
+if (IMVIEW_WITH_GLAD)
+  target_link_libraries(imview PUBLIC glad)
+  target_compile_definitions(imview PUBLIC IMVIEW_WITH_GLAD)
+endif ()
 target_include_directories(imview PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
