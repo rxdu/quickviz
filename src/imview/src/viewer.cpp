@@ -90,6 +90,11 @@ Viewer::Viewer(std::string title, uint32_t width, uint32_t height,
   EnableDocking(true);
   EnableKeyboardNav(true);
   EnableGamepadNav(false);
+
+  // set up default layer
+  auto default_layer = std::make_shared<Layer>("DefaultLayer");
+  default_layer->SetVisible(false);
+  layers_.push_back(default_layer);
 }
 
 Viewer::~Viewer() {
@@ -208,8 +213,7 @@ void Viewer::RenderFrame() {
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-bool Viewer::AddRenderable(uint32_t z_index,
-                           std::shared_ptr<Renderable> renderable) {
+bool Viewer::AddRenderable(std::shared_ptr<Renderable> renderable) {
   if (renderable == nullptr) {
     std::cerr << "[ERROR] Viewer::AddRenderable: renderable is nullptr"
               << std::endl;
@@ -217,8 +221,11 @@ bool Viewer::AddRenderable(uint32_t z_index,
   }
   if (renderable->IsContainer()) {
     layers_.push_back(std::dynamic_pointer_cast<Layer>(renderable));
+  } else {
+    std::cout << "[INFO] Added renderable object to default layer" << std::endl;
+    layers_.front()->AddRenderable(renderable);
+    layers_.front()->SetVisible(true);
   }
-  renderables_[z_index] = renderable;
   return true;
 }
 
@@ -226,6 +233,7 @@ void Viewer::OnResize(GLFWwindow *window, int width, int height) {
   std::cout << "-- Viewer::OnResize: " << width << "x" << height << std::endl;
   for (auto &layer : layers_) {
     layer->OnResize(width, height);
+    layer->PrintLayout();
   }
 }
 
@@ -236,8 +244,12 @@ void Viewer::Show() {
 
     // draw stuff
     StartNewFrame();
-    for (auto &renderable : renderables_) {
-      if (renderable.second->IsVisible()) renderable.second->OnRender();
+    //    std::cout << "--" << std::endl;
+    for (auto &layer : layers_) {
+      if (layer->IsVisible()) {
+        //        std::cout << "layer: " << layer->GetName() << std::endl;
+        layer->OnRender();
+      }
     }
     RenderFrame();
 

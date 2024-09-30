@@ -11,11 +11,13 @@ add_library(imview
     ## helper classv
     src/fonts.cpp
     src/layer.cpp
+    src/yoga_utils.cpp
+    src/resizable_ui_node.cpp
     ## public class
     src/window.cpp
-    src/panel.cpp
     src/viewer.cpp
-    #    src/panel.cpp
+    src/panel.cpp
+    src/ui_panel.cpp
     #    src/popup.cpp
     #    src/cairo_widget.cpp
     #    src/cairo_draw.cpp

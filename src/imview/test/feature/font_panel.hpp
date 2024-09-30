@@ -14,7 +14,9 @@
 namespace quickviz {
 class FontPanel : public Renderable {
  public:
-  void Render() {
+  bool IsVisible() const override { return true; }
+  bool IsContainer() const override { return false; }
+  void OnRender() override {
     ImGui::Begin("Canvas", NULL,
                  ImGuiWindowFlags_NoMove |
                      ImGuiWindowFlags_NoBringToFrontOnFocus |

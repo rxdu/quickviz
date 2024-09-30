@@ -14,15 +14,9 @@ class Renderable {
   virtual ~Renderable() = default;
 
   // public methods
-  void SetVisible(bool visible) { visible_ = visible; }
-  bool IsVisible() const { return visible_; }
-  bool IsContainer() const { return is_container_; }
-
+  virtual bool IsVisible() const = 0;
+  virtual bool IsContainer() const = 0;
   virtual void OnRender() = 0;
-
- protected:
-  bool visible_ = true;
-  bool is_container_ = false;
 };
 }  // namespace quickviz
 

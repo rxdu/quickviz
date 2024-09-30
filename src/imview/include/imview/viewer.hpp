@@ -40,7 +40,7 @@ class Viewer : public Window {
   void DockSpaceOverMainViewport();
 
   // add renderable layers and start viewer loop
-  bool AddRenderable(uint32_t z_index, std::shared_ptr<Renderable> renderable);
+  bool AddRenderable(std::shared_ptr<Renderable> renderable);
   void Show();
 
  protected:
@@ -54,8 +54,6 @@ class Viewer : public Window {
   void LoadDefaultStyle();
   void OnResize(GLFWwindow* window, int width, int height);
 
-  std::map<uint32_t, std::shared_ptr<Renderable>, std::greater<uint32_t>>
-      renderables_;
   std::vector<std::shared_ptr<Layer>> layers_;
 };
 }  // namespace quickviz
