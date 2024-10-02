@@ -20,6 +20,13 @@ ResizableUiNode::ResizableUiNode(bool is_container)
 
 ResizableUiNode::~ResizableUiNode() { YGNodeFreeRecursive(yg_node_); }
 
+void ResizableUiNode::SetBackgroundColor(float r, float g, float b, float a) {
+  bg_color_[0] = r;
+  bg_color_[1] = g;
+  bg_color_[2] = b;
+  bg_color_[3] = a;
+}
+
 void ResizableUiNode::SetAlignContent(Styling::AlignContent align) {
   YGNodeStyleSetAlignContent(yg_node_, ToYogaAlign(align));
 }
@@ -86,6 +93,14 @@ void ResizableUiNode::SetBorder(Styling::Edge edge, float border) {
 
 void ResizableUiNode::SetPositionType(Styling::PositionType type) {
   YGNodeStyleSetPositionType(yg_node_, ToYogaPositionType(type));
+}
+
+void ResizableUiNode::SetHeight(float height) {
+  YGNodeStyleSetHeight(yg_node_, height);
+}
+
+void ResizableUiNode::SetWidth(float width) {
+  YGNodeStyleSetWidth(yg_node_, width);
 }
 
 void ResizableUiNode::SetMinWidth(float width) {

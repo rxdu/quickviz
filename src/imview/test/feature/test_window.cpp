@@ -19,10 +19,17 @@ int main(int argc, char* argv[]) {
 
   while (!win.ShouldClose()) {
     win.PollEvents();
-
+    glEnable(GL_SCISSOR_TEST);
+    glViewport(0, 0, 1919, 50);
+    glScissor(0, 0, 1919, 50);
     glClearColor(1.0, 0.5, 0.2, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    glViewport(0, 780, 1919, 300);
+    glScissor(0, 780, 1919, 300);
+    glClearColor(0.0, 0.0, 0.8, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDisable(GL_SCISSOR_TEST);
     win.SwapBuffers();
   }
 

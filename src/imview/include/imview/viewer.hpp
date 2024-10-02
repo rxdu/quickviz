@@ -44,17 +44,17 @@ class Viewer : public Window {
   void Show();
 
  protected:
-  void StartNewFrame();
-  void RenderFrame();
-
-  // draw function (to be implemented in derived classes)
-  virtual void Draw() {}
+  void ClearBackground();
+  void CreateNewImGuiFrame();
+  void RenderImGuiFrame();
+  void RenderRenderables();
 
  private:
   void LoadDefaultStyle();
   void OnResize(GLFWwindow* window, int width, int height);
 
   std::vector<std::shared_ptr<Layer>> layers_;
+  float bg_color_[4];
 };
 }  // namespace quickviz
 

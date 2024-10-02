@@ -19,10 +19,6 @@ class UiPanel : public Panel {
   void SetPosition(float x, float y) override;
   void OnResize(float width, float height) override;
   void OnRender() override;
-
- private:
-  void StartNewFrame();
-  void RenderFrame();
 };
 }  // namespace quickviz
 

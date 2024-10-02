@@ -55,6 +55,10 @@ void Layer::OnResize(float width, float height) {
 
   for (uint32_t i = 0; i < YGNodeGetChildCount(yg_node_); ++i) {
     auto child = YGNodeGetChild(yg_node_, i);
+    //    resizables_[i]->SetPosition(
+    //        YGNodeLayoutGetLeft(child),
+    //        height - YGNodeLayoutGetTop(child) -
+    //        YGNodeLayoutGetHeight(child));
     resizables_[i]->SetPosition(YGNodeLayoutGetLeft(child),
                                 YGNodeLayoutGetTop(child));
     resizables_[i]->OnResize(YGNodeLayoutGetWidth(child),
@@ -65,10 +69,15 @@ void Layer::OnResize(float width, float height) {
 void Layer::OnRender() {
   if (!visible_) return;
 
+  //  std::cout << "Rendering Layer: " << name_ << std::endl;
+  //  std::cout << " - number of resizables: " << resizables_.size() <<
+  //  std::endl;
   for (auto resizable : resizables_) {
     if (resizable.second->IsVisible()) resizable.second->OnRender();
   }
 
+  //  std::cout << " - number of renderables: " << renderables_.size() <<
+  //  std::endl;
   for (auto renderable : renderables_) {
     if (renderable->IsVisible()) renderable->OnRender();
   }

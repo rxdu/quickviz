@@ -196,21 +196,29 @@ void Viewer::DockSpaceOverMainViewport() {
   ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
 }
 
-void Viewer::StartNewFrame() {
-  ImGui_ImplOpenGL3_NewFrame();
-  ImGui_ImplGlfw_NewFrame();
-  ImGui::NewFrame();
-}
-
-void Viewer::RenderFrame() {
-  ImGui::Render();
-
+void Viewer::ClearBackground() {
   int display_w, display_h;
   glfwGetFramebufferSize(win_, &display_w, &display_h);
   glViewport(0, 0, display_w, display_h);
   glClearColor(bg_color_[0], bg_color_[1], bg_color_[2], bg_color_[3]);
   glClear(GL_COLOR_BUFFER_BIT);
+}
+
+void Viewer::CreateNewImGuiFrame() {
+  ImGui_ImplOpenGL3_NewFrame();
+  ImGui_ImplGlfw_NewFrame();
+  ImGui::NewFrame();
+}
+
+void Viewer::RenderImGuiFrame() {
+  ImGui::Render();
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+void Viewer::RenderRenderables() {
+  for (auto &layer : layers_) {
+    if (layer->IsVisible()) layer->OnRender();
+  }
 }
 
 bool Viewer::AddRenderable(std::shared_ptr<Renderable> renderable) {
@@ -238,20 +246,21 @@ void Viewer::OnResize(GLFWwindow *window, int width, int height) {
 }
 
 void Viewer::Show() {
+  // initialize layers
+  int display_w, display_h;
+  glfwGetFramebufferSize(win_, &display_w, &display_h);
+  OnResize(win_, display_w, display_h);
+
+  // main loop
   while (!ShouldClose()) {
     // handle events
     PollEvents();
 
     // draw stuff
-    StartNewFrame();
-    //    std::cout << "--" << std::endl;
-    for (auto &layer : layers_) {
-      if (layer->IsVisible()) {
-        //        std::cout << "layer: " << layer->GetName() << std::endl;
-        layer->OnRender();
-      }
-    }
-    RenderFrame();
+    ClearBackground();
+    CreateNewImGuiFrame();
+    RenderRenderables();
+    RenderImGuiFrame();
 
     // swap buffers
     SwapBuffers();

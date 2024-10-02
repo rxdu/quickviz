@@ -24,6 +24,7 @@ class ResizableUiNode : public Resizable, public Renderable {
   void SetVisible(bool visible) { visible_ = visible; }
   bool IsVisible() const override { return visible_; }
   bool IsContainer() const { return is_container_; }
+  void SetBackgroundColor(float r, float g, float b, float a);
   YGNodeRef GetYogaNode() { return yg_node_; }
 
   void SetAlignContent(Styling::AlignContent content) override;
@@ -43,6 +44,8 @@ class ResizableUiNode : public Resizable, public Renderable {
   void SetPadding(Styling::Edge edge, float padding) override;
   void SetBorder(Styling::Edge edge, float border) override;
   void SetPositionType(Styling::PositionType type) override;
+  void SetHeight(float height) override;
+  void SetWidth(float width) override;
   void SetMinWidth(float width) override;
   void SetMinHeight(float height) override;
   void SetMaxWidth(float width) override;
@@ -57,6 +60,7 @@ class ResizableUiNode : public Resizable, public Renderable {
   size_t child_count_ = 0;
   bool visible_ = true;
   bool is_container_ = false;
+  float bg_color_[4] = {0.31f, 0.31f, 0.31f, 1.0f};
 };
 }  // namespace quickviz
 

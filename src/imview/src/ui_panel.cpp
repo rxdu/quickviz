@@ -27,26 +27,8 @@ void UiPanel::OnResize(float width, float height) {
 
 void UiPanel::OnRender() {
   if (!visible_) return;
-
-  StartNewFrame();
   for (auto renderable : renderables_) {
     if (renderable->IsVisible()) renderable->OnRender();
   }
-  RenderFrame();
-}
-
-void UiPanel::StartNewFrame() {
-  ImGui_ImplOpenGL3_NewFrame();
-  ImGui_ImplGlfw_NewFrame();
-  ImGui::NewFrame();
-}
-
-void UiPanel::RenderFrame() {
-  ImGui::Render();
-
-  glViewport(x_, y_, width_, height_);
-  glClearColor(0.31f, 0.31f, 0.31f, 1.0f);
-  glClear(GL_COLOR_BUFFER_BIT);
-  ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 }  // namespace quickviz

@@ -55,7 +55,6 @@ class Window {
   void LoadDefaultStyle();
 
   GLFWwindow *win_;
-  float bg_color_[4];
 };
 }  // namespace quickviz
 
