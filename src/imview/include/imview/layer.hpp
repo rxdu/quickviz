@@ -20,7 +20,7 @@
 namespace quickviz {
 class Layer : public ResizableUiNode {
  public:
-  Layer(std::string name = "Layer");
+  explicit Layer(std::string name);
   virtual ~Layer() = default;
 
   // do not allow copy or move
@@ -39,7 +39,7 @@ class Layer : public ResizableUiNode {
   void OnResize(float width, float height) override;
   void OnRender() override;
 
- private:
+ protected:
   std::string name_;
   std::unordered_map<size_t, std::shared_ptr<ResizableUiNode>> resizables_;
   std::vector<std::shared_ptr<Renderable>> renderables_;

@@ -12,16 +12,22 @@
 #include "imview/interface/renderable.hpp"
 
 namespace quickviz {
-class OpenGLPanel : public Renderable {
+class OpenGLPanel : public Panel {
  public:
-  OpenGLPanel(float r = 1.0, float g = 0.5, float b = 0.2)
-      : r(r), g(g), b(b) {};
+  OpenGLPanel(float r = 1.0, float g = 0.0, float b = 0.0)
+      : Panel("OpenGLPanel"), r(r), g(g), b(b) {};
 
   bool IsVisible() const override { return true; }
   bool IsContainer() const override { return false; }
   void OnRender() override {
+    glEnable(GL_SCISSOR_TEST);
+    glViewport(x_, y_, width_, height_);
+    glScissor(x_, y_, width_, height_);
+
     glClearColor(r, g, b, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
+
+    glDisable(GL_SCISSOR_TEST);
   }
 
   float r, g, b;

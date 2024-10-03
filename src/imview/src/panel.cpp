@@ -25,11 +25,16 @@ void Panel::AddRenderable(std::shared_ptr<Renderable> renderable) {
 void Panel::SetPosition(float x, float y) {
   x_ = x;
   y_ = y;
+  std::cout << "Panel " << name_ << " position set to (" << x_ << ", " << y_
+            << ")" << std::endl;
 }
 
 void Panel::OnResize(float width, float height) {
   width_ = width;
   height_ = height;
+
+  std::cout << "Panel " << name_ << " resized to (" << width_ << ", " << height_
+            << ")" << std::endl;
 }
 
 void Panel::OnRender() {

@@ -55,10 +55,6 @@ void Layer::OnResize(float width, float height) {
 
   for (uint32_t i = 0; i < YGNodeGetChildCount(yg_node_); ++i) {
     auto child = YGNodeGetChild(yg_node_, i);
-    //    resizables_[i]->SetPosition(
-    //        YGNodeLayoutGetLeft(child),
-    //        height - YGNodeLayoutGetTop(child) -
-    //        YGNodeLayoutGetHeight(child));
     resizables_[i]->SetPosition(YGNodeLayoutGetLeft(child),
                                 YGNodeLayoutGetTop(child));
     resizables_[i]->OnResize(YGNodeLayoutGetWidth(child),

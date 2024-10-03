@@ -11,18 +11,28 @@
 #include <iostream>
 
 #include "glad/glad.h"
-#include "imview/interface/renderable.hpp"
+#include "imview/panel.hpp"
 
 namespace quickviz {
-class GLTrianglePanel : public Renderable {
+class GLTrianglePanel : public Panel {
  public:
-  GLTrianglePanel() {};
+  GLTrianglePanel() : Panel("GLTrianglePanel") {};
 
   bool IsVisible() const override { return true; }
   bool IsContainer() const override { return false; }
   void OnRender() override {
-    PrepareData(300, 300);
+    //    std::cout << "x, y, width, height: " << x_ << ", " << y_ << ", " <<
+    //    width_
+    //              << ", " << height_ << std::endl;
+
+    glEnable(GL_SCISSOR_TEST);
+    glViewport(x_, y_, width_, height_);
+    glScissor(x_, y_, width_, height_);
+
+    PrepareData(x_, y_, width_, height_);
     Render();
+
+    glDisable(GL_SCISSOR_TEST);
   }
 
  private:
@@ -45,7 +55,7 @@ void main()
 out vec4 FragColor;
 void main()
 {
-    FragColor = vec4(1.0, 0.5, 0.2, 1.0);
+    FragColor = vec4(0.2, 0.5, 0.8, 1.0);
 }
 )";
 
@@ -72,9 +82,9 @@ void main()
     }
   }
 
-  void PrepareData(int width, int height) {
+  void PrepareData(int x, int y, int width, int height) {
     // Define the viewport dimensions
-    glViewport(0, 0, width, height);
+    glViewport(x, y, width, height);
 
     // Compile vertex shader
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -131,7 +141,7 @@ void main()
 
   void Render() {
     // Rendering
-    glClearColor(0, 1, 0, 0.5);
+    glClearColor(0.2, 0.5, 0.4, 0.5);
     glClear(GL_COLOR_BUFFER_BIT);
 
     // Use the shader program and bind the VAO

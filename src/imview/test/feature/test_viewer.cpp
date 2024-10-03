@@ -14,44 +14,47 @@
 #include "font_panel.hpp"
 #include "opengl_panel.hpp"
 #include "gl_triangle_panel.hpp"
+#include "imview/gl_layer.hpp"
 
 using namespace quickviz;
 
-class FirstLayer : public Layer {
+class FirstLayer : public GlLayer {
  public:
-  FirstLayer() : Layer("FirstLayer") {
+  FirstLayer() : GlLayer("FirstLayer") {
     this->SetFlexDirection(Styling::FlexDirection::kColumn);
-    this->SetJustifyContent(Styling::JustifyContent::kSpaceBetween);
+    //    this->SetJustifyContent(Styling::JustifyContent::kSpaceBetween);
 
-//    auto panel1 = std::make_shared<Panel>("GlPanel-Orange");
-//    //    panel1->SetWidth(300);
-//    panel1->SetHeight(50);
-//    panel1->AddRenderable(std::make_shared<OpenGLPanel>());
-//    this->AddResizableUiNode(panel1);
-//
-//    auto panel2 = std::make_shared<Panel>("GlPanel-Blue");
-//    //    panel2->SetWidth(300);
-//    panel2->SetHeight(100);
-//    panel2->AddRenderable(std::make_shared<OpenGLPanel>(0, 0, 1.0));
-//    this->AddResizableUiNode(panel2);
+    //    auto panel0 = std::make_shared<OpenGLPanel>(1.0, 0, 0);
+    //    panel0->SetHeight(100);
+    //    this->AddResizableUiNode(panel0);
 
-//    auto panel3 = std::make_shared<Panel>("FontPanel");
-//    //    panel3->SetWidth(300);
-//    panel3->SetHeight(300);
-//    panel3->AddRenderable(std::make_shared<FontPanel>());
-//    this->AddResizableUiNode(panel3);
+    auto panel1 = std::make_shared<OpenGLPanel>(1.0, 0, 0);
+    panel1->SetHeight(50);
+    this->AddResizableUiNode(panel1);
 
-    auto panel4 = std::make_shared<Panel>("TrianglePanel");
-    //    panel3->SetWidth(300);
-    panel4->SetMinHeight(300);
-    panel4->AddRenderable(std::make_shared<GLTrianglePanel>());
+    auto panel2 = std::make_shared<OpenGLPanel>(0, 1.0, 0);
+    panel2->SetHeight(60);
+    this->AddResizableUiNode(panel2);
+
+    auto panel4 = std::make_shared<OpenGLPanel>(0, 0, 1.0);
+    panel4->SetHeight(70);
     this->AddResizableUiNode(panel4);
+
+    //    auto panel5 = std::make_shared<GLTrianglePanel>();
+    //    panel5->SetHeight(400);
+    //    this->AddResizableUiNode(panel5);
   }
 };
 
 class SecondLayer : public Layer {
  public:
-  SecondLayer() : Layer("SecondLayer") {}
+  SecondLayer() : Layer("SecondLayer") {
+    this->SetFlexDirection(Styling::FlexDirection::kColumn);
+
+    auto panel1 = std::make_shared<FontPanel>();
+    panel1->SetHeight(100);
+    this->AddResizableUiNode(panel1);
+  }
 };
 
 int main(int argc, char* argv[]) {
@@ -77,8 +80,8 @@ int main(int argc, char* argv[]) {
     // to test adding multiple renderables
     viewer.AddRenderable(std::make_shared<FontPanel>());
   } else if (opt == 1) {
-    viewer.AddRenderable(std::make_shared<FontPanel>());
     viewer.AddRenderable(std::make_shared<OpenGLPanel>());
+    viewer.AddRenderable(std::make_shared<FontPanel>());
   } else if (opt == 2) {
     auto layer1 = std::make_shared<FirstLayer>();
     viewer.AddRenderable(layer1);

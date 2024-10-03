@@ -18,8 +18,8 @@
 
 #include "imview/fonts.hpp"
 #include "imview/window.hpp"
-#include "imview/layer.hpp"
 #include "implot/implot.h"
+#include "imview/layer.hpp"
 
 namespace quickviz {
 class Viewer : public Window {
