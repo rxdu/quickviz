@@ -14,11 +14,11 @@
 #include <unordered_map>
 #include <memory>
 
-#include "imview/details/resizable_ui_node.hpp"
+#include "imview/scene_object.hpp"
 #include "imview/panel.hpp"
 
 namespace quickviz {
-class Layer : public ResizableUiNode {
+class Layer : public SceneObject {
  public:
   explicit Layer(std::string name);
   virtual ~Layer() = default;
@@ -30,18 +30,16 @@ class Layer : public ResizableUiNode {
   Layer &operator=(Layer &&other) = delete;
 
   // public methods
-  std::string GetName() const { return name_; }
   void PrintLayout() const;
 
-  void AddResizableUiNode(std::shared_ptr<ResizableUiNode> resizable);
+  void AddResizableUiNode(std::shared_ptr<SceneObject> resizable);
   void AddRenderable(std::shared_ptr<Renderable> renderable);
 
   void OnResize(float width, float height) override;
   void OnRender() override;
 
  protected:
-  std::string name_;
-  std::unordered_map<size_t, std::shared_ptr<ResizableUiNode>> resizables_;
+  std::unordered_map<size_t, std::shared_ptr<SceneObject>> resizables_;
   std::vector<std::shared_ptr<Renderable>> renderables_;
 };
 }  // namespace quickviz

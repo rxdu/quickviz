@@ -2,8 +2,9 @@
  * viewer.hpp
  *
  * Created on: Jul 27, 2021 08:56
- * Description: Viewer is built on top of Window,
- *  with base setup for imgui and implot
+ * Description: Viewer manages rendering of imgui/implot and other OpenGL
+ * renderables and eventually writes the content to the frame buffer for
+ * display in the GLFW window (class Window).
  *
  * Copyright (c) 2021 Ruixiang Du (rdu)
  */
@@ -18,7 +19,6 @@
 
 #include "imview/fonts.hpp"
 #include "imview/window.hpp"
-#include "implot/implot.h"
 #include "imview/layer.hpp"
 
 namespace quickviz {
@@ -37,23 +37,22 @@ class Viewer : public Window {
   void EnableDocking(bool enable);
   void EnableKeyboardNav(bool enable);
   void EnableGamepadNav(bool enable);
-  void DockSpaceOverMainViewport();
 
   // add renderable layers and start viewer loop
-  bool AddRenderable(std::shared_ptr<Renderable> renderable);
+  bool AddSceneObject(std::shared_ptr<SceneObject> obj);
   void Show();
 
  protected:
   void ClearBackground();
   void CreateNewImGuiFrame();
   void RenderImGuiFrame();
-  void RenderRenderables();
+  void RenderSceneObjects();
 
  private:
   void LoadDefaultStyle();
   void OnResize(GLFWwindow* window, int width, int height);
 
-  std::vector<std::shared_ptr<Layer>> layers_;
+  std::vector<std::shared_ptr<SceneObject>> scene_objects_;
   float bg_color_[4];
 };
 }  // namespace quickviz

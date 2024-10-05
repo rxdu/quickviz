@@ -14,10 +14,10 @@
 #include <memory>
 #include <vector>
 
-#include "imview/details/resizable_ui_node.hpp"
+#include "imview/scene_object.hpp"
 
 namespace quickviz {
-class Panel : public ResizableUiNode {
+class Panel : public SceneObject {
  public:
   Panel(std::string name = "Panel");
   virtual ~Panel();
@@ -36,11 +36,6 @@ class Panel : public ResizableUiNode {
   void OnRender() override;
 
  protected:
-  std::string name_;
-  float x_ = 0;
-  float y_ = 0;
-  float width_ = 0;
-  float height_ = 0;
   std::vector<std::shared_ptr<Renderable>> renderables_;
 };
 }  // namespace quickviz

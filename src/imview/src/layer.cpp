@@ -10,6 +10,8 @@
 
 #include <iostream>
 
+#include <yoga/Yoga.h>
+
 namespace quickviz {
 namespace {
 void PrintYgLayout(YGNodeRef node, int indent = 0) {
@@ -27,21 +29,21 @@ void PrintYgLayout(YGNodeRef node, int indent = 0) {
 }
 }  // namespace
 
-Layer::Layer(std::string name) : ResizableUiNode(true), name_(name) {}
+Layer::Layer(std::string name) : SceneObject(name) {}
 
 void Layer::PrintLayout() const {
   std::cout << "Layer: " << name_ << std::endl;
   PrintYgLayout(yg_node_);
 }
 
-void Layer::AddResizableUiNode(std::shared_ptr<ResizableUiNode> resizable) {
+void Layer::AddResizableUiNode(std::shared_ptr<SceneObject> resizable) {
   int idx = child_count_++;
   resizables_[idx] = resizable;
   YGNodeInsertChild(yg_node_, resizable->GetYogaNode(), idx);
 }
 
-void Layer::AddRenderable(std::shared_ptr<Renderable> renderable) {
-  renderables_.push_back(renderable);
+void Layer::AddRenderable(std::shared_ptr<Renderable> obj) {
+  renderables_.push_back(obj);
 }
 
 void Layer::OnResize(float width, float height) {
@@ -60,6 +62,8 @@ void Layer::OnResize(float width, float height) {
     resizables_[i]->OnResize(YGNodeLayoutGetWidth(child),
                              YGNodeLayoutGetHeight(child));
   }
+
+  PrintLayout();
 }
 
 void Layer::OnRender() {

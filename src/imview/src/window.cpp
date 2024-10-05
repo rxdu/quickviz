@@ -132,5 +132,5 @@ void Window::SwapBuffers() { glfwSwapBuffers(win_); }
 
 void Window::CloseWindow() { glfwSetWindowShouldClose(win_, 1); }
 
-bool Window::ShouldClose() { return glfwWindowShouldClose(win_); }
+bool Window::ShouldClose() const { return glfwWindowShouldClose(win_); }
 }  // namespace quickviz

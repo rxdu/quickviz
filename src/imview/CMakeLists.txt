@@ -13,7 +13,7 @@ add_library(imview
     src/layer.cpp
     src/gl_layer.cpp
     src/yoga_utils.cpp
-    src/resizable_ui_node.cpp
+    src/scene_object.cpp
     ## public class
     src/window.cpp
     src/viewer.cpp

@@ -20,6 +20,7 @@
 #include <iostream>
 #include <functional>
 
+#include "implot/implot.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
@@ -90,11 +91,6 @@ Viewer::Viewer(std::string title, uint32_t width, uint32_t height,
   EnableDocking(true);
   EnableKeyboardNav(true);
   EnableGamepadNav(false);
-
-  // set up default layer
-  auto default_layer = std::make_shared<Layer>("DefaultLayer");
-  default_layer->SetVisible(false);
-  layers_.push_back(default_layer);
 }
 
 Viewer::~Viewer() {
@@ -169,6 +165,8 @@ void Viewer::SetBackgroundColor(float r, float g, float b, float a) {
 void Viewer::EnableDocking(bool enable) {
   if (enable) {
     ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    // enable docking with shift key
+    ImGui::GetIO().ConfigDockingWithShift = true;
   } else {
     ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_DockingEnable;
   }
@@ -192,10 +190,6 @@ void Viewer::EnableGamepadNav(bool enable) {
   }
 }
 
-void Viewer::DockSpaceOverMainViewport() {
-  ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
-}
-
 void Viewer::ClearBackground() {
   int display_w, display_h;
   glfwGetFramebufferSize(win_, &display_w, &display_h);
@@ -215,33 +209,26 @@ void Viewer::RenderImGuiFrame() {
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-void Viewer::RenderRenderables() {
-  for (auto &layer : layers_) {
+void Viewer::RenderSceneObjects() {
+  for (auto &layer : scene_objects_) {
     if (layer->IsVisible()) layer->OnRender();
   }
 }
 
-bool Viewer::AddRenderable(std::shared_ptr<Renderable> renderable) {
-  if (renderable == nullptr) {
+bool Viewer::AddSceneObject(std::shared_ptr<SceneObject> obj) {
+  if (obj == nullptr) {
     std::cerr << "[ERROR] Viewer::AddRenderable: renderable is nullptr"
               << std::endl;
     return false;
   }
-  if (renderable->IsContainer()) {
-    layers_.push_back(std::dynamic_pointer_cast<Layer>(renderable));
-  } else {
-    std::cout << "[INFO] Added renderable object to default layer" << std::endl;
-    layers_.front()->AddRenderable(renderable);
-    layers_.front()->SetVisible(true);
-  }
+  scene_objects_.push_back(obj);
   return true;
 }
 
 void Viewer::OnResize(GLFWwindow *window, int width, int height) {
   std::cout << "-- Viewer::OnResize: " << width << "x" << height << std::endl;
-  for (auto &layer : layers_) {
-    layer->OnResize(width, height);
-    layer->PrintLayout();
+  for (auto &obj : scene_objects_) {
+    obj->OnResize(width, height);
   }
 }
 
@@ -259,7 +246,7 @@ void Viewer::Show() {
     // draw stuff
     ClearBackground();
     CreateNewImGuiFrame();
-    RenderRenderables();
+    RenderSceneObjects();
     RenderImGuiFrame();
 
     // swap buffers

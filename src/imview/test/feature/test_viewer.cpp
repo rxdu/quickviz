@@ -11,10 +11,11 @@
 
 #include "imview/viewer.hpp"
 #include "imview/ui_panel.hpp"
-#include "font_panel.hpp"
-#include "opengl_panel.hpp"
-#include "gl_triangle_panel.hpp"
 #include "imview/gl_layer.hpp"
+
+#include "scene_objects/imtext_scene_object.hpp"
+#include "scene_objects/opengl_scene_object.hpp"
+#include "scene_objects/gl_triangle_scene_object.hpp"
 
 using namespace quickviz;
 
@@ -24,19 +25,15 @@ class FirstLayer : public GlLayer {
     this->SetFlexDirection(Styling::FlexDirection::kColumn);
     //    this->SetJustifyContent(Styling::JustifyContent::kSpaceBetween);
 
-    //    auto panel0 = std::make_shared<OpenGLPanel>(1.0, 0, 0);
-    //    panel0->SetHeight(100);
-    //    this->AddResizableUiNode(panel0);
-
-    auto panel1 = std::make_shared<OpenGLPanel>(1.0, 0, 0);
+    auto panel1 = std::make_shared<OpenGLSceneObject>(1.0, 0, 0);
     panel1->SetHeight(50);
     this->AddResizableUiNode(panel1);
 
-    auto panel2 = std::make_shared<OpenGLPanel>(0, 1.0, 0);
+    auto panel2 = std::make_shared<OpenGLSceneObject>(0, 1.0, 0);
     panel2->SetHeight(60);
     this->AddResizableUiNode(panel2);
 
-    auto panel4 = std::make_shared<OpenGLPanel>(0, 0, 1.0);
+    auto panel4 = std::make_shared<OpenGLSceneObject>(0, 0, 1.0);
     panel4->SetHeight(70);
     this->AddResizableUiNode(panel4);
 
@@ -51,7 +48,7 @@ class SecondLayer : public Layer {
   SecondLayer() : Layer("SecondLayer") {
     this->SetFlexDirection(Styling::FlexDirection::kColumn);
 
-    auto panel1 = std::make_shared<FontPanel>();
+    auto panel1 = std::make_shared<ImTextSceneObject>();
     panel1->SetHeight(100);
     this->AddResizableUiNode(panel1);
   }
@@ -74,20 +71,31 @@ int main(int argc, char* argv[]) {
 
   Viewer viewer;
 
-  bool add_renderable_directly = false;
-
   if (opt == 0) {
-    // to test adding multiple renderables
-    viewer.AddRenderable(std::make_shared<FontPanel>());
+    auto obj1 = std::make_shared<ImTextSceneObject>("Panel1");
+    viewer.AddSceneObject(obj1);
+
+    auto obj2 = std::make_shared<ImTextSceneObject>("Panel2");
+    viewer.AddSceneObject(obj2);
   } else if (opt == 1) {
-    viewer.AddRenderable(std::make_shared<OpenGLPanel>());
-    viewer.AddRenderable(std::make_shared<FontPanel>());
+    auto obj1 = std::make_shared<ImTextSceneObject>("UiObject");
+    viewer.AddSceneObject(obj1);
+
+    auto obj2 = std::make_shared<OpenGLSceneObject>(0, 0.6, 0.6);
+    obj2->SetPosition(0, 0);
+    obj2->OnResize(viewer.GetWidth(), viewer.GetHeight() / 2.0);
+    viewer.AddSceneObject(obj2);
+
+    auto obj3 = std::make_shared<GLTriangleSceneObject>();
+    obj3->SetPosition(0, viewer.GetHeight() / 2.0);
+    obj3->OnResize(viewer.GetWidth(), viewer.GetHeight() / 2.0);
+    viewer.AddSceneObject(obj3);
   } else if (opt == 2) {
     auto layer1 = std::make_shared<FirstLayer>();
-    viewer.AddRenderable(layer1);
+    viewer.AddSceneObject(layer1);
 
     //    auto layer2 = std::make_shared<SecondLayer>();
-    //    viewer.AddRenderable(layer2);
+    //    viewer.AddSceneObject(layer2);
   } else {
     std::cout << "Invalid option" << std::endl;
     return -1;

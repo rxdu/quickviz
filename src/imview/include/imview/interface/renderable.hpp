@@ -13,9 +13,8 @@ class Renderable {
  public:
   virtual ~Renderable() = default;
 
-  // public methods
+  /****** public methods ******/
   virtual bool IsVisible() const = 0;
-  virtual bool IsContainer() const = 0;
   virtual void OnRender() = 0;
 };
 }  // namespace quickviz

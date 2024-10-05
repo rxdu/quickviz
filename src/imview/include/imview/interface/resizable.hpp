@@ -14,9 +14,13 @@
 namespace quickviz {
 class Resizable {
  public:
-  virtual void SetPosition(float x, float y) {};
+  virtual ~Resizable() = default;
+
+  /****** public methods ******/
+  // common methods
   virtual void OnResize(float width, float height) = 0;
 
+  // used for automatic layout only
   virtual void SetAlignContent(Styling::AlignContent content) = 0;
   virtual void SetAlignItems(Styling::AlignItems items) = 0;
   virtual void SetAspectRatio(float aspect_ratio) = 0;

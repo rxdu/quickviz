@@ -13,7 +13,7 @@
 #include "glad/glad.h"
 
 namespace quickviz {
-Panel::Panel(std::string name) : ResizableUiNode(true), name_(name) {}
+Panel::Panel(std::string name) : SceneObject(name) {}
 
 Panel::~Panel() {}
 
@@ -42,7 +42,7 @@ void Panel::OnRender() {
   glEnable(GL_SCISSOR_TEST);
   glViewport(x_, y_, width_, height_);
   glScissor(x_, y_, width_, height_);
-  glClearColor(bg_color_[0], bg_color_[1], bg_color_[2], bg_color_[3]);
+  //  glClearColor(bg_color_[0], bg_color_[1], bg_color_[2], bg_color_[3]);
   glClear(GL_COLOR_BUFFER_BIT);
   for (auto renderable : renderables_) {
     if (renderable->IsVisible()) renderable->OnRender();

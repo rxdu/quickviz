@@ -15,21 +15,32 @@
 using namespace quickviz;
 
 int main(int argc, char* argv[]) {
-  Window win("Test Window", 1920, 1080);
+  int width = 1920;
+  int height = 1080;
+  Window win("Test Window", width, height);
 
   while (!win.ShouldClose()) {
     win.PollEvents();
+
     glEnable(GL_SCISSOR_TEST);
-    glViewport(0, 0, 1919, 50);
-    glScissor(0, 0, 1919, 50);
-    glClearColor(1.0, 0.5, 0.2, 1.0);
+
+    glViewport(0, 0, width, height / 3.0);
+    glScissor(0, 0, width, height / 3.0);
+    glClearColor(0.8, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glViewport(0, 780, 1919, 300);
-    glScissor(0, 780, 1919, 300);
+    glViewport(0, height / 3.0, width, height / 3.0);
+    glScissor(0, height / 3.0, width, height / 3.0);
+    glClearColor(0.0, 0.8, 0.0, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glViewport(0, height * 2 / 3.0, width, height / 3.0);
+    glScissor(0, height * 2 / 3.0, width, height / 3.0);
     glClearColor(0.0, 0.0, 0.8, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
+
     glDisable(GL_SCISSOR_TEST);
+
     win.SwapBuffers();
   }
 

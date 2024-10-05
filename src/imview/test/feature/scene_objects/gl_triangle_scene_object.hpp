@@ -1,30 +1,24 @@
 /*
- * @file gl_triangle_panel.hpp
+ * @file gl_triangle_scene_object.hpp
  * @date 10/2/24
  * @brief
  *
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
-#ifndef QUICKVIZ_GLTRIANGLE_PANEL_HPP
-#define QUICKVIZ_GLTRIANGLE_PANEL_HPP
+#ifndef QUICKVIZ_GLTRIANGLE_SCENE_OBJECT_HPP
+#define QUICKVIZ_GLTRIANGLE_SCENE_OBJECT_HPP
 
 #include <iostream>
 
 #include "glad/glad.h"
-#include "imview/panel.hpp"
+#include "imview/scene_object.hpp"
 
 namespace quickviz {
-class GLTrianglePanel : public Panel {
+class GLTriangleSceneObject : public SceneObject {
  public:
-  GLTrianglePanel() : Panel("GLTrianglePanel") {};
+  GLTriangleSceneObject() : SceneObject("GLTrianglePanel") {};
 
-  bool IsVisible() const override { return true; }
-  bool IsContainer() const override { return false; }
   void OnRender() override {
-    //    std::cout << "x, y, width, height: " << x_ << ", " << y_ << ", " <<
-    //    width_
-    //              << ", " << height_ << std::endl;
-
     glEnable(GL_SCISSOR_TEST);
     glViewport(x_, y_, width_, height_);
     glScissor(x_, y_, width_, height_);
@@ -161,4 +155,4 @@ void main()
 };
 }  // namespace quickviz
 
-#endif  // QUICKVIZ_GLTRIANGLE_PANEL_HPP
+#endif  // QUICKVIZ_GLTRIANGLE_SCENE_OBJECT_HPP

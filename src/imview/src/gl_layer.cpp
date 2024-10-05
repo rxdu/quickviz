@@ -10,6 +10,8 @@
 
 #include <iostream>
 
+#include <yoga/Yoga.h>
+
 namespace quickviz {
 GlLayer::GlLayer(std::string name) : Layer(name) {}
 

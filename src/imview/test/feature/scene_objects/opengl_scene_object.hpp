@@ -1,24 +1,22 @@
 /*
- * @file opengl_panel.hpp
+ * @file opengl_scene_object.hpp
  * @date 10/2/24
  * @brief
  *
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
-#ifndef QUICKVIZ_OPENGL_PANEL_HPP
-#define QUICKVIZ_OPENGL_PANEL_HPP
+#ifndef QUICKVIZ_OPENGL_SCENE_OBJECT_HPP
+#define QUICKVIZ_OPENGL_SCENE_OBJECT_HPP
 
 #include "glad/glad.h"
-#include "imview/interface/renderable.hpp"
+#include "imview/scene_object.hpp"
 
 namespace quickviz {
-class OpenGLPanel : public Panel {
+class OpenGLSceneObject : public SceneObject {
  public:
-  OpenGLPanel(float r = 1.0, float g = 0.0, float b = 0.0)
-      : Panel("OpenGLPanel"), r(r), g(g), b(b) {};
+  OpenGLSceneObject(float r = 1.0, float g = 0.0, float b = 0.0)
+      : SceneObject("OpenGLPanel"), r(r), g(g), b(b) {};
 
-  bool IsVisible() const override { return true; }
-  bool IsContainer() const override { return false; }
   void OnRender() override {
     glEnable(GL_SCISSOR_TEST);
     glViewport(x_, y_, width_, height_);
@@ -34,4 +32,4 @@ class OpenGLPanel : public Panel {
 };
 }  // namespace quickviz
 
-#endif  // QUICKVIZ_OPENGL_PANEL_HPP
+#endif  // QUICKVIZ_OPENGL_SCENE_OBJECT_HPP

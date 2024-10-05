@@ -45,7 +45,7 @@ class Window {
   uint32_t GetWidth() const;
   uint32_t GetHeight() const;
 
-  bool ShouldClose();
+  bool ShouldClose() const;
   void CloseWindow();
   void PollEvents();
   void SwapBuffers();
