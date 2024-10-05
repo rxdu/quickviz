@@ -67,6 +67,7 @@ The library is built on top of a few third-party libraries, you can refer to the
 * imgui demo: src/third_party/imcore/imgui/imgui_demo.cpp
 * implot demo: src/third_party/imcore/implot/implot_demo.cpp
 * cairo docs: https://cairographics.org/documentation/
+* yoga layout docs: https://www.yogalayout.dev/docs/styling/
 
 Online demo of imgui and implot:
 

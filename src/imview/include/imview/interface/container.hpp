@@ -19,8 +19,8 @@ class Container {
   virtual ~Container() = default;
 
   /****** public methods ******/
-  virtual void AddChild() = 0;
-  virtual void RemoveChild() = 0;
+  virtual void AddChild(std::shared_ptr<SceneObject> obj) = 0;
+  virtual void RemoveChild(const std::string& name) = 0;
 };
 }  // namespace quickviz
 

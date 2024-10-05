@@ -8,15 +8,13 @@ add_library(imview
     ## internal implementations
     #    src/cairo_context.cpp
     #    src/data_buffer.cpp
-    ## helper classv
-    src/fonts.cpp
-    src/layer.cpp
-    src/gl_layer.cpp
     src/yoga_utils.cpp
-    src/scene_object.cpp
     ## public class
     src/window.cpp
     src/viewer.cpp
+    src/fonts.cpp
+    src/scene_object.cpp
+    src/layer.cpp
     src/panel.cpp
     #    src/popup.cpp
     #    src/cairo_widget.cpp

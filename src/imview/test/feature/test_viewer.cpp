@@ -11,35 +11,35 @@
 
 #include "imview/viewer.hpp"
 #include "imview/ui_panel.hpp"
-#include "imview/gl_layer.hpp"
 
 #include "scene_objects/imtext_scene_object.hpp"
+#include "scene_objects/imgui_fixed_scene_object.hpp"
 #include "scene_objects/opengl_scene_object.hpp"
 #include "scene_objects/gl_triangle_scene_object.hpp"
 
 using namespace quickviz;
 
-class FirstLayer : public GlLayer {
+class FirstLayer : public Layer {
  public:
-  FirstLayer() : GlLayer("FirstLayer") {
+  FirstLayer() : Layer("FirstLayer") {
     this->SetFlexDirection(Styling::FlexDirection::kColumn);
-    //    this->SetJustifyContent(Styling::JustifyContent::kSpaceBetween);
+    this->SetJustifyContent(Styling::JustifyContent::kFlexStart);
 
-    auto panel1 = std::make_shared<OpenGLSceneObject>(1.0, 0, 0);
+    auto panel1 = std::make_shared<OpenGLSceneObject>("text1", 1.0, 0, 0);
     panel1->SetHeight(50);
-    this->AddResizableUiNode(panel1);
+    this->AddChild(panel1);
 
-    auto panel2 = std::make_shared<OpenGLSceneObject>(0, 1.0, 0);
+    auto panel2 = std::make_shared<OpenGLSceneObject>("text2", 0, 1.0, 0);
     panel2->SetHeight(60);
-    this->AddResizableUiNode(panel2);
+    this->AddChild(panel2);
 
-    auto panel4 = std::make_shared<OpenGLSceneObject>(0, 0, 1.0);
-    panel4->SetHeight(70);
-    this->AddResizableUiNode(panel4);
+    auto panel3 = std::make_shared<OpenGLSceneObject>("text3", 0, 0, 1.0);
+    panel3->SetHeight(70);
+    this->AddChild(panel3);
 
-    //    auto panel5 = std::make_shared<GLTrianglePanel>();
-    //    panel5->SetHeight(400);
-    //    this->AddResizableUiNode(panel5);
+    auto panel4 = std::make_shared<GLTriangleSceneObject>();
+    panel4->SetMinHeight(400);
+    this->AddChild(panel4);
   }
 };
 
@@ -48,9 +48,17 @@ class SecondLayer : public Layer {
   SecondLayer() : Layer("SecondLayer") {
     this->SetFlexDirection(Styling::FlexDirection::kColumn);
 
-    auto panel1 = std::make_shared<ImTextSceneObject>();
+    auto panel1 = std::make_shared<ImGuiFixedSceneObject>("imgui1");
     panel1->SetHeight(100);
-    this->AddResizableUiNode(panel1);
+    this->AddChild(panel1);
+
+    auto panel2 = std::make_shared<ImGuiFixedSceneObject>("imgui2");
+    panel2->SetHeight(200);
+    this->AddChild(panel2);
+
+    auto panel3 = std::make_shared<ImGuiFixedSceneObject>("imgui3");
+    panel3->SetHeight(500);
+    this->AddChild(panel3);
   }
 };
 
@@ -81,7 +89,7 @@ int main(int argc, char* argv[]) {
     auto obj1 = std::make_shared<ImTextSceneObject>("UiObject");
     viewer.AddSceneObject(obj1);
 
-    auto obj2 = std::make_shared<OpenGLSceneObject>(0, 0.6, 0.6);
+    auto obj2 = std::make_shared<OpenGLSceneObject>("obj2", 0, 0.6, 0.6);
     obj2->SetPosition(0, 0);
     obj2->OnResize(viewer.GetWidth(), viewer.GetHeight() / 2.0);
     viewer.AddSceneObject(obj2);
@@ -94,8 +102,8 @@ int main(int argc, char* argv[]) {
     auto layer1 = std::make_shared<FirstLayer>();
     viewer.AddSceneObject(layer1);
 
-    //    auto layer2 = std::make_shared<SecondLayer>();
-    //    viewer.AddSceneObject(layer2);
+    auto layer2 = std::make_shared<SecondLayer>();
+    viewer.AddSceneObject(layer2);
   } else {
     std::cout << "Invalid option" << std::endl;
     return -1;
