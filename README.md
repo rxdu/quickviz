@@ -1,15 +1,21 @@
-# Immediate-Mode Toolkit (imtoolkit)
+# QuickViz
 
-![GitHub Workflow Status](https://github.com/rxdu/imtoolkit/workflows/CMake/badge.svg)
+![GitHub Workflow Status](https://github.com/rxdu/quickviz/workflows/default/badge.svg)
 
-This repository constains a set of packages built on top of the [imgui](https://github.com/ocornut/imgui) library. The targeted use case is creating data visualization and basic UI for assisting development and debugging of robotics software. This toolkit is designed to be very lightweight (minimal dependent libraries required, easy to be integrated and built), which differentiates it from other more feature-rich but much heavier libraries (such as OpenCV, VTK, ROS/RViz). It's expected that this toolkit is integrated into an existing project and used to build application-specific visualization tools, rather than used as a standalone and general-purpose visualization application.
+This repository provides a C++ framework for creating data visualization and basic GUI for robotics applications. The
+core of the framework is a library named "imview". imview is designed to be flexible and lightweight.
 
-Currently the following features are supported:
+* For data visualization, imview provides a set of API functions to easily plot 2D time-series data, draw 2D primitives
+  and render 3D objects. It can be used to visualize data in real-time.
+* For GUI applications, imview provides automatic layout management and commonly used UI widgets such as buttons,
+  sliders, and text boxes.
 
-* Data Plot: ImGui + ImPlot
-* Cairo Canvas: ImGui + Cairo 2D graphics library
+An app named "quickviz" is provided for data visualization with [libxmotion](https://github.com/rxdu/libxmotion). It
+also serves as an example of how to use the imview library.
 
-## Build 
+Design of imview is documented in [docs/imview_design.md](docs/imview_design.md).
+
+## Build
 
 The code in this repository should build on any recent linux distributions with a compiler supporting C++11/14.
 
@@ -19,7 +25,8 @@ The code in this repository should build on any recent linux distributions with 
 $ sudo apt install build-essential cmake
 ```
 
-If the version of cmake bundled with your system is too low, you can install a newer version from [kitware ppa](https://apt.kitware.com/) or build and install from [source](https://cmake.org/download/). 
+If the version of cmake bundled with your system is too low, you can install a newer version
+from [Kitware PPA](https://apt.kitware.com/) or build and install from [source](https://cmake.org/download/).
 
 **Install dependencies**
 
@@ -27,38 +34,41 @@ If the version of cmake bundled with your system is too low, you can install a n
 $ sudo apt-get install libgl1-mesa-dev libglfw3-dev libcairo2-dev
 ```
 
+Please refer to [CI configuration](.github/workflows/default.yml) for the up-to-date dependency installation
+instructions.
+
 **Download code**
 
 ```
-$ git clone --recursive https://github.com/rxdu/imtoolkit.git
+$ git clone --recursive https://github.com/rxdu/quickviz.git
 ```
 
 Or you can clone and then update the submodules manually
 
 ```
-$ git clone https://github.com/rxdu/imtoolkit.git
-$ cd imtoolkit
+$ git clone https://github.com/rxdu/quickviz.git
+$ cd quickviz
 $ git submodule update --init --recursive
 ```
 
-**Configure and compile**
+**Configure CMake and compile**
 
 ```
-$ cd imtoolkit
+$ cd quickviz
 $ mkdir build && cd build
 $ cmake ..
 $ make -j8
 ```
 
-## Use the toolkit
+## Reference
 
-This toolkit offers a number of convenience wrappers/helper functions to allow you create more specialized visualization/UI tools for your project easily. Initially it helps you put all pieces together and get started quickly, but eventually you would probably need to get familar with the underlying building blocks in order to create tools that fits your hand most.
+The library is built on top of a few third-party libraries, you can refer to their documentation for more details:
 
-* imgui demo: src/imcore/imgui/imgui_demo.cpp
-* implot demo: src/imcore/implot/implot_demo.cpp
+* imgui demo: src/third_party/imcore/imgui/imgui_demo.cpp
+* implot demo: src/third_party/imcore/implot/implot_demo.cpp
 * cairo docs: https://cairographics.org/documentation/
 
-Online demo
+Online demo of imgui and implot:
 
-* [imgui demo](https://greggman.github.io/doodles/glfw-imgui/out/glfw-imgui.html)  
+* [imgui demo](https://greggman.github.io/doodles/glfw-imgui/out/glfw-imgui.html)
 * [implot demo](https://traineq.org/implot_demo/src/implot_demo.html)

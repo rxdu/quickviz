@@ -1,14 +1,14 @@
 from conans import ConanFile, CMake
 
 
-class ImtoolkitConan(ConanFile):
-    name = "imtoolkit"
+class QuickVizConan(ConanFile):
+    name = "quickviz"
     version = "0.2.0"
     license = "MIT"
     author = "<Ruixiang Du> <ruixiang.du@gmail.com>"
     url = "<Package recipe repository url here, for issues about the package>"
-    description = "https://github.com/rxdu/imtoolkit"
-    topics = ("imgui", "implot", "cairo")
+    description = "https://github.com/rxdu/quickviz"
+    topics = ("imgui", "implot", "cairo", "visualization", "gui")
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False]}
     default_options = {"shared": False}
@@ -27,5 +27,5 @@ class ImtoolkitConan(ConanFile):
 
     def package_info(self):
         self.cpp_info.includedirs = ["include"]
-        self.cpp_info.libs = ["imtoolkit"]
+        self.cpp_info.libs = ["imview"]
 

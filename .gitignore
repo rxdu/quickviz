@@ -4,6 +4,9 @@
 # VSCode
 .vscode
 
+# CLion
+.idea
+
 # Prerequisites
 *.d
 

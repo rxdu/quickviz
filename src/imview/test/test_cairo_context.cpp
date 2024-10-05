@@ -9,19 +9,19 @@
 
 #include <memory>
 
-#include "imview/viewer_base.hpp"
+#include "imview/viewer.hpp"
 #include "imview/cairo_widget.hpp"
 
-using namespace rdu::wgui;
+using namespace quickviz::swviz;
 
 void Paint(cairo_t* cr);
 
-struct DrawArc : public ViewerBase {
+struct DrawArc : public Viewer {
   DrawArc() { ctx1_ = std::make_shared<CairoWidget>(320, 240); }
 
   std::shared_ptr<CairoWidget> ctx1_;
 
-  void Draw() override {
+  void Update() override {
     ImVec2 panel_size = {ImGui::GetIO().DisplaySize.x / 2.0f,
                          ImGui::GetIO().DisplaySize.y / 2.0f};
 

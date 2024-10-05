@@ -2,30 +2,23 @@
  * window.hpp
  *
  * Created on: Mar 04, 2021 15:05
- * Description:
+ * Description: a light wrapper around GLFW
+ *  Window <- Layer <- Panel <- Renderable
  *
  * Copyright (c) 2021 Ruixiang Du (rdu)
  */
 
-#ifndef WINDOW_HPP
-#define WINDOW_HPP
+#ifndef IMVIEW_WINDOW_HPP
+#define IMVIEW_WINDOW_HPP
 
-#include "imgui.h"
-
-#include "implot/implot.h"
-
-#include <GL/gl.h>
+#ifdef IMVIEW_WITH_GLAD
+#include <glad/glad.h>
+#endif
 #include <GLFW/glfw3.h>
 
 #include <string>
 
-namespace rdu {
-namespace wgui {
-enum class FontSize { Tiny, Small, Normal, Big, Large, ExtraLarge };
-
-void Init();
-void Terminate();
-
+namespace quickviz {
 class Window {
  public:
   enum WINDOW_HINT {
@@ -38,62 +31,31 @@ class Window {
   };
 
  public:
-  Window(uint32_t width = 640, uint32_t height = 480,
-         std::string title = "wgui Window",
+  Window(std::string title, uint32_t width, uint32_t height,
          uint32_t window_hints = WIN_RESIZABLE | WIN_DECORATED);
   ~Window();
 
   // do not allow copy
-  Window(const Window& other) = delete;
-  Window& operator=(const Window& other) = delete;
-  Window(const Window&& other) = delete;
-  Window& operator=(const Window&& other) = delete;
+  Window(const Window &other) = delete;
+  Window &operator=(const Window &other) = delete;
+  Window(const Window &&other) = delete;
+  Window &operator=(const Window &&other) = delete;
 
-  void Show();
-
-  // configuration
-  void ApplyDarkStyle();
-  void ApplyLightStyle();
-
-  void SetBackgroundColor(ImVec4 color);
-
-  void EnableKeyboardNav();
-  void EnableGamepadNav();
-
+  // public methods
   uint32_t GetWidth() const;
   uint32_t GetHeight() const;
 
-  // main loop
-  bool WindowShouldClose();
+  bool ShouldClose() const;
   void CloseWindow();
-
   void PollEvents();
-  void StartNewFrame();
-  void RenderFrame();
+  void SwapBuffers();
 
-  ImFont* GetFont(FontSize size = FontSize::Normal);
-  GLFWwindow* GetGlfwWindow() { return glfw_win_; }
-
- private:
-  GLFWwindow* glfw_win_;
-  ImVec4 background_color_;
-
-  const char* glsl_version_str = "#version 130";
-  const int glfw_context_version_major = 3;
-  const int glfw_context_version_minor = 0;
-
-  ImFont* font_tiny_;
-  ImFont* font_small_;
-  ImFont* font_normal_;
-  ImFont* font_big_;
-  ImFont* font_large_;
-  ImFont* font_extra_large_;
-
+ protected:
   void ApplyWindowHints(uint32_t window_hints);
   void LoadDefaultStyle();
+
+  GLFWwindow *win_;
 };
-}  // namespace wgui
+}  // namespace quickviz
 
-}  // namespace rdu
-
-#endif /* WINDOW_HPP */
+#endif /* IMVIEW_WINDOW_HPP */

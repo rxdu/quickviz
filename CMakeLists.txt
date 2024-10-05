@@ -6,13 +6,14 @@ if(CCACHE_PROGRAM)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
 endif()
 
-project(imtoolkit VERSION 0.2.0)
+project(quickviz VERSION 0.2.0)
 
 set(BUILD_TESTING on)
 
 ## Project Options
 option(BUILD_TESTING "Build tests" ON)
 option(STATIC_CHECK "Perform static check" OFF)
+option(IMVIEW_WITH_GLAD "Integrate glad into imview" ON)
 
 ## Check if code compiles on x86_64 platform
 if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
@@ -77,6 +78,9 @@ endif()
 ## Add source directory
 add_subdirectory(src)
 
+add_library(quickviz INTERFACE)
+target_link_libraries(quickviz INTERFACE imcore imview cvdraw)
+
 ## Installation setup
 message(STATUS "Project will be installed to ${CMAKE_INSTALL_PREFIX} with 'make install'")
 
@@ -99,43 +103,38 @@ foreach(p LIB BIN INCLUDE CMAKE)
 endforeach()
 
 # targets to install
-install(TARGETS imcore imview
-    EXPORT imtoolkitTargets
+install(TARGETS quickviz
+    EXPORT quickvizTargets
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin
     INCLUDES DESTINATION include)
 
-install(DIRECTORY src/imcore/imgui 
-                src/imcore/implot
-                src/imview/include/
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    PATTERN "*.h*")
-
 # export target configuration 
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
-    imtoolkitConfigVersion.cmake
-    VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}"
+    quickvizConfigVersion.cmake
+    VERSION "${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH}"
     COMPATIBILITY SameMajorVersion)
 
-install(EXPORT imtoolkitTargets
-    FILE imtoolkitTargets.cmake
-    NAMESPACE rdu::
-    DESTINATION lib/cmake/imtoolkit)
+install(EXPORT quickvizTargets
+    FILE quickvizTargets.cmake
+    NAMESPACE quickviz::
+    DESTINATION lib/cmake/quickviz)
 
-configure_file(cmake/imtoolkitConfig.cmake.in imtoolkitConfig.cmake @ONLY)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/imtoolkitConfig.cmake"
-              "${CMAKE_CURRENT_BINARY_DIR}/imtoolkitConfigVersion.cmake"
-        DESTINATION lib/cmake/imtoolkit)
+configure_file(cmake/quickvizConfig.cmake.in quickvizConfig.cmake @ONLY)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/quickvizConfig.cmake"
+              "${CMAKE_CURRENT_BINARY_DIR}/quickvizConfigVersion.cmake"
+        DESTINATION lib/cmake/quickviz)
 
 # Packaging support
+set(CPACK_PACKAGE_NAME "quickviz")
 set(CPACK_PACKAGE_VENDOR "Ruixiang Du")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Immediate-Mode Toolkit")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "QuickViz: a lightweight visualization library for C++")
 set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
 set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
-set(CPACK_PACKAGING_INSTALL_PREFIX "/opt/imtoolkit")
+set(CPACK_PACKAGING_INSTALL_PREFIX "/opt/quickviz")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
 
