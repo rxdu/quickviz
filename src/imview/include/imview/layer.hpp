@@ -16,7 +16,6 @@
 
 #include "imview/interface/container.hpp"
 #include "imview/scene_object.hpp"
-#include "imview/panel.hpp"
 
 namespace quickviz {
 class Layer : public SceneObject, public Container {

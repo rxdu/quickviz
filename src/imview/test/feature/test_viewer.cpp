@@ -10,7 +10,7 @@
 #include <iostream>
 
 #include "imview/viewer.hpp"
-#include "imview/ui_panel.hpp"
+#include "imview/box.hpp"
 
 #include "scene_objects/imtext_scene_object.hpp"
 #include "scene_objects/imgui_fixed_scene_object.hpp"
@@ -19,9 +19,9 @@
 
 using namespace quickviz;
 
-class FirstLayer : public Layer {
+class FirstLayer : public Box {
  public:
-  FirstLayer() : Layer("FirstLayer") {
+  FirstLayer() : Box("FirstLayer") {
     this->SetFlexDirection(Styling::FlexDirection::kColumn);
     this->SetJustifyContent(Styling::JustifyContent::kFlexStart);
 
@@ -43,22 +43,40 @@ class FirstLayer : public Layer {
   }
 };
 
-class SecondLayer : public Layer {
+class SecondLayer : public Box {
  public:
-  SecondLayer() : Layer("SecondLayer") {
-    this->SetFlexDirection(Styling::FlexDirection::kColumn);
+  SecondLayer() : Box("SecondLayer") {
+    this->SetFlexDirection(Styling::FlexDirection::kRow);
 
-    auto panel1 = std::make_shared<ImGuiFixedSceneObject>("imgui1");
-    panel1->SetHeight(100);
-    this->AddChild(panel1);
+    auto left = std::make_shared<Box>("LeftBox");
+    left->SetFlexDirection(Styling::FlexDirection::kColumn);
+    {
+      auto panel1 = std::make_shared<ImGuiFixedSceneObject>("imgui1");
+      panel1->SetHeight(100);
+      left->AddChild(panel1);
 
-    auto panel2 = std::make_shared<ImGuiFixedSceneObject>("imgui2");
-    panel2->SetHeight(200);
-    this->AddChild(panel2);
+      auto panel2 = std::make_shared<ImGuiFixedSceneObject>("imgui2");
+      panel2->SetHeight(200);
+      left->AddChild(panel2);
 
-    auto panel3 = std::make_shared<ImGuiFixedSceneObject>("imgui3");
-    panel3->SetHeight(500);
-    this->AddChild(panel3);
+      auto panel3 = std::make_shared<ImGuiFixedSceneObject>("imgui3");
+      panel3->SetHeight(250);
+      left->AddChild(panel3);
+    }
+    this->AddChild(left);
+
+    auto right = std::make_shared<Box>("RightBox");
+    right->SetFlexDirection(Styling::FlexDirection::kColumn);
+    {
+      auto panel4 = std::make_shared<ImGuiFixedSceneObject>("imgui4");
+      panel4->SetHeight(500);
+      right->AddChild(panel4);
+
+      auto panel5 = std::make_shared<ImGuiFixedSceneObject>("imgui5");
+      panel5->SetHeight(300);
+      right->AddChild(panel5);
+    }
+    this->AddChild(right);
   }
 };
 
@@ -99,8 +117,8 @@ int main(int argc, char* argv[]) {
     obj3->OnResize(viewer.GetWidth(), viewer.GetHeight() / 2.0);
     viewer.AddSceneObject(obj3);
   } else if (opt == 2) {
-    auto layer1 = std::make_shared<FirstLayer>();
-    viewer.AddSceneObject(layer1);
+    //    auto layer1 = std::make_shared<FirstLayer>();
+    //    viewer.AddSceneObject(layer1);
 
     auto layer2 = std::make_shared<SecondLayer>();
     viewer.AddSceneObject(layer2);

@@ -80,5 +80,5 @@ class diagrams.
     * If no automatic layout is needed, you can define your renderable objects by inheriting from the `SceneObject`
       class and add them to the viewer directly.
     * If you want automatic layout, you can define your renderable objects by inheriting from the `SceneObject`
-      class, adding them to the containers (Layer, Panel, etc.), setting layout constraints to the containers and adding
+      class, adding them to the containers (Box), setting layout constraints to the containers and adding
       the containers to the viewer.

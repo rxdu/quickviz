@@ -14,8 +14,8 @@ add_library(imview
     src/viewer.cpp
     src/fonts.cpp
     src/scene_object.cpp
+    src/box.cpp
     src/layer.cpp
-    src/panel.cpp
     #    src/popup.cpp
     #    src/cairo_widget.cpp
     #    src/cairo_draw.cpp
