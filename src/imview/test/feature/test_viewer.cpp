@@ -21,7 +21,7 @@ using namespace quickviz;
 
 class FirstLayer : public Box {
  public:
-  FirstLayer() : Box("FirstLayer") {
+  FirstLayer() : Box("PrimaryGlBox") {
     this->SetFlexDirection(Styling::FlexDirection::kColumn);
     this->SetJustifyContent(Styling::JustifyContent::kFlexStart);
 
@@ -45,34 +45,38 @@ class FirstLayer : public Box {
 
 class SecondLayer : public Box {
  public:
-  SecondLayer() : Box("SecondLayer") {
+  SecondLayer() : Box("PrimaryUiBox") {
     this->SetFlexDirection(Styling::FlexDirection::kRow);
 
     auto left = std::make_shared<Box>("LeftBox");
-    left->SetFlexDirection(Styling::FlexDirection::kColumn);
+    left->SetWidth(500);
     {
-      auto panel1 = std::make_shared<ImGuiFixedSceneObject>("imgui1");
+      left->SetFlexDirection(Styling::FlexDirection::kColumn);
+
+      auto panel1 = std::make_shared<ImGuiFixedSceneObject>("left-imgui1");
       panel1->SetHeight(100);
       left->AddChild(panel1);
 
-      auto panel2 = std::make_shared<ImGuiFixedSceneObject>("imgui2");
+      auto panel2 = std::make_shared<ImGuiFixedSceneObject>("left-imgui2");
       panel2->SetHeight(200);
       left->AddChild(panel2);
 
-      auto panel3 = std::make_shared<ImGuiFixedSceneObject>("imgui3");
+      auto panel3 = std::make_shared<ImGuiFixedSceneObject>("left-imgui3");
       panel3->SetHeight(250);
       left->AddChild(panel3);
     }
     this->AddChild(left);
 
     auto right = std::make_shared<Box>("RightBox");
-    right->SetFlexDirection(Styling::FlexDirection::kColumn);
+    right->SetFlexGrow(1);
     {
-      auto panel4 = std::make_shared<ImGuiFixedSceneObject>("imgui4");
+      right->SetFlexDirection(Styling::FlexDirection::kColumn);
+
+      auto panel4 = std::make_shared<ImGuiFixedSceneObject>("right-imgui1");
       panel4->SetHeight(500);
       right->AddChild(panel4);
 
-      auto panel5 = std::make_shared<ImGuiFixedSceneObject>("imgui5");
+      auto panel5 = std::make_shared<ImGuiFixedSceneObject>("right-imgui2");
       panel5->SetHeight(300);
       right->AddChild(panel5);
     }

@@ -16,7 +16,7 @@ namespace quickviz {
 namespace {
 void PrintYgLayout(YGNodeRef node, int indent = 0) {
   for (int i = 0; i < indent; ++i) std::cout << "  ";
-  std::cout << "Size: "
+  std::cout << "Area: "
             << "X: " << YGNodeLayoutGetLeft(node)
             << ", Y: " << YGNodeLayoutGetTop(node)
             << ", Width: " << YGNodeLayoutGetWidth(node)
@@ -32,8 +32,10 @@ void PrintYgLayout(YGNodeRef node, int indent = 0) {
 Box::Box(std::string name) : SceneObject(name) {}
 
 void Box::PrintLayout() const {
-  std::cout << "Box: " << name_ << std::endl;
+  std::cout << "-------------------------------------------------" << std::endl;
+  std::cout << "[ Layout of Box: " << name_ << " ]" << std::endl;
   PrintYgLayout(yg_node_);
+  std::cout << "-------------------------------------------------" << std::endl;
 }
 
 void Box::AddChild(std::shared_ptr<SceneObject> obj) {
@@ -63,19 +65,20 @@ void Box::OnResize(float width, float height) {
   YGNodeStyleSetWidth(yg_node_, width);
   YGNodeStyleSetHeight(yg_node_, height);
   YGNodeCalculateLayout(yg_node_, YGUndefined, YGUndefined, YGDirectionLTR);
-  for (auto child : children_) {
-    child.second->OnResize(width, height);
-  }
 
   for (uint32_t i = 0; i < YGNodeGetChildCount(yg_node_); ++i) {
     auto child = YGNodeGetChild(yg_node_, i);
-    children_[child_name_by_index_[i]]->SetPosition(YGNodeLayoutGetLeft(child),
-                                                    YGNodeLayoutGetTop(child));
+    children_[child_name_by_index_[i]]->SetPosition(
+        x_ + YGNodeLayoutGetLeft(child), y_ + YGNodeLayoutGetTop(child));
     children_[child_name_by_index_[i]]->OnResize(YGNodeLayoutGetWidth(child),
                                                  YGNodeLayoutGetHeight(child));
   }
 
-  PrintLayout();
+  YGNodeCalculateLayout(yg_node_, YGUndefined, YGUndefined, YGDirectionLTR);
+
+  if (YGNodeGetParent(yg_node_) == nullptr) {
+    PrintLayout();
+  }
 }
 
 void Box::OnRender() {

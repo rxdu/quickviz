@@ -20,8 +20,9 @@ class ImGuiFixedSceneObject : public SceneObject {
 
   void OnRender() override {
     // clang-format off
-    std::cout << "Window " << name_ <<": " << x_ << ", " << y_ << ", " << width_ << ", "
-              << height_ << std::endl;
+//    std::cout << "Window " << name_ <<": " << x_ << ", " << y_ << ", " << width_ << ", "
+//              << height_ << std::endl;
+    // clang-format on
     ImGui::SetNextWindowPos(ImVec2(x_, y_));
     ImGui::SetNextWindowSize(ImVec2(width_, height_));
     ImGui::Begin(name_.c_str(), NULL,
@@ -30,7 +31,6 @@ class ImGuiFixedSceneObject : public SceneObject {
                      ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoCollapse |
                      ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar |
                      ImGuiWindowFlags_NoBackground);
-
 
     // ui elements of the panel
     {
