@@ -10,10 +10,10 @@ core of the framework is a library named "imview". imview is designed to be flex
 * For GUI applications, imview provides automatic layout management and commonly used UI widgets such as buttons,
   sliders, and text boxes.
 
-An app named "quickviz" is provided for data visualization with [libxmotion](https://github.com/rxdu/libxmotion). It
-also serves as an example of how to use the imview library.
-
-Design of imview is documented in [docs/imview_design.md](docs/imview_design.md).
+An app named "quickviz" is provided with commonly used data visualization functions (to support development
+of [libxmotion](https://github.com/rxdu/libxmotion)). It also serves as an example of how to use the imview library.
+Design of imview is documented in [docs/imview_design.md](docs/imview_design.md). If you are interested in using the
+imview library in your own project, it's recommended to read this design document first.
 
 ## Build
 

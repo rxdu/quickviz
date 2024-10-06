@@ -21,6 +21,8 @@ and text boxes.
 * **2D plotting**: imview uses `ImPlot` for 2D plotting. ImPlot is a lightweight plotting library built on top of
   `Dear ImGui`.
 
+The class diagram below shows the main classes in the imview library:
+
 ```mermaid
 ---
 title: imview classes
