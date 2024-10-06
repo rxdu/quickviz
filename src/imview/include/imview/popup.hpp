@@ -14,10 +14,8 @@
 #include <cstdint>
 
 namespace quickviz {
-namespace swviz {
 bool ShowPopupNotification(std::string msg, std::string title,
                            float width = 300, float height = 150);
-}
 }
 
 #endif //ROBOSW_SRC_VISUALIZATION_IMVIEW_INCLUDE_IMVIEW_POPUP_HPP

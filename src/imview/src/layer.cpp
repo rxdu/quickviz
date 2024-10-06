@@ -13,28 +13,7 @@
 #include <yoga/Yoga.h>
 
 namespace quickviz {
-namespace {
-void PrintYgLayout(YGNodeRef node, int indent = 0) {
-  for (int i = 0; i < indent; ++i) std::cout << "  ";
-  std::cout << "Size: "
-            << "X: " << YGNodeLayoutGetLeft(node)
-            << ", Y: " << YGNodeLayoutGetTop(node)
-            << ", Width: " << YGNodeLayoutGetWidth(node)
-            << ", Height: " << YGNodeLayoutGetHeight(node) << std::endl;
-
-  // Recursively print children nodes
-  for (uint32_t i = 0; i < YGNodeGetChildCount(node); ++i) {
-    PrintYgLayout(YGNodeGetChild(node, i), indent + 1);
-  }
-}
-}  // namespace
-
 Layer::Layer(std::string name) : SceneObject(name) {}
-
-void Layer::PrintLayout() const {
-  std::cout << "Layer: " << name_ << std::endl;
-  PrintYgLayout(yg_node_);
-}
 
 void Layer::AddChild(std::shared_ptr<SceneObject> obj) {
   if (obj == nullptr) return;
@@ -59,23 +38,9 @@ void Layer::RemoveChild(const std::string& name) {
 }
 
 void Layer::OnResize(float width, float height) {
-  // update root node size
-  YGNodeStyleSetWidth(yg_node_, width);
-  YGNodeStyleSetHeight(yg_node_, height);
-  YGNodeCalculateLayout(yg_node_, YGUndefined, YGUndefined, YGDirectionLTR);
   for (auto child : children_) {
     child.second->OnResize(width, height);
   }
-
-  for (uint32_t i = 0; i < YGNodeGetChildCount(yg_node_); ++i) {
-    auto child = YGNodeGetChild(yg_node_, i);
-    children_[child_name_by_index_[i]]->SetPosition(YGNodeLayoutGetLeft(child),
-                                                    YGNodeLayoutGetTop(child));
-    children_[child_name_by_index_[i]]->OnResize(YGNodeLayoutGetWidth(child),
-                                                 YGNodeLayoutGetHeight(child));
-  }
-
-  PrintLayout();
 }
 
 void Layer::OnRender() {

@@ -1,7 +1,8 @@
 /*
  * @file box.hpp
  * @date 10/6/24
- * @brief
+ * @brief a layer contains one or more scene objects and is responsible for
+ * automatic layout and rendering of the objects
  *
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */

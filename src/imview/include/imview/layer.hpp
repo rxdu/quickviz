@@ -1,8 +1,8 @@
 /*
  * @file layer.hpp
  * @date 9/29/24
- * @brief a layer contains one or more panel objects and is responsible for
- * automatic layout and rendering of the panels
+ * @brief a layer groups multiple scene objects into a logical unit and is
+ *  used for event handling and rendering management
  *
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
@@ -23,15 +23,7 @@ class Layer : public SceneObject, public Container {
   explicit Layer(std::string name);
   virtual ~Layer() = default;
 
-  // do not allow copy or move
-  Layer(const Layer &other) = delete;
-  Layer(Layer &&other) = delete;
-  Layer &operator=(const Layer &other) = delete;
-  Layer &operator=(Layer &&other) = delete;
-
   // public methods
-  void PrintLayout() const;
-
   void AddChild(std::shared_ptr<SceneObject> obj);
   void RemoveChild(const std::string &name);
 

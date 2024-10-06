@@ -28,6 +28,9 @@ title: imview classes
 classDiagram
     Window <|-- Viewer
     Viewer o-- SceneObject
+    Panel --|> SceneObject
+    Box --|> SceneObject
+    Box ..|> Container
     SceneObject ..|> Resizable
     SceneObject ..|> Renderable
     namespace quickviz {
@@ -59,6 +62,11 @@ classDiagram
             +SetFlexDirection() void *
             +SetXYZ() void *
         }
+        class Container {
+            <<Interface>>
+            +AddChild(std:: shared_ptr<SceneObject> obj) *;
+            +RemoveChild(const std:: string& name) *;
+        }
         class SceneObject {
             <<Abstract>>
             +GetName() std:: string
@@ -66,6 +74,16 @@ classDiagram
             +SetVisibility() void
             +OnResize() void
             +OnRender() void *
+        }
+        class Box {
+            +PrintLayout() const
+            +AddChild(std:: shared_ptr<SceneObject> obj) void
+            +RemoveChild(const std:: string &name) void
+        }
+        class Panel {
+            +SetAutoLayout(bool value) void
+            #Begin() void
+            #End() void
         }
     }
 ```
@@ -76,9 +94,12 @@ class diagrams.
 ## Use Cases
 
 * If you only need a window and would like to handle everything by yourself, you can use the `Window` class directly.
-* If you need a window ready for both OpenGL rendering and UI elements, you can use the `Viewer` class
+* If you need a window ready for both OpenGL rendering and UI elements, you can use the `Viewer` class:
     * If no automatic layout is needed, you can define your renderable objects by inheriting from the `SceneObject`
       class and add them to the viewer directly.
     * If you want automatic layout, you can define your renderable objects by inheriting from the `SceneObject`
-      class, adding them to the containers (Box), setting layout constraints to the containers and adding
-      the containers to the viewer.
+      class, adding them to the container `Box`, setting layout constraints and adding the containers to the viewer.
+      Nesting containers is also supported (i.e. Box inside another Box).
+* A specialized type of `SceneObject` is provided for ImGui: `Panel`. You can use this class to create a panel with
+  minimal boilerplate code. If automatic layout is enabled (by calling `SetAutoLayout(true)`), the size and
+  position of the panel will be automatically adjusted based on the `Box` it is added to.

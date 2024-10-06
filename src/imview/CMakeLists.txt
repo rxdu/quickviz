@@ -14,6 +14,7 @@ add_library(imview
     src/viewer.cpp
     src/fonts.cpp
     src/scene_object.cpp
+    src/panel.cpp
     src/box.cpp
     src/layer.cpp
     #    src/popup.cpp
