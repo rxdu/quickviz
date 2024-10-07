@@ -8,6 +8,9 @@ target_link_libraries(test_window_gl_triangle PRIVATE imview)
 add_executable(test_box test_box.cpp)
 target_link_libraries(test_box PRIVATE imview)
 
+add_executable(test_event test_event.cpp)
+target_link_libraries(test_event PRIVATE imview)
+
 #add_executable(test_panel test_panel.cpp)
 #target_link_libraries(test_panel imview)
 #
