@@ -8,7 +8,14 @@
 
 #include <iostream>
 
+#include "imview/viewer.hpp"
+
+#include "quickviz_application.hpp"
+
+using namespace quickviz;
+
 int main(int argc, char *argv[]) {
-  std::cout << "Hello QuickViz!" << std::endl;
+  QuickvizApplication app;
+  if (app.Initialize()) app.Run();
   return 0;
 }

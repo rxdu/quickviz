@@ -9,7 +9,6 @@
 #ifndef QUICKVIZ_IMTEXT_PANEL_HPP
 #define QUICKVIZ_IMTEXT_PANEL_HPP
 
-#include "imview/viewer.hpp"
 #include "imview/panel.hpp"
 
 namespace quickviz {

@@ -78,8 +78,8 @@ endif()
 ## Add source directory
 add_subdirectory(src)
 
-add_library(quickviz INTERFACE)
-target_link_libraries(quickviz INTERFACE imcore imview cvdraw)
+#add_library(quickviz INTERFACE)
+#target_link_libraries(quickviz INTERFACE imcore imview cvdraw)
 
 ## Installation setup
 message(STATUS "Project will be installed to ${CMAKE_INSTALL_PREFIX} with 'make install'")
