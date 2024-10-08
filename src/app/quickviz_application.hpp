@@ -12,6 +12,7 @@
 #include "imview/viewer.hpp"
 #include "imview/layer.hpp"
 #include "panels/main_docking_panel.hpp"
+#include "data_reader.hpp"
 
 namespace quickviz {
 class QuickvizApplication {
@@ -33,6 +34,11 @@ class QuickvizApplication {
   // ui elements
   std::shared_ptr<Layer> ui_layer_;
   std::shared_ptr<MainDockingPanel> main_docking_panel_;
+
+  std::shared_ptr<Layer> plot_layer_;
+
+  // data reader
+  std::shared_ptr<DataReader> data_reader_;
 };
 }  // namespace quickviz
 

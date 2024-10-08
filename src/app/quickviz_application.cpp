@@ -11,6 +11,7 @@
 namespace quickviz {
 QuickvizApplication::QuickvizApplication() {
   viewer_ = std::make_unique<Viewer>("QuickViz");
+  data_reader_ = std::make_shared<DataReader>();
 }
 
 bool QuickvizApplication::Initialize() {
@@ -21,6 +22,8 @@ bool QuickvizApplication::Initialize() {
 
   // add ui layer to viewer
   viewer_->AddSceneObject(ui_layer_);
+
+  // initialize data reader
 
   return true;
 }

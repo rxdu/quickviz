@@ -23,29 +23,12 @@ class EventDispatcher {
   using EventPtr = std::shared_ptr<BaseEvent>;
   using HandlerFunc = std::function<void(std::shared_ptr<BaseEvent>)>;
 
-  // Get the singleton instance of EventDispatcher
-  static EventDispatcher& GetInstance() {
-    static EventDispatcher instance;
-    return instance;
-  }
-
-  // Register an event handler for a specific event type (identified by name)
-  void RegisterHandler(const std::string& event_name, HandlerFunc handler) {
-    handlers_[event_name].push_back(handler);
-  }
-
-  // Dispatch an event to all registered handlers
-  void Dispatch(std::shared_ptr<BaseEvent> event) const {
-    if (event == nullptr) return;
-    if (handlers_.find(event->GetName()) != handlers_.end()) {
-      for (const auto& handler : handlers_.at(event->GetName())) {
-        handler(event);
-      }
-    }
-  }
+  // public interface
+  static EventDispatcher& GetInstance();
+  void RegisterHandler(const std::string& event_name, HandlerFunc handler);
+  void Dispatch(std::shared_ptr<BaseEvent> event) const;
 
  private:
-  // Make constructor private to prevent instantiation
   EventDispatcher() = default;
 
   // do not allow copy or move

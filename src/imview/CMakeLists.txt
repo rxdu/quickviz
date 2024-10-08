@@ -18,6 +18,8 @@ add_library(imview
     src/box.cpp
     src/layer.cpp
     #    src/popup.cpp
+    src/event/event_dispatcher.cpp
+    src/event/async_event_dispatcher.cpp
     #    src/cairo_widget.cpp
     #    src/cairo_draw.cpp
 )

@@ -11,6 +11,7 @@
 
 #include <tuple>
 #include <string>
+#include <iostream>
 
 namespace quickviz {
 class BaseEvent {
