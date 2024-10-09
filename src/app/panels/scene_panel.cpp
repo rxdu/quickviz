@@ -14,6 +14,8 @@ namespace quickviz {
 ScenePanel::ScenePanel(std::string name) : Panel(name) {
   this->SetAutoLayout(false);
   this->SetNoResize(true);
+  this->SetNoMove(true);
+  this->SetWindowNoMenuButton();
 }
 
 void ScenePanel::Draw() {

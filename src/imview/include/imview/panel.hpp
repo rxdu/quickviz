@@ -54,11 +54,17 @@ class Panel : public SceneObject {
   void SetNoDecoration();
   void SetNoInputs();
 
+  void SetWindowNoMenuButton();
+  void SetWindowNoTabBar();
+  void SetWindowHiddenTabBar();
+  void SetWindowNoCloseButton();
+
   virtual void Draw() = 0;
 
  private:
   bool auto_layout_ = false;
   ImGuiWindowFlags flags_ = ImGuiWindowFlags_None;
+  ImGuiWindowClass window_class_;
 };
 }  // namespace quickviz
 

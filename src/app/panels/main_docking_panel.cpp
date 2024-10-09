@@ -50,8 +50,8 @@ void MainDockingPanel::Draw() {
   End();
 
   // draw child panels
-  config_panel_.Draw();
-  scene_panel_.Draw();
-  console_panel_.Draw();
+  if (config_panel_.IsVisible()) config_panel_.Draw();
+  if (console_panel_.IsVisible()) console_panel_.Draw();
+  if (scene_panel_.IsVisible()) scene_panel_.Draw();
 }
 }  // namespace quickviz

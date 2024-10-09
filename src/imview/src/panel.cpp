@@ -9,6 +9,8 @@
 
 #include "imview/panel.hpp"
 
+#include "imgui_internal.h"
+
 namespace quickviz {
 Panel::Panel(std::string name) : SceneObject(name) {}
 
@@ -20,7 +22,10 @@ void Panel::OnRender() {
   Draw();
 }
 
-void Panel::Begin(bool *p_open) { ImGui::Begin(name_.c_str(), p_open, flags_); }
+void Panel::Begin(bool *p_open) {
+  ImGui::SetNextWindowClass(&window_class_);
+  ImGui::Begin(name_.c_str(), p_open, flags_);
+}
 
 void Panel::End() { ImGui::End(); }
 
@@ -191,4 +196,21 @@ void Panel::SetNoNav() { flags_ |= ImGuiWindowFlags_NoNav; }
 void Panel::SetNoDecoration() { flags_ |= ImGuiWindowFlags_NoDecoration; }
 
 void Panel::SetNoInputs() { flags_ |= ImGuiWindowFlags_NoInputs; }
+
+void Panel::SetWindowNoMenuButton() {
+  window_class_.DockNodeFlagsOverrideSet |=
+      ImGuiDockNodeFlags_NoWindowMenuButton;
+}
+
+void Panel::SetWindowNoTabBar() {
+  window_class_.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoTabBar;
+}
+
+void Panel::SetWindowHiddenTabBar() {
+  window_class_.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_HiddenTabBar;
+}
+
+void Panel::SetWindowNoCloseButton() {
+  window_class_.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoCloseButton;
+}
 }  // namespace quickviz
