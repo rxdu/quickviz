@@ -8,8 +8,6 @@ endif()
 
 project(quickviz VERSION 0.2.0)
 
-set(BUILD_TESTING on)
-
 ## Project Options
 option(BUILD_TESTING "Build tests" ON)
 option(STATIC_CHECK "Perform static check" OFF)
@@ -67,11 +65,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}
 if(PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME AND BUILD_TESTING)
     enable_testing()
     include(GoogleTest)
-    set(BUILD_TESTS ON)
     # add_subdirectory(tests)
     message(STATUS "Tests will be built")
 else()
-    set(BUILD_TESTS OFF)
     message(STATUS "Tests will not be built")
 endif()
 

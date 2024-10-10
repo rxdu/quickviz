@@ -57,7 +57,7 @@
 #include <array>
 #include <iostream>
 
-namespace xmotion {
+namespace quickviz {
 template <typename T = uint8_t, std::size_t N = 1024>
 class RingBuffer {
  public:
@@ -107,28 +107,54 @@ class RingBuffer {
   }
 
   // Read/Write functions
-  std::size_t Read(T data[], std::size_t btr) {
-    std::lock_guard<std::mutex> lock(buffer_mutex_);
+  std::size_t ReadMultiple(T data[], std::size_t btr) {
     for (std::size_t i = 0; i < btr; ++i) {
       if (ReadOne(&data[i]) == 0) return i;
     }
     return btr;
   }
 
-  std::size_t Peek(T data[], std::size_t btp) {
-    std::lock_guard<std::mutex> lock(buffer_mutex_);
+  std::size_t PeekMultiple(T data[], std::size_t btp) {
     for (std::size_t i = 0; i < btp; ++i) {
       if (PeekOneAt(&data[i], i) == 0) return i;
     }
     return btp;
   }
 
-  std::size_t Write(const T new_data[], std::size_t btw) {
-    std::lock_guard<std::mutex> lock(buffer_mutex_);
+  std::size_t WriteMultiple(const T new_data[], std::size_t btw) {
     for (std::size_t i = 0; i < btw; ++i) {
       if (WriteOne(new_data[i]) == 0) return i;
     }
     return btw;
+  }
+
+  std::size_t Read(T &data) {
+    std::lock_guard<std::mutex> lock(buffer_mutex_);
+    if (read_index_ == write_index_) return 0;  // Buffer is empty
+    data = buffer_[read_index_++ & size_mask_];
+    return 1;
+  }
+
+  std::size_t PeekAt(T &data, size_t n) const {
+    std::lock_guard<std::mutex> lock(buffer_mutex_);
+    // return 0 if requested data is beyond the available range
+    if (n >= (write_index_ - read_index_) & size_mask_) return 0;
+    data = buffer_[(read_index_ + n) & size_mask_];
+    return 1;
+  }
+
+  std::size_t Write(const T &new_data) {
+    std::lock_guard<std::mutex> lock(buffer_mutex_);
+    // equivalent to if(IsFull()), avoid locking twice
+    if (((write_index_ + 1) & size_mask_) == (read_index_ & size_mask_)) {
+      // return 0 if buffer is full and overwrite is disabled
+      if (!enable_overwrite_) return 0;
+      // otherwise, advance the read_index to overwrite old data
+      read_index_ = (read_index_ + 1) & size_mask_;
+    }
+
+    buffer_[(write_index_++) & size_mask_] = new_data;
+    return 1;
   }
 
   void PrintBuffer() const {
@@ -149,32 +175,7 @@ class RingBuffer {
   bool enable_overwrite_ = false;  // enable buffer overwrite when full
 
   mutable std::mutex buffer_mutex_;
-
-  std::size_t ReadOne(T *data) {
-    if (read_index_ == write_index_) return 0;  // Buffer is empty
-    *data = buffer_[read_index_++ & size_mask_];
-    return 1;
-  }
-
-  std::size_t PeekOneAt(T *data, size_t n) const {
-    // return 0 if requested data is beyond the available range
-    if (n >= (write_index_ - read_index_) & size_mask_) return 0;
-    *data = buffer_[(read_index_ + n) & size_mask_];
-    return 1;
-  }
-
-  std::size_t WriteOne(const T &new_data) {
-    if (IsFull()) {
-      // return 0 if buffer is full and overwrite is disabled
-      if (!enable_overwrite_) return 0;
-      // otherwise, advance the read_index to overwrite old data
-      read_index_ = (read_index_ + 1) & size_mask_;
-    }
-
-    buffer_[(write_index_++) & size_mask_] = new_data;
-    return 1;
-  }
 };
-}  // namespace xmotion
+}  // namespace quickviz
 
 #endif /* RING_BUFFER_HPP */
