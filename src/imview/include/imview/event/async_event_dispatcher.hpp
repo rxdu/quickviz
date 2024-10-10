@@ -16,6 +16,7 @@
 #include <functional>
 #include <string>
 #include <queue>
+#include <atomic>
 
 #include "imview/event/event.hpp"
 #include "imview/event/thread_safe_queue.hpp"
@@ -37,6 +38,9 @@ class AsyncEventDispatcher {
   std::mutex handler_mutex_;
   std::unordered_map<std::string, std::vector<HandlerFunc>> handlers_;
   ThreadSafeQueue<std::shared_ptr<BaseEvent>> event_queue_;
+
+  std::atomic<std::thread::id> dispatch_thread_id_{};
+  std::atomic<std::thread::id> handle_events_thread_id_{};
 };
 }  // namespace quickviz
 

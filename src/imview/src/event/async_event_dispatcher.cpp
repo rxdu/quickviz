@@ -21,10 +21,38 @@ void AsyncEventDispatcher::RegisterHandler(const std::string& event_name,
 }
 
 void AsyncEventDispatcher::Dispatch(std::shared_ptr<BaseEvent> event) {
+  // validate that Dispatch is called from a consistent thread
+  if (dispatch_thread_id_ == std::thread::id()) {
+    dispatch_thread_id_ = std::this_thread::get_id();
+  } else if (std::this_thread::get_id() != dispatch_thread_id_) {
+    throw std::runtime_error("Error: Dispatch called from multiple threads!");
+  }
+
+  // ensure Dispatch is not called from the same thread as HandleEvents
+  if (std::this_thread::get_id() == handle_events_thread_id_) {
+    throw std::runtime_error(
+        "Error: Dispatch called from the same thread as HandleEvents!");
+  }
+
+  // push the event to the queue
   event_queue_.Push(event);
 }
 
 void AsyncEventDispatcher::HandleEvents() {
+  // validate that HandleEvents is called from a consistent thread
+  if (handle_events_thread_id_ == std::thread::id()) {
+    handle_events_thread_id_ = std::this_thread::get_id();
+  } else if (std::this_thread::get_id() != handle_events_thread_id_) {
+    throw std::runtime_error(
+        "Error: HandleEvents called from multiple threads!");
+  }
+
+  // ensure HandleEvents is not called from the same thread as Dispatch
+  if (std::this_thread::get_id() == dispatch_thread_id_) {
+    throw std::runtime_error(
+        "Error: HandleEvents called from the same thread as Dispatch!");
+  }
+
   std::shared_ptr<BaseEvent> event;
   while (event_queue_.TryPop(event)) {
     std::vector<HandlerFunc> event_handlers;

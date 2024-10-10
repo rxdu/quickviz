@@ -43,7 +43,11 @@ int main(int argc, char* argv[]) {
   emitter.Emit<Event<int, double, std::string>>("test_event", 21, 6.28,
                                                 "hello again");
 
-  AsyncEventDispatcher::GetInstance().HandleEvents();
+  //  AsyncEventDispatcher::GetInstance().HandleEvents();
+  std::thread handler_thread(&AsyncEventDispatcher::HandleEvents,
+                             &AsyncEventDispatcher::GetInstance());
+
+  handler_thread.join();
 
   return 0;
 }
