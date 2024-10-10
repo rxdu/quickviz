@@ -1,6 +1,9 @@
 ## feature test
 add_subdirectory(feature)
 
+## unit test
+add_subdirectory(unit_test)
+
 ## additional tests/sample
 add_executable(test_window_gl_triangle test_window_gl_triangle.cpp)
 target_link_libraries(test_window_gl_triangle PRIVATE imview)

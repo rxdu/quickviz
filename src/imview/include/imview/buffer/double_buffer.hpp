@@ -13,13 +13,15 @@
 #include <atomic>
 #include <condition_variable>
 
+#include "imview/buffer/buffer_interface.hpp"
+
 namespace quickviz {
 template <typename T>
-class DoubleBuffer {
+class DoubleBuffer : BufferInterface<T> {
  public:
   DoubleBuffer() : write_index_(0), ready_(false) {}
 
-  void Write(const T& data) {
+  std::size_t Write(const T& data) {
     {
       std::lock_guard<std::mutex> lock(mutex_);
       buffer_[write_index_] = data;     // Write to the active write buffer
@@ -27,9 +29,11 @@ class DoubleBuffer {
       ready_.store(true, std::memory_order_release);
     }
     cond_var_.notify_one();  // Notify the reader that new data is ready
+    
+    return 1;
   }
 
-  void Read(T& data) {
+  std::size_t Read(T& data) {
     std::unique_lock<std::mutex> lock(mutex_);
     // wait until data is ready
     cond_var_.wait(lock,
@@ -39,6 +43,8 @@ class DoubleBuffer {
     int read_index = 1 - write_index_;
     data = buffer_[read_index];
     ready_.store(false, std::memory_order_release);
+
+    return 1;
   }
 
   bool TryRead(T& data) {

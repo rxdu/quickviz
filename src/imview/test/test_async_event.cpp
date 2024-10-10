@@ -23,10 +23,8 @@ int main(int argc, char* argv[]) {
   auto a = std::get<0>(data);
   auto b = std::get<1>(data);
   auto c = std::get<2>(data);
-  std::cout << "Retrieved a = " << a << ", b = " << b << ", c = " << c
-            << std::endl;
+  std::cout << "Event a = " << a << ", b = " << b << ", c = " << c << std::endl;
 
-  AsyncEventDispatcher::Initialize(1);
   AsyncEventDispatcher::GetInstance().RegisterHandler(
       "test_event", [](std::shared_ptr<BaseEvent> event) {
         auto data =
@@ -42,6 +40,10 @@ int main(int argc, char* argv[]) {
   AsyncEventEmitter emitter;
   emitter.Emit<Event<int, double, std::string>>("test_event", 42, 3.14,
                                                 "hello");
+  emitter.Emit<Event<int, double, std::string>>("test_event", 21, 6.28,
+                                                "hello again");
+
+  AsyncEventDispatcher::GetInstance().HandleEvents();
 
   return 0;
 }

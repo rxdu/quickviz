@@ -18,34 +18,25 @@
 #include <queue>
 
 #include "imview/event/event.hpp"
+#include "imview/event/thread_safe_queue.hpp"
 
 namespace quickviz {
 class AsyncEventDispatcher {
  public:
-  using EventPtr = std::shared_ptr<BaseEvent>;
   using HandlerFunc = std::function<void(std::shared_ptr<BaseEvent>)>;
 
-  ~AsyncEventDispatcher();
-
   // public interface
-  static void Initialize(size_t num_threads);
   static AsyncEventDispatcher& GetInstance();
-  void RegisterHandler(const std::string& eventName, HandlerFunc handler);
+  void RegisterHandler(const std::string& event_name, HandlerFunc handler);
   void Dispatch(std::shared_ptr<BaseEvent> event);
+  void HandleEvents();
 
  private:
-  AsyncEventDispatcher(size_t num_threads);
+  AsyncEventDispatcher() = default;
 
-  static std::unique_ptr<AsyncEventDispatcher> instance_;
-
-  std::vector<std::thread> workers_;
-  std::queue<std::function<void()>> tasks_;
-  std::unordered_map<std::string, std::vector<HandlerFunc>> handlers_;
-
-  std::mutex queue_mutex_;
   std::mutex handler_mutex_;
-  std::condition_variable condition_;
-  bool stop_;
+  std::unordered_map<std::string, std::vector<HandlerFunc>> handlers_;
+  ThreadSafeQueue<std::shared_ptr<BaseEvent>> event_queue_;
 };
 }  // namespace quickviz
 

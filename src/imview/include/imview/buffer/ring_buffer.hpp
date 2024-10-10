@@ -55,14 +55,17 @@
 
 #include <mutex>
 #include <array>
+#include <vector>
 #include <iostream>
+
+#include "imview/buffer/buffer_interface.hpp"
 
 namespace quickviz {
 template <typename T = uint8_t, std::size_t N = 1024>
-class RingBuffer {
+class RingBuffer : BufferInterface<T> {
  public:
   // Init and reset of buffer
-  RingBuffer(bool enable_overwrite = false)
+  RingBuffer(bool enable_overwrite = true)
       : enable_overwrite_(enable_overwrite) {
     // assert size is a power of 2
     static_assert(
@@ -107,35 +110,53 @@ class RingBuffer {
   }
 
   // Read/Write functions
-  std::size_t ReadMultiple(T data[], std::size_t btr) {
+  // burst read/write functions
+  std::size_t Read(std::vector<T>& data, std::size_t btr) override {
+    assert(data.size() >= btr);
+    std::lock_guard<std::mutex> lock(buffer_mutex_);
+    // duplicated the read logic to avoid locking multiple times
     for (std::size_t i = 0; i < btr; ++i) {
-      if (ReadOne(&data[i]) == 0) return i;
+      if (read_index_ == write_index_) return i;
+      data[i] = buffer_[read_index_++ & size_mask_];
     }
     return btr;
   }
 
-  std::size_t PeekMultiple(T data[], std::size_t btp) {
+  std::size_t Peek(std::vector<T>& data, std::size_t btp) const {
+    assert(data.size() >= btp);
+    std::size_t count = 0;
     for (std::size_t i = 0; i < btp; ++i) {
-      if (PeekOneAt(&data[i], i) == 0) return i;
+      if (PeekAt(data[i], i) == 0) return i;
+      count++;
     }
-    return btp;
+    return count;
   }
 
-  std::size_t WriteMultiple(const T new_data[], std::size_t btw) {
+  std::size_t Write(const std::vector<T>& new_data, std::size_t btw) override {
+    assert(new_data.size() >= btw);
+    std::lock_guard<std::mutex> lock(buffer_mutex_);
+    // duplicated the write logic to avoid locking multiple times
     for (std::size_t i = 0; i < btw; ++i) {
-      if (WriteOne(new_data[i]) == 0) return i;
+      if (((write_index_ + 1) & size_mask_) == (read_index_ & size_mask_)) {
+        // return 0 if buffer is full and overwrite is disabled
+        if (!enable_overwrite_) return i;
+        // otherwise, advance the read_index to overwrite old data
+        read_index_ = (read_index_ + 1) & size_mask_;
+      }
+      buffer_[(write_index_++) & size_mask_] = new_data[i];
     }
     return btw;
   }
 
-  std::size_t Read(T &data) {
+  // single read/write functions
+  std::size_t Read(T& data) override {
     std::lock_guard<std::mutex> lock(buffer_mutex_);
     if (read_index_ == write_index_) return 0;  // Buffer is empty
     data = buffer_[read_index_++ & size_mask_];
     return 1;
   }
 
-  std::size_t PeekAt(T &data, size_t n) const {
+  std::size_t PeekAt(T& data, size_t n) const {
     std::lock_guard<std::mutex> lock(buffer_mutex_);
     // return 0 if requested data is beyond the available range
     if (n >= (write_index_ - read_index_) & size_mask_) return 0;
@@ -143,7 +164,7 @@ class RingBuffer {
     return 1;
   }
 
-  std::size_t Write(const T &new_data) {
+  std::size_t Write(const T& new_data) override {
     std::lock_guard<std::mutex> lock(buffer_mutex_);
     // equivalent to if(IsFull()), avoid locking twice
     if (((write_index_ + 1) & size_mask_) == (read_index_ & size_mask_)) {
@@ -168,10 +189,10 @@ class RingBuffer {
   }
 
  private:
-  std::array<T, N> buffer_;      // buffer memory to store data
-  std::size_t size_mask_;        // for internal indexing management
-  std::size_t write_index_ = 0;  // place new data to be written
-  std::size_t read_index_ = 0;   // place earliest written data to be read from
+  std::array<T, N> buffer_;        // buffer memory to store data
+  std::size_t size_mask_;          // for internal indexing management
+  std::size_t write_index_ = 0;    // new data to be written
+  std::size_t read_index_ = 0;     // the earliest written data to be read from
   bool enable_overwrite_ = false;  // enable buffer overwrite when full
 
   mutable std::mutex buffer_mutex_;

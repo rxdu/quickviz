@@ -6,10 +6,9 @@ pkg_check_modules(Fontconfig REQUIRED IMPORTED_TARGET fontconfig)
 # add library
 add_library(imview
     ## internal implementations
-    #    src/cairo_context.cpp
-    #    src/data_buffer.cpp
     src/yoga_utils.cpp
     ## public class
+    # ui components
     src/window.cpp
     src/viewer.cpp
     src/fonts.cpp
@@ -18,10 +17,15 @@ add_library(imview
     src/box.cpp
     src/layer.cpp
     #    src/popup.cpp
-    src/event/event_dispatcher.cpp
-    src/event/async_event_dispatcher.cpp
+    #    src/cairo_context.cpp
+    #    src/data_buffer.cpp
     #    src/cairo_widget.cpp
     #    src/cairo_draw.cpp
+    # widgets
+    src/widget/image_widget.cpp
+    # event handling
+    src/event/event_dispatcher.cpp
+    src/event/async_event_dispatcher.cpp
 )
 target_link_libraries(imview PUBLIC imcore yogacore PkgConfig::Cairo PkgConfig::Fontconfig)
 if (IMVIEW_WITH_GLAD)
@@ -33,7 +37,7 @@ target_include_directories(imview PUBLIC
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
-if (BUILD_TESTS)
+if (BUILD_TESTING)
   add_subdirectory(test)
 endif ()
 
