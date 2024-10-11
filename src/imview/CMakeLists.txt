@@ -23,8 +23,10 @@ add_library(imview
     #    src/data_buffer.cpp
     #    src/cairo_widget.cpp
     #    src/cairo_draw.cpp
+    # utils
+    src/utils/image_utils.cpp
     # widgets
-    src/widget/image_widget.cpp
+#    src/widget/image_widget.cpp
     # data buffer
     src/buffer/buffer_registry.cpp
     # event handling

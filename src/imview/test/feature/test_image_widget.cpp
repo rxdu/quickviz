@@ -20,10 +20,13 @@
 
 #include "scene_objects/gl_triangle_scene_object.hpp"
 #include "imview/widget/image_widget.hpp"
+#include "imview/utils/image_utils.hpp"
 
 using namespace quickviz;
 
-void CaptureVideo() {
+bool keep_running = true;
+
+void CaptureVideo(std::string buffer_name) {
   cv::VideoCapture cap(0);  // Open the default camera
   if (!cap.isOpened()) {
     std::cerr << "Error: Could not open video capture device." << std::endl;
@@ -31,9 +34,9 @@ void CaptureVideo() {
   }
 
   auto& buffer_registry = BufferRegistry::GetInstance();
-  auto cv_buffer = buffer_registry.GetBuffer<cv::Mat>("video_buffer");
+  auto cv_buffer = buffer_registry.GetBuffer<cv::Mat>(buffer_name);
 
-  while (true) {
+  while (keep_running) {
     cv::Mat frame;
     cap >> frame;  // Capture a new frame
     if (frame.empty()) {
@@ -47,25 +50,32 @@ void CaptureVideo() {
 }
 
 int main(int argc, char* argv[]) {
-  Viewer viewer;
-
+  // set up buffer first
+  std::string buffer_name = "video_buffer";
   auto& buffer_registry = BufferRegistry::GetInstance();
   std::shared_ptr<BufferInterface<cv::Mat>> cv_buffer =
-      std::make_shared<RingBuffer<cv::Mat, 8>>();
-  buffer_registry.AddBuffer("video_buffer", cv_buffer);
+      //      std::make_shared<RingBuffer<cv::Mat, 8>>();
+      std::make_shared<DoubleBuffer<cv::Mat>>();
+  buffer_registry.AddBuffer(buffer_name, cv_buffer);
 
-  // Start the video capture thread
-  std::thread capture_thread(CaptureVideo);
+  // set up video capture thread --> producer
+  std::thread capture_thread(CaptureVideo, buffer_name);
 
+  // set up viewer --> consumer
+  Viewer viewer;
   auto gl_triangle = std::make_shared<GLTriangleSceneObject>();
-  auto image_widget = std::make_shared<ImageWidget>();
+  viewer.AddSceneObject(gl_triangle);
+
+  auto image_widget = std::make_shared<ImageWidget<cv::Mat>>(
+      "camera", buffer_name, CopyTextureFromCvMat);
   image_widget->OnResize(300, 200);
   image_widget->SetPosition(0, 0);
-  viewer.AddSceneObject(gl_triangle);
   viewer.AddSceneObject(image_widget);
 
   viewer.Show();
 
+  // clean up
+  keep_running = false;
   capture_thread.join();
 
   return 0;
