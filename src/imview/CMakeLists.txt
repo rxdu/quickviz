@@ -3,6 +3,8 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(Cairo REQUIRED IMPORTED_TARGET cairo)
 pkg_check_modules(Fontconfig REQUIRED IMPORTED_TARGET fontconfig)
 
+find_package(OpenCV REQUIRED)
+
 # add library
 add_library(imview
     ## internal implementations
@@ -23,11 +25,13 @@ add_library(imview
     #    src/cairo_draw.cpp
     # widgets
     src/widget/image_widget.cpp
+    # data buffer
+    src/buffer/buffer_registry.cpp
     # event handling
     src/event/event_dispatcher.cpp
     src/event/async_event_dispatcher.cpp
 )
-target_link_libraries(imview PUBLIC imcore yogacore PkgConfig::Cairo PkgConfig::Fontconfig)
+target_link_libraries(imview PUBLIC imcore yogacore PkgConfig::Cairo PkgConfig::Fontconfig ${OpenCV_LIBS})
 if (IMVIEW_WITH_GLAD)
   target_link_libraries(imview PUBLIC glad)
   target_compile_definitions(imview PUBLIC IMVIEW_WITH_GLAD)

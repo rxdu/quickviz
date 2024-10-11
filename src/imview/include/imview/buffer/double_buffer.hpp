@@ -17,7 +17,7 @@
 
 namespace quickviz {
 template <typename T>
-class DoubleBuffer : BufferInterface<T> {
+class DoubleBuffer : public BufferInterface<T> {
  public:
   DoubleBuffer() : write_index_(0), ready_(false) {}
 
@@ -29,7 +29,7 @@ class DoubleBuffer : BufferInterface<T> {
       ready_.store(true, std::memory_order_release);
     }
     cond_var_.notify_one();  // Notify the reader that new data is ready
-    
+
     return 1;
   }
 

@@ -13,8 +13,13 @@
 #include <vector>
 
 namespace quickviz {
+class BufferBase {
+ public:
+  virtual ~BufferBase() = default;
+};
+
 template <typename T>
-class BufferInterface {
+class BufferInterface : public BufferBase {
  public:
   /// \brief Read data from the buffer
   /// \param data

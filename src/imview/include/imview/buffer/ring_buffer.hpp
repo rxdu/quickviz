@@ -62,7 +62,7 @@
 
 namespace quickviz {
 template <typename T = uint8_t, std::size_t N = 1024>
-class RingBuffer : BufferInterface<T> {
+class RingBuffer : public BufferInterface<T> {
  public:
   // Init and reset of buffer
   RingBuffer(bool enable_overwrite = true)
