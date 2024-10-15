@@ -2,6 +2,7 @@
  * ring_buffer.hpp
  *
  * Created on: Dec 08, 2019 22:22
+ * Updated on: Oct 2024
  * Description:
  *
  * Requirements:
@@ -20,15 +21,20 @@
  *  ^  ^
  *  R  W
  *
- * - Buffer gets full when last element X is inserted
- * [X][D][D][D]...[D]
- *     ^
- *    W/R (W>R)
+ * - Buffer gets full when last element X is inserted and W moves to N.
+ * The last position N will not be used for data storage because otherwise
+ * W will move to the same position with R after the write and we cannot
+ * differentiate between empty and full.
+ * [D][D][D][D]...[X][N]
+ *  ^                 ^
+ *  R                 W
  *
- * - Buffer data overwritten by new element Y after getting full
- * [X][Y][D][D]...[D]
- *        ^
- *       W/R (W>R)
+ * - Buffer data pointed by R is overwritten (? not readable) when a new element
+ * Y is inserted after the buffer is full. In other words, the R index is pushed
+ * forward by one position after the buffer is full.
+ * [?][D][D][D]...[X][Y]
+ *  ^  ^
+ *  W  R
  *
  * To differentiate between empty and full, one slot is always left empty before
  *  the read index. This is why the buffer size is N-1.
