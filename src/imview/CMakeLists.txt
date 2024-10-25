@@ -19,14 +19,15 @@ add_library(imview
     src/box.cpp
     src/layer.cpp
     #    src/popup.cpp
-    #    src/cairo_context.cpp
     #    src/data_buffer.cpp
-    #    src/cairo_widget.cpp
-    #    src/cairo_draw.cpp
     # utils
     src/utils/image_utils.cpp
     # widgets
-#    src/widget/image_widget.cpp
+    src/widget/cv_image_widget.cpp
+    src/widget/buffered_cv_image_widget.cpp
+    src/widget/cairo/cairo_context.cpp
+    src/widget/cairo/cairo_widget.cpp
+    src/widget/cairo/cairo_draw.cpp
     # data buffer
     src/buffer/buffer_registry.cpp
     # event handling

@@ -12,6 +12,7 @@
 #include <mutex>
 #include <memory>
 #include <unordered_map>
+#include <stdexcept>
 
 #include "imview/buffer/buffer_interface.hpp"
 

@@ -10,14 +10,13 @@
 #ifndef CAIRO_CONTEXT_HPP
 #define CAIRO_CONTEXT_HPP
 
-#include <cstdint>
-#include <stack>
-
 #include <cairo.h>
 #include <GL/gl.h>
 
+#include <cstdint>
+#include <stack>
+
 namespace quickviz {
-namespace swviz {
 class CairoContext {
   struct Scaler {
     double x;
@@ -74,7 +73,6 @@ class CairoContext {
   void CreateSurface();
   void GenGlTexture();
 };
-}  // namespace swviz
-}  // namespace xmotion
+}  // namespace quickviz
 
 #endif /* CAIRO_CONTEXT_HPP */

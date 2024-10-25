@@ -19,36 +19,29 @@
 
 #include "imgui.h"
 
-#include "imview/details/cairo_context.hpp"
+#include "imview/panel.hpp"
+#include "imview/widget/cairo/cairo_context.hpp"
 
 namespace quickviz {
-namespace swviz {
-class CairoWidget {
+class CairoWidget : public Panel {
  public:
-  CairoWidget(uint32_t width, uint32_t height,
+  CairoWidget(const std::string& widget_name, uint32_t width, uint32_t height,
               bool normalize_coordinate = false);
-  ~CairoWidget();
+  ~CairoWidget() override;
 
-  // load image texture (before entering rendering loop)
-  void LoadImage(std::string png_file);
+  void Draw() override;
+  void OnResize(float width, float height) override;
+
+  float GetAspectRatio() const;
 
   // resize/fill cairo surface
   void Resize(uint32_t width, uint32_t height);
   void Fill(ImVec4 color = {1, 1, 1, 0.6});
   void Clear();
 
-  float GetAspectRatio() const;
-
   // draw vector graphics with user function
   using CairoDrawFunc = std::function<void(cairo_t*)>;
   void Draw(CairoDrawFunc DrawFunc);
-
-  // draw from png image (avoid if possible, slow)
-  enum class ScaleMode { MANUAL, AUTO_STRETCH, AUTO_KEEP_ASPECT_RATIO };
-  void Draw(std::string png_file, double pos_x, double pos_y,
-            double angle = 0.0,
-            ScaleMode scale_mode = ScaleMode::AUTO_KEEP_ASPECT_RATIO,
-            double scale_x = 1.0, double scale_y = 1.0);
 
   // draw text to cairo surface
   void DrawText(std::string text, double pos_x, double pos_y,
@@ -64,11 +57,7 @@ class CairoWidget {
 
  private:
   std::unique_ptr<CairoContext> ctx_;
-  std::unordered_map<std::string, cairo_surface_t*> images_;
-
-  cairo_surface_t* GetImageSurface(std::string png_file);
 };
-}  // namespace swviz
-}  // namespace xmotion
+}  // namespace quickviz
 
 #endif /* CAIRO_WIDGET_HPP */

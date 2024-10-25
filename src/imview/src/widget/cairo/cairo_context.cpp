@@ -7,12 +7,11 @@
  * Copyright (c) 2021 Ruixiang Du (rdu)
  */
 
-#include "imview/details/cairo_context.hpp"
+#include "imview/widget/cairo//cairo_context.hpp"
 
 #include <iostream>
 
 namespace quickviz {
-namespace swviz {
 CairoContext::CairoContext(uint32_t width, uint32_t height,
                            bool normalize_coordinate)
     : width_(width),
@@ -107,5 +106,4 @@ GLuint CairoContext::RenderToGlTexture() {
 
   return image_texture_;
 }
-}  // namespace swviz
-}  // namespace xmotion
+}  // namespace quickviz
