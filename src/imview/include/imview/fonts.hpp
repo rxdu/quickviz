@@ -25,6 +25,7 @@ enum class FontSize {
 class Fonts {
  public:
   static void LoadFonts();
+  static void UnloadFonts();
   static ImFont *GetFont(FontSize size);
 };
 }  // namespace quickviz

@@ -15,28 +15,20 @@
 #include <fontconfig/fontconfig.h>
 
 namespace quickviz {
-CairoWidget::CairoWidget(const std::string& widget_name, uint32_t width,
-                         uint32_t height, bool normalize_coordinate)
-    : Panel(widget_name),
-      ctx_(new CairoContext(width, height, normalize_coordinate)) {}
+CairoWidget::CairoWidget(const std::string& widget_name,
+                         bool normalize_coordinate)
+    : Panel(widget_name), ctx_(new CairoContext(0, 0, normalize_coordinate)) {}
 
-CairoWidget::~CairoWidget() {
-  // font-related memory cleanup
-  // Reference:
-  // [1]
-  // https://stackoverflow.com/questions/51174295/cairo-show-text-memory-leak
-  // [2] https://gitlab.freedesktop.org/cairo/cairo/-/issues/393
-  cairo_debug_reset_static_data();
-  FcFini();
+void CairoWidget::Draw() {
+  Begin();
+  Render();
+  End();
 }
-
-void CairoWidget::Draw() {}
 
 void CairoWidget::OnResize(float width, float height) {
   Panel::OnResize(width, height);
+  ctx_->Resize(width, height);
 }
-
-float CairoWidget::GetAspectRatio() const { return ctx_->GetAspectRatio(); }
 
 void CairoWidget::Fill(ImVec4 color) {
   auto cr = ctx_->GetCairoObject();
@@ -52,15 +44,9 @@ void CairoWidget::Clear() {
   cairo_paint(cr);
 }
 
-void CairoWidget::Draw(CairoDrawFunc DrawFunc) {
-  assert(ctx_ != nullptr && ctx_->GetCairoObject() != NULL);
-
-  // do actual paint with cairo
-  DrawFunc(ctx_->GetCairoObject());
-}
-
-void CairoWidget::Resize(uint32_t width, uint32_t height) {
-  ctx_->Resize(width, height);
+void CairoWidget::AttachDrawFunction(CairoDrawFunc DrawFunc) {
+  std::lock_guard<std::mutex> lock(draw_func_mutex_);
+  draw_func_ = DrawFunc;
 }
 
 void CairoWidget::DrawText(std::string text, double pos_x, double pos_y,
@@ -88,6 +74,24 @@ void CairoWidget::DrawText(std::string text, double pos_x, double pos_y,
 
 void CairoWidget::Render(const ImVec2& uv0, const ImVec2& uv1,
                          const ImVec4& tint_col, const ImVec4& border_col) {
+  assert(ctx_ != nullptr && ctx_->GetCairoObject() != NULL);
+
+  // check if window size has changed
+  if (width_ == 0 || height_ == 0) return;
+  auto current_size = ImGui::GetWindowSize();
+  if (current_size.x != width_ || current_size.y != height_) {
+    OnResize(current_size.x, current_size.y);
+  }
+
+  // draw user-defined graphics
+  CairoDrawFunc draw_func;
+  {
+    std::lock_guard<std::mutex> lock(draw_func_mutex_);
+    draw_func = draw_func_;
+  }
+  draw_func(ctx_->GetCairoObject(), ctx_->GetAspectRatio());
+
+  // render cairo content to OpenGL texture
   GLuint image = ctx_->RenderToGlTexture();
   ImGui::Image((void*)(intptr_t)image, ImGui::GetContentRegionAvail(), uv0, uv1,
                tint_col, border_col);

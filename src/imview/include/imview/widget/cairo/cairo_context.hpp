@@ -26,9 +26,10 @@ class CairoContext {
  public:
   // default constructor: empty cairo surface
   CairoContext() = default;
-  // normalize coordinate so that drawing area will be x,y in [0, 1]
-  CairoContext(uint32_t width, uint32_t height,
-               bool normalize_coordinate = false);
+  // unify coordinate so that drawing area will be defined as:
+  // x (width): [0, 1.0 * aspect_ratio]
+  // y (height): [0, 1.0]
+  CairoContext(uint32_t width, uint32_t height, bool unify_coordinate = false);
 
   ~CairoContext();
 
@@ -61,7 +62,7 @@ class CairoContext {
 
   uint32_t width_;
   uint32_t height_;
-  bool normalize_coordinate_;
+  bool unified_coordinate_;
   std::stack<Scaler> scaler_stack_;
 
   cairo_surface_t* surface_ = nullptr;

@@ -13,10 +13,8 @@
 
 namespace quickviz {
 CairoContext::CairoContext(uint32_t width, uint32_t height,
-                           bool normalize_coordinate)
-    : width_(width),
-      height_(height),
-      normalize_coordinate_(normalize_coordinate) {
+                           bool unify_coordinate)
+    : width_(width), height_(height), unified_coordinate_(unify_coordinate) {
   // create cairo context
   CreateSurface();
   GenGlTexture();
@@ -58,8 +56,7 @@ void CairoContext::CreateSurface() {
         "[ERROR] create_cairo_context() - Couldn't create context\n");
   }
 
-  if (normalize_coordinate_) {
-    // auto min = std::min(width_, height_);
+  if (unified_coordinate_) {
     cairo_scale(cr_, height_, height_);
   }
 

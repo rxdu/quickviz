@@ -94,6 +94,7 @@ Viewer::Viewer(std::string title, uint32_t width, uint32_t height,
 }
 
 Viewer::~Viewer() {
+  Fonts::UnloadFonts();
   ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplGlfw_Shutdown();
   ImPlot::DestroyContext();

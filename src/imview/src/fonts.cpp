@@ -8,6 +8,8 @@
 
 #include "imview/fonts.hpp"
 
+#include <fontconfig/fontconfig.h>
+
 #include <unordered_map>
 
 #include "fonts/opensans_regular.hpp"
@@ -34,6 +36,17 @@ void Fonts::LoadFonts() {
       OpenSansRegular_compressed_data, OpenSansRegular_compressed_size, 32.f);
   custom_fonts_[FontSize::kFont40] = io.Fonts->AddFontFromMemoryCompressedTTF(
       OpenSansRegular_compressed_data, OpenSansRegular_compressed_size, 40.f);
+}
+
+void Fonts::UnloadFonts() {
+  ImGuiIO &io = ImGui::GetIO();
+  io.Fonts->ClearFonts();
+
+  // Reference:
+  // [1]
+  // https://stackoverflow.com/questions/51174295/cairo-show-text-memory-leak
+  // [2] https://gitlab.freedesktop.org/cairo/cairo/-/issues/393
+  FcFini();
 }
 
 ImFont *Fonts::GetFont(FontSize size) {

@@ -25,8 +25,8 @@ add_library(imview
     # widgets
     src/widget/cv_image_widget.cpp
     src/widget/buffered_cv_image_widget.cpp
+    src/widget/cairo_widget.cpp
     src/widget/cairo/cairo_context.cpp
-    src/widget/cairo/cairo_widget.cpp
     src/widget/cairo/cairo_draw.cpp
     # data buffer
     src/buffer/buffer_registry.cpp
