@@ -99,7 +99,7 @@ class RingBuffer : public BufferInterface<T> {
     return N - 1 - ((write_index_ - read_index_) & size_mask_);
   }
 
-  std::size_t GetOccupiedSize() const {
+  std::size_t GetOccupiedSize() const override {
     std::lock_guard<std::mutex> lock(buffer_mutex_);
     return (write_index_ - read_index_) & size_mask_;
   };

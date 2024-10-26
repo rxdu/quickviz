@@ -21,6 +21,10 @@ class BufferBase {
 template <typename T>
 class BufferInterface : public BufferBase {
  public:
+  /// \brief Get the number of bytes that can be read from the buffer
+  /// \return number of bytes that can be read
+  virtual std::size_t GetOccupiedSize() const = 0;
+
   /// \brief Read data from the buffer
   /// \param data
   /// \return 0 if failed, otherwise the number of bytes read (1)

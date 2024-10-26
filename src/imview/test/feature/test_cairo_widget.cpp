@@ -15,8 +15,6 @@
 #include "imview/viewer.hpp"
 #include "imview/widget/cairo_widget.hpp"
 
-#include "scene_objects/gl_triangle_scene_object.hpp"
-
 using namespace quickviz;
 
 void PaintUnifiedCoordinate(cairo_t* cr, float aspect_ratio) {
@@ -69,8 +67,6 @@ void Paint(cairo_t* cr, float aspect_ratio) {
 
 int main(int argc, char* argv[]) {
   Viewer viewer;
-//  auto gl_triangle = std::make_shared<GLTriangleSceneObject>();
-//  viewer.AddSceneObject(gl_triangle);
 
   auto cairo_widget = std::make_shared<CairoWidget>("cairo_unified", true);
   cairo_widget->OnResize(300, 200);

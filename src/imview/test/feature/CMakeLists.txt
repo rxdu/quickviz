@@ -12,3 +12,6 @@ target_link_libraries(test_buffered_cv_image_widget PRIVATE imview)
 
 add_executable(test_cairo_widget test_cairo_widget.cpp)
 target_link_libraries(test_cairo_widget PRIVATE imview)
+
+add_executable(test_implot_widget test_implot_widget.cpp)
+target_link_libraries(test_implot_widget PRIVATE imview)

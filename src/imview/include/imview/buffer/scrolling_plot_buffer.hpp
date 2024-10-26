@@ -1,5 +1,5 @@
 /*
- * data_buffer.hpp
+ * scrolling_plot_buffer.hpp
  *
  * Created on: Mar 25, 2021 14:29
  * Description: adapted from class ScrollingBuffer from implot_demo.cpp
@@ -7,8 +7,8 @@
  * Copyright (c) 2021 Ruixiang Du (rdu)
  */
 
-#ifndef PLOT_BUFFER_HPP
-#define PLOT_BUFFER_HPP
+#ifndef SCROLLING_PLOT_BUFFER_HPP
+#define SCROLLING_PLOT_BUFFER_HPP
 
 #include <cstdint>
 #include <mutex>
@@ -17,10 +17,9 @@
 #include "imgui.h"
 
 namespace quickviz {
-namespace swviz {
-class DataBuffer {
+class ScrollingPlotBuffer {
  public:
-  DataBuffer(uint32_t size = 2048);
+  ScrollingPlotBuffer(uint32_t size = 2048);
 
   void Resize(uint32_t size);
   std::size_t GetSize() const;
@@ -36,7 +35,6 @@ class DataBuffer {
   uint32_t buffer_size_ = 0;
   uint32_t offset_ = 0;
 };
-}  // namespace swviz
-}  // namespace xmotion
+}  // namespace quickviz
 
-#endif /* PLOT_BUFFER_HPP */
+#endif /* SCROLLING_PLOT_BUFFER_HPP */

@@ -19,7 +19,7 @@ add_library(imview
     src/box.cpp
     src/layer.cpp
     #    src/popup.cpp
-    #    src/data_buffer.cpp
+    src/buffer/scrolling_plot_buffer.cpp
     # utils
     src/utils/image_utils.cpp
     # widgets
@@ -28,6 +28,7 @@ add_library(imview
     src/widget/cairo_widget.cpp
     src/widget/cairo/cairo_context.cpp
     src/widget/cairo/cairo_draw.cpp
+    src/widget/rt_line_plot_widget.cpp
     # data buffer
     src/buffer/buffer_registry.cpp
     # event handling

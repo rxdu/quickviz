@@ -21,6 +21,8 @@ class DoubleBuffer : public BufferInterface<T> {
  public:
   DoubleBuffer() : write_index_(0), ready_(false) {}
 
+  std::size_t GetOccupiedSize() const override { return ready_.load() ? 1 : 0; }
+
   std::size_t Write(const T& data) {
     {
       std::lock_guard<std::mutex> lock(mutex_);
