@@ -1,4 +1,4 @@
-/* 
+/*
  * popup.cpp
  *
  * Created on 4/5/22 11:08 PM
@@ -12,8 +12,8 @@
 #include "imgui.h"
 
 namespace quickviz {
-bool swviz::ShowPopupNotification(std::string msg, std::string title,
-                                  float width, float height) {
+bool ShowPopupNotification(std::string msg, std::string title, float width,
+                           float height) {
   bool show_popup = true;
 
   ImGui::OpenPopup(title.c_str());
@@ -27,8 +27,8 @@ bool swviz::ShowPopupNotification(std::string msg, std::string title,
   ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
 
   if (ImGui::BeginPopupModal(
-      title.c_str(), NULL,
-      ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoResize)) {
+          title.c_str(), NULL,
+          ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoResize)) {
     ImGui::SetCursorPos(ImVec2(15, 40));
     ImGui::Text("%s", msg.c_str());
     ImGui::Text("\n");
@@ -47,4 +47,4 @@ bool swviz::ShowPopupNotification(std::string msg, std::string title,
 
   return show_popup;
 }
-}
+}  // namespace quickviz

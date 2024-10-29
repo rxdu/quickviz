@@ -21,6 +21,7 @@ set(GL_LOADER_SRC
 set(IMPLOT_SRC
     implot/implot.cpp
     implot/implot_items.cpp
+    implot/implot_demo.cpp
 )
 add_library(imcore ${IMGUI_CORE_SRC} ${IMGUI_BACKEND_SRC} ${IMPLOT_SRC})
 target_link_libraries(imcore PUBLIC glfw OpenGL::GL ${GLFW3_LIBRARY} ${CMAKE_DL_LIBS})

@@ -13,73 +13,42 @@
 #include <yoga/Yoga.h>
 
 namespace quickviz {
-namespace {
-void PrintYgLayout(YGNodeRef node, int indent = 0) {
-  for (int i = 0; i < indent; ++i) std::cout << "  ";
-  std::cout << "Size: "
-            << "X: " << YGNodeLayoutGetLeft(node)
-            << ", Y: " << YGNodeLayoutGetTop(node)
-            << ", Width: " << YGNodeLayoutGetWidth(node)
-            << ", Height: " << YGNodeLayoutGetHeight(node) << std::endl;
-
-  // Recursively print children nodes
-  for (uint32_t i = 0; i < YGNodeGetChildCount(node); ++i) {
-    PrintYgLayout(YGNodeGetChild(node, i), indent + 1);
-  }
-}
-}  // namespace
-
 Layer::Layer(std::string name) : SceneObject(name) {}
 
-void Layer::PrintLayout() const {
-  std::cout << "Layer: " << name_ << std::endl;
-  PrintYgLayout(yg_node_);
+void Layer::AddChild(std::shared_ptr<SceneObject> obj) {
+  if (obj == nullptr) return;
+  children_[obj->GetName()] = obj;
+  auto idx = YGNodeGetChildCount(yg_node_);
+  child_name_by_index_[idx] = obj->GetName();
+  YGNodeInsertChild(yg_node_, obj->GetYogaNode(), idx);
 }
 
-void Layer::AddResizableUiNode(std::shared_ptr<SceneObject> resizable) {
-  int idx = child_count_++;
-  resizables_[idx] = resizable;
-  YGNodeInsertChild(yg_node_, resizable->GetYogaNode(), idx);
-}
-
-void Layer::AddRenderable(std::shared_ptr<Renderable> obj) {
-  renderables_.push_back(obj);
+void Layer::RemoveChild(const std::string& name) {
+  for (auto& child : child_name_by_index_) {
+    if (child.second == name) {
+      child_name_by_index_.erase(child.first);
+      break;
+    }
+  }
+  auto it = children_.find(name);
+  if (it != children_.end()) {
+    YGNodeRemoveChild(yg_node_, it->second->GetYogaNode());
+    children_.erase(it);
+  }
 }
 
 void Layer::OnResize(float width, float height) {
-  // update root node size
-  YGNodeStyleSetWidth(yg_node_, width);
-  YGNodeStyleSetHeight(yg_node_, height);
-  YGNodeCalculateLayout(yg_node_, YGUndefined, YGUndefined, YGDirectionLTR);
-  for (auto resizable : resizables_) {
-    resizable.second->OnResize(width, height);
+  for (auto child : children_) {
+    child.second->OnResize(width, height);
   }
-
-  for (uint32_t i = 0; i < YGNodeGetChildCount(yg_node_); ++i) {
-    auto child = YGNodeGetChild(yg_node_, i);
-    resizables_[i]->SetPosition(YGNodeLayoutGetLeft(child),
-                                YGNodeLayoutGetTop(child));
-    resizables_[i]->OnResize(YGNodeLayoutGetWidth(child),
-                             YGNodeLayoutGetHeight(child));
-  }
-
-  PrintLayout();
 }
 
 void Layer::OnRender() {
   if (!visible_) return;
 
   //  std::cout << "Rendering Layer: " << name_ << std::endl;
-  //  std::cout << " - number of resizables: " << resizables_.size() <<
-  //  std::endl;
-  for (auto resizable : resizables_) {
-    if (resizable.second->IsVisible()) resizable.second->OnRender();
-  }
-
-  //  std::cout << " - number of renderables: " << renderables_.size() <<
-  //  std::endl;
-  for (auto renderable : renderables_) {
-    if (renderable->IsVisible()) renderable->OnRender();
+  for (auto child : children_) {
+    if (child.second->IsVisible()) child.second->OnRender();
   }
 }
 }  // namespace quickviz

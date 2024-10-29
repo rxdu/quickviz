@@ -3,26 +3,39 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(Cairo REQUIRED IMPORTED_TARGET cairo)
 pkg_check_modules(Fontconfig REQUIRED IMPORTED_TARGET fontconfig)
 
+find_package(OpenCV REQUIRED)
+
 # add library
 add_library(imview
     ## internal implementations
-    #    src/cairo_context.cpp
-    #    src/data_buffer.cpp
-    ## helper classv
-    src/fonts.cpp
-    src/layer.cpp
-    src/gl_layer.cpp
     src/yoga_utils.cpp
-    src/scene_object.cpp
     ## public class
+    # ui components
     src/window.cpp
     src/viewer.cpp
+    src/fonts.cpp
+    src/scene_object.cpp
     src/panel.cpp
+    src/box.cpp
+    src/layer.cpp
     #    src/popup.cpp
-    #    src/cairo_widget.cpp
-    #    src/cairo_draw.cpp
+    src/buffer/scrolling_plot_buffer.cpp
+    # utils
+    src/utils/image_utils.cpp
+    # widgets
+    src/widget/cv_image_widget.cpp
+    src/widget/buffered_cv_image_widget.cpp
+    src/widget/cairo_widget.cpp
+    src/widget/cairo/cairo_context.cpp
+    src/widget/cairo/cairo_draw.cpp
+    src/widget/rt_line_plot_widget.cpp
+    # data buffer
+    src/buffer/buffer_registry.cpp
+    # event handling
+    src/event/event_dispatcher.cpp
+    src/event/async_event_dispatcher.cpp
 )
-target_link_libraries(imview PUBLIC imcore yogacore PkgConfig::Cairo PkgConfig::Fontconfig)
+target_link_libraries(imview PUBLIC imcore yogacore PkgConfig::Cairo PkgConfig::Fontconfig ${OpenCV_LIBS})
 if (IMVIEW_WITH_GLAD)
   target_link_libraries(imview PUBLIC glad)
   target_compile_definitions(imview PUBLIC IMVIEW_WITH_GLAD)
@@ -32,7 +45,7 @@ target_include_directories(imview PUBLIC
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
-if (BUILD_TESTS)
+if (BUILD_TESTING)
   add_subdirectory(test)
 endif ()
 

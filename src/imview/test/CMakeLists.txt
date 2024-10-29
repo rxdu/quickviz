@@ -1,9 +1,30 @@
 ## feature test
 add_subdirectory(feature)
 
+## unit test
+add_subdirectory(unit_test)
+
 ## additional tests/sample
 add_executable(test_window_gl_triangle test_window_gl_triangle.cpp)
 target_link_libraries(test_window_gl_triangle PRIVATE imview)
+
+add_executable(test_box test_box.cpp)
+target_link_libraries(test_box PRIVATE imview)
+
+add_executable(test_event test_event.cpp)
+target_link_libraries(test_event PRIVATE imview)
+
+add_executable(test_async_event test_async_event.cpp)
+target_link_libraries(test_async_event PRIVATE imview)
+
+find_package(OpenCV QUIET)
+if (OpenCV_FOUND)
+  add_executable(test_double_buffer test_double_buffer.cpp)
+  target_link_libraries(test_double_buffer PRIVATE imview ${OpenCV_LIBS})
+
+  add_executable(test_ring_buffer test_ring_buffer.cpp)
+  target_link_libraries(test_ring_buffer PRIVATE imview ${OpenCV_LIBS})
+endif ()
 
 #add_executable(test_panel test_panel.cpp)
 #target_link_libraries(test_panel imview)

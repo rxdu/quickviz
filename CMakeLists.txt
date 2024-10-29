@@ -8,8 +8,6 @@ endif()
 
 project(quickviz VERSION 0.2.0)
 
-set(BUILD_TESTING on)
-
 ## Project Options
 option(BUILD_TESTING "Build tests" ON)
 option(STATIC_CHECK "Perform static check" OFF)
@@ -39,8 +37,8 @@ set(USER_CMAKE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 list(APPEND CMAKE_MODULE_PATH "${USER_CMAKE_PATH}/modules")
 list(APPEND CMAKE_PREFIX_PATH "/usr/lib/${CMAKE_SYSTEM_PROCESSOR}-linux-gnu/cmake")
 
-## Set compiler to use c++ 14 features
-set(CMAKE_CXX_STANDARD 14)
+## Set compiler to use c++ 17 features
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -67,19 +65,17 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}
 if(PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME AND BUILD_TESTING)
     enable_testing()
     include(GoogleTest)
-    set(BUILD_TESTS ON)
     # add_subdirectory(tests)
     message(STATUS "Tests will be built")
 else()
-    set(BUILD_TESTS OFF)
     message(STATUS "Tests will not be built")
 endif()
 
 ## Add source directory
 add_subdirectory(src)
 
-add_library(quickviz INTERFACE)
-target_link_libraries(quickviz INTERFACE imcore imview cvdraw)
+#add_library(quickviz INTERFACE)
+#target_link_libraries(quickviz INTERFACE imcore imview cvdraw)
 
 ## Installation setup
 message(STATUS "Project will be installed to ${CMAKE_INSTALL_PREFIX} with 'make install'")

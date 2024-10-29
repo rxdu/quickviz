@@ -14,8 +14,9 @@
 namespace quickviz {
 class OpenGLSceneObject : public SceneObject {
  public:
-  OpenGLSceneObject(float r = 1.0, float g = 0.0, float b = 0.0)
-      : SceneObject("OpenGLPanel"), r(r), g(g), b(b) {};
+  OpenGLSceneObject(std::string name, float r = 1.0, float g = 0.0,
+                    float b = 0.0)
+      : SceneObject(name), r(r), g(g), b(b) {};
 
   void OnRender() override {
     glEnable(GL_SCISSOR_TEST);

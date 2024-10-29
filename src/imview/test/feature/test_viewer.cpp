@@ -10,47 +10,77 @@
 #include <iostream>
 
 #include "imview/viewer.hpp"
-#include "imview/ui_panel.hpp"
-#include "imview/gl_layer.hpp"
+#include "imview/box.hpp"
 
-#include "scene_objects/imtext_scene_object.hpp"
+#include "scene_objects/imtext_panel.hpp"
+#include "scene_objects/imgui_fixed_panel.hpp"
 #include "scene_objects/opengl_scene_object.hpp"
 #include "scene_objects/gl_triangle_scene_object.hpp"
 
 using namespace quickviz;
 
-class FirstLayer : public GlLayer {
+class FirstLayer : public Box {
  public:
-  FirstLayer() : GlLayer("FirstLayer") {
+  FirstLayer() : Box("PrimaryGlBox") {
     this->SetFlexDirection(Styling::FlexDirection::kColumn);
-    //    this->SetJustifyContent(Styling::JustifyContent::kSpaceBetween);
+    this->SetJustifyContent(Styling::JustifyContent::kFlexStart);
 
-    auto panel1 = std::make_shared<OpenGLSceneObject>(1.0, 0, 0);
+    auto panel1 = std::make_shared<OpenGLSceneObject>("text1", 1.0, 0, 0);
     panel1->SetHeight(50);
-    this->AddResizableUiNode(panel1);
+    this->AddChild(panel1);
 
-    auto panel2 = std::make_shared<OpenGLSceneObject>(0, 1.0, 0);
+    auto panel2 = std::make_shared<OpenGLSceneObject>("text2", 0, 1.0, 0);
     panel2->SetHeight(60);
-    this->AddResizableUiNode(panel2);
+    this->AddChild(panel2);
 
-    auto panel4 = std::make_shared<OpenGLSceneObject>(0, 0, 1.0);
-    panel4->SetHeight(70);
-    this->AddResizableUiNode(panel4);
+    auto panel3 = std::make_shared<OpenGLSceneObject>("text3", 0, 0, 1.0);
+    panel3->SetHeight(70);
+    this->AddChild(panel3);
 
-    //    auto panel5 = std::make_shared<GLTrianglePanel>();
-    //    panel5->SetHeight(400);
-    //    this->AddResizableUiNode(panel5);
+    auto panel4 = std::make_shared<GLTriangleSceneObject>();
+    panel4->SetMinHeight(400);
+    this->AddChild(panel4);
   }
 };
 
-class SecondLayer : public Layer {
+class SecondLayer : public Box {
  public:
-  SecondLayer() : Layer("SecondLayer") {
-    this->SetFlexDirection(Styling::FlexDirection::kColumn);
+  SecondLayer() : Box("PrimaryUiBox") {
+    this->SetFlexDirection(Styling::FlexDirection::kRow);
 
-    auto panel1 = std::make_shared<ImTextSceneObject>();
-    panel1->SetHeight(100);
-    this->AddResizableUiNode(panel1);
+    auto left = std::make_shared<Box>("LeftBox");
+    left->SetWidth(500);
+    {
+      left->SetFlexDirection(Styling::FlexDirection::kColumn);
+
+      auto panel1 = std::make_shared<ImGuiFixedPanel>("left-imgui1");
+      panel1->SetHeight(100);
+      left->AddChild(panel1);
+
+      auto panel2 = std::make_shared<ImGuiFixedPanel>("left-imgui2");
+      panel2->SetHeight(200);
+      left->AddChild(panel2);
+
+      auto panel3 = std::make_shared<ImGuiFixedPanel>("left-imgui3");
+      panel3->SetHeight(250);
+      left->AddChild(panel3);
+    }
+    this->AddChild(left);
+
+    auto right = std::make_shared<Box>("RightBox");
+    right->SetFlexGrow(1);
+    {
+      right->SetFlexDirection(Styling::FlexDirection::kColumn);
+
+      auto panel4 = std::make_shared<ImGuiFixedPanel>("right-imgui1");
+      panel4->SetHeight(500);
+      right->AddChild(panel4);
+
+      auto panel5 = std::make_shared<ImGuiFixedPanel>("right-imgui2");
+      panel5->SetHeight(300);
+      right->AddChild(panel5);
+    }
+    this->AddChild(right);
   }
 };
 
@@ -72,16 +102,16 @@ int main(int argc, char* argv[]) {
   Viewer viewer;
 
   if (opt == 0) {
-    auto obj1 = std::make_shared<ImTextSceneObject>("Panel1");
+    auto obj1 = std::make_shared<ImTextPanel>("Panel1");
     viewer.AddSceneObject(obj1);
 
-    auto obj2 = std::make_shared<ImTextSceneObject>("Panel2");
+    auto obj2 = std::make_shared<ImTextPanel>("Panel2");
     viewer.AddSceneObject(obj2);
   } else if (opt == 1) {
-    auto obj1 = std::make_shared<ImTextSceneObject>("UiObject");
+    auto obj1 = std::make_shared<ImTextPanel>("UiObject");
     viewer.AddSceneObject(obj1);
 
-    auto obj2 = std::make_shared<OpenGLSceneObject>(0, 0.6, 0.6);
+    auto obj2 = std::make_shared<OpenGLSceneObject>("obj2", 0, 0.6, 0.6);
     obj2->SetPosition(0, 0);
     obj2->OnResize(viewer.GetWidth(), viewer.GetHeight() / 2.0);
     viewer.AddSceneObject(obj2);
@@ -91,11 +121,11 @@ int main(int argc, char* argv[]) {
     obj3->OnResize(viewer.GetWidth(), viewer.GetHeight() / 2.0);
     viewer.AddSceneObject(obj3);
   } else if (opt == 2) {
-    auto layer1 = std::make_shared<FirstLayer>();
-    viewer.AddSceneObject(layer1);
+    //    auto layer1 = std::make_shared<FirstLayer>();
+    //    viewer.AddSceneObject(layer1);
 
-    //    auto layer2 = std::make_shared<SecondLayer>();
-    //    viewer.AddSceneObject(layer2);
+    auto layer2 = std::make_shared<SecondLayer>();
+    viewer.AddSceneObject(layer2);
   } else {
     std::cout << "Invalid option" << std::endl;
     return -1;

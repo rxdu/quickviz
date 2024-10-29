@@ -10,10 +10,10 @@ core of the framework is a library named "imview". imview is designed to be flex
 * For GUI applications, imview provides automatic layout management and commonly used UI widgets such as buttons,
   sliders, and text boxes.
 
-An app named "quickviz" is provided for data visualization with [libxmotion](https://github.com/rxdu/libxmotion). It
-also serves as an example of how to use the imview library.
-
-Design of imview is documented in [docs/imview_design.md](docs/imview_design.md).
+An app named "quickviz" is provided with commonly used data visualization functions (to support development
+of [libxmotion](https://github.com/rxdu/libxmotion)). It also serves as an example of how to use the imview library.
+Design of imview is documented in [docs/imview_design.md](docs/imview_design.md). If you are interested in using the
+imview library in your own project, it's recommended to read this design document first.
 
 ## Build
 
@@ -67,6 +67,7 @@ The library is built on top of a few third-party libraries, you can refer to the
 * imgui demo: src/third_party/imcore/imgui/imgui_demo.cpp
 * implot demo: src/third_party/imcore/implot/implot_demo.cpp
 * cairo docs: https://cairographics.org/documentation/
+* yoga layout docs: https://www.yogalayout.dev/docs/styling/
 
 Online demo of imgui and implot:
 

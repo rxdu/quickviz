@@ -1,8 +1,8 @@
 /*
  * @file layer.hpp
  * @date 9/29/24
- * @brief a layer contains one or more panel objects and is responsible for
- * automatic layout and rendering of the panels
+ * @brief a layer groups multiple scene objects into a logical unit and is
+ *  used for event handling and rendering management
  *
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
@@ -14,33 +14,25 @@
 #include <unordered_map>
 #include <memory>
 
+#include "imview/interface/container.hpp"
 #include "imview/scene_object.hpp"
-#include "imview/panel.hpp"
 
 namespace quickviz {
-class Layer : public SceneObject {
+class Layer : public SceneObject, public Container {
  public:
   explicit Layer(std::string name);
   virtual ~Layer() = default;
 
-  // do not allow copy or move
-  Layer(const Layer &other) = delete;
-  Layer(Layer &&other) = delete;
-  Layer &operator=(const Layer &other) = delete;
-  Layer &operator=(Layer &&other) = delete;
-
   // public methods
-  void PrintLayout() const;
-
-  void AddResizableUiNode(std::shared_ptr<SceneObject> resizable);
-  void AddRenderable(std::shared_ptr<Renderable> renderable);
+  void AddChild(std::shared_ptr<SceneObject> obj);
+  void RemoveChild(const std::string &name);
 
   void OnResize(float width, float height) override;
   void OnRender() override;
 
  protected:
-  std::unordered_map<size_t, std::shared_ptr<SceneObject>> resizables_;
-  std::vector<std::shared_ptr<Renderable>> renderables_;
+  std::unordered_map<std::string, std::shared_ptr<SceneObject>> children_;
+  std::unordered_map<size_t, std::string> child_name_by_index_;
 };
 }  // namespace quickviz
 

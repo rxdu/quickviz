@@ -1,43 +1,71 @@
 /*
- * @file panel.hpp
- * @date 9/29/24
- * @brief a panel is defined as a region that contains one or more renderable
- * objects within a window
+ * panel.hpp
  *
- * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
+ * Created on 4/3/22 11:07 PM
+ * Description: a panel represents a GUI window that can be rendered by ImGui
+ *
+ * Copyright (c) 2022 Ruixiang Du (rdu)
  */
 
-#ifndef QUICKVIZ_PANEL_HPP
-#define QUICKVIZ_PANEL_HPP
+#ifndef ROBOSW_SRC_VISUALIZATION_IMVIEW_INCLUDE_IMVIEW_PANEL_HPP
+#define ROBOSW_SRC_VISUALIZATION_IMVIEW_INCLUDE_IMVIEW_PANEL_HPP
 
 #include <string>
-#include <memory>
-#include <vector>
 
+#include "imgui.h"
 #include "imview/scene_object.hpp"
 
 namespace quickviz {
 class Panel : public SceneObject {
  public:
-  Panel(std::string name = "Panel");
-  virtual ~Panel();
+  Panel(std::string name);
+  virtual ~Panel() = default;
 
-  // do not allow copy or move
-  Panel(const Panel &other) = delete;
-  Panel(Panel &&other) = delete;
-  Panel &operator=(const Panel &other) = delete;
-  Panel &operator=(Panel &&other) = delete;
-
-  // public methods
-  void AddRenderable(std::shared_ptr<Renderable> renderable);
-
-  void SetPosition(float x, float y) override;
-  void OnResize(float width, float height) override;
+  // public API
+  void SetAutoLayout(bool value);
   void OnRender() override;
 
  protected:
-  std::vector<std::shared_ptr<Renderable>> renderables_;
+  // for derived classes
+  void Begin(bool *p_open = NULL);
+  void End();
+
+  void SetNoTitleBar(bool value);
+  void SetNoResize(bool value);
+  void SetNoMove(bool value);
+  void SetNoScrollbar(bool value);
+  void SetNoScrollWithMouse(bool value);
+  void SetNoCollapse(bool value);
+  void SetAlwaysAutoResize(bool value);
+  void SetNoBackground(bool value);
+  void SetNoSavedSettings(bool value);
+  void SetNoMouseInputs(bool value);
+  void SetMenuBar(bool value);
+  void SetHorizontalScrollbar(bool value);
+  void SetNoFocusOnAppearing(bool value);
+  void SetNoBringToFrontOnFocus(bool value);
+  void SetAlwaysVerticalScrollbar(bool value);
+  void SetAlwaysHorizontalScrollbar(bool value);
+  void SetNoNavInputs(bool value);
+  void SetNoNavFocus(bool value);
+  void SetUnsavedDocument(bool value);
+  void SetNoDocking(bool value);
+  void SetNoNav();
+  void SetNoDecoration();
+  void SetNoInputs();
+
+  void SetWindowNoMenuButton();
+  void SetWindowNoTabBar();
+  void SetWindowHiddenTabBar();
+  void SetWindowNoCloseButton();
+
+  virtual void Draw() = 0;
+
+ private:
+  bool auto_layout_ = false;
+  ImGuiWindowFlags flags_ = ImGuiWindowFlags_None;
+  ImGuiWindowClass window_class_;
 };
 }  // namespace quickviz
 
-#endif  // QUICKVIZ_PANEL_HPP
+#endif  // ROBOSW_SRC_VISUALIZATION_IMVIEW_INCLUDE_IMVIEW_PANEL_HPP
