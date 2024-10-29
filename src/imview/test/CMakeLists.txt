@@ -17,6 +17,9 @@ target_link_libraries(test_event PRIVATE imview)
 add_executable(test_async_event test_async_event.cpp)
 target_link_libraries(test_async_event PRIVATE imview)
 
+add_executable(test_framebuffer test_framebuffer.cpp)
+target_link_libraries(test_framebuffer PRIVATE imview)
+
 find_package(OpenCV QUIET)
 if (OpenCV_FOUND)
   add_executable(test_double_buffer test_double_buffer.cpp)

@@ -8,6 +8,7 @@
 
 #include "imview/widget/cv_image_widget.hpp"
 
+#include "glad/glad.h"
 #include "imview/utils/image_utils.hpp"
 
 namespace quickviz {

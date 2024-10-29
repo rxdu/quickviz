@@ -26,9 +26,11 @@ add_library(imview
     src/widget/cv_image_widget.cpp
     src/widget/buffered_cv_image_widget.cpp
     src/widget/cairo_widget.cpp
-    src/widget/cairo/cairo_context.cpp
-    src/widget/cairo/cairo_draw.cpp
+    src/widget/details/cairo_context.cpp
+    src/widget/details/cairo_draw.cpp
     src/widget/rt_line_plot_widget.cpp
+    src/widget/gl_scene_widget.cpp
+    src/widget/details/gl_frame_buffer.cpp
     # data buffer
     src/buffer/buffer_registry.cpp
     # event handling
