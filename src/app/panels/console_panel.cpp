@@ -14,7 +14,7 @@ namespace quickviz {
 ConsolePanel::ConsolePanel(std::string name) : Panel(name) {
   this->SetAutoLayout(false);
   this->SetNoResize(true);
-//  this->SetNoMove(true);
+  //  this->SetNoMove(true);
   this->SetWindowNoMenuButton();
 }
 

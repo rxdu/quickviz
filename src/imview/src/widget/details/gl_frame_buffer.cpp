@@ -71,8 +71,8 @@ void GlFrameBuffer::Bind() const {
 
 void GlFrameBuffer::Unbind() const { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
 
-void GlFrameBuffer::Clear() const {
-  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+void GlFrameBuffer::Clear(float r, float g, float b, float a) const {
+  glClearColor(r, g, b, a);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
@@ -85,7 +85,5 @@ void GlFrameBuffer::Resize(uint32_t width, uint32_t height) {
   // delete old buffers and create new ones
   DestroyBuffers();
   CreateBuffers();
-
-  std::cout << "new frame buffer id: " << frame_buffer_ << std::endl;
 }
 }  // namespace quickviz

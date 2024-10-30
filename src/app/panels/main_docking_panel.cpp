@@ -17,6 +17,8 @@ MainDockingPanel::MainDockingPanel(std::string name) : Panel(name) {
   this->SetNoResize(true);
   this->SetNoTitleBar(true);
   this->SetNoBackground(true);
+
+  gl_scene_widget_.SetNoMove(true);
 }
 
 void MainDockingPanel::Draw() {
@@ -30,14 +32,14 @@ void MainDockingPanel::Draw() {
       dockspace_id_ = ImGui::DockBuilderAddNode();
 
       ImGui::DockBuilderSplitNode(dockspace_id_, ImGuiDir_Left, 0.2f,
-                                  &config_panel_node_, &scene_panel_node_);
-      ImGui::DockBuilderSplitNode(scene_panel_node_, ImGuiDir_Up, 0.8f,
-                                  &scene_panel_node_, &console_panel_node_);
+                                  &config_panel_node_, &gl_scene_widget_node_);
+      ImGui::DockBuilderSplitNode(gl_scene_widget_node_, ImGuiDir_Up, 0.8f,
+                                  &gl_scene_widget_node_, &console_panel_node_);
 
       ImGui::DockBuilderDockWindow(config_panel_.GetName().c_str(),
                                    config_panel_node_);
-      ImGui::DockBuilderDockWindow(scene_panel_.GetName().c_str(),
-                                   scene_panel_node_);
+      ImGui::DockBuilderDockWindow(gl_scene_widget_.GetName().c_str(),
+                                   gl_scene_widget_node_);
       ImGui::DockBuilderDockWindow(console_panel_.GetName().c_str(),
                                    console_panel_node_);
 
@@ -52,6 +54,6 @@ void MainDockingPanel::Draw() {
   // draw child panels
   if (config_panel_.IsVisible()) config_panel_.Draw();
   if (console_panel_.IsVisible()) console_panel_.Draw();
-  if (scene_panel_.IsVisible()) scene_panel_.Draw();
+  if (gl_scene_widget_.IsVisible()) gl_scene_widget_.Draw();
 }
 }  // namespace quickviz

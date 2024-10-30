@@ -26,8 +26,9 @@ class GlFrameBuffer {
   // public methods
   void Bind() const;
   void Unbind() const;
-  void Clear() const;
-  uint32_t GetTextureId() const { return texture_id_; }
+  void Clear(float r = 0.0, float g = 0.0, float b = 0.0,
+             float a = 1.0) const;
+  uint32_t GetTextureId() const { return texture_buffer_; }
 
   uint32_t GetWidth() const { return width_; }
   uint32_t GetHeight() const { return height_; }
@@ -39,7 +40,6 @@ class GlFrameBuffer {
 
   uint32_t width_;
   uint32_t height_;
-  uint32_t texture_id_;
   uint32_t frame_buffer_;
   uint32_t texture_buffer_;
   uint32_t render_buffer_;
