@@ -63,9 +63,16 @@ void GlFrameBuffer::DestroyBuffers() {
   render_buffer_ = 0;
 }
 
-void GlFrameBuffer::Bind() const {
+void GlFrameBuffer::Bind(bool keep_aspect_ratio) const {
   glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_);
-  glViewport(0, 0, width_, height_);
+  if (keep_aspect_ratio) {
+    float square_size = std::min(width_, height_);
+    int x_offset = (width_ - square_size) / 2;
+    int y_offset = (height_ - square_size) / 2;
+    glViewport(x_offset, y_offset, square_size, square_size);
+  } else {
+    glViewport(0, 0, width_, height_);
+  }
   glEnable(GL_DEPTH_TEST);
 }
 

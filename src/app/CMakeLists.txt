@@ -4,9 +4,8 @@ if (BUILD_QUICKVIZ_APP)
       # components
       quickviz_application.cpp
       # panels
+      panels/menu_bar.cpp
       panels/main_docking_panel.cpp
-      panels/config_panel.cpp
-      panels/scene_panel.cpp
       panels/config_panel.cpp
       panels/console_panel.cpp)
   target_link_libraries(quickviz PRIVATE imview)

@@ -191,6 +191,10 @@ void Viewer::EnableGamepadNav(bool enable) {
   }
 }
 
+void Viewer::SetWindowShouldClose() {
+  glfwSetWindowShouldClose(win_, GLFW_TRUE);
+}
+
 void Viewer::ClearBackground() {
   int display_w, display_h;
   glfwGetFramebufferSize(win_, &display_w, &display_h);
@@ -227,7 +231,8 @@ bool Viewer::AddSceneObject(std::shared_ptr<SceneObject> obj) {
 }
 
 void Viewer::OnResize(GLFWwindow *window, int width, int height) {
-  std::cout << "-- Viewer::OnResize: " << width << "x" << height << std::endl;
+  //  std::cout << "-- Viewer::OnResize: " << width << "x" << height <<
+  //  std::endl;
   for (auto &obj : scene_objects_) {
     obj->OnResize(width, height);
   }

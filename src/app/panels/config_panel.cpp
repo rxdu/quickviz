@@ -14,8 +14,9 @@ namespace quickviz {
 ConfigPanel::ConfigPanel(std::string name) : Panel(name) {
   this->SetAutoLayout(false);
   this->SetNoResize(true);
-  //  this->SetNoMove(true);
+  this->SetNoMove(true);
   this->SetWindowNoMenuButton();
+  this->SetWindowNoTabBar();
 }
 
 void ConfigPanel::Draw() {

@@ -14,9 +14,11 @@
 namespace quickviz {
 // enum class FontSize { Tiny, Small, Normal, Big, Large, ExtraLarge };
 enum class FontSize {
+  kDefault = 0,
   kFont16 = 16,
   kFont18 = 18,
   kFont20 = 20,
+  kFont24 = 24,
   kFont28 = 28,
   kFont32 = 32,
   kFont40 = 40

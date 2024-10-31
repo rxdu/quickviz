@@ -24,10 +24,9 @@ class GlFrameBuffer {
   GlFrameBuffer& operator=(GlFrameBuffer&&) = delete;
 
   // public methods
-  void Bind() const;
+  void Bind(bool keep_aspect_ratio = true) const;
   void Unbind() const;
-  void Clear(float r = 0.0, float g = 0.0, float b = 0.0,
-             float a = 1.0) const;
+  void Clear(float r = 0.0, float g = 0.0, float b = 0.0, float a = 1.0) const;
   uint32_t GetTextureId() const { return texture_buffer_; }
 
   uint32_t GetWidth() const { return width_; }

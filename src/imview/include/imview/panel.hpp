@@ -23,6 +23,7 @@ class Panel : public SceneObject {
 
   // public API
   void SetAutoLayout(bool value);
+  bool IsAutoLayout() const;
   void OnRender() override;
 
   void SetNoTitleBar(bool value);

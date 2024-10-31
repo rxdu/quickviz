@@ -8,22 +8,26 @@
 
 #include "panels/main_docking_panel.hpp"
 
+#include "imgui.h"
 #include "imgui_internal.h"
 
 namespace quickviz {
 MainDockingPanel::MainDockingPanel(std::string name) : Panel(name) {
-  this->SetAutoLayout(false);
+  this->SetAutoLayout(true);
   this->SetNoMove(true);
   this->SetNoResize(true);
   this->SetNoTitleBar(true);
   this->SetNoBackground(true);
 
   gl_scene_widget_.SetNoMove(true);
+  gl_scene_widget_.SetWindowNoTabBar();
 }
 
 void MainDockingPanel::Draw() {
-  ImGui::SetNextWindowSize(ImVec2(width_, height_));
-  ImGui::SetNextWindowPos(ImVec2(0, 0));
+  if (!IsAutoLayout()) {
+    ImGui::SetNextWindowSize(ImVec2(width_, height_));
+    ImGui::SetNextWindowPos(ImVec2(0, 0));
+  }
 
   // set up layout
   Begin();
@@ -49,11 +53,16 @@ void MainDockingPanel::Draw() {
     ImGui::DockBuilderSetNodePos(dockspace_id_, ImGui::GetWindowPos());
     ImGui::DockBuilderSetNodeSize(dockspace_id_, ImGui::GetWindowSize());
   }
-  End();
 
   // draw child panels
   if (config_panel_.IsVisible()) config_panel_.Draw();
   if (console_panel_.IsVisible()) console_panel_.Draw();
   if (gl_scene_widget_.IsVisible()) gl_scene_widget_.Draw();
+
+  End();
+}
+
+void MainDockingPanel::ChangeDebugPanelVisibility(bool visible) {
+  console_panel_.SetVisibility(visible);
 }
 }  // namespace quickviz
