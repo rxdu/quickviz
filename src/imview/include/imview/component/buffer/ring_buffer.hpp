@@ -64,7 +64,7 @@
 #include <vector>
 #include <iostream>
 
-#include "imview/buffer/buffer_interface.hpp"
+#include "imview/component/buffer/buffer_interface.hpp"
 
 namespace quickviz {
 template <typename T = uint8_t, std::size_t N = 1024>

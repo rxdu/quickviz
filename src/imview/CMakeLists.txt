@@ -37,12 +37,14 @@ add_library(imview
     src/component/shader.cpp
     src/component/shader_program.cpp
     src/component/frame_buffer.cpp
+    # opengl primitives
+    src/primitive/grid.cpp
     # data buffer
-    src/buffer/buffer_registry.cpp
-    src/buffer/scrolling_plot_buffer.cpp
+    src/component/buffer/buffer_registry.cpp
+    src/component/buffer/scrolling_plot_buffer.cpp
     # event handling
-    src/event/event_dispatcher.cpp
-    src/event/async_event_dispatcher.cpp
+    src/component/event/event_dispatcher.cpp
+    src/component/event/async_event_dispatcher.cpp
 )
 target_link_libraries(imview PUBLIC imcore
     PkgConfig::Cairo PkgConfig::Fontconfig

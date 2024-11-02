@@ -14,9 +14,9 @@
 
 #include "imview/viewer.hpp"
 #include "imview/box.hpp"
-#include "imview/buffer/buffer_registry.hpp"
-#include "imview/buffer/ring_buffer.hpp"
-#include "imview/buffer/double_buffer.hpp"
+#include "imview/component/buffer/buffer_registry.hpp"
+#include "imview/component/buffer/ring_buffer.hpp"
+#include "imview/component/buffer/double_buffer.hpp"
 
 #include "scene_objects/gl_triangle_scene_object.hpp"
 #include "imview/widget/buffered_cv_image_widget.hpp"

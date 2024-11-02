@@ -45,6 +45,7 @@ class Viewer : public Window {
   void Show();
 
  protected:
+  void SetupOpenGL();
   void ClearBackground();
   void CreateNewImGuiFrame();
   void RenderImGuiFrame();

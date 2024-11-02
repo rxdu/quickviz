@@ -12,8 +12,8 @@
 
 #include <opencv2/opencv.hpp>
 
-#include "imview/buffer/buffer_registry.hpp"
-#include "imview/buffer/ring_buffer.hpp"
+#include "imview/component/buffer/buffer_registry.hpp"
+#include "imview/component/buffer/ring_buffer.hpp"
 
 #include "imview/viewer.hpp"
 #include "imview/widget/rt_line_plot_widget.hpp"

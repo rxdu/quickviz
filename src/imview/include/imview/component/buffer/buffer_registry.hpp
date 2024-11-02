@@ -14,7 +14,7 @@
 #include <unordered_map>
 #include <stdexcept>
 
-#include "imview/buffer/buffer_interface.hpp"
+#include "imview/component/buffer/buffer_interface.hpp"
 
 namespace quickviz {
 class BufferRegistry {

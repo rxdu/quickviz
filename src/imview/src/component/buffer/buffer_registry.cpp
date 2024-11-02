@@ -8,7 +8,7 @@
 
 #include <stdexcept>
 
-#include "imview/buffer/buffer_registry.hpp"
+#include "imview/component/buffer/buffer_registry.hpp"
 
 namespace quickviz {
 BufferRegistry& BufferRegistry::GetInstance() {

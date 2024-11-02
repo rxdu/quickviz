@@ -32,9 +32,29 @@ std::string LoadShaderSource(const std::string& file_path) {
 }
 }  // namespace
 
+Shader::Shader(const char* source_code, Type type)
+    : source_code_(source_code), type_(type) {
+  if (source_code == nullptr) {
+    std::cout << "ERROR::SHADER::INVALID_SOURCE_CODE" << std::endl;
+  }
+  CreateShader();
+}
+
 Shader::Shader(const std::string& source_file, Shader::Type type)
     : source_file_(source_file), type_(type) {
   source_code_ = LoadShaderSource(source_file_);
+
+  CreateShader();
+}
+
+Shader::~Shader() { glDeleteShader(shader_id_); }
+
+void Shader::CreateShader() {
+  if (source_code_.empty()) {
+    std::cout << "ERROR::SHADER::INVALID_SOURCE_FILE" << std::endl;
+    throw std::invalid_argument("Invalid shader source file");
+  }
+
   if (type_ == Shader::Type::kVertex)
     shader_id_ = glCreateShader(GL_VERTEX_SHADER);
   else if (type_ == Shader::Type::kFragment)
@@ -42,8 +62,6 @@ Shader::Shader(const std::string& source_file, Shader::Type type)
   const char* code = source_code_.c_str();
   glShaderSource(shader_id_, 1, &code, NULL);
 }
-
-Shader::~Shader() { glDeleteShader(shader_id_); }
 
 void Shader::Print() const {
   std::cout << "Shader source file: " << source_file_ << std::endl;
@@ -67,9 +85,5 @@ bool Shader::Compile() {
     return false;
   }
   return success;
-}
-
-std::string Shader::LoadSourceFile(const std::string& file_path) {
-  return std::string();
 }
 }  // namespace quickviz

@@ -7,7 +7,7 @@
  */
 
 #include <gtest/gtest.h>
-#include "imview/buffer/ring_buffer.hpp"
+#include "imview/component/buffer/ring_buffer.hpp"
 
 using namespace quickviz;
 

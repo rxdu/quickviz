@@ -25,6 +25,9 @@ target_link_libraries(test_framebuffer PRIVATE imview)
 add_executable(test_shader test_shader.cpp)
 target_link_libraries(test_shader PRIVATE imview)
 
+add_executable(test_grid test_grid.cpp)
+target_link_libraries(test_grid PRIVATE imview)
+
 find_package(OpenCV QUIET)
 if (OpenCV_FOUND)
   add_executable(test_double_buffer test_double_buffer.cpp)

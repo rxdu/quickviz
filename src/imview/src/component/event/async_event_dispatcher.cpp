@@ -6,7 +6,7 @@
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
-#include "imview/event/async_event_dispatcher.hpp"
+#include "imview/component/event/async_event_dispatcher.hpp"
 
 namespace quickviz {
 AsyncEventDispatcher& AsyncEventDispatcher::GetInstance() {

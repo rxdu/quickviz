@@ -7,7 +7,7 @@
  * Copyright (c) 2021 Ruixiang Du (rdu)
  */
 
-#include "imview/buffer/scrolling_plot_buffer.hpp"
+#include "imview/component/buffer/scrolling_plot_buffer.hpp"
 
 #include <cmath>
 

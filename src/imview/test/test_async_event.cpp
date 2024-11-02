@@ -8,9 +8,9 @@
 
 #include <iostream>
 
-#include "imview/event/event.hpp"
-#include "imview/event/async_event_dispatcher.hpp"
-#include "imview/event/async_event_emitter.hpp"
+#include "imview/component/event/event.hpp"
+#include "imview/component/event/async_event_dispatcher.hpp"
+#include "imview/component/event/async_event_emitter.hpp"
 
 using namespace quickviz;
 

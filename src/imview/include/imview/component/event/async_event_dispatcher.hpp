@@ -18,8 +18,8 @@
 #include <queue>
 #include <atomic>
 
-#include "imview/event/event.hpp"
-#include "imview/event/thread_safe_queue.hpp"
+#include "imview/component/event/event.hpp"
+#include "imview/component/event/thread_safe_queue.hpp"
 
 namespace quickviz {
 class AsyncEventDispatcher {

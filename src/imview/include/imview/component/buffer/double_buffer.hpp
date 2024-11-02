@@ -13,7 +13,7 @@
 #include <atomic>
 #include <condition_variable>
 
-#include "imview/buffer/buffer_interface.hpp"
+#include "imview/component/buffer/buffer_interface.hpp"
 
 namespace quickviz {
 template <typename T>

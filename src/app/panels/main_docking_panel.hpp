@@ -27,7 +27,6 @@ class MainDockingPanel : public Panel {
   void ChangeDebugPanelVisibility(bool visible);
 
  private:
-
   bool layout_initialized_ = false;
   ImGuiID dockspace_id_;
 
@@ -37,7 +36,7 @@ class MainDockingPanel : public Panel {
 
   ConfigPanel config_panel_{"Config"};
   ConsolePanel console_panel_{"Console"};
-  GlSceneWidget gl_scene_widget_{"Scene"};
+  GlWidget gl_widget_{"Scene"};
 };
 }  // namespace quickviz
 

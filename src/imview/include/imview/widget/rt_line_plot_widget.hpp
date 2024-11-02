@@ -13,8 +13,8 @@
 #include <unordered_map>
 
 #include "imview/panel.hpp"
-#include "imview/buffer/buffer_registry.hpp"
-#include "imview/buffer/scrolling_plot_buffer.hpp"
+#include "imview/component/buffer/buffer_registry.hpp"
+#include "imview/component/buffer/scrolling_plot_buffer.hpp"
 
 namespace quickviz {
 class RtLinePlotWidget : public Panel {

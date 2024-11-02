@@ -23,6 +23,7 @@ class Shader {
   };
 
  public:
+  Shader(const char* source_code, Type type);
   Shader(const std::string& source_file, Type type);
   ~Shader();
 
@@ -36,7 +37,7 @@ class Shader {
   uint32_t GetShaderID() const { return shader_id_; }
 
  private:
-  std::string LoadSourceFile(const std::string& file_path);
+  void CreateShader();
 
   std::string source_file_;
   Type type_;

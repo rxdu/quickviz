@@ -15,7 +15,7 @@
 #include <functional>
 #include <unordered_map>
 
-#include "imview/event/event.hpp"
+#include "imview/component/event/event.hpp"
 
 namespace quickviz {
 class EventDispatcher {
