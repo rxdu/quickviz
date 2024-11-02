@@ -19,11 +19,12 @@ endif ()
 message(STATUS "------------------------------------------------")
 
 ## Project Options
+option(ENABLE_AUTO_LAYOUT "Enable autolayout" ON)
+option(IMVIEW_WITH_GLAD "Integrate glad into imview" ON)
 option(BUILD_QUICKVIZ_APP "Build quickviz app" OFF)
 option(BUILD_TESTING "Build tests" ON)
 option(QUICKVIZ_DEV_MODE "Development mode forces building tests" OFF)
 option(STATIC_CHECK "Perform static check" OFF)
-option(IMVIEW_WITH_GLAD "Integrate glad into imview" ON)
 
 ## Check if code compiles on x86_64 platform
 if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")

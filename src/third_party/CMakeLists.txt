@@ -1,5 +1,7 @@
 # external libraries
-add_subdirectory(yoga)
+if (ENABLE_AUTO_LAYOUT)
+  add_subdirectory(yoga)
+endif ()
 add_subdirectory(glad)
 add_subdirectory(imcore)
 

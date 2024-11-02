@@ -5,18 +5,22 @@ pkg_check_modules(Fontconfig REQUIRED IMPORTED_TARGET fontconfig)
 
 find_package(OpenCV REQUIRED)
 
+if (ENABLE_AUTO_LAYOUT)
+  set(AUTO_LAYOUT_SRC
+      src/box.cpp
+      src/yoga_utils.cpp)
+  set(AUTO_LAYOUT_LIBS yogacore)
+endif ()
+
 # add library
 add_library(imview
-    ## internal implementations
-    src/yoga_utils.cpp
-    ## public class
     # ui components
     src/window.cpp
     src/viewer.cpp
     src/fonts.cpp
     src/scene_object.cpp
     src/panel.cpp
-    src/box.cpp
+    ${AUTO_LAYOUT_SRC}
     src/layer.cpp
     #    src/popup.cpp
     src/buffer/scrolling_plot_buffer.cpp
@@ -37,7 +41,12 @@ add_library(imview
     src/event/event_dispatcher.cpp
     src/event/async_event_dispatcher.cpp
 )
-target_link_libraries(imview PUBLIC imcore yogacore PkgConfig::Cairo PkgConfig::Fontconfig ${OpenCV_LIBS})
+target_link_libraries(imview PUBLIC imcore
+    PkgConfig::Cairo PkgConfig::Fontconfig
+    ${AUTO_LAYOUT_LIBS} ${OpenCV_LIBS})
+if (ENABLE_AUTO_LAYOUT)
+  target_compile_definitions(imview PUBLIC ENABLE_AUTO_LAYOUT)
+endif ()
 if (IMVIEW_WITH_GLAD)
   target_link_libraries(imview PUBLIC glad)
   target_compile_definitions(imview PUBLIC IMVIEW_WITH_GLAD)

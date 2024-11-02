@@ -8,18 +8,25 @@
 
 #include "imview/scene_object.hpp"
 
+#ifdef ENABLE_AUTO_LAYOUT
 #include <yoga/Yoga.h>
-
 #include "yoga_utils.hpp"
 
-namespace quickviz {
-using namespace YogaUtils;
+using namespace quickviz::YogaUtils;
+#endif
 
+namespace quickviz {
 SceneObject::SceneObject(std::string name) : name_(std::move(name)) {
+#ifdef ENABLE_AUTO_LAYOUT
   yg_node_ = YGNodeNew();
+#endif
 }
 
-SceneObject::~SceneObject() { YGNodeFreeRecursive(yg_node_); }
+SceneObject::~SceneObject() {
+#ifdef ENABLE_AUTO_LAYOUT
+  YGNodeFreeRecursive(yg_node_);
+#endif
+}
 
 void SceneObject::SetPosition(float x, float y) {
   x_ = x;
@@ -31,6 +38,7 @@ void SceneObject::OnResize(float width, float height) {
   height_ = height;
 }
 
+#ifdef ENABLE_AUTO_LAYOUT
 void SceneObject::SetAlignContent(Styling::AlignContent align) {
   YGNodeStyleSetAlignContent(yg_node_, ToYogaAlign(align));
 }
@@ -122,4 +130,5 @@ void SceneObject::SetMaxWidth(float width) {
 void SceneObject::SetMaxHeight(float height) {
   YGNodeStyleSetMaxHeight(yg_node_, height);
 }
+#endif
 }  // namespace quickviz
