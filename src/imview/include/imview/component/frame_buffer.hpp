@@ -1,27 +1,27 @@
 /*
- * @file gl_frame_buffer.hpp
+ * @file frame_buffer.hpp
  * @date 10/29/24
  * @brief
  *
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
-#ifndef XMOTION_GL_FRAME_BUFFER_HPP
-#define XMOTION_GL_FRAME_BUFFER_HPP
+#ifndef XMOTION_FRAME_BUFFER_HPP
+#define XMOTION_FRAME_BUFFER_HPP
 
 #include <cstdint>
 
 namespace quickviz {
-class GlFrameBuffer {
+class FrameBuffer {
  public:
-  GlFrameBuffer(uint32_t width, uint32_t height);
-  ~GlFrameBuffer();
+  FrameBuffer(uint32_t width, uint32_t height);
+  ~FrameBuffer();
 
   // do not allow copy or move
-  GlFrameBuffer(const GlFrameBuffer&) = delete;
-  GlFrameBuffer& operator=(const GlFrameBuffer&) = delete;
-  GlFrameBuffer(GlFrameBuffer&&) = delete;
-  GlFrameBuffer& operator=(GlFrameBuffer&&) = delete;
+  FrameBuffer(const FrameBuffer&) = delete;
+  FrameBuffer& operator=(const FrameBuffer&) = delete;
+  FrameBuffer(FrameBuffer&&) = delete;
+  FrameBuffer& operator=(FrameBuffer&&) = delete;
 
   // public methods
   void Bind(bool keep_aspect_ratio = true) const;
@@ -45,4 +45,4 @@ class GlFrameBuffer {
 };
 }  // namespace quickviz
 
-#endif  // XMOTION_GL_FRAME_BUFFER_HPP
+#endif  // XMOTION_FRAME_BUFFER_HPP

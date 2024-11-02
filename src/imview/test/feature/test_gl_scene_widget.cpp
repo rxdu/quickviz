@@ -13,11 +13,11 @@
 #include <opencv2/opencv.hpp>
 
 #include "imview/viewer.hpp"
-#include "imview/widget/gl_scene_widget.hpp"
+#include "imview/widget/gl_widget.hpp"
 
 using namespace quickviz;
 
-void RenderGL(const GlFrameBuffer& frame_buffer) {
+void RenderGL(const FrameBuffer& frame_buffer) {
   frame_buffer.Clear();
 
   // Define shapes enclosed within a pair of glBegin and glEnd
@@ -74,7 +74,7 @@ void RenderGL(const GlFrameBuffer& frame_buffer) {
 int main(int argc, char* argv[]) {
   Viewer viewer;
 
-  auto gl_widget = std::make_shared<GlSceneWidget>("OpenGL Scene");
+  auto gl_widget = std::make_shared<GlWidget>("OpenGL Scene");
   gl_widget->OnResize(300, 200);
   gl_widget->SetPosition(0, 0);
   gl_widget->SetGlRenderFunction(RenderGL);

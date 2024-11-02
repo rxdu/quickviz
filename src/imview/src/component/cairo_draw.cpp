@@ -7,7 +7,7 @@
  * Copyright (c) 2021 Ruixiang Du (rdu)
  */
 
-#include "imview/widget/details/cairo_draw.hpp"
+#include "imview/component/cairo_draw.hpp"
 
 #include <cmath>
 

@@ -11,7 +11,7 @@
 
 #include "imview/panel.hpp"
 
-#include "imview/widget/gl_scene_widget.hpp"
+#include "imview/widget/gl_widget.hpp"
 
 #include "panels/menu_bar.hpp"
 #include "panels/config_panel.hpp"

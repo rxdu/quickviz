@@ -1,28 +1,28 @@
 /*
- * @file gl_scene_widget.cpp
+ * @file gl_widget.cpp
  * @date 10/29/24
  * @brief
  *
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
-#include "imview/widget/gl_scene_widget.hpp"
+#include "imview/widget/gl_widget.hpp"
 
 namespace quickviz {
-GlSceneWidget::GlSceneWidget(const std::string& widget_name)
+GlWidget::GlWidget(const std::string& widget_name)
     : Panel(widget_name) {
   this->SetAutoLayout(false);
   this->SetWindowNoMenuButton();
   this->SetNoBackground(true);
 
-  frame_buffer_ = std::make_unique<GlFrameBuffer>(100, 50);
+  frame_buffer_ = std::make_unique<FrameBuffer>(100, 50);
 }
 
-void GlSceneWidget::SetGlRenderFunction(GlSceneWidget::GlRenderFunction func) {
+void GlWidget::SetGlRenderFunction(GlWidget::GlRenderFunction func) {
   render_function_ = func;
 }
 
-void GlSceneWidget::Draw() {
+void GlWidget::Draw() {
   Begin();
   {
     ImVec2 contentSize = ImGui::GetContentRegionAvail();

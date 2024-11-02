@@ -24,19 +24,19 @@ add_library(imview
     src/panel.cpp
     src/layer.cpp
     ${AUTO_LAYOUT_SRC}
-    #    src/popup.cpp
-    # utils
-    src/utils/image_utils.cpp
     # widgets
     src/widget/cv_image_widget.cpp
     src/widget/buffered_cv_image_widget.cpp
     src/widget/cairo_widget.cpp
-    src/widget/details/cairo_context.cpp
-    src/widget/details/cairo_draw.cpp
     src/widget/rt_line_plot_widget.cpp
-    src/widget/gl_scene_widget.cpp
-    src/widget/details/gl_frame_buffer.cpp
-    src/widget/details/shader.cpp
+    src/widget/gl_widget.cpp
+    # components
+    src/component/cairo_context.cpp
+    src/component/cairo_draw.cpp
+    src/component/image_utils.cpp
+    src/component/shader.cpp
+    src/component/shader_program.cpp
+    src/component/frame_buffer.cpp
     # data buffer
     src/buffer/buffer_registry.cpp
     src/buffer/scrolling_plot_buffer.cpp

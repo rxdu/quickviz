@@ -9,7 +9,7 @@
 #include "imview/widget/cv_image_widget.hpp"
 
 #include "glad/glad.h"
-#include "imview/utils/image_utils.hpp"
+#include "imview/component/image_utils.hpp"
 
 namespace quickviz {
 CvImageWidget::CvImageWidget(const std::string& widget_name)

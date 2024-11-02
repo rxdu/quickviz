@@ -7,12 +7,11 @@
  * Copyright (c) 2021 Ruixiang Du (rdu)
  */
 
-#include <iostream>
 #include <memory>
 
 #include "glad/glad.h"
 #include "imview/window.hpp"
-#include "imview/widget/details/gl_frame_buffer.hpp"
+#include "imview/component/frame_buffer.hpp"
 
 using namespace quickviz;
 
@@ -22,7 +21,7 @@ int main(int argc, char* argv[]) {
   Window win("Test Window", width, height);
 
   // Create a framebuffer
-  auto frame_buffer = std::make_unique<GlFrameBuffer>(width, height);
+  auto frame_buffer = std::make_unique<FrameBuffer>(width, height);
 
   while (!win.ShouldClose()) {
     win.PollEvents();

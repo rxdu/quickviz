@@ -1,19 +1,19 @@
 /*
- * @file gl_frame_buffer.cpp
+ * @file frame_buffer.cpp
  * @date 10/29/24
  * @brief
  *
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
-#include "imview/widget/details/gl_frame_buffer.hpp"
+#include "imview/component/frame_buffer.hpp"
 
 #include <iostream>
 
 #include "glad/glad.h"
 
 namespace quickviz {
-GlFrameBuffer::GlFrameBuffer(uint32_t width, uint32_t height)
+FrameBuffer::FrameBuffer(uint32_t width, uint32_t height)
     : width_(width),
       height_(height),
       frame_buffer_(0),
@@ -22,9 +22,9 @@ GlFrameBuffer::GlFrameBuffer(uint32_t width, uint32_t height)
   CreateBuffers();
 }
 
-GlFrameBuffer::~GlFrameBuffer() { DestroyBuffers(); }
+FrameBuffer::~FrameBuffer() { DestroyBuffers(); }
 
-void GlFrameBuffer::CreateBuffers() {
+void FrameBuffer::CreateBuffers() {
   // generate and bind the framebuffer
   glGenFramebuffers(1, &frame_buffer_);
   glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_);
@@ -54,7 +54,7 @@ void GlFrameBuffer::CreateBuffers() {
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void GlFrameBuffer::DestroyBuffers() {
+void FrameBuffer::DestroyBuffers() {
   glDeleteFramebuffers(1, &frame_buffer_);
   glDeleteTextures(1, &texture_buffer_);
   glDeleteRenderbuffers(1, &render_buffer_);
@@ -63,7 +63,7 @@ void GlFrameBuffer::DestroyBuffers() {
   render_buffer_ = 0;
 }
 
-void GlFrameBuffer::Bind(bool keep_aspect_ratio) const {
+void FrameBuffer::Bind(bool keep_aspect_ratio) const {
   glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_);
   if (keep_aspect_ratio) {
     float square_size = std::min(width_, height_);
@@ -76,14 +76,14 @@ void GlFrameBuffer::Bind(bool keep_aspect_ratio) const {
   glEnable(GL_DEPTH_TEST);
 }
 
-void GlFrameBuffer::Unbind() const { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
+void FrameBuffer::Unbind() const { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
 
-void GlFrameBuffer::Clear(float r, float g, float b, float a) const {
+void FrameBuffer::Clear(float r, float g, float b, float a) const {
   glClearColor(r, g, b, a);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void GlFrameBuffer::Resize(uint32_t width, uint32_t height) {
+void FrameBuffer::Resize(uint32_t width, uint32_t height) {
   if (width == width_ && height == height_) return;
 
   width_ = width;
