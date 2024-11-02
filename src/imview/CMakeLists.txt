@@ -22,10 +22,9 @@ add_library(imview
     src/fonts.cpp
     src/scene_object.cpp
     src/panel.cpp
-    ${AUTO_LAYOUT_SRC}
     src/layer.cpp
+    ${AUTO_LAYOUT_SRC}
     #    src/popup.cpp
-    src/buffer/scrolling_plot_buffer.cpp
     # utils
     src/utils/image_utils.cpp
     # widgets
@@ -37,8 +36,10 @@ add_library(imview
     src/widget/rt_line_plot_widget.cpp
     src/widget/gl_scene_widget.cpp
     src/widget/details/gl_frame_buffer.cpp
+    src/widget/details/shader.cpp
     # data buffer
     src/buffer/buffer_registry.cpp
+    src/buffer/scrolling_plot_buffer.cpp
     # event handling
     src/event/event_dispatcher.cpp
     src/event/async_event_dispatcher.cpp
