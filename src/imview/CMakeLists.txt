@@ -2,7 +2,7 @@
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(Cairo REQUIRED IMPORTED_TARGET cairo)
 pkg_check_modules(Fontconfig REQUIRED IMPORTED_TARGET fontconfig)
-
+find_package(OpenGL REQUIRED)
 find_package(OpenCV REQUIRED)
 
 if (ENABLE_AUTO_LAYOUT)
@@ -43,6 +43,7 @@ add_library(imview
 )
 target_link_libraries(imview PUBLIC imcore
     PkgConfig::Cairo PkgConfig::Fontconfig
+    OpenGL::OpenGL ${CMAKE_DL_LIBS}
     ${AUTO_LAYOUT_LIBS} ${OpenCV_LIBS})
 if (ENABLE_AUTO_LAYOUT)
   target_compile_definitions(imview PUBLIC ENABLE_AUTO_LAYOUT)

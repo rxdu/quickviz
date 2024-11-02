@@ -82,6 +82,10 @@ if(QUICKVIZ_DEV_MODE)
   message(STATUS "quickviz development mode enabled")
 endif()
 
+if(ENABLE_AUTO_LAYOUT)
+  message(STATUS "Auto layout enabled")
+endif()
+
 # Build tests
 if (((NOT BUILD_AS_MODULE) AND BUILD_TESTING) OR QUICKVIZ_DEV_MODE)
   set(BUILD_TESTING ON)
