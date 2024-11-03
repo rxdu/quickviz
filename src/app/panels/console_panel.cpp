@@ -16,18 +16,25 @@ ConsolePanel::ConsolePanel(std::string name) : Panel(name) {
   //  this->SetNoResize(true);
   this->SetNoMove(true);
   this->SetWindowNoMenuButton();
+
+  static int counter = 0;
+  const char* categories[3] = {"info", "warn", "error"};
+  const char* words[] = {"Bumfuzzled",    "Cattywampus",  "Snickersnee",
+                         "Abibliophobia", "Absquatulate", "Nincompoop",
+                         "Pauciloquent"};
+  for (int n = 0; n < 5; n++) {
+    const char* category = categories[counter % IM_ARRAYSIZE(categories)];
+    const char* word = words[counter % IM_ARRAYSIZE(words)];
+    log_.AddLog(
+        "[%05d] [%s] Hello, current time is %.1f, here's a word: '%s'\n",
+        ImGui::GetFrameCount(), category, ImGui::GetTime(), word);
+    counter++;
+  }
 }
 
 void ConsolePanel::Draw() {
   Begin();
-  {
-    ImGui::PushFont(Fonts::GetFont(FontSize::kFont18));
-    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 153, 153, 200));
-    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
-                1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-    ImGui::PopStyleColor();
-    ImGui::PopFont();
-  }
+  log_.Draw("Example: Log");
   End();
 }
 }  // namespace quickviz

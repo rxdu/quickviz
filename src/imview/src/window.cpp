@@ -73,6 +73,8 @@ void Window::ApplyWindowHints(uint32_t window_hints) {
 // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 #endif
 
+  glfwWindowHint(GLFW_SAMPLES, 4);
+
   // optional hints
   if (window_hints & WIN_FOCUSED) {
     glfwWindowHint(GLFW_FOCUSED, GLFW_TRUE);
@@ -133,4 +135,6 @@ void Window::SwapBuffers() { glfwSwapBuffers(win_); }
 void Window::CloseWindow() { glfwSetWindowShouldClose(win_, 1); }
 
 bool Window::ShouldClose() const { return glfwWindowShouldClose(win_); }
+
+GLFWwindow *Window::GetWindowObject() { return win_; }
 }  // namespace quickviz

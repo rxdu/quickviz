@@ -13,7 +13,7 @@
 #include <functional>
 
 #include "imview/panel.hpp"
-#include "imview/component/frame_buffer.hpp"
+#include "imview/component/opengl/frame_buffer.hpp"
 
 namespace quickviz {
 class GlWidget : public Panel {

@@ -196,9 +196,10 @@ void Viewer::SetWindowShouldClose() {
 }
 
 void Viewer::SetupOpenGL() {
+  glEnable(GL_MULTISAMPLE);
   glEnable(GL_DEPTH_TEST);
-  //  glEnable(GL_BLEND);
-  //  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void Viewer::ClearBackground() {

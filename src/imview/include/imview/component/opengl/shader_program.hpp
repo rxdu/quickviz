@@ -14,7 +14,7 @@
 #include <cstdint>
 #include <unordered_map>
 
-#include "imview/component/shader.hpp"
+#include "imview/component/opengl/shader.hpp"
 
 namespace quickviz {
 class ShaderProgram {

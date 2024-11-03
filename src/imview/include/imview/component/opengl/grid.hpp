@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "imview/component/shader_program.hpp"
+#include "imview/component/opengl/shader_program.hpp"
 
 namespace quickviz {
 class Grid {
@@ -22,15 +22,21 @@ class Grid {
        glm::vec3 color = glm::vec3(0.5f, 0.5f, 0.5f));
   ~Grid();
 
+  void SetLineColor(const glm::vec3& color, float alpha = 0.5f);
+
   void Initialize();
   void Draw(const glm::mat4& projection, const glm::mat4& view);
 
  private:
   void GenerateGrid();
 
+  // grid parameters
   float grid_size_;
   float spacing_;
   glm::vec3 color_;
+  float alpha_ = 0.5f;
+
+  // OpenGL related
   uint32_t vao_;
   uint32_t vbo_;
   std::vector<glm::vec3> vertices_;

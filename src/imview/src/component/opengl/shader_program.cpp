@@ -6,7 +6,7 @@
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
-#include "imview/component/shader_program.hpp"
+#include "imview/component/opengl/shader_program.hpp"
 
 #include <iostream>
 

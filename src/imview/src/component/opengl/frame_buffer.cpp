@@ -6,7 +6,7 @@
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
-#include "imview/component/frame_buffer.hpp"
+#include "imview/component/opengl/frame_buffer.hpp"
 
 #include <iostream>
 

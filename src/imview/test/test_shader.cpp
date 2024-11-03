@@ -9,8 +9,8 @@
 #include <iostream>
 
 #include "imview/window.hpp"
-#include "imview/component/shader.hpp"
-#include "imview/component/shader_program.hpp"
+#include "imview/component/opengl/shader.hpp"
+#include "imview/component/opengl/shader_program.hpp"
 
 using namespace quickviz;
 

@@ -11,7 +11,7 @@
 
 #include "glad/glad.h"
 #include "imview/window.hpp"
-#include "imview/component/frame_buffer.hpp"
+#include "imview/component/opengl/frame_buffer.hpp"
 
 using namespace quickviz;
 

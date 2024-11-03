@@ -31,18 +31,16 @@ add_library(imview
     src/widget/rt_line_plot_widget.cpp
     src/widget/gl_widget.cpp
     # components
+    src/component/image_utils.cpp
     src/component/cairo_context.cpp
     src/component/cairo_draw.cpp
-    src/component/image_utils.cpp
-    src/component/shader.cpp
-    src/component/shader_program.cpp
-    src/component/frame_buffer.cpp
-    # opengl primitives
-    src/primitive/grid.cpp
-    # data buffer
+    src/component/opengl/shader.cpp
+    src/component/opengl/shader_program.cpp
+    src/component/opengl/frame_buffer.cpp
+    src/component/opengl/grid.cpp
+    src/component/opengl/camera.cpp
     src/component/buffer/buffer_registry.cpp
     src/component/buffer/scrolling_plot_buffer.cpp
-    # event handling
     src/component/event/event_dispatcher.cpp
     src/component/event/async_event_dispatcher.cpp
 )

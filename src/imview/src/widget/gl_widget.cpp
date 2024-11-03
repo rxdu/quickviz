@@ -9,8 +9,7 @@
 #include "imview/widget/gl_widget.hpp"
 
 namespace quickviz {
-GlWidget::GlWidget(const std::string& widget_name)
-    : Panel(widget_name) {
+GlWidget::GlWidget(const std::string& widget_name) : Panel(widget_name) {
   this->SetAutoLayout(false);
   this->SetWindowNoMenuButton();
   this->SetNoBackground(true);
@@ -25,9 +24,9 @@ void GlWidget::SetGlRenderFunction(GlWidget::GlRenderFunction func) {
 void GlWidget::Draw() {
   Begin();
   {
-    ImVec2 contentSize = ImGui::GetContentRegionAvail();
-    float width = contentSize.x;
-    float height = contentSize.y;
+    ImVec2 content_size = ImGui::GetContentRegionAvail();
+    float width = content_size.x;
+    float height = content_size.y;
 
     frame_buffer_->Resize(width, height);
     frame_buffer_->Bind();

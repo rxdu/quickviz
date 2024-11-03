@@ -21,8 +21,28 @@ ConfigPanel::ConfigPanel(std::string name) : Panel(name) {
 
 void ConfigPanel::Draw() {
   Begin();
+  ImVec2 content_size = ImGui::GetContentRegionAvail();
+
   ImGui::PushFont(Fonts::GetFont(FontSize::kFont16));
   {
+    //----------------------- view settings -----------------------//
+    if (ImGui::CollapsingHeader("Views")) {
+      ImGui::Indent(16.0f);
+      ImGui::PushItemWidth(80);
+      {
+        ImGui::SetNextItemWidth(content_size.x - 80);
+        static int item_current_2 = 0;
+        ImGui::Combo("##view-selection-combo", &item_current_2,
+                     "Obit\0TopDown\0\0");
+        ImGui::SameLine();
+        if (ImGui::Button("Reset")) {
+        }
+      }
+      ImGui::PopItemWidth();
+      ImGui::Unindent(16.0f);
+    }
+
+    //----------------------- help -----------------------//
     if (ImGui::CollapsingHeader("Help")) {
       ImGui::SeparatorText("ABOUT THIS DEMO:");
       ImGui::BulletText(
@@ -52,9 +72,13 @@ void ConfigPanel::Draw() {
 
     //    ImGui::PushFont(Fonts::GetFont(FontSize::kFont18));
     //    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 153, 153, 200));
-    //    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
-    //                1000.0f / ImGui::GetIO().Framerate,
-    //                ImGui::GetIO().Framerate);
+    ImGui::SetCursorPos(ImVec2(0, ImGui::GetWindowHeight() - 35));
+    ImGui::Separator();
+    ImGui::Spacing();
+    ImGui::Indent(16.0f);
+    ImGui::Text("Frame update rate: %.3f ms/frame (%.1f FPS)",
+                1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    ImGui::Unindent(16.0f);
     //    ImGui::PopStyleColor();
     //    ImGui::PopFont();
     //    ImGui::Spacing();

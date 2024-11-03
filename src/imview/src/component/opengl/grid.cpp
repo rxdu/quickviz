@@ -6,7 +6,7 @@
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
-#include "imview/primitive/grid.hpp"
+#include "imview/component/opengl/grid.hpp"
 
 #include <iostream>
 
@@ -32,9 +32,10 @@ std::string fragment_shader_source = R"(
 
 out vec4 FragColor;
 uniform vec3 lineColor;
+uniform float lineAlpha;
 
 void main() {
-    FragColor = vec4(lineColor, 1.0);
+    FragColor = vec4(lineColor, lineAlpha);
 }
 )";
 }  // namespace
@@ -58,9 +59,15 @@ Grid::~Grid() {
   glDeleteBuffers(1, &vbo_);
 }
 
+void Grid::SetLineColor(const glm::vec3& color, float alpha) {
+  color_ = color;
+  alpha_ = alpha;
+}
+
 void Grid::Initialize() {
   shader_.Use();
   shader_.SetUniform("lineColor", color_);
+  shader_.SetUniform("lineAlpha", alpha_);
 }
 
 void Grid::Draw(const glm::mat4& projection, const glm::mat4& view) {
@@ -76,14 +83,15 @@ void Grid::Draw(const glm::mat4& projection, const glm::mat4& view) {
 
 void Grid::GenerateGrid() {
   // generate grid vertices along X and Z axes
-  for (float x = -grid_size_; x <= grid_size_; x += spacing_) {
-    vertices_.emplace_back(x, 0.0f, -grid_size_);
-    vertices_.emplace_back(x, 0.0f, grid_size_);
+  float half_grid_size = grid_size_ / 2.0f;
+  for (float x = -half_grid_size; x <= half_grid_size; x += spacing_) {
+    vertices_.emplace_back(x, 0.0f, -half_grid_size);
+    vertices_.emplace_back(x, 0.0f, half_grid_size);
   }
 
-  for (float z = -grid_size_; z <= grid_size_; z += spacing_) {
-    vertices_.emplace_back(-grid_size_, 0.0f, z);
-    vertices_.emplace_back(grid_size_, 0.0f, z);
+  for (float z = -half_grid_size; z <= half_grid_size; z += spacing_) {
+    vertices_.emplace_back(-half_grid_size, 0.0f, z);
+    vertices_.emplace_back(half_grid_size, 0.0f, z);
   }
 
   // set up VAO and VBO
