@@ -15,6 +15,7 @@
 
 #include "panels/menu_bar.hpp"
 #include "panels/config_panel.hpp"
+#include "panels/scene_panel.hpp"
 #include "panels/console_panel.hpp"
 
 namespace quickviz {
@@ -36,7 +37,8 @@ class MainDockingPanel : public Panel {
 
   ConfigPanel config_panel_{"Config"};
   ConsolePanel console_panel_{"Console"};
-  GlWidget gl_widget_{"Scene"};
+  //  GlWidget gl_widget_{"Scene"};
+  ScenePanel gl_widget_{"Scene"};
 };
 }  // namespace quickviz
 

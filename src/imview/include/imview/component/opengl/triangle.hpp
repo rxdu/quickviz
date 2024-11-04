@@ -1,13 +1,13 @@
 /*
- * @file grid.hpp
- * @date 11/2/24
+ * @file triangle.hpp
+ * @date 11/4/24
  * @brief
  *
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
-#ifndef QUICKVIZ_GRID_HPP
-#define QUICKVIZ_GRID_HPP
+#ifndef QUICKVIZ_TRIANGLE_HPP
+#define QUICKVIZ_TRIANGLE_HPP
 
 #include <glm/glm.hpp>
 
@@ -17,22 +17,20 @@
 #include "imview/component/opengl/shader_program.hpp"
 
 namespace quickviz {
-class Grid : public OpenGLDrawable {
+class Triangle : public OpenGLDrawable {
  public:
-  Grid(float grid_size = 10.0f, float spacing = 1.0f,
-       glm::vec3 color = glm::vec3(0.5f, 0.5f, 0.5f));
-  ~Grid();
+  Triangle(float size = 1.0f, glm::vec3 color = glm::vec3(0.5f, 0.5f, 0.5f));
+  ~Triangle();
 
-  void SetLineColor(const glm::vec3& color, float alpha = 0.5f);
+  void SetColor(const glm::vec3& color, float alpha = 0.5f);
 
   void OnDraw(const glm::mat4& projection, const glm::mat4& view) override;
 
  private:
-  void GenerateGrid();
+  void GenerateTriangle();
 
-  // grid parameters
-  float grid_size_;
-  float spacing_;
+  // triangle parameters
+  float size_;
   glm::vec3 color_;
   float alpha_ = 0.5f;
 
@@ -44,4 +42,4 @@ class Grid : public OpenGLDrawable {
 };
 }  // namespace quickviz
 
-#endif  // QUICKVIZ_GRID_HPP
+#endif  // QUICKVIZ_TRIANGLE_HPP

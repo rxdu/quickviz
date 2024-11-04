@@ -1,16 +1,16 @@
 /*
- * @file grid.cpp
- * @date 11/2/24
+ * @file triangle.cpp
+ * @date 11/4/24
  * @brief
  *
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
-#include "imview/component/opengl/grid.hpp"
-
-#include <iostream>
+#include "imview/component/opengl/triangle.hpp"
 
 #include "glad/glad.h"
+
+#include <iostream>
 
 namespace quickviz {
 namespace {
@@ -40,8 +40,9 @@ void main() {
 )";
 }  // namespace
 
-Grid::Grid(float grid_size, float spacing, glm::vec3 color)
-    : grid_size_(grid_size), spacing_(spacing), color_(color) {
+///////////////////////////////////////////////////////////////////////////////
+
+Triangle::Triangle(float size, glm::vec3 color) : size_(size), color_(color) {
   Shader vertex_shader(vertex_shader_source.c_str(), Shader::Type::kVertex);
   Shader fragment_shader(fragment_shader_source.c_str(),
                          Shader::Type::kFragment);
@@ -51,20 +52,20 @@ Grid::Grid(float grid_size, float spacing, glm::vec3 color)
     std::cout << "ERROR::GRID::SHADER_PROGRAM_LINKING_FAILED" << std::endl;
     throw std::runtime_error("Shader program linking failed");
   }
-  GenerateGrid();
+  GenerateTriangle();
 }
 
-Grid::~Grid() {
+Triangle::~Triangle() {
   glDeleteVertexArrays(1, &vao_);
   glDeleteBuffers(1, &vbo_);
 }
 
-void Grid::SetLineColor(const glm::vec3& color, float alpha) {
+void Triangle::SetColor(const glm::vec3& color, float alpha) {
   color_ = color;
   alpha_ = alpha;
 }
 
-void Grid::OnDraw(const glm::mat4& projection, const glm::mat4& view) {
+void Triangle::OnDraw(const glm::mat4& projection, const glm::mat4& view) {
   shader_.Use();
   shader_.SetUniform("projection", projection);
   shader_.SetUniform("view", view);
@@ -73,36 +74,35 @@ void Grid::OnDraw(const glm::mat4& projection, const glm::mat4& view) {
   shader_.SetUniform("lineAlpha", alpha_);
 
   glBindVertexArray(vao_);
-  glDrawArrays(GL_LINES, 0, vertices_.size());
+  glDrawArrays(GL_TRIANGLES, 0, vertices_.size());
   glBindVertexArray(0);
 }
 
-void Grid::GenerateGrid() {
-  // generate grid vertices along X and Z axes
-  float half_grid_size = grid_size_ / 2.0f;
-  for (float x = -half_grid_size; x <= half_grid_size; x += spacing_) {
-    vertices_.emplace_back(x, 0.0f, -half_grid_size);
-    vertices_.emplace_back(x, 0.0f, half_grid_size);
-  }
+void Triangle::GenerateTriangle() {
+  // clang-format off
+  vertices_ = {
+    glm::vec3(-0.5f, 0.0f, 0.0f),
+    glm::vec3(0.0f, 0.866f, 0.0f),
+    glm::vec3(0.5f, 0.0f, 0.0f)
+  };
+  // clang-format on
 
-  for (float z = -half_grid_size; z <= half_grid_size; z += spacing_) {
-    vertices_.emplace_back(-half_grid_size, 0.0f, z);
-    vertices_.emplace_back(half_grid_size, 0.0f, z);
-  }
-
-  // set up VAO and VBO
+  // create vertex array object
   glGenVertexArrays(1, &vao_);
-  glGenBuffers(1, &vbo_);
-
   glBindVertexArray(vao_);
+
+  // create vertex buffer object
+  glGenBuffers(1, &vbo_);
   glBindBuffer(GL_ARRAY_BUFFER, vbo_);
   glBufferData(GL_ARRAY_BUFFER, vertices_.size() * sizeof(glm::vec3),
                vertices_.data(), GL_STATIC_DRAW);
 
-  // set vertex attribute
+  // set vertex attribute pointers
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
   glEnableVertexAttribArray(0);
 
-  glBindVertexArray(0);  // Unbind VAO
+  // unbind vbo and vao
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindVertexArray(0);
 }
 }  // namespace quickviz

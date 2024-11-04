@@ -18,5 +18,5 @@ target_link_libraries(test_cairo_widget PRIVATE imview)
 add_executable(test_implot_widget test_implot_widget.cpp)
 target_link_libraries(test_implot_widget PRIVATE imview)
 
-add_executable(test_gl_scene_widget test_gl_scene_widget.cpp)
-target_link_libraries(test_gl_scene_widget PRIVATE imview)
+add_executable(test_gl_widget test_gl_widget.cpp)
+target_link_libraries(test_gl_widget PRIVATE imview)

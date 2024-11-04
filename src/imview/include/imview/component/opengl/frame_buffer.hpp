@@ -24,7 +24,7 @@ class FrameBuffer {
   FrameBuffer& operator=(FrameBuffer&&) = delete;
 
   // public methods
-  void Bind(bool keep_aspect_ratio = true) const;
+  void Bind() const;
   void Unbind() const;
   void Clear(float r = 0.0, float g = 0.0, float b = 0.0, float a = 1.0) const;
   uint32_t GetTextureId() const { return texture_buffer_; }

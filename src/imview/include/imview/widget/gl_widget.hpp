@@ -11,9 +11,11 @@
 
 #include <memory>
 #include <functional>
+#include <unordered_map>
 
 #include "imview/panel.hpp"
 #include "imview/component/opengl/frame_buffer.hpp"
+#include "imview/interface/opengl_drawable.hpp"
 
 namespace quickviz {
 class GlWidget : public Panel {
@@ -22,13 +24,20 @@ class GlWidget : public Panel {
   ~GlWidget() = default;
 
   // public methods
-  using GlRenderFunction = std::function<void(const FrameBuffer&)>;
-  void SetGlRenderFunction(GlRenderFunction func);
+  void AddOpenGLObject(const std::string& name,
+                       std::unique_ptr<OpenGLDrawable> object);
+  void RemoveOpenGLObject(const std::string& name);
+  void ClearOpenGLObjects();
+  void UpdateView(const glm::mat4& projection, const glm::mat4& view);
+
   void Draw() override;
 
- private:
-  GlRenderFunction render_function_;
+ protected:
   std::unique_ptr<FrameBuffer> frame_buffer_;
+  glm::mat4 projection_ = glm::mat4(1.0f);
+  glm::mat4 view_ = glm::mat4(1.0f);
+  std::unordered_map<std::string, std::unique_ptr<OpenGLDrawable>>
+      drawable_objects_;
 };
 }  // namespace quickviz
 

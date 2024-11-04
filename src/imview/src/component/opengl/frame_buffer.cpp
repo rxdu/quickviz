@@ -63,16 +63,9 @@ void FrameBuffer::DestroyBuffers() {
   render_buffer_ = 0;
 }
 
-void FrameBuffer::Bind(bool keep_aspect_ratio) const {
+void FrameBuffer::Bind() const {
   glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_);
-  if (keep_aspect_ratio) {
-    float square_size = std::min(width_, height_);
-    int x_offset = (width_ - square_size) / 2;
-    int y_offset = (height_ - square_size) / 2;
-    glViewport(x_offset, y_offset, square_size, square_size);
-  } else {
-    glViewport(0, 0, width_, height_);
-  }
+  glViewport(0, 0, width_, height_);
   glEnable(GL_DEPTH_TEST);
 }
 
@@ -84,7 +77,8 @@ void FrameBuffer::Clear(float r, float g, float b, float a) const {
 }
 
 void FrameBuffer::Resize(uint32_t width, uint32_t height) {
-  if (width == width_ && height == height_) return;
+  if ((width == width_ && height == height_) || (width == 0 || height == 0))
+    return;
 
   width_ = width;
   height_ = height;

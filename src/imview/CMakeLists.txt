@@ -38,7 +38,9 @@ add_library(imview
     src/component/opengl/shader_program.cpp
     src/component/opengl/frame_buffer.cpp
     src/component/opengl/grid.cpp
+    src/component/opengl/triangle.cpp
     src/component/opengl/camera.cpp
+    src/component/opengl/camera_controller.cpp
     src/component/buffer/buffer_registry.cpp
     src/component/buffer/scrolling_plot_buffer.cpp
     src/component/event/event_dispatcher.cpp
