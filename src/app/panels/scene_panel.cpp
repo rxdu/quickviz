@@ -26,6 +26,7 @@ ScenePanel::ScenePanel(const std::string& panel_name) : GlWidget(panel_name) {
 
 void ScenePanel::Draw() {
   ImVec2 content_size = ImGui::GetContentRegionAvail();
+
   // Orthographic projection for a top-down view
   float aspect_ratio =
       static_cast<float>(content_size.x) / static_cast<float>(content_size.y);

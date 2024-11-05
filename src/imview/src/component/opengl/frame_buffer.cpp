@@ -19,6 +19,7 @@ FrameBuffer::FrameBuffer(uint32_t width, uint32_t height)
       frame_buffer_(0),
       texture_buffer_(0),
       render_buffer_(0) {
+  aspect_ratio_ = static_cast<float>(width) / static_cast<float>(height);
   CreateBuffers();
 }
 
@@ -63,9 +64,21 @@ void FrameBuffer::DestroyBuffers() {
   render_buffer_ = 0;
 }
 
-void FrameBuffer::Bind() const {
+void FrameBuffer::Bind(bool lock_aspect_ratio) const {
   glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_);
-  glViewport(0, 0, width_, height_);
+
+  if (lock_aspect_ratio) {
+    float expected_width = height_ * aspect_ratio_;
+    if (expected_width > width_) {
+      float actual_height = width_ / aspect_ratio_;
+      glViewport(0, (height_ - actual_height) / 2, width_, actual_height);
+    } else {
+      float actual_width = expected_width;
+      glViewport((width_ - actual_width) / 2, 0, actual_width, height_);
+    }
+  } else {
+    glViewport(0, 0, width_, height_);
+  }
   glEnable(GL_DEPTH_TEST);
 }
 
