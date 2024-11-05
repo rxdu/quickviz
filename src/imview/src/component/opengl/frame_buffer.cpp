@@ -66,7 +66,6 @@ void FrameBuffer::DestroyBuffers() {
 
 void FrameBuffer::Bind(bool lock_aspect_ratio) const {
   glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_);
-
   if (lock_aspect_ratio) {
     float expected_width = height_ * aspect_ratio_;
     if (expected_width > width_) {

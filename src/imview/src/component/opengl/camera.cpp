@@ -33,6 +33,11 @@ void Camera::Reset() {
   UpdateCameraVectors();
 }
 
+void Camera::SetWorldUpVector(glm::vec3 up) {
+  world_up_ = up;
+  UpdateCameraVectors();
+}
+
 glm::mat4 Camera::GetViewMatrix() const {
   return glm::lookAt(current_state_.position,
                      current_state_.position + current_state_.front,
@@ -42,6 +47,28 @@ glm::mat4 Camera::GetViewMatrix() const {
 glm::mat4 Camera::GetProjectionMatrix(float aspect_ratio, float z_near,
                                       float z_far) const {
   return glm::perspective(glm::radians(fov_), aspect_ratio, z_near, z_far);
+}
+
+void Camera::SetPosition(const glm::vec3& position) {
+  current_state_.position = position;
+}
+
+void Camera::SetYaw(float yaw) {
+  current_state_.yaw = yaw;
+  UpdateCameraVectors();
+}
+
+void Camera::SetPitch(float pitch) {
+  current_state_.pitch = pitch;
+  UpdateCameraVectors();
+}
+
+void Camera::LookAt(const glm::vec3& target) {
+  current_state_.front = glm::normalize(target - current_state_.position);
+  current_state_.right =
+      glm::normalize(glm::cross(current_state_.front, world_up_));
+  current_state_.up =
+      glm::normalize(glm::cross(current_state_.right, current_state_.front));
 }
 
 void Camera::UpdateCameraVectors() {

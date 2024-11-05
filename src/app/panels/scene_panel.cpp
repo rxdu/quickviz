@@ -20,6 +20,9 @@ ScenePanel::ScenePanel(const std::string& panel_name) : GlWidget(panel_name) {
   this->SetNoTitleBar(true);
   this->SetNoBackground(true);
 
+  camera_ =
+      std::make_unique<Camera>(glm::vec3(0.0f, 3.0f, 8.0f), -90.0f, -25.0f);
+
   auto grid = std::make_unique<Grid>(10.0f, 1.0f, glm::vec3(0.7f, 0.7f, 0.7f));
   this->AddOpenGLObject("grid", std::move(grid));
 }
@@ -27,19 +30,11 @@ ScenePanel::ScenePanel(const std::string& panel_name) : GlWidget(panel_name) {
 void ScenePanel::Draw() {
   ImVec2 content_size = ImGui::GetContentRegionAvail();
 
-  // Orthographic projection for a top-down view
+  // get view matrices from camera
   float aspect_ratio =
       static_cast<float>(content_size.x) / static_cast<float>(content_size.y);
-  //  std::cout << "aspect ratio: " << aspect_ratio << std::endl;
-  glm::mat4 projection =
-      glm::perspective(glm::radians(45.0f), aspect_ratio, 0.1f, 100.0f);
-
-  // Simple view matrix looking at an angle
-  glm::mat4 view = glm::lookAt(
-      glm::vec3(10.0f, 10.0f, 10.0f),  // Camera positioned at an angle
-      glm::vec3(0.0f, 0.0f, 0.0f),     // Looking at the origin
-      glm::vec3(0.0f, 1.0f, 0.0f)      // Up vector pointing along the Y-axis
-  );
+  glm::mat4 projection = camera_->GetProjectionMatrix(aspect_ratio);
+  glm::mat4 view = camera_->GetViewMatrix();
 
   UpdateView(projection, view);
 

@@ -16,6 +16,7 @@
 #include "imview/window.hpp"
 #include "imview/component/opengl/grid.hpp"
 #include "imview/component/opengl/camera.hpp"
+#include "imview/component/opengl/camera_controller.hpp"
 
 using namespace quickviz;
 
@@ -27,23 +28,48 @@ float lastX = 1920 / 2.0f;
 float lastY = 1080 / 2.0f;
 
 Camera camera(glm::vec3(0.0f, 3.0f, 8.0f), -90.0f, -25.0f);
+CameraController camera_controller(camera);
 
 void ProcessInput(GLFWwindow* window) {
+  //  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+  //    std::cout << "W key pressed" << std::endl;
+  //    camera.ProcessKeyboard(Camera::Movement::kForward, deltaTime);
+  //  }
+  //  if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+  //    std::cout << "S key pressed" << std::endl;
+  //    camera.ProcessKeyboard(Camera::Movement::kBackward, deltaTime);
+  //  }
+  //  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+  //    std::cout << "A key pressed" << std::endl;
+  //    camera.ProcessKeyboard(Camera::Movement::kLeft, deltaTime);
+  //  }
+  //  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+  //    std::cout << "D key pressed" << std::endl;
+  //    camera.ProcessKeyboard(Camera::Movement::kRight, deltaTime);
+  //  }
   if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-    std::cout << "W key pressed" << std::endl;
-    camera.ProcessKeyboard(Camera::Movement::kForward, deltaTime);
+    camera_controller.ProcessKeyboard(
+        CameraController::CameraMovement::kForward, deltaTime);
   }
   if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-    std::cout << "S key pressed" << std::endl;
-    camera.ProcessKeyboard(Camera::Movement::kBackward, deltaTime);
+    camera_controller.ProcessKeyboard(
+        CameraController::CameraMovement::kBackward, deltaTime);
   }
   if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-    std::cout << "A key pressed" << std::endl;
-    camera.ProcessKeyboard(Camera::Movement::kLeft, deltaTime);
+    camera_controller.ProcessKeyboard(CameraController::CameraMovement::kLeft,
+                                      deltaTime);
   }
   if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-    std::cout << "D key pressed" << std::endl;
-    camera.ProcessKeyboard(Camera::Movement::kRight, deltaTime);
+    camera_controller.ProcessKeyboard(CameraController::CameraMovement::kRight,
+                                      deltaTime);
+  }
+  if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
+    camera_controller.ProcessKeyboard(CameraController::CameraMovement::kUp,
+                                      deltaTime);
+  }
+  if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+    camera_controller.ProcessKeyboard(CameraController::CameraMovement::kDown,
+                                      deltaTime);
   }
   if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
     camera.Reset();
@@ -63,11 +89,13 @@ void MouseCallback(GLFWwindow* window, double xpos, double ypos) {
   lastX = xpos;
   lastY = ypos;
 
-  camera.ProcessMouseMovement(xoffset, yoffset);
+  //  camera.ProcessMouseMovement(xoffset, yoffset);
+  camera_controller.ProcessMouseMovement(xoffset, yoffset);
 }
 
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
-  camera.ProcessMouseScroll(yoffset);
+  //  camera.ProcessMouseScroll(yoffset);
+  camera_controller.ProcessMouseScroll(yoffset);
 }
 
 int main(int argc, char* argv[]) {
@@ -75,6 +103,7 @@ int main(int argc, char* argv[]) {
   int height = 1080;
   Window win("Test Window", width, height);
 
+  camera_controller.SetMode(CameraController::Mode::kTopDown);
   glfwSetCursorPosCallback(win.GetWindowObject(), MouseCallback);
   glfwSetScrollCallback(win.GetWindowObject(), ScrollCallback);
   glfwSetInputMode(win.GetWindowObject(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);

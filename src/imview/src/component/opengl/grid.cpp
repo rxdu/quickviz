@@ -64,6 +64,10 @@ void Grid::SetLineColor(const glm::vec3& color, float alpha) {
   alpha_ = alpha;
 }
 
+void Grid::InitGraphicsResources() {}
+
+void Grid::DeinitGraphicsResources() {}
+
 void Grid::OnDraw(const glm::mat4& projection, const glm::mat4& view) {
   shader_.Use();
   shader_.SetUniform("projection", projection);

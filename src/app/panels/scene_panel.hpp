@@ -13,6 +13,7 @@
 
 #include "imview/widget/gl_widget.hpp"
 #include "imview/component/opengl/grid.hpp"
+#include "imview/component/opengl/camera.hpp"
 
 namespace quickviz {
 class ScenePanel : public GlWidget {
@@ -20,6 +21,9 @@ class ScenePanel : public GlWidget {
   ScenePanel(const std::string& panel_name);
 
   void Draw() override;
+
+ private:
+  std::unique_ptr<Camera> camera_;
 };
 }  // namespace quickviz
 
