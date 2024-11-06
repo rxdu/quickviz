@@ -72,7 +72,7 @@ void ProcessInput(GLFWwindow* window) {
                                       deltaTime);
   }
   if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-    camera.Reset();
+    camera_controller.Reset();
   }
 }
 
@@ -103,7 +103,7 @@ int main(int argc, char* argv[]) {
   int height = 1080;
   Window win("Test Window", width, height);
 
-  camera_controller.SetMode(CameraController::Mode::kTopDown);
+  camera_controller.SetMode(CameraController::Mode::kOrbit);
   glfwSetCursorPosCallback(win.GetWindowObject(), MouseCallback);
   glfwSetScrollCallback(win.GetWindowObject(), ScrollCallback);
   glfwSetInputMode(win.GetWindowObject(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);

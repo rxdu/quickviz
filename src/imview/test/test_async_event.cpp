@@ -15,7 +15,8 @@
 using namespace quickviz;
 
 int main(int argc, char* argv[]) {
-  Event<int, double, std::string> event("test_event", 42, 3.14, "hello");
+  Event<int, double, std::string> event(EventSource::kApplicaton, "test_event",
+                                        42, 3.14, "hello");
   event.Print();
 
   auto name = event.GetName();
@@ -38,10 +39,10 @@ int main(int argc, char* argv[]) {
       });
 
   AsyncEventEmitter emitter;
-  emitter.Emit<Event<int, double, std::string>>("test_event", 42, 3.14,
-                                                "hello");
-  emitter.Emit<Event<int, double, std::string>>("test_event", 21, 6.28,
-                                                "hello again");
+  emitter.Emit<Event<int, double, std::string>>(
+      EventSource::kApplicaton, "test_event", 42, 3.14, "hello");
+  emitter.Emit<Event<int, double, std::string>>(
+      EventSource::kApplicaton, "test_event", 21, 6.28, "hello again");
 
   //  AsyncEventDispatcher::GetInstance().HandleEvents();
   std::thread handler_thread(&AsyncEventDispatcher::HandleEvents,

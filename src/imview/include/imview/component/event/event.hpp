@@ -14,9 +14,20 @@
 #include <iostream>
 
 namespace quickviz {
+enum class EventSource : int {
+  kNone = 0,
+  kKeyboard,
+  kMouse,
+  kMouseButton,
+  kUiElement,
+  kApplicaton,
+  kCustomEvent
+};
+
 class BaseEvent {
  public:
   virtual ~BaseEvent() = default;
+  virtual EventSource GetSource() const = 0;
   virtual std::string GetName() const = 0;
 };
 
@@ -24,10 +35,11 @@ template <typename... Args>
 class Event : public BaseEvent {
  public:
   // Constructor to create an event with given arguments
-  Event(std::string name, Args... args)
-      : name_(name), data_(std::make_tuple(args...)) {}
+  Event(EventSource type, const std::string& name, Args... args)
+      : type_(type), name_(name), data_(std::make_tuple(args...)) {}
 
   // Get the stored data
+  EventSource GetSource() const override { return type_; }
   std::string GetName() const override { return name_; }
   const std::tuple<Args...>& GetData() const { return data_; }
 
@@ -39,6 +51,7 @@ class Event : public BaseEvent {
   }
 
  private:
+  EventSource type_;
   std::string name_;
   std::tuple<Args...> data_;
 

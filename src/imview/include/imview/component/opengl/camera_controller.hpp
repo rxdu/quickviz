@@ -20,6 +20,7 @@ class CameraController {
  public:
   CameraController(Camera& camera);
 
+  void Reset();
   void SetMode(Mode mode);
   void ProcessKeyboard(CameraMovement direction, float delta_time);
   void ProcessMouseMovement(float x_offset, float y_offset);

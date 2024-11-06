@@ -11,6 +11,8 @@
 namespace quickviz {
 CameraController::CameraController(Camera& camera) : camera_(camera) {}
 
+void CameraController::Reset() { camera_.Reset(); }
+
 void CameraController::SetMode(CameraController::Mode mode) {
   mode_ = mode;
   if (mode == Mode::kTopDown) {
@@ -26,15 +28,16 @@ void CameraController::ProcessKeyboard(
   if (mode_ == Mode::kTopDown) {
     float velocity = camera_.GetMovementSpeed() * delta_time;
     glm::vec3 position = camera_.GetPosition();
-    // Move only along X and Z axes
-    if (direction == CameraMovement::kForward) position.z -= velocity;
-    if (direction == CameraMovement::kBackward) position.z += velocity;
-    if (direction == CameraMovement::kLeft) position.x -= velocity;
-    if (direction == CameraMovement::kRight) position.x += velocity;
-
-    camera_.SetPosition(position);  // Update position without changing height
+    if (direction == CameraMovement::kUp) position.y -= velocity;
+    if (direction == CameraMovement::kDown) position.y += velocity;
+    if (direction == CameraMovement::kForward) position.x -= velocity;
+    if (direction == CameraMovement::kBackward) position.x += velocity;
+    if (direction == CameraMovement::kLeft) position.z += velocity;
+    if (direction == CameraMovement::kRight) position.z -= velocity;
+    camera_.SetPosition(position);
+  } else {
+    camera_.ProcessKeyboard(direction, delta_time);
   }
-  camera_.ProcessKeyboard(direction, delta_time);
 }
 
 void CameraController::ProcessMouseMovement(float x_offset, float y_offset) {
