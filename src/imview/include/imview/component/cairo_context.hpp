@@ -11,7 +11,6 @@
 #define CAIRO_CONTEXT_HPP
 
 #include <cairo.h>
-#include <GL/gl.h>
 
 #include <cstdint>
 #include <stack>
@@ -51,7 +50,7 @@ class CairoContext {
   void PopScale();
 
   // GL-related functions can only be called after a GL context has been created
-  GLuint RenderToGlTexture();
+  uint32_t RenderToGlTexture();
 
   // get object of Cairo context and surface
   cairo_t* GetCairoObject() { return cr_; }
@@ -67,7 +66,7 @@ class CairoContext {
 
   cairo_surface_t* surface_ = nullptr;
   cairo_t* cr_ = nullptr;
-  GLuint image_texture_;
+  uint32_t image_texture_;
 
   float aspect_ratio_ = 1.0;
 

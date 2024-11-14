@@ -9,6 +9,8 @@
 
 #include "imview/component/cairo_context.hpp"
 
+#include <glad/glad.h>
+
 #include <iostream>
 
 namespace quickviz {
@@ -89,13 +91,34 @@ void CairoContext::PopScale() {
   scaler_stack_.pop();
 }
 
-GLuint CairoContext::RenderToGlTexture() {
+uint32_t CairoContext::RenderToGlTexture() {
   // bind texture
   glBindTexture(GL_TEXTURE_2D, image_texture_);
 
   // convert surface to OpenGL texture
   unsigned char* data = cairo_image_surface_get_data(surface_);
-  glTexImage2D(GL_TEXTURE_2D, 0, 4, width_, height_, 0, GL_BGRA,
+  cairo_format_t format = cairo_image_surface_get_format(surface_);
+  GLenum gl_format;
+  if (format == CAIRO_FORMAT_ARGB32) {
+    gl_format = GL_RGBA;
+    for (int i = 0; i < width_ * height_; ++i) {
+      unsigned char* pixel = &data[i * 4];
+      unsigned char a = pixel[3];
+      unsigned char r = pixel[2];
+      unsigned char g = pixel[1];
+      unsigned char b = pixel[0];
+      pixel[0] = r;
+      pixel[1] = g;
+      pixel[2] = b;
+      pixel[3] = a;
+    }
+  } else if (format == CAIRO_FORMAT_RGB24) {
+    gl_format = GL_RGB;
+  } else {
+    throw std::runtime_error(
+        "[ERROR] render_to_gl_texture() - Unsupported Cairo format\n");
+  }
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width_, height_, 0, gl_format,
                GL_UNSIGNED_BYTE, data);
 
   // unbind texture
