@@ -100,26 +100,23 @@ uint32_t CairoContext::RenderToGlTexture() {
   cairo_format_t format = cairo_image_surface_get_format(surface_);
   GLenum gl_format;
   if (format == CAIRO_FORMAT_ARGB32) {
-    gl_format = GL_RGBA;
-    for (int i = 0; i < width_ * height_; ++i) {
-      unsigned char* pixel = &data[i * 4];
-      unsigned char a = pixel[3];
-      unsigned char r = pixel[2];
-      unsigned char g = pixel[1];
-      unsigned char b = pixel[0];
-      pixel[0] = r;
-      pixel[1] = g;
-      pixel[2] = b;
-      pixel[3] = a;
-    }
+    gl_format = GL_BGRA;  // Note: GL_BGRA requires OpenGL 3.2+
   } else if (format == CAIRO_FORMAT_RGB24) {
     gl_format = GL_RGB;
   } else {
-    throw std::runtime_error(
-        "[ERROR] render_to_gl_texture() - Unsupported Cairo format\n");
+    std::cerr << "Error: Unsupported Cairo image format." << std::endl;
+    return 0;
   }
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width_, height_, 0, gl_format,
-               GL_UNSIGNED_BYTE, data);
+  glTexImage2D(GL_TEXTURE_2D,     // target
+               0,                 // level
+               GL_RGBA,           // internal format
+               width_,            // width
+               height_,           // height
+               0,                 // border
+               gl_format,         // format
+               GL_UNSIGNED_BYTE,  // type
+               data               // pixels
+  );
 
   // unbind texture
   glBindTexture(GL_TEXTURE_2D, 0);
