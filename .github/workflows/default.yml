@@ -14,19 +14,27 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-22.04, ubuntu-24.04 ]
+        os: [ ubuntu-20.04, ubuntu-22.04, ubuntu-24.04 ]
     steps:
     - uses: actions/checkout@v4
     - name: Checkout submodules
       run: git submodule update --init --recursive
     - name: Install Dependencies
-      run: sudo apt-get update && sudo apt-get install -y libgl1-mesa-dev libglfw3-dev libcairo2-dev libopencv-dev
+      run: |
+        sudo apt-get update && sudo apt-get install -y libgl1-mesa-dev \
+          libglfw3-dev libcairo2-dev libopencv-dev libglm-dev
     - name: Create Build Environment
       run: cmake -E make_directory ${{runner.workspace}}/build
-    - name: Configure CMake
+    - name: Configure CMake (Ubuntu 20.04)
+      if: ${{ matrix.os == 'ubuntu-20.04' }}
       shell: bash
       working-directory: ${{runner.workspace}}/build
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DENABLE_AUTO_LAYOUT=OFF -DBUILD_TESTING=ON
+    - name: Configure CMake (Ubuntu 22.04 or 24.04)
+      if: ${{ matrix.os == 'ubuntu-22.04' || matrix.os == 'ubuntu-24.04' }}
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=ON
     - name: Build
       working-directory: ${{runner.workspace}}/build
       shell: bash

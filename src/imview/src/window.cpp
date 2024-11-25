@@ -66,12 +66,14 @@ void Window::ApplyWindowHints(uint32_t window_hints) {
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);  // Required on Mac
 #else
-  // GL 3.0 + GLSL 130
+  // GL 3.3
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
 // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 #endif
+
+  glfwWindowHint(GLFW_SAMPLES, 4);
 
   // optional hints
   if (window_hints & WIN_FOCUSED) {
@@ -133,4 +135,6 @@ void Window::SwapBuffers() { glfwSwapBuffers(win_); }
 void Window::CloseWindow() { glfwSetWindowShouldClose(win_, 1); }
 
 bool Window::ShouldClose() const { return glfwWindowShouldClose(win_); }
+
+GLFWwindow *Window::GetWindowObject() { return win_; }
 }  // namespace quickviz

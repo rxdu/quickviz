@@ -38,11 +38,14 @@ class Viewer : public Window {
   void EnableKeyboardNav(bool enable);
   void EnableGamepadNav(bool enable);
 
+  void SetWindowShouldClose();
+
   // add renderable layers and start viewer loop
   bool AddSceneObject(std::shared_ptr<SceneObject> obj);
   void Show();
 
  protected:
+  void SetupOpenGL();
   void ClearBackground();
   void CreateNewImGuiFrame();
   void RenderImGuiFrame();

@@ -191,12 +191,23 @@ void Viewer::EnableGamepadNav(bool enable) {
   }
 }
 
+void Viewer::SetWindowShouldClose() {
+  glfwSetWindowShouldClose(win_, GLFW_TRUE);
+}
+
+void Viewer::SetupOpenGL() {
+  glEnable(GL_MULTISAMPLE);
+  glEnable(GL_DEPTH_TEST);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
 void Viewer::ClearBackground() {
   int display_w, display_h;
   glfwGetFramebufferSize(win_, &display_w, &display_h);
   glViewport(0, 0, display_w, display_h);
   glClearColor(bg_color_[0], bg_color_[1], bg_color_[2], bg_color_[3]);
-  glClear(GL_COLOR_BUFFER_BIT);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void Viewer::CreateNewImGuiFrame() {
@@ -227,7 +238,8 @@ bool Viewer::AddSceneObject(std::shared_ptr<SceneObject> obj) {
 }
 
 void Viewer::OnResize(GLFWwindow *window, int width, int height) {
-  std::cout << "-- Viewer::OnResize: " << width << "x" << height << std::endl;
+  //  std::cout << "-- Viewer::OnResize: " << width << "x" << height <<
+  //  std::endl;
   for (auto &obj : scene_objects_) {
     obj->OnResize(width, height);
   }
@@ -238,6 +250,8 @@ void Viewer::Show() {
   int display_w, display_h;
   glfwGetFramebufferSize(win_, &display_w, &display_h);
   OnResize(win_, display_w, display_h);
+
+  SetupOpenGL();
 
   // main loop
   while (!ShouldClose()) {

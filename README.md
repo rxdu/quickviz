@@ -17,7 +17,9 @@ imview library in your own project, it's recommended to read this design documen
 
 ## Build
 
-The code in this repository should build on any recent linux distributions with a compiler supporting C++11/14.
+The code in this repository should build on any recent linux distributions with a compiler supporting C++11/14/17. Note
+that the yoga library for layout management requires certain C++20 features, and you will need to disable automatic
+layout feature if you are using an older compiler (such as the gcc that comes with Ubuntu 20.04 or older).
 
 **Setup toolchain**
 

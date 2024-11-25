@@ -50,6 +50,9 @@ class Window {
   void PollEvents();
   void SwapBuffers();
 
+  // for testing purposes, not recommended for normal use
+  GLFWwindow *GetWindowObject();
+
  protected:
   void ApplyWindowHints(uint32_t window_hints);
   void LoadDefaultStyle();

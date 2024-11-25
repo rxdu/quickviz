@@ -24,12 +24,19 @@ std::unordered_map<FontSize, ImFont *> custom_fonts_;
 void Fonts::LoadFonts() {
   ImGuiIO &io = ImGui::GetIO();
 
+  io.Fonts->Clear();
+
+  custom_fonts_[FontSize::kDefault] = io.Fonts->AddFontFromMemoryCompressedTTF(
+      OpenSansRegular_compressed_data, OpenSansRegular_compressed_size, 18.f);
+
   custom_fonts_[FontSize::kFont16] = io.Fonts->AddFontFromMemoryCompressedTTF(
       OpenSansRegular_compressed_data, OpenSansRegular_compressed_size, 16.f);
   custom_fonts_[FontSize::kFont18] = io.Fonts->AddFontFromMemoryCompressedTTF(
       OpenSansRegular_compressed_data, OpenSansRegular_compressed_size, 18.f);
   custom_fonts_[FontSize::kFont20] = io.Fonts->AddFontFromMemoryCompressedTTF(
       OpenSansRegular_compressed_data, OpenSansRegular_compressed_size, 20.f);
+  custom_fonts_[FontSize::kFont24] = io.Fonts->AddFontFromMemoryCompressedTTF(
+      OpenSansRegular_compressed_data, OpenSansRegular_compressed_size, 24.f);
   custom_fonts_[FontSize::kFont28] = io.Fonts->AddFontFromMemoryCompressedTTF(
       OpenSansRegular_compressed_data, OpenSansRegular_compressed_size, 28.f);
   custom_fonts_[FontSize::kFont32] = io.Fonts->AddFontFromMemoryCompressedTTF(

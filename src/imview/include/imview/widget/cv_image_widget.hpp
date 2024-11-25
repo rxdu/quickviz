@@ -9,8 +9,6 @@
 #ifndef QUICKVIZ_CV_IMAGE_WIDGET_HPP
 #define QUICKVIZ_CV_IMAGE_WIDGET_HPP
 
-#include "glad/glad.h"
-
 #include <mutex>
 #include <functional>
 
@@ -32,7 +30,7 @@ class CvImageWidget : public Panel {
  private:
   std::mutex image_mutex_;
   cv::Mat image_mat_;
-  GLuint image_texture_;
+  uint32_t image_texture_;
   bool keep_aspect_ratio_ = false;
 };
 }  // namespace quickviz

@@ -21,6 +21,7 @@ class Resizable {
   virtual void OnResize(float width, float height) = 0;
 
   // used for automatic layout only
+#ifdef ENABLE_AUTO_LAYOUT
   virtual void SetAlignContent(Styling::AlignContent content) = 0;
   virtual void SetAlignItems(Styling::AlignItems items) = 0;
   virtual void SetAspectRatio(float aspect_ratio) = 0;
@@ -44,6 +45,7 @@ class Resizable {
   virtual void SetMinHeight(float height) = 0;
   virtual void SetMaxWidth(float width) = 0;
   virtual void SetMaxHeight(float height) = 0;
+#endif
 };
 }  // namespace quickviz
 

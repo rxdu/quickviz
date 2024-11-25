@@ -11,6 +11,7 @@
 
 #include "imview/viewer.hpp"
 #include "imview/layer.hpp"
+#include "imview/box.hpp"
 #include "panels/main_docking_panel.hpp"
 #include "data_reader.hpp"
 
@@ -28,11 +29,16 @@ class QuickvizApplication {
   bool Initialize();
   void Run();
 
+  void OnChangeDebugPanelVisibility(bool visible);
+  void OnWindowShouldClose();
+
  private:
   std::unique_ptr<Viewer> viewer_;
 
   // ui elements
   std::shared_ptr<Layer> ui_layer_;
+  std::shared_ptr<Box> main_box_;
+  std::shared_ptr<MenuBar> menu_bar_;
   std::shared_ptr<MainDockingPanel> main_docking_panel_;
 
   std::shared_ptr<Layer> plot_layer_;

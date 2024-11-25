@@ -9,4 +9,6 @@ endif ()
 add_subdirectory(third_party)
 
 # applications
-add_subdirectory(app)
+if (ENABLE_AUTO_LAYOUT)
+  add_subdirectory(app)
+endif ()

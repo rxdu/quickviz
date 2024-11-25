@@ -23,12 +23,8 @@ class Panel : public SceneObject {
 
   // public API
   void SetAutoLayout(bool value);
+  bool IsAutoLayout() const;
   void OnRender() override;
-
- protected:
-  // for derived classes
-  void Begin(bool *p_open = NULL);
-  void End();
 
   void SetNoTitleBar(bool value);
   void SetNoResize(bool value);
@@ -60,6 +56,11 @@ class Panel : public SceneObject {
   void SetWindowNoCloseButton();
 
   virtual void Draw() = 0;
+
+ protected:
+  // for derived classes
+  void Begin(bool *p_open = NULL);
+  void End();
 
  private:
   bool auto_layout_ = false;
