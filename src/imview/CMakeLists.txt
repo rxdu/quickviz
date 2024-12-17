@@ -45,6 +45,8 @@ add_library(imview
     src/component/buffer/scrolling_plot_buffer.cpp
     src/component/event/event_dispatcher.cpp
     src/component/event/async_event_dispatcher.cpp
+    src/component/logging/log_processor.cpp
+    src/component/logging/app_log_handler.cpp
 )
 target_link_libraries(imview PUBLIC imcore
     PkgConfig::Cairo PkgConfig::Fontconfig

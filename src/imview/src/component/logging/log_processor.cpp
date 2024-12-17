@@ -1,12 +1,12 @@
 /*
  * @file log_processor.cpp
  * @date 11/3/24
- * @brief
+ * @brief adapted from imgui_demo.cpp
  *
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
-#include "component/log_processor.hpp"
+#include "imview/component/logging/log_processor.hpp"
 
 namespace quickviz {
 LogProcessor::LogProcessor() {

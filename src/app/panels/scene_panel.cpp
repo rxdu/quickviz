@@ -13,6 +13,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "imview/component/logging/app_log_handler.hpp"
+
 namespace quickviz {
 ScenePanel::ScenePanel(const std::string& panel_name) : GlWidget(panel_name) {
   this->SetNoMove(true);
@@ -35,6 +37,11 @@ void ScenePanel::Draw() {
       static_cast<float>(content_size.x) / static_cast<float>(content_size.y);
   glm::mat4 projection = camera_->GetProjectionMatrix(aspect_ratio);
   glm::mat4 view = camera_->GetViewMatrix();
+
+  if (ImGui::IsWindowHovered()) {
+    std::cerr << "ScenePanel is hovered" << std::endl;
+    AppLogHandler::GetInstance().Log(LogLevel::kInfo, "ScenePanel is hovered");
+  }
 
   UpdateView(projection, view);
 
