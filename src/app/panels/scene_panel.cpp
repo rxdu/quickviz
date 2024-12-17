@@ -39,8 +39,30 @@ void ScenePanel::Draw() {
   glm::mat4 view = camera_->GetViewMatrix();
 
   if (ImGui::IsWindowHovered()) {
-    std::cerr << "ScenePanel is hovered" << std::endl;
     AppLogHandler::GetInstance().Log(LogLevel::kInfo, "ScenePanel is hovered");
+  }
+
+  ImGuiIO& io = ImGui::GetIO();
+  ImVec2 windowPos = ImGui::GetWindowPos();
+
+  ImVec2 localMousePos =
+      ImVec2(io.MousePos.x - windowPos.x, io.MousePos.y - windowPos.y);
+
+  if (io.WantCaptureMouse) {
+    if (ImGui::IsMousePosValid()) {
+      AppLogHandler::GetInstance().Log(LogLevel::kInfo, "Mouse pos: (%f, %f)",
+                                       io.MousePos.x, io.MousePos.y);
+    } else {
+      AppLogHandler::GetInstance().Log(LogLevel::kInfo, "Mouse pos: <INVALID>");
+    }
+
+    for (int i = 0; i < IM_ARRAYSIZE(io.MouseDown); i++)
+      if (ImGui::IsMouseDown(i)) {
+        ImGui::SameLine();
+        // ImGui::Text("b%d (%.02f secs)", i, io.MouseDownDuration[i]);
+        AppLogHandler::GetInstance().Log(LogLevel::kInfo,
+                                         "Mouse button %d down", i);
+      }
   }
 
   UpdateView(projection, view);
