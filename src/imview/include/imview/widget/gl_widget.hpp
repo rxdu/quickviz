@@ -29,6 +29,7 @@ class GlWidget : public Panel {
   void RemoveOpenGLObject(const std::string& name);
   void ClearOpenGLObjects();
   void UpdateView(const glm::mat4& projection, const glm::mat4& view);
+  void DrawOpenGLObject();
 
   void Draw() override;
 

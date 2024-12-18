@@ -14,8 +14,8 @@
 namespace quickviz {
 MainDockingPanel::MainDockingPanel(std::string name) : Panel(name) {
   this->SetAutoLayout(true);
-  this->SetNoMove(true);
   this->SetNoResize(true);
+  this->SetNoMove(true);
   this->SetNoTitleBar(true);
   this->SetNoBackground(true);
 
@@ -31,9 +31,14 @@ void MainDockingPanel::Draw() {
 
   // set up layout
   Begin();
+
+  // set up dockspace
+  dockspace_id_ = ImGui::GetID("MainDockingPanel");
+  ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_NoResize;
+  ImGui::DockSpace(dockspace_id_, ImGui::GetWindowSize(), dockspace_flags);
   {
     if (!layout_initialized_) {
-      dockspace_id_ = ImGui::DockBuilderAddNode();
+      dockspace_id_ = ImGui::DockBuilderAddNode(dockspace_id_, dockspace_flags);
 
       ImGui::DockBuilderSplitNode(dockspace_id_, ImGuiDir_Left, 0.2f,
                                   &config_panel_node_, &gl_scene_widget_node_);

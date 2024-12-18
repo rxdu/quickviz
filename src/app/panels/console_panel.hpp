@@ -10,17 +10,13 @@
 #define QUICKVIZ_CONSOLE_PANEL_HPP
 
 #include "imview/panel.hpp"
-#include "component/log_processor.hpp"
 
 namespace quickviz {
 class ConsolePanel : public Panel {
  public:
-  ConsolePanel(std::string name = "Debug");
+  ConsolePanel(std::string name = "Console");
 
   void Draw() override;
-
- private:
-  LogProcessor log_;
 };
 }  // namespace quickviz
 

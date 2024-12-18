@@ -1,4 +1,4 @@
-/* 
+/*
  * popup.hpp
  *
  * Created on 4/5/22 11:08 PM
@@ -12,10 +12,18 @@
 
 #include <string>
 #include <cstdint>
+#include <functional>
 
 namespace quickviz {
-bool ShowPopupNotification(std::string msg, std::string title,
-                           float width = 300, float height = 150);
-}
+enum class PopupType { kNotification, kConfirmation };
 
-#endif //ROBOSW_SRC_VISUALIZATION_IMVIEW_INCLUDE_IMVIEW_POPUP_HPP
+void ShowNotificationPopup(std::string title, std::string msg,
+                           float width = 300, float height = 150);
+
+using OnConfirmationCallback = std::function<void(bool)>;
+void ShowConfirmationPopup(std::string title, std::string msg,
+                           OnConfirmationCallback callback = nullptr,
+                           float width = 300, float height = 150);
+}  // namespace quickviz
+
+#endif  // ROBOSW_SRC_VISUALIZATION_IMVIEW_INCLUDE_IMVIEW_POPUP_HPP

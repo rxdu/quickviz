@@ -11,6 +11,22 @@
 #include <cmath>
 
 namespace quickviz {
+Camera::Camera(float fov) : fov_(fov) {
+  current_state_.position = glm::vec3(0.0f, 0.0f, 0.0f);
+  current_state_.yaw = -90.0f;
+  current_state_.pitch = 0.0f;
+
+  UpdateCameraVectors();
+
+  // save initial state for reset
+  initial_state_.position = current_state_.position;
+  initial_state_.yaw = current_state_.yaw;
+  initial_state_.pitch = current_state_.pitch;
+  initial_state_.front = current_state_.front;
+  initial_state_.up = current_state_.up;
+  initial_state_.right = current_state_.right;
+}
+
 Camera::Camera(glm::vec3 position, float yaw, float pitch, float fov)
     : fov_(fov) {
   current_state_.position = position;

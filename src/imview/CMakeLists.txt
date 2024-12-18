@@ -19,6 +19,7 @@ add_library(imview
     # ui components
     src/window.cpp
     src/viewer.cpp
+    src/popup.cpp
     src/fonts.cpp
     src/scene_object.cpp
     src/panel.cpp
@@ -31,6 +32,7 @@ add_library(imview
     src/widget/rt_line_plot_widget.cpp
     src/widget/gl_widget.cpp
     # components
+    src/component/popup_manager.cpp
     src/component/image_utils.cpp
     src/component/cairo_context.cpp
     src/component/cairo_draw.cpp
@@ -45,6 +47,8 @@ add_library(imview
     src/component/buffer/scrolling_plot_buffer.cpp
     src/component/event/event_dispatcher.cpp
     src/component/event/async_event_dispatcher.cpp
+    src/component/logging/log_processor.cpp
+    src/component/logging/app_log_handler.cpp
 )
 target_link_libraries(imview PUBLIC imcore
     PkgConfig::Cairo PkgConfig::Fontconfig

@@ -1,9 +1,7 @@
 if (BUILD_QUICKVIZ_APP)
   message(STATUS "Build quickviz application")
   add_executable(quickviz main.cpp
-      # components
       quickviz_application.cpp
-      component/log_processor.cpp
       # panels
       panels/menu_bar.cpp
       panels/main_docking_panel.cpp
