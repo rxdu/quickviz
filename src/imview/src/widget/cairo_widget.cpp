@@ -92,7 +92,7 @@ void CairoWidget::Render(const ImVec2& uv0, const ImVec2& uv1,
   draw_func(ctx_->GetCairoObject(), ctx_->GetAspectRatio());
 
   // render cairo content to OpenGL texture
-  GLuint image = ctx_->RenderToGlTexture();
+  uint32_t image = ctx_->RenderToGlTexture();
   ImGui::Image((void*)(intptr_t)image, ImGui::GetContentRegionAvail(), uv0, uv1,
                tint_col, border_col);
 }

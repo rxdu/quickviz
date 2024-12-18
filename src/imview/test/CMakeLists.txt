@@ -8,14 +8,28 @@ add_subdirectory(unit_test)
 add_executable(test_window_gl_triangle test_window_gl_triangle.cpp)
 target_link_libraries(test_window_gl_triangle PRIVATE imview)
 
-add_executable(test_box test_box.cpp)
-target_link_libraries(test_box PRIVATE imview)
+if (ENABLE_AUTO_LAYOUT)
+  add_executable(test_box test_box.cpp)
+  target_link_libraries(test_box PRIVATE imview)
+endif ()
 
 add_executable(test_event test_event.cpp)
 target_link_libraries(test_event PRIVATE imview)
 
 add_executable(test_async_event test_async_event.cpp)
 target_link_libraries(test_async_event PRIVATE imview)
+
+add_executable(test_framebuffer test_framebuffer.cpp)
+target_link_libraries(test_framebuffer PRIVATE imview)
+
+add_executable(test_shader test_shader.cpp)
+target_link_libraries(test_shader PRIVATE imview)
+
+add_executable(test_grid test_grid.cpp)
+target_link_libraries(test_grid PRIVATE imview)
+
+add_executable(test_camera test_camera.cpp)
+target_link_libraries(test_camera PRIVATE imview)
 
 find_package(OpenCV QUIET)
 if (OpenCV_FOUND)

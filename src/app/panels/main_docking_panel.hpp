@@ -11,6 +11,9 @@
 
 #include "imview/panel.hpp"
 
+#include "imview/widget/gl_widget.hpp"
+
+#include "panels/menu_bar.hpp"
 #include "panels/config_panel.hpp"
 #include "panels/scene_panel.hpp"
 #include "panels/console_panel.hpp"
@@ -22,17 +25,20 @@ class MainDockingPanel : public Panel {
 
   void Draw() override;
 
+  void ChangeDebugPanelVisibility(bool visible);
+
  private:
   bool layout_initialized_ = false;
-
   ImGuiID dockspace_id_;
-  ImGuiID config_panel_node_;
-  ImGuiID scene_panel_node_;
-  ImGuiID console_panel_node_;
 
-  ConfigPanel config_panel_;
-  ScenePanel scene_panel_;
-  ConsolePanel console_panel_;
+  ImGuiID config_panel_node_;
+  ImGuiID console_panel_node_;
+  ImGuiID gl_scene_widget_node_;
+
+  ConfigPanel config_panel_{"Config"};
+  ConsolePanel console_panel_{"Console"};
+  //  GlWidget gl_widget_{"Scene"};
+  ScenePanel gl_widget_{"Scene"};
 };
 }  // namespace quickviz
 

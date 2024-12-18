@@ -14,7 +14,7 @@
 namespace quickviz {
 class ConsolePanel : public Panel {
  public:
-  ConsolePanel(std::string name = "Debug");
+  ConsolePanel(std::string name = "Console");
 
   void Draw() override;
 };

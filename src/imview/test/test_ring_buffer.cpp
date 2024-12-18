@@ -9,7 +9,7 @@
 #include <iostream>
 #include <thread>
 
-#include "imview/buffer/ring_buffer.hpp"
+#include "imview/component/buffer/ring_buffer.hpp"
 
 #include <opencv2/opencv.hpp>
 

@@ -8,7 +8,7 @@
 
 #include "imview/widget/buffered_cv_image_widget.hpp"
 
-#include "imview/utils/image_utils.hpp"
+#include "imview/component/image_utils.hpp"
 
 namespace quickviz {
 BufferedCvImageWidget::BufferedCvImageWidget(const std::string& widget_name,

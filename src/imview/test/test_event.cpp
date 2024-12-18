@@ -8,14 +8,15 @@
 
 #include <iostream>
 
-#include "imview/event/event.hpp"
-#include "imview/event/event_dispatcher.hpp"
-#include "imview/event/event_emitter.hpp"
+#include "imview/component/event/event.hpp"
+#include "imview/component/event/event_dispatcher.hpp"
+#include "imview/component/event/event_emitter.hpp"
 
 using namespace quickviz;
 
 int main(int argc, char* argv[]) {
-  Event<int, double, std::string> event("test_event", 42, 3.14, "hello");
+  Event<int, double, std::string> event(EventSource::kApplicaton, "test_event",
+                                        42, 3.14, "hello");
   event.Print();
 
   auto name = event.GetName();
@@ -39,8 +40,8 @@ int main(int argc, char* argv[]) {
       });
 
   EventEmitter emitter;
-  emitter.Emit<Event<int, double, std::string>>("test_event", 42, 3.14,
-                                                "hello");
+  emitter.Emit<Event<int, double, std::string>>(
+      EventSource::kApplicaton, "test_event", 42, 3.14, "hello");
 
   return 0;
 }

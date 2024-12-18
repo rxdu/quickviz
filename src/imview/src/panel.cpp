@@ -31,6 +31,8 @@ void Panel::End() { ImGui::End(); }
 
 void Panel::SetAutoLayout(bool value) { auto_layout_ = value; }
 
+bool Panel::IsAutoLayout() const { return auto_layout_; }
+
 void Panel::SetNoTitleBar(bool value) {
   if (value) {
     flags_ |= ImGuiWindowFlags_NoTitleBar;

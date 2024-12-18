@@ -15,8 +15,10 @@
 #include "imview/interface/resizable.hpp"
 #include "imview/interface/renderable.hpp"
 
+#ifdef ENABLE_AUTO_LAYOUT
 struct YGNode;
 typedef struct YGNode* YGNodeRef;
+#endif
 
 namespace quickviz {
 class SceneObject : public Resizable, public Renderable {
@@ -36,6 +38,7 @@ class SceneObject : public Resizable, public Renderable {
   bool IsVisible() const override { return visible_; }
 
   // used for automatic layout only
+#ifdef ENABLE_AUTO_LAYOUT
   YGNodeRef GetYogaNode() { return yg_node_; }
   void SetAlignContent(Styling::AlignContent content) override;
   void SetAlignItems(Styling::AlignItems items) override;
@@ -60,6 +63,7 @@ class SceneObject : public Resizable, public Renderable {
   void SetMinHeight(float height) override;
   void SetMaxWidth(float width) override;
   void SetMaxHeight(float height) override;
+#endif
 
  protected:
   std::string name_;
@@ -70,8 +74,10 @@ class SceneObject : public Resizable, public Renderable {
   float width_ = 0;
   float height_ = 0;
 
+#ifdef ENABLE_AUTO_LAYOUT
   YGNodeRef yg_node_;
   size_t child_count_ = 0;
+#endif
 };
 }  // namespace quickviz
 

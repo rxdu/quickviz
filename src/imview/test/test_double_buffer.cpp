@@ -9,7 +9,7 @@
 #include <iostream>
 #include <thread>
 
-#include "imview/buffer/double_buffer.hpp"
+#include "imview/component/buffer/double_buffer.hpp"
 
 #include <opencv2/opencv.hpp>
 
