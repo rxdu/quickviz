@@ -19,6 +19,7 @@ add_library(imview
     # ui components
     src/window.cpp
     src/viewer.cpp
+    src/popup.cpp
     src/fonts.cpp
     src/scene_object.cpp
     src/panel.cpp
@@ -31,6 +32,7 @@ add_library(imview
     src/widget/rt_line_plot_widget.cpp
     src/widget/gl_widget.cpp
     # components
+    src/component/popup_manager.cpp
     src/component/image_utils.cpp
     src/component/cairo_context.cpp
     src/component/cairo_draw.cpp
