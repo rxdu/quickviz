@@ -43,6 +43,7 @@ class Camera {
   enum class Movement { kForward, kBackward, kLeft, kRight, kUp, kDown };
 
  public:
+  explicit Camera(float fov = default_fov);
   Camera(glm::vec3 position, float yaw, float pitch, float fov = default_fov);
 
   // public methods

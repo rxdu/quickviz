@@ -9,13 +9,25 @@
 #include "imview/component/opengl/camera_controller.hpp"
 
 namespace quickviz {
-CameraController::CameraController(Camera& camera) : camera_(camera) {}
+CameraController::CameraController(Camera& camera, glm::vec3 position,
+                                   float yaw, float pitch)
+    : camera_(camera) {
+  camera_.SetPosition(position);
+  camera_.SetYaw(yaw);
+  camera_.SetPitch(pitch);
+
+  orbit_distance_ = glm::length(camera_.GetPosition());
+
+  UpdateOrbitPosition();
+}
 
 void CameraController::Reset() { camera_.Reset(); }
 
 void CameraController::SetMode(CameraController::Mode mode) {
+  if (mode == mode_) return;
+
   mode_ = mode;
-  if (mode == Mode::kTopDown) {
+  if (mode_ == Mode::kTopDown) {
     camera_.SetPosition(glm::vec3(0.0f, top_down_height_, 0.0f));
     camera_.SetPitch(-90.0f);
     camera_.SetYaw(0.0f);

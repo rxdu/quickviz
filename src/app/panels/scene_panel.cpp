@@ -22,51 +22,43 @@ ScenePanel::ScenePanel(const std::string& panel_name) : GlWidget(panel_name) {
   this->SetNoTitleBar(true);
   this->SetNoBackground(true);
 
-  camera_ =
-      std::make_unique<Camera>(glm::vec3(0.0f, 3.0f, 8.0f), -90.0f, -25.0f);
+  camera_ = std::make_unique<Camera>();
+  camera_controller_ = std::make_unique<CameraController>(
+      *camera_, glm::vec3(0.0f, 6.0f, 8.0f), 0.0f, 25.0f);
 
   auto grid = std::make_unique<Grid>(10.0f, 1.0f, glm::vec3(0.7f, 0.7f, 0.7f));
   this->AddOpenGLObject("grid", std::move(grid));
 }
 
 void ScenePanel::Draw() {
-  ImVec2 content_size = ImGui::GetContentRegionAvail();
+  Begin();
+
+  // update view according to user input
+  ImGuiIO& io = ImGui::GetIO();
+  // only process mouse delta when mouse position is within the scene panel
+  if (ImGui::IsMousePosValid() && io.WantCaptureMouse &&
+      ImGui::IsWindowHovered()) {
+    // track mouse move delta only when the mouse left button is pressed
+    if (ImGui::IsMouseDown(MouseButton::kLeft)) {
+      camera_controller_->ProcessMouseMovement(io.MouseDelta.x,
+                                               io.MouseDelta.y);
+    }
+
+    // track mouse wheel scroll
+    camera_controller_->ProcessMouseScroll(io.MouseWheel);
+  }
 
   // get view matrices from camera
+  ImVec2 content_size = ImGui::GetContentRegionAvail();
   float aspect_ratio =
       static_cast<float>(content_size.x) / static_cast<float>(content_size.y);
   glm::mat4 projection = camera_->GetProjectionMatrix(aspect_ratio);
   glm::mat4 view = camera_->GetViewMatrix();
-
-  if (ImGui::IsWindowHovered()) {
-    AppLogHandler::GetInstance().Log(LogLevel::kInfo, "ScenePanel is hovered");
-  }
-
-  ImGuiIO& io = ImGui::GetIO();
-  ImVec2 windowPos = ImGui::GetWindowPos();
-
-  ImVec2 localMousePos =
-      ImVec2(io.MousePos.x - windowPos.x, io.MousePos.y - windowPos.y);
-
-  if (io.WantCaptureMouse) {
-    if (ImGui::IsMousePosValid()) {
-      AppLogHandler::GetInstance().Log(LogLevel::kInfo, "Mouse pos: (%f, %f)",
-                                       io.MousePos.x, io.MousePos.y);
-    } else {
-      AppLogHandler::GetInstance().Log(LogLevel::kInfo, "Mouse pos: <INVALID>");
-    }
-
-    for (int i = 0; i < IM_ARRAYSIZE(io.MouseDown); i++)
-      if (ImGui::IsMouseDown(i)) {
-        ImGui::SameLine();
-        // ImGui::Text("b%d (%.02f secs)", i, io.MouseDownDuration[i]);
-        AppLogHandler::GetInstance().Log(LogLevel::kInfo,
-                                         "Mouse button %d down", i);
-      }
-  }
-
   UpdateView(projection, view);
 
-  GlWidget::Draw();
+  // finally draw the scene
+  DrawOpenGLObject();
+
+  End();
 }
 }  // namespace quickviz

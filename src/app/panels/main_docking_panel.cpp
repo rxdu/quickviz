@@ -33,6 +33,7 @@ void MainDockingPanel::Draw() {
   Begin();
 
   // set up dockspace
+  dockspace_id_ = ImGui::GetID("MainDockingPanel");
   ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_NoResize;
   ImGui::DockSpace(dockspace_id_, ImGui::GetWindowSize(), dockspace_flags);
   {
