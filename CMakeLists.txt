@@ -48,7 +48,22 @@ endif ()
 # include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 set(USER_CMAKE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 list(APPEND CMAKE_MODULE_PATH "${USER_CMAKE_PATH}/modules")
-list(APPEND CMAKE_PREFIX_PATH "/usr/lib/${CMAKE_SYSTEM_PROCESSOR}-linux-gnu/cmake")
+
+if(WIN32)
+  ## Windows support
+  message(STATUS "Building on Windows")
+  if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+    message(FATAL_ERROR "CMAKE_TOOLCHAIN_FILE not specified, e.g. -DCMAKE_TOOLCHAIN_FILE=/path/to/vcpkg/scripts/buildsystems/vcpkg.cmake")
+    message(FATAL_ERROR "For example: -DCMAKE_TOOLCHAIN_FILE=/path/to/vcpkg/scripts/buildsystems/vcpkg.cmake")
+  else()
+    message(STATUS "CMAKE_TOOLCHAIN_FILE: ${CMAKE_TOOLCHAIN_FILE}")
+  endif()
+else()
+  # Linux support
+  message(STATUS "Building on Linux by default")
+  list(APPEND CMAKE_PREFIX_PATH "/usr/lib/${CMAKE_SYSTEM_PROCESSOR}-linux-gnu/cmake")
+endif()
+message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
 
 ## Set compiler to use c++ 17 features
 set(CMAKE_CXX_STANDARD 17)

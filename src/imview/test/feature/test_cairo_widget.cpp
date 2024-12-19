@@ -15,6 +15,10 @@
 #include "imview/viewer.hpp"
 #include "imview/widget/cairo_widget.hpp"
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 using namespace quickviz;
 
 void PaintUnifiedCoordinate(cairo_t* cr, float aspect_ratio) {

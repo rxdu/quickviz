@@ -11,6 +11,10 @@
 
 #include <cmath>
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 namespace quickviz {
 void DrawPoint(cairo_t *cr, ImVec2 pos, double size, ImVec4 color) {
   cairo_set_source_rgba(cr, color.x, color.y, color.z, color.w);
