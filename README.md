@@ -2,20 +2,22 @@
 
 ![GitHub Workflow Status](https://github.com/rxdu/quickviz/workflows/default/badge.svg)
 
-This repository provides a C++ framework for creating data visualization and basic GUI for robotics applications. The
-core of the framework is a library named "imview". imview is designed to be flexible and lightweight.
+This repository provides a collection of C++ libraries for creating data visualization and basic UI applications, primarily focused on use cases in robotics.
+
+The core component of this codebase is a library called "imview", which is designed to be both flexible and lightweight:
 
 * For data visualization, imview provides a set of API functions to easily plot 2D time-series data, draw 2D primitives
-  and render 3D objects. It can be used to visualize data in real-time.
-* For GUI applications, imview provides automatic layout management and commonly used UI widgets such as buttons,
-  sliders, and text boxes.
+  and render 3D objects in real-time.
+* For UI design, imview includes automatic layout management and widgets such as buttons, sliders, and text boxes.
 
-An app named "quickviz" is provided with commonly used data visualization functions (to support development
-of [libxmotion](https://github.com/rxdu/libxmotion)). It also serves as an example of how to use the imview library.
-Design of imview is documented in [docs/imview_design.md](docs/imview_design.md). If you are interested in using the
-imview library in your own project, it's recommended to read this design document first.
+The design of imview is documented in [docs/imview_design.md](docs/imview_design.md). If you are interested in using the imview library in your 
+own project, it's recommended to read this design document first. Additionally, an app named "quickviz" is included with commonly used 
+data visualization functions (to support development of [libxmotion](https://github.com/rxdu/libxmotion)). It also serves as an example to demonstrate 
+the usage of the imview library.
 
 ## Build
+
+### Linux
 
 The code in this repository should build on any recent linux distributions with a compiler supporting C++11/14/17. Note
 that the yoga library for layout management requires certain C++20 features, and you will need to disable automatic
@@ -61,6 +63,53 @@ $ mkdir build && cd build
 $ cmake ..
 $ make -j8
 ```
+
+### Windows
+
+(Windows support is experimental and may not be as stable as the Linux setup.)
+
+On Windows, vcpkg is used to manage dependencies. The following instructions are tested on Windows 11 with Visual Studio 2022.
+
+**Setup toolchain**
+
+* Install Visual Studio (MinGW is not tested and may not work)
+* Install [git](https://gitforwindows.org/)
+* Install [cmake](https://cmake.org/download/)
+
+Make sure both git and cmake are added to the system PATH. This should be done automatically for you if you use an installer 
+with default installation settings. Otherwise, you can add the paths manually if you prefer installing them with binary archives.
+
+**Install vcpkg**
+
+Refer to the [vcpkg documentation](https://learn.microsoft.com/en-us/vcpkg/get_started/get-started?pivots=shell-bash) for more details.
+
+```
+$ git clone https://github.com/microsoft/vcpkg.git
+$ cd vcpkg
+$ .\bootstrap-vcpkg.bat # if you are using powershell
+```
+
+Make sure the following two environment variables are set:
+
+```
+export VCPKG_ROOT=/path/to/vcpkg
+export PATH=$VCPKG_ROOT:$PATH
+```
+
+You can add the two variables in "Environment Variables" in Windows settings to make them persistent. Note that you should use
+`%VCPKG_ROOT%` instead of `$VCPKG_ROOT` when appending it to the PATH variable.
+
+**Build package**
+
+Depending on the IDE you use, the configuration steps may vary.
+
+For Visual Studio, open "Build"-"Cmake Settings for quickfiz" and add the following line to "CMake command arguments":
+
+```
+-DCMAKE_TOOLCHAIN_FILE=<your-vcpkg-path>/scripts/buildsystems/vcpkg.cmake
+```
+
+Then you should be able to configure and build the project successfully.
 
 ## Reference
 

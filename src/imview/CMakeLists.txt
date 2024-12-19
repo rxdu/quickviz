@@ -53,7 +53,7 @@ add_library(imview
 target_link_libraries(imview PUBLIC imcore
     PkgConfig::Cairo PkgConfig::Fontconfig
     Threads::Threads
-    OpenGL::OpenGL
+    OpenGL::GL
     ${AUTO_LAYOUT_LIBS}
     ${OpenCV_LIBS})
 if (ENABLE_AUTO_LAYOUT)

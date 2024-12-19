@@ -1,5 +1,12 @@
+# vcpkg
+vcpkg_installed
+
 # Build temporary files
 **build
+
+# Visual Studio
+.vs
+CMakeSettings.json
 
 # VSCode
 .vscode
