@@ -6,6 +6,25 @@ if (CCACHE_PROGRAM)
   set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
 endif ()
 
+## Windows support for vcpkg (must be set before project())
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  message(STATUS "Building on Windows")
+  if (NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+    if (NOT DEFINED ENV{VCPKG_ROOT})
+      message(FATAL_ERROR "CMAKE_TOOLCHAIN_FILE not specified for vcpkg integration on Windows.
+        Please do one of the following:
+        1. set VCPKG_ROOT to the vcpkg root directory in the environment
+          e.g. $ export VCPKG_ROOT=/path/to/vcpkg
+        2. specify CMAKE_TOOLCHAIN_FILE when invoking cmake
+          e.g. -DCMAKE_TOOLCHAIN_FILE=/path/to/vcpkg/scripts/buildsystems/vcpkg.cmake")
+    else ()
+      set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake")
+    endif ()
+  else ()
+    message(STATUS "CMAKE_TOOLCHAIN_FILE: ${CMAKE_TOOLCHAIN_FILE}")
+  endif ()
+endif ()
+
 project(quickviz VERSION 0.3.0)
 
 message(STATUS "------------------------------------------------")
@@ -45,24 +64,12 @@ if (STATIC_CHECK)
 endif ()
 
 ## Additional cmake module path
-# include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 set(USER_CMAKE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 list(APPEND CMAKE_MODULE_PATH "${USER_CMAKE_PATH}/modules")
-
-if(WIN32)
-  ## Windows support
-  message(STATUS "Building on Windows")
-  if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-    message(FATAL_ERROR "CMAKE_TOOLCHAIN_FILE not specified, e.g. -DCMAKE_TOOLCHAIN_FILE=/path/to/vcpkg/scripts/buildsystems/vcpkg.cmake")
-    message(FATAL_ERROR "For example: -DCMAKE_TOOLCHAIN_FILE=/path/to/vcpkg/scripts/buildsystems/vcpkg.cmake")
-  else()
-    message(STATUS "CMAKE_TOOLCHAIN_FILE: ${CMAKE_TOOLCHAIN_FILE}")
-  endif()
-else()
-  # Linux support
+if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
   message(STATUS "Building on Linux by default")
   list(APPEND CMAKE_PREFIX_PATH "/usr/lib/${CMAKE_SYSTEM_PROCESSOR}-linux-gnu/cmake")
-endif()
+endif ()
 message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
 
 ## Set compiler to use c++ 17 features
@@ -93,13 +100,13 @@ else ()
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
 endif ()
 
-if(QUICKVIZ_DEV_MODE)
+if (QUICKVIZ_DEV_MODE)
   message(STATUS "quickviz development mode enabled")
-endif()
+endif ()
 
-if(ENABLE_AUTO_LAYOUT)
+if (ENABLE_AUTO_LAYOUT)
   message(STATUS "Auto layout enabled")
-endif()
+endif ()
 
 # Build tests
 if (((NOT BUILD_AS_MODULE) AND BUILD_TESTING) OR QUICKVIZ_DEV_MODE)
@@ -136,7 +143,7 @@ foreach (p LIB BIN INCLUDE CMAKE)
   unset(_path)
 endforeach ()
 
-# targets to install defined in each module
+# targets to install are defined in each module
 
 # export target configuration 
 include(CMakePackageConfigHelpers)
