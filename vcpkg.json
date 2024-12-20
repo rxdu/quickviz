@@ -1,0 +1,13 @@
+{
+  "dependencies": [
+    "pkgconf",
+    "glfw3",
+    "opengl",
+    "glm",
+    {
+      "name": "cairo",
+      "features": ["fontconfig"]
+    },
+    "opencv4"
+  ]
+}

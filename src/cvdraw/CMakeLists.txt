@@ -13,7 +13,7 @@ target_include_directories(cvdraw PUBLIC
 	PRIVATE src)
 
 # Add executables
-if(BUILD_TESTS)
+if(BUILD_TESTING)
     add_subdirectory(test)
 endif()
 
