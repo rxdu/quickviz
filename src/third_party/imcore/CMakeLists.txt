@@ -30,10 +30,8 @@ target_include_directories(imcore PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/imgui>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/imgui/examples/libs/gl3w>
     $<INSTALL_INTERFACE:include/imgui>
-    $<INSTALL_INTERFACE:include/imgui/backends>
-    $<INSTALL_INTERFACE:include/imgui/examples/libs/gl3w>)
+    $<INSTALL_INTERFACE:include/imgui/backends>)
 
 add_subdirectory(sample)
 
