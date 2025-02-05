@@ -59,6 +59,8 @@ class SceneObject : public Resizable, public Renderable {
   void SetPositionType(Styling::PositionType type) override;
   void SetHeight(float height) override;
   void SetWidth(float width) override;
+  void SetHeightPercent(float height) override;
+  void SetWidthPercent(float width) override;
   void SetMinWidth(float width) override;
   void SetMinHeight(float height) override;
   void SetMaxWidth(float width) override;

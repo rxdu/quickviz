@@ -41,6 +41,8 @@ class Resizable {
   virtual void SetPositionType(Styling::PositionType type) = 0;
   virtual void SetHeight(float height) = 0;
   virtual void SetWidth(float width) = 0;
+  virtual void SetHeightPercent(float height) = 0;
+  virtual void SetWidthPercent(float width) = 0;
   virtual void SetMinWidth(float width) = 0;
   virtual void SetMinHeight(float height) = 0;
   virtual void SetMaxWidth(float width) = 0;

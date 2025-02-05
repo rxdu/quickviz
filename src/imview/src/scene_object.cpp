@@ -115,6 +115,14 @@ void SceneObject::SetWidth(float width) {
   YGNodeStyleSetWidth(yg_node_, width);
 }
 
+void SceneObject::SetHeightPercent(float height) {
+  YGNodeStyleSetHeightPercent(yg_node_, height);
+}
+
+void SceneObject::SetWidthPercent(float width) {
+  YGNodeStyleSetWidthPercent(yg_node_, width);
+}
+
 void SceneObject::SetMinWidth(float width) {
   YGNodeStyleSetMinWidth(yg_node_, width);
 }
