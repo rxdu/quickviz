@@ -28,6 +28,8 @@ enum class AlignItems {
   kBaseline
 };
 
+using AlignSelf = AlignItems;
+
 enum class Display { kFlex = 0, kNone };
 enum class FlexDirection { kColumn = 0, kRow, kColumnReverse, kRowReverse };
 enum class FlexWrap { kNoWrap = 0, kWrap, kWrapReverse };

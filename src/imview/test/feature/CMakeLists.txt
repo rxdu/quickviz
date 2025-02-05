@@ -4,6 +4,9 @@ target_link_libraries(test_window PRIVATE imview)
 if (ENABLE_AUTO_LAYOUT)
   add_executable(test_viewer test_viewer.cpp)
   target_link_libraries(test_viewer PRIVATE imview)
+
+  add_executable(test_auto_layout test_auto_layout.cpp)
+  target_link_libraries(test_auto_layout PRIVATE imview)
 endif ()
 
 add_executable(test_cv_image_widget test_cv_image_widget.cpp)

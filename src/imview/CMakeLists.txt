@@ -23,7 +23,6 @@ add_library(imview
     src/fonts.cpp
     src/scene_object.cpp
     src/panel.cpp
-    src/layer.cpp
     ${AUTO_LAYOUT_SRC}
     # widgets
     src/widget/cv_image_widget.cpp

@@ -41,7 +41,8 @@ class SceneObject : public Resizable, public Renderable {
 #ifdef ENABLE_AUTO_LAYOUT
   YGNodeRef GetYogaNode() { return yg_node_; }
   void SetAlignContent(Styling::AlignContent content) override;
-  void SetAlignItems(Styling::AlignItems items) override;
+  void SetAlignItems(Styling::AlignItems alignment) override;
+  void SetAlignSelf(Styling::AlignSelf alignment) override;
   void SetAspectRatio(float aspect_ratio) override;
   void SetDisplay(Styling::Display display) override;
   void SetFlexBasis(float basis) override;
@@ -59,6 +60,8 @@ class SceneObject : public Resizable, public Renderable {
   void SetPositionType(Styling::PositionType type) override;
   void SetHeight(float height) override;
   void SetWidth(float width) override;
+  void SetHeightPercent(float height) override;
+  void SetWidthPercent(float width) override;
   void SetMinWidth(float width) override;
   void SetMinHeight(float height) override;
   void SetMaxWidth(float width) override;

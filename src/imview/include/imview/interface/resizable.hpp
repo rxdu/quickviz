@@ -23,7 +23,8 @@ class Resizable {
   // used for automatic layout only
 #ifdef ENABLE_AUTO_LAYOUT
   virtual void SetAlignContent(Styling::AlignContent content) = 0;
-  virtual void SetAlignItems(Styling::AlignItems items) = 0;
+  virtual void SetAlignItems(Styling::AlignItems alignment) = 0;
+  virtual void SetAlignSelf(Styling::AlignSelf alignment) = 0;
   virtual void SetAspectRatio(float aspect_ratio) = 0;
   virtual void SetDisplay(Styling::Display display) = 0;
   virtual void SetFlexBasis(float basis) = 0;
@@ -41,6 +42,8 @@ class Resizable {
   virtual void SetPositionType(Styling::PositionType type) = 0;
   virtual void SetHeight(float height) = 0;
   virtual void SetWidth(float width) = 0;
+  virtual void SetHeightPercent(float height) = 0;
+  virtual void SetWidthPercent(float width) = 0;
   virtual void SetMinWidth(float width) = 0;
   virtual void SetMinHeight(float height) = 0;
   virtual void SetMaxWidth(float width) = 0;

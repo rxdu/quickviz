@@ -43,8 +43,12 @@ void SceneObject::SetAlignContent(Styling::AlignContent align) {
   YGNodeStyleSetAlignContent(yg_node_, ToYogaAlign(align));
 }
 
-void SceneObject::SetAlignItems(Styling::AlignItems items) {
-  YGNodeStyleSetAlignItems(yg_node_, ToYogaAlign(items));
+void SceneObject::SetAlignItems(Styling::AlignItems alignment) {
+  YGNodeStyleSetAlignItems(yg_node_, ToYogaAlign(alignment));
+}
+
+void SceneObject::SetAlignSelf(Styling::AlignSelf alignment) {
+  YGNodeStyleSetAlignSelf(yg_node_, ToYogaAlign(alignment));
 }
 
 void SceneObject::SetAspectRatio(float aspect_ratio) {
@@ -113,6 +117,14 @@ void SceneObject::SetHeight(float height) {
 
 void SceneObject::SetWidth(float width) {
   YGNodeStyleSetWidth(yg_node_, width);
+}
+
+void SceneObject::SetHeightPercent(float height) {
+  YGNodeStyleSetHeightPercent(yg_node_, height);
+}
+
+void SceneObject::SetWidthPercent(float width) {
+  YGNodeStyleSetWidthPercent(yg_node_, width);
 }
 
 void SceneObject::SetMinWidth(float width) {

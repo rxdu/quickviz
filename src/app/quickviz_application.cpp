@@ -16,23 +16,21 @@ QuickvizApplication::QuickvizApplication() {
 
 bool QuickvizApplication::Initialize() {
   // setup ui layer
-  ui_layer_ = std::make_shared<Layer>("ui_layer");
-
-  main_box_ = std::make_shared<Box>("main_box");
-  main_box_->SetFlexDirection(Styling::FlexDirection::kColumn);
+  ui_layer_ = std::make_shared<Box>("ui_layer");
+  ui_layer_->SetFlexDirection(Styling::FlexDirection::kColumn);
+  ui_layer_->SetAlignItems(Styling::AlignItems::kStretch);
   {
     menu_bar_ = std::make_shared<MenuBar>("menu_bar");
     menu_bar_->SetHeight(24);
     menu_bar_->SetFlexGrow(0);
     menu_bar_->SetFlexShrink(0);
-    main_box_->AddChild(menu_bar_);
+    ui_layer_->AddChild(menu_bar_);
 
     main_docking_panel_ = std::make_shared<MainDockingPanel>();
     main_docking_panel_->SetFlexGrow(1);
     main_docking_panel_->SetFlexShrink(1);
-    main_box_->AddChild(main_docking_panel_);
+    ui_layer_->AddChild(main_docking_panel_);
   }
-  ui_layer_->AddChild(main_box_);
 
   // add ui layer to viewer
   viewer_->AddSceneObject(ui_layer_);
