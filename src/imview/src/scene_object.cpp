@@ -43,8 +43,12 @@ void SceneObject::SetAlignContent(Styling::AlignContent align) {
   YGNodeStyleSetAlignContent(yg_node_, ToYogaAlign(align));
 }
 
-void SceneObject::SetAlignItems(Styling::AlignItems items) {
-  YGNodeStyleSetAlignItems(yg_node_, ToYogaAlign(items));
+void SceneObject::SetAlignItems(Styling::AlignItems alignment) {
+  YGNodeStyleSetAlignItems(yg_node_, ToYogaAlign(alignment));
+}
+
+void SceneObject::SetAlignSelf(Styling::AlignSelf alignment) {
+  YGNodeStyleSetAlignSelf(yg_node_, ToYogaAlign(alignment));
 }
 
 void SceneObject::SetAspectRatio(float aspect_ratio) {

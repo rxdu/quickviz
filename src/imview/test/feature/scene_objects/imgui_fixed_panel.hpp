@@ -23,7 +23,7 @@ class ImGuiFixedPanel : public Panel {
     this->SetNoCollapse(true);
     this->SetNoResize(true);
     this->SetNoScrollbar(true);
-    this->SetNoBackground(true);
+    // this->SetNoBackground(true);
   }
 
   void Draw() override {

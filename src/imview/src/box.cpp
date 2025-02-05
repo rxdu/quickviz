@@ -61,23 +61,25 @@ void Box::RemoveChild(const std::string& name) {
 }
 
 void Box::OnResize(float width, float height) {
-  // update root node size
-  YGNodeStyleSetWidth(yg_node_, width);
-  YGNodeStyleSetHeight(yg_node_, height);
-  YGNodeCalculateLayout(yg_node_, YGUndefined, YGUndefined, YGDirectionLTR);
+  // update the size of the box
+  width_ = width;
+  height_ = height;
 
+  // only need to trigger a yoga update if the current node is the root node
+  if (YGNodeGetParent(yg_node_) == nullptr) {
+    YGNodeStyleSetWidth(yg_node_, width);
+    YGNodeStyleSetHeight(yg_node_, height);
+    YGNodeCalculateLayout(yg_node_, YGUndefined, YGUndefined, YGDirectionLTR);
+    // PrintLayout();
+  }
+
+  // then apply  the yoga layout to all children
   for (uint32_t i = 0; i < YGNodeGetChildCount(yg_node_); ++i) {
     auto child = YGNodeGetChild(yg_node_, i);
     children_[child_name_by_index_[i]]->SetPosition(
         x_ + YGNodeLayoutGetLeft(child), y_ + YGNodeLayoutGetTop(child));
     children_[child_name_by_index_[i]]->OnResize(YGNodeLayoutGetWidth(child),
                                                  YGNodeLayoutGetHeight(child));
-  }
-
-  YGNodeCalculateLayout(yg_node_, YGUndefined, YGUndefined, YGDirectionLTR);
-
-  if (YGNodeGetParent(yg_node_) == nullptr) {
-    PrintLayout();
   }
 }
 

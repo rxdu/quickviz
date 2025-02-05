@@ -19,7 +19,7 @@
 
 #include "imview/fonts.hpp"
 #include "imview/window.hpp"
-#include "imview/layer.hpp"
+#include "imview/scene_object.hpp"
 
 namespace quickviz {
 class Viewer : public Window {
