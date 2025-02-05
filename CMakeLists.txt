@@ -6,7 +6,7 @@ if (CCACHE_PROGRAM)
   set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
 endif ()
 
-project(quickviz VERSION 0.3.0)
+project(quickviz VERSION 0.4.0)
 
 message(STATUS "------------------------------------------------")
 if (PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME)
@@ -22,7 +22,7 @@ message(STATUS "------------------------------------------------")
 option(ENABLE_AUTO_LAYOUT "Enable autolayout" ON)
 option(IMVIEW_WITH_GLAD "Integrate glad into imview" ON)
 option(BUILD_QUICKVIZ_APP "Build quickviz app" OFF)
-option(BUILD_TESTING "Build tests" ON)
+option(BUILD_TESTING "Build tests" OFF)
 option(QUICKVIZ_DEV_MODE "Development mode forces building tests" OFF)
 option(STATIC_CHECK "Perform static check" OFF)
 
