@@ -163,6 +163,14 @@ void Viewer::SetBackgroundColor(float r, float g, float b, float a) {
   bg_color_[3] = a;
 }
 
+void Viewer::SetWindowSizeLimits(int min_x, int min_y, int max_x, int max_y) {
+  int minx = min_x == -1 ? GLFW_DONT_CARE : min_x;
+  int miny = min_y == -1 ? GLFW_DONT_CARE : min_y;
+  int maxx = max_x == -1 ? GLFW_DONT_CARE : max_x;
+  int maxy = max_y == -1 ? GLFW_DONT_CARE : max_y;
+  glfwSetWindowSizeLimits(win_, minx, miny, maxx, maxy);
+}
+
 void Viewer::EnableDocking(bool enable) {
   if (enable) {
     ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
