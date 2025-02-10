@@ -34,6 +34,9 @@ class Viewer : public Window {
   void ApplyLightColorScheme();
   void SetBackgroundColor(float r, float g, float b, float a);
 
+  void SetWindowSizeLimits(int min_x, int min_y, int max_x = -1,
+                           int max_y = -1);
+
   void EnableDocking(bool enable);
   void EnableKeyboardNav(bool enable);
   void EnableGamepadNav(bool enable);
