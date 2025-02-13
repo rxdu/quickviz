@@ -14,44 +14,16 @@
 
 #include <memory>
 #include <vector>
-#include <functional>
 #include <unordered_map>
 
 #include "imgui.h"
 
 #include "imview/fonts.hpp"
 #include "imview/window.hpp"
+#include "imview/joystick.hpp"
 #include "imview/scene_object.hpp"
 
 namespace quickviz {
-struct JoystickDevice {
-  int id;
-  std::string name;
-};
-
-struct JoystickInput {
-  JoystickDevice device;
-  std::vector<float> axes;
-  std::vector<unsigned char> buttons;
-  std::vector<unsigned char> hats;
-
-  bool operator!=(const JoystickInput& rhs) const {
-    bool axes_not_equal = false;
-    if (axes.size() != rhs.axes.size()) {
-      axes_not_equal = true;
-    } else {
-      for (int i = 0; i < axes.size(); ++i) {
-        if (std::abs(axes[i] - rhs.axes[i]) > 0.0001) {
-          axes_not_equal = true;
-          break;
-        }
-      }
-    }
-    return device.id != rhs.device.id || axes_not_equal || buttons != rhs.buttons ||
-           hats != rhs.hats;
-  }
-};
-
 class Viewer : public Window {
  public:
   Viewer(std::string title = "Viewer", uint32_t width = 1920,
@@ -77,10 +49,7 @@ class Viewer : public Window {
   // user input handling
   void EnableJoystickInput(bool enable);
   std::vector<JoystickDevice> GetListOfJoysticks();
-  using JoystickDeviceChangeCallback =
-      std::function<void(const std::vector<JoystickDevice>&)>;
   void SetJoystickDeviceChangeCallback(JoystickDeviceChangeCallback callback);
-  using JoystickInputUpdateCallback = std::function<void(const JoystickInput&)>;
   bool MonitorJoystickInputUpdate(int id, JoystickInputUpdateCallback callback);
 
   // window content rendering
