@@ -16,11 +16,7 @@ using namespace quickviz;
 class JoystickPanel : public Panel {
  public:
   JoystickPanel(std::shared_ptr<Viewer> viewer)
-      : Panel("JoystickPanel"), viewer_(viewer) {
-    this->SetAutoLayout(false);
-    this->SetHeight(200);
-    this->SetWidth(200);
-  }
+      : Panel("JoystickPanel"), viewer_(viewer) {}
 
   void Draw() override {
     Begin();
