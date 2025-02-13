@@ -27,10 +27,10 @@
 namespace quickviz {
 namespace {
 template <typename T>
-struct Callback;
+struct FramebufferSizeCallback;
 
 template <typename Ret, typename... Params>
-struct Callback<Ret(Params...)> {
+struct FramebufferSizeCallback<Ret(Params...)> {
   template <typename... Args>
   static Ret callback(Args... args) {
     return func(args...);
@@ -40,7 +40,23 @@ struct Callback<Ret(Params...)> {
 
 // Initialize the static member.
 template <typename Ret, typename... Params>
-std::function<Ret(Params...)> Callback<Ret(Params...)>::func;
+std::function<Ret(Params...)> FramebufferSizeCallback<Ret(Params...)>::func;
+
+template <typename T>
+struct JoystickCallback;
+
+template <typename Ret, typename... Params>
+struct JoystickCallback<Ret(Params...)> {
+  template <typename... Args>
+  static Ret callback(Args... args) {
+    return func(args...);
+  }
+  static std::function<Ret(Params...)> func;
+};
+
+// Initialize the static member.
+template <typename Ret, typename... Params>
+std::function<Ret(Params...)> JoystickCallback<Ret(Params...)>::func;
 }  // namespace
 
 Viewer::Viewer(std::string title, uint32_t width, uint32_t height,
@@ -72,12 +88,12 @@ Viewer::Viewer(std::string title, uint32_t width, uint32_t height,
 
   // set up callbacks
   // convert callback-function to c-pointer first
-  Callback<void(GLFWwindow *, int, int)>::func =
+  FramebufferSizeCallback<void(GLFWwindow *, int, int)>::func =
       std::bind(&Viewer::OnResize, this, std::placeholders::_1,
                 std::placeholders::_2, std::placeholders::_3);
   void (*resize_callback_func)(GLFWwindow *, int, int) =
       static_cast<decltype(resize_callback_func)>(
-          Callback<void(GLFWwindow *, int, int)>::callback);
+          FramebufferSizeCallback<void(GLFWwindow *, int, int)>::callback);
   glfwSetFramebufferSizeCallback(win_, resize_callback_func);
 
   // load fonts
@@ -199,6 +215,105 @@ void Viewer::EnableGamepadNav(bool enable) {
   }
 }
 
+void Viewer::EnumerateJoysticks() {
+  joysticks_.clear();
+  for (int i = GLFW_JOYSTICK_1; i < GLFW_JOYSTICK_LAST; i++) {
+    if (glfwJoystickPresent(i)) {
+      JoystickDevice js;
+      js.id = i;
+      js.name = glfwGetJoystickName(i);
+      joysticks_[i] = js;
+    }
+  }
+}
+
+void Viewer::OnJoystickEvent(int id, int event) {
+  if (event == GLFW_CONNECTED) {
+    joysticks_[id].name = glfwGetJoystickName(id);
+  } else if (event == GLFW_DISCONNECTED) {
+    if (current_joystick_input_.device.id == id) {
+      current_joystick_input_.device.id = -1;
+      joystick_input_update_callback_ = nullptr;
+    }
+    joysticks_.erase(id);
+  }
+
+  if (joystick_device_change_callback_) {
+    joystick_device_change_callback_(GetListOfJoysticks());
+  }
+}
+
+void Viewer::SetJoystickDeviceChangeCallback(
+    JoystickDeviceChangeCallback callback) {
+  joystick_device_change_callback_ = callback;
+}
+
+bool Viewer::MonitorJoystickInputUpdate(int id,
+                                        JoystickInputUpdateCallback callback) {
+  if (joysticks_.find(id) == joysticks_.end()) return false;
+  current_joystick_input_.device.id = id;
+  current_joystick_input_.device.name = joysticks_[id].name;
+  current_joystick_input_.axes.clear();
+  current_joystick_input_.buttons.clear();
+  current_joystick_input_.hats.clear();
+  joystick_input_update_callback_ = callback;
+  return true;
+}
+
+void Viewer::EnableJoystickInput(bool enable) {
+  handle_joystick_input_ = enable;
+  if (handle_joystick_input_) {
+    EnumerateJoysticks();
+    JoystickCallback<void(int, int)>::func =
+        std::bind(&Viewer::OnJoystickEvent, this, std::placeholders::_1,
+                  std::placeholders::_2);
+
+    void (*joystick_callback)(int, int) =
+        static_cast<decltype(joystick_callback)>(
+            JoystickCallback<void(int, int)>::callback);
+
+    glfwSetJoystickCallback(joystick_callback);
+  }
+}
+
+std::vector<JoystickDevice> Viewer::GetListOfJoysticks() {
+  if (!handle_joystick_input_) {
+    EnumerateJoysticks();
+  }
+  std::vector<JoystickDevice> js;
+  for (const auto &pair : joysticks_) {
+    js.push_back(pair.second);
+  }
+  return js;
+}
+
+bool Viewer::GetJoystickInput(int id, JoystickInput &input) {
+  input.device.id = id;
+  input.device.name = joysticks_[id].name;
+  if (glfwJoystickPresent(id)) {
+    // clear previous data
+    input.axes.clear();
+    input.buttons.clear();
+    input.hats.clear();
+
+    // read input data
+    int axis_count, button_count;
+    const float *axes = glfwGetJoystickAxes(id, &axis_count);
+    const unsigned char *buttons = glfwGetJoystickButtons(id, &button_count);
+
+    input.axes.assign(axes, axes + axis_count);
+    input.buttons.assign(buttons, buttons + button_count);
+
+#if ((GLFW_VERSION_MAJOR >= 3) && (GLFW_VERSION_MINOR >= 3))
+    int hat_count;
+    const unsigned char *hats = glfwGetJoystickHats(id, &hat_count);
+    input.hats.assign(hats, hats + hat_count);
+#endif
+    return true;
+  }
+  return false;
+}
+
 void Viewer::SetWindowShouldClose() {
   glfwSetWindowShouldClose(win_, GLFW_TRUE);
 }
@@ -265,6 +380,16 @@ void Viewer::Show() {
   while (!ShouldClose()) {
     // handle events
     PollEvents();
+    if (handle_joystick_input_) {
+      JoystickInput input;
+      if (GetJoystickInput(current_joystick_input_.device.id, input)) {
+        if (input != current_joystick_input_ &&
+            joystick_input_update_callback_) {
+          joystick_input_update_callback_(input);
+          current_joystick_input_ = input;
+        }
+      }
+    }
 
     // draw stuff
     ClearBackground();

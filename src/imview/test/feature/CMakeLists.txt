@@ -26,3 +26,6 @@ target_link_libraries(test_gl_widget PRIVATE imview)
 
 add_executable(test_popup test_popup.cpp)
 target_link_libraries(test_popup PRIVATE imview)
+
+add_executable(test_joystick_input test_joystick_input.cpp)
+target_link_libraries(test_joystick_input PRIVATE imview)
