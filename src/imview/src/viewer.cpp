@@ -248,9 +248,21 @@ void Viewer::SetJoystickDeviceChangeCallback(
   joystick_device_change_callback_ = callback;
 }
 
-bool Viewer::MonitorJoystickInputUpdate(int id,
-                                        JoystickInputUpdateCallback callback) {
-  if (joysticks_.find(id) == joysticks_.end()) return false;
+bool Viewer::IsJoystickInputUpdateCallbackRegistered() const {
+  if (joystick_input_update_callback_) {
+    return true;
+  }
+  return false;
+}
+
+bool Viewer::RegisterJoystickInputUpdateCallback(
+    int id, JoystickInputUpdateCallback callback) {
+  if (joysticks_.find(id) == joysticks_.end()) {
+    std::cerr << "[ERROR] Viewer::RegisterJoystickInputUpdateCallback(): "
+                 "Joystick with ID "
+              << id << " not found" << std::endl;
+    return false;
+  }
   current_joystick_input_.device.id = id;
   current_joystick_input_.device.name = joysticks_[id].name;
   current_joystick_input_.axes.clear();
@@ -260,10 +272,16 @@ bool Viewer::MonitorJoystickInputUpdate(int id,
   return true;
 }
 
+void Viewer::UnregisterJoystickInputUpdateCallback() {
+  current_joystick_input_.device.id = -1;
+  joystick_input_update_callback_ = nullptr;
+}
+
 void Viewer::EnableJoystickInput(bool enable) {
   handle_joystick_input_ = enable;
   if (handle_joystick_input_) {
     EnumerateJoysticks();
+
     JoystickCallback<void(int, int)>::func =
         std::bind(&Viewer::OnJoystickEvent, this, std::placeholders::_1,
                   std::placeholders::_2);
@@ -352,7 +370,7 @@ void Viewer::RenderSceneObjects() {
 
 bool Viewer::AddSceneObject(std::shared_ptr<SceneObject> obj) {
   if (obj == nullptr) {
-    std::cerr << "[ERROR] Viewer::AddRenderable: renderable is nullptr"
+    std::cerr << "[ERROR] Viewer::AddSceneObject(): object is nullptr"
               << std::endl;
     return false;
   }
@@ -380,7 +398,9 @@ void Viewer::Show() {
   while (!ShouldClose()) {
     // handle events
     PollEvents();
-    if (handle_joystick_input_) {
+    if (handle_joystick_input_ &&
+        current_joystick_input_.device.id > GLFW_JOYSTICK_1 &&
+        current_joystick_input_.device.id < GLFW_JOYSTICK_LAST) {
       JoystickInput input;
       if (GetJoystickInput(current_joystick_input_.device.id, input)) {
         if (input != current_joystick_input_ &&

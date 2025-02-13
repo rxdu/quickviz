@@ -8,65 +8,97 @@
 
 #include <iostream>
 
+#include "imview/panel.hpp"
 #include "imview/viewer.hpp"
-
-#include "scene_objects/imgui_fixed_panel.hpp"
 
 using namespace quickviz;
 
-void JoystickDeviceChangeCallback(const std::vector<JoystickDevice>& devices) {
-  std::cout << "Total number of joysticks: " << devices.size() << std::endl;
-}
+class JoystickPanel : public Panel {
+ public:
+  JoystickPanel(std::shared_ptr<Viewer> viewer)
+      : Panel("JoystickPanel"), viewer_(viewer) {
+    this->SetAutoLayout(false);
+    this->SetHeight(200);
+    this->SetWidth(200);
+  }
 
-void JoystickInputUpdateCallback(const JoystickInput& input) {
-  static uint64_t count = 0;
-  std::cout << "Joystick input updated: " << count++ << std::endl;
-  // print axis
-  std::cout << "Axis: ";
-  for (int i = 0; i < input.axes.size(); ++i) {
-    std::cout << "Axis " << i << ": " << input.axes[i] << " ";
+  void Draw() override {
+    Begin();
+    joysticks_ = viewer_->GetListOfJoysticks();
+    ImGui::Text("Number of Joystick devices: %ld", joysticks_.size());
+
+    if (!joysticks_.empty()) {
+      static int selected_joystick_ = 0;
+      if (ImGui::BeginCombo("Select Joystick",
+                            joysticks_[selected_joystick_].name.c_str())) {
+        for (int i = 0; i < joysticks_.size(); ++i) {
+          auto js = joysticks_[i];
+          std::string name = "[" + std::to_string(js.id) + "] " + js.name;
+          if (ImGui::Selectable(name.c_str(), selected_joystick_ == i)) {
+            selected_joystick_ = i;  // js.id;
+          }
+        }
+        ImGui::EndCombo();
+      }
+
+      if (!viewer_->IsJoystickInputUpdateCallbackRegistered()) {
+        if (ImGui::Button("Connect")) {
+          std::cerr << "Monitor Joystick Input: " << "[" << selected_joystick_
+                    << "] " << joysticks_[selected_joystick_].id << std::endl;
+          viewer_->RegisterJoystickInputUpdateCallback(
+              joysticks_[selected_joystick_].id,
+              [this](const JoystickInput& input) {
+                current_joystick_input_ = input;
+                std::cerr << "Joystick Input Update: " << input.device.id
+                          << std::endl;
+              });
+        }
+      } else {
+        if (ImGui::Button("Disconnect")) {
+          viewer_->UnregisterJoystickInputUpdateCallback();
+          current_joystick_input_.device.id = -1;
+        }
+      }
+
+      // display current joystick input
+      if (current_joystick_input_.device.id >= GLFW_JOYSTICK_1 &&
+          current_joystick_input_.device.id < GLFW_JOYSTICK_LAST) {
+        ImGui::Text("Current Joystick Input:");
+        ImGui::Text("Device ID: %d", current_joystick_input_.device.id);
+        ImGui::Text("Device Name: %s",
+                    current_joystick_input_.device.name.c_str());
+        ImGui::Text("Axes:");
+        for (int i = 0; i < current_joystick_input_.axes.size(); ++i) {
+          ImGui::Text(" - Axis %d: %.2f", i, current_joystick_input_.axes[i]);
+        }
+        ImGui::Text("Buttons:");
+        for (int i = 0; i < current_joystick_input_.buttons.size(); ++i) {
+          ImGui::Text(" - Button %d: %d", i,
+                      current_joystick_input_.buttons[i]);
+        }
+      }
+    } else {
+      ImGui::Text("No joystick detected");
+    }
+
+    End();
   }
-  std::cout << std::endl;
-  // print buttons
-  std::cout << "Buttons: ";
-  for (int i = 0; i < input.buttons.size(); ++i) {
-    std::cout << "Button " << i << ": " << (int)input.buttons[i] << " ";
-  }
-  std::cout << std::endl;
-}
+
+ private:
+  std::shared_ptr<Viewer> viewer_;
+  std::vector<JoystickDevice> joysticks_;
+  JoystickInput current_joystick_input_;
+};
 
 int main(int argc, char* argv[]) {
-  Viewer viewer;
+  auto viewer = std::make_shared<Viewer>();
 
-  auto joysticks = viewer.GetListOfJoysticks();
-  if (joysticks.empty()) {
-    std::cout << "No joysticks found" << std::endl;
-    return -1;
-  }
+  viewer->EnableJoystickInput(true);
 
-  std::cout << "Available Joysticks:" << std::endl;
-  for (int i = 0; i < joysticks.size(); ++i) {
-    auto js = joysticks[i];
-    std::cout << "[" << i << "] Joystick ID: " << js.id << ", Name: " << js.name
-              << std::endl;
-  }
+  auto panel = std::make_shared<JoystickPanel>(viewer);
+  viewer->AddSceneObject(panel);
 
-  std::cout << "Please select which joystick to monitor: ";
-  int selection;
-  std::cin >> selection;
-  if (selection < 0 || selection >= joysticks.size()) {
-    std::cout << "Invalid joystick ID" << std::endl;
-    return -1;
-  }
+  viewer->Show();
 
-  viewer.EnableJoystickInput(true);
-  viewer.SetJoystickDeviceChangeCallback(JoystickDeviceChangeCallback);
-  viewer.MonitorJoystickInputUpdate(joysticks[selection].id,
-                                    JoystickInputUpdateCallback);
-
-  auto panel = std::make_shared<ImGuiFixedPanel>("random-imgui_panel");
-  viewer.AddSceneObject(panel);
-
-  viewer.Show();
   return 0;
 }

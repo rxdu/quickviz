@@ -50,7 +50,10 @@ class Viewer : public Window {
   void EnableJoystickInput(bool enable);
   std::vector<JoystickDevice> GetListOfJoysticks();
   void SetJoystickDeviceChangeCallback(JoystickDeviceChangeCallback callback);
-  bool MonitorJoystickInputUpdate(int id, JoystickInputUpdateCallback callback);
+  bool IsJoystickInputUpdateCallbackRegistered() const;
+  bool RegisterJoystickInputUpdateCallback(
+      int id, JoystickInputUpdateCallback callback);
+  void UnregisterJoystickInputUpdateCallback();
 
   // window content rendering
   bool AddSceneObject(std::shared_ptr<SceneObject> obj);
@@ -75,8 +78,8 @@ class Viewer : public Window {
 
   bool handle_joystick_input_ = false;
   std::unordered_map<int, JoystickDevice> joysticks_;
-  JoystickDeviceChangeCallback joystick_device_change_callback_;
   JoystickInput current_joystick_input_;
+  JoystickDeviceChangeCallback joystick_device_change_callback_;
   JoystickInputUpdateCallback joystick_input_update_callback_;
 
   std::vector<std::shared_ptr<SceneObject>> scene_objects_;
