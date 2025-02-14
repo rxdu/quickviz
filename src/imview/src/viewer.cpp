@@ -229,34 +229,24 @@ void Viewer::EnumerateJoysticks() {
 
 void Viewer::OnJoystickEvent(int id, int event) {
   if (event == GLFW_CONNECTED) {
-    joysticks_[id].name = glfwGetJoystickName(id);
+    EnumerateJoysticks();
   } else if (event == GLFW_DISCONNECTED) {
     if (current_joystick_input_.device.id == id) {
-      current_joystick_input_.device.id = -1;
-      joystick_input_update_callback_ = nullptr;
+      StopJoystickInputMonitoring();
     }
     joysticks_.erase(id);
   }
 
-  if (joystick_device_change_callback_) {
-    joystick_device_change_callback_(GetListOfJoysticks());
+  std::vector<JoystickDevice> js;
+  for (const auto &pair : joysticks_) {
+    js.push_back(pair.second);
+  }
+  for (auto &obj : scene_objects_) {
+    obj->OnJoystickDeviceChange(js);
   }
 }
 
-void Viewer::SetJoystickDeviceChangeCallback(
-    JoystickDeviceChangeCallback callback) {
-  joystick_device_change_callback_ = callback;
-}
-
-bool Viewer::IsJoystickInputUpdateCallbackRegistered() const {
-  if (joystick_input_update_callback_) {
-    return true;
-  }
-  return false;
-}
-
-bool Viewer::RegisterJoystickInputUpdateCallback(
-    int id, JoystickInputUpdateCallback callback) {
+bool Viewer::StartJoystickInputMonitoring(int id) {
   if (joysticks_.find(id) == joysticks_.end()) {
     std::cerr << "[ERROR] Viewer::RegisterJoystickInputUpdateCallback(): "
                  "Joystick with ID "
@@ -268,13 +258,20 @@ bool Viewer::RegisterJoystickInputUpdateCallback(
   current_joystick_input_.axes.clear();
   current_joystick_input_.buttons.clear();
   current_joystick_input_.hats.clear();
-  joystick_input_update_callback_ = callback;
   return true;
 }
 
-void Viewer::UnregisterJoystickInputUpdateCallback() {
+void Viewer::StopJoystickInputMonitoring() {
   current_joystick_input_.device.id = -1;
-  joystick_input_update_callback_ = nullptr;
+  current_joystick_input_.device.name = "";
+  current_joystick_input_.axes.clear();
+  current_joystick_input_.buttons.clear();
+  current_joystick_input_.hats.clear();
+}
+
+bool Viewer::IsJoystickInputMonitoringActive() const {
+  return current_joystick_input_.device.id >= GLFW_JOYSTICK_1 &&
+         current_joystick_input_.device.id < GLFW_JOYSTICK_LAST;
 }
 
 void Viewer::EnableJoystickInput(bool enable) {
@@ -363,8 +360,24 @@ void Viewer::RenderImGuiFrame() {
 }
 
 void Viewer::RenderSceneObjects() {
-  for (auto &layer : scene_objects_) {
-    if (layer->IsVisible()) layer->OnRender();
+  for (auto &obj : scene_objects_) {
+    if (obj->IsVisible()) obj->OnRender();
+  }
+}
+
+void Viewer::HandleJoystickInput() {
+  if (handle_joystick_input_ &&
+      current_joystick_input_.device.id >= GLFW_JOYSTICK_1 &&
+      current_joystick_input_.device.id < GLFW_JOYSTICK_LAST) {
+    JoystickInput input;
+    if (GetJoystickInput(current_joystick_input_.device.id, input)) {
+      if (input != current_joystick_input_) {
+        for (auto &obj : scene_objects_) {
+          obj->OnJoystickUpdate(input);
+        }
+        current_joystick_input_ = input;
+      }
+    }
   }
 }
 
@@ -398,18 +411,7 @@ void Viewer::Show() {
   while (!ShouldClose()) {
     // handle events
     PollEvents();
-    if (handle_joystick_input_ &&
-        current_joystick_input_.device.id > GLFW_JOYSTICK_1 &&
-        current_joystick_input_.device.id < GLFW_JOYSTICK_LAST) {
-      JoystickInput input;
-      if (GetJoystickInput(current_joystick_input_.device.id, input)) {
-        if (input != current_joystick_input_ &&
-            joystick_input_update_callback_) {
-          joystick_input_update_callback_(input);
-          current_joystick_input_ = input;
-        }
-      }
-    }
+    HandleJoystickInput();
 
     // draw stuff
     ClearBackground();

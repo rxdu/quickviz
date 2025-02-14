@@ -11,14 +11,14 @@
 #include <iostream>
 
 #include "glad/glad.h"
-#include "imview/scene_object.hpp"
+#include "imview/panel.hpp"
 
 namespace quickviz {
-class GLTriangleSceneObject : public SceneObject {
+class GLTriangleSceneObject : public Panel {
  public:
-  GLTriangleSceneObject() : SceneObject("GLTrianglePanel") {};
+  GLTriangleSceneObject() : Panel("GLTrianglePanel") {};
 
-  void OnRender() override {
+  void Draw() override {
     glEnable(GL_SCISSOR_TEST);
     glViewport(x_, y_, width_, height_);
     glScissor(x_, y_, width_, height_);

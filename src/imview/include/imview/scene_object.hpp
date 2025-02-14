@@ -14,6 +14,7 @@
 
 #include "imview/interface/resizable.hpp"
 #include "imview/interface/renderable.hpp"
+#include "imview/interface/input_handler.hpp"
 
 #ifdef ENABLE_AUTO_LAYOUT
 struct YGNode;
@@ -21,7 +22,7 @@ typedef struct YGNode* YGNodeRef;
 #endif
 
 namespace quickviz {
-class SceneObject : public Resizable, public Renderable {
+class SceneObject : public Resizable, public Renderable, public InputHandler {
  public:
   SceneObject(std::string name);
   virtual ~SceneObject();
@@ -68,6 +69,13 @@ class SceneObject : public Resizable, public Renderable {
   void SetMaxHeight(float height) override;
 #endif
 
+  // user input handling
+  void SetInputHandlingStrategy(Type type, Strategy strategy) override;
+  void OnJoystickDeviceChange(
+      const std::vector<JoystickDevice>& devices) override;
+
+  virtual void OnJoystickUpdate(const JoystickInput& input) = 0;
+
  protected:
   std::string name_;
   bool visible_ = true;
@@ -81,6 +89,10 @@ class SceneObject : public Resizable, public Renderable {
   YGNodeRef yg_node_;
   size_t child_count_ = 0;
 #endif
+
+  std::vector<JoystickDevice> joysticks_;
+  std::unordered_map<InputHandler::Type, InputHandler::Strategy>
+      input_handling_strategies_;
 };
 }  // namespace quickviz
 

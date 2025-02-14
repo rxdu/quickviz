@@ -8,6 +8,8 @@
 
 #include "imview/scene_object.hpp"
 
+#include <iostream>
+
 #ifdef ENABLE_AUTO_LAYOUT
 #include <yoga/Yoga.h>
 #include "yoga_utils.hpp"
@@ -20,6 +22,13 @@ SceneObject::SceneObject(std::string name) : name_(std::move(name)) {
 #ifdef ENABLE_AUTO_LAYOUT
   yg_node_ = YGNodeNew();
 #endif
+
+  input_handling_strategies_[InputHandler::Type::kKeyboard] =
+      InputHandler::Strategy::kNone;
+  input_handling_strategies_[InputHandler::Type::kMouse] =
+      InputHandler::Strategy::kNone;
+  input_handling_strategies_[InputHandler::Type::kJoystick] =
+      InputHandler::Strategy::kNone;
 }
 
 SceneObject::~SceneObject() {
@@ -143,4 +152,21 @@ void SceneObject::SetMaxHeight(float height) {
   YGNodeStyleSetMaxHeight(yg_node_, height);
 }
 #endif
+
+void SceneObject::SetInputHandlingStrategy(Type type, Strategy strategy) {
+  if (input_handling_strategies_.find(type) == input_handling_strategies_.end())
+    return;
+  input_handling_strategies_[type] = strategy;
+}
+
+void SceneObject::OnJoystickDeviceChange(
+    const std::vector<JoystickDevice>& devices) {
+  joysticks_ = devices;
+  std::cout << "Joystick device changed, available joystick number: "
+            << devices.size() << std::endl;
+  for (int i = 0; i < joysticks_.size(); ++i) {
+    std::cout << "Joystick " << i << ": " << joysticks_[i].id << " - "
+              << joysticks_[i].name << std::endl;
+  }
+}
 }  // namespace quickviz

@@ -14,7 +14,7 @@
 
 namespace quickviz {
 struct JoystickDevice {
-  int id;
+  int id = -1;
   std::string name;
 };
 

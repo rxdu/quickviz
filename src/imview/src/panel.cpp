@@ -22,7 +22,7 @@ void Panel::OnRender() {
   Draw();
 }
 
-void Panel::Begin(bool *p_open) {
+void Panel::Begin(bool* p_open) {
   ImGui::SetNextWindowClass(&window_class_);
   ImGui::Begin(name_.c_str(), p_open, flags_);
 }
@@ -214,5 +214,9 @@ void Panel::SetWindowHiddenTabBar() {
 
 void Panel::SetWindowNoCloseButton() {
   window_class_.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoCloseButton;
+}
+
+void Panel::OnJoystickUpdate(const JoystickInput& input) {
+  // do nothing by default
 }
 }  // namespace quickviz

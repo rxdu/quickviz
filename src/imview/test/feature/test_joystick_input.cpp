@@ -16,11 +16,17 @@ using namespace quickviz;
 class JoystickPanel : public Panel {
  public:
   JoystickPanel(std::shared_ptr<Viewer> viewer)
-      : Panel("JoystickPanel"), viewer_(viewer) {}
+      : Panel("JoystickPanel"), viewer_(viewer) {
+    joysticks_ = viewer_->GetListOfJoysticks();
+    current_joystick_input_.device.id = -1;
+  }
+
+  void OnJoystickUpdate(const JoystickInput& input) override {
+    current_joystick_input_ = input;
+  }
 
   void Draw() override {
     Begin();
-    joysticks_ = viewer_->GetListOfJoysticks();
     ImGui::Text("Number of Joystick devices: %ld", joysticks_.size());
 
     if (!joysticks_.empty()) {
@@ -37,21 +43,16 @@ class JoystickPanel : public Panel {
         ImGui::EndCombo();
       }
 
-      if (!viewer_->IsJoystickInputUpdateCallbackRegistered()) {
+      if (!viewer_->IsJoystickInputMonitoringActive()) {
         if (ImGui::Button("Connect")) {
           std::cerr << "Monitor Joystick Input: " << "[" << selected_joystick_
                     << "] " << joysticks_[selected_joystick_].id << std::endl;
-          viewer_->RegisterJoystickInputUpdateCallback(
-              joysticks_[selected_joystick_].id,
-              [this](const JoystickInput& input) {
-                current_joystick_input_ = input;
-                std::cerr << "Joystick Input Update: " << input.device.id
-                          << std::endl;
-              });
+          viewer_->StartJoystickInputMonitoring(
+              joysticks_[selected_joystick_].id);
         }
       } else {
         if (ImGui::Button("Disconnect")) {
-          viewer_->UnregisterJoystickInputUpdateCallback();
+          viewer_->StopJoystickInputMonitoring();
           current_joystick_input_.device.id = -1;
         }
       }
@@ -82,7 +83,6 @@ class JoystickPanel : public Panel {
 
  private:
   std::shared_ptr<Viewer> viewer_;
-  std::vector<JoystickDevice> joysticks_;
   JoystickInput current_joystick_input_;
 };
 

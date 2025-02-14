@@ -20,7 +20,6 @@
 
 #include "imview/fonts.hpp"
 #include "imview/window.hpp"
-#include "imview/joystick.hpp"
 #include "imview/scene_object.hpp"
 
 namespace quickviz {
@@ -49,11 +48,9 @@ class Viewer : public Window {
   // user input handling
   void EnableJoystickInput(bool enable);
   std::vector<JoystickDevice> GetListOfJoysticks();
-  void SetJoystickDeviceChangeCallback(JoystickDeviceChangeCallback callback);
-  bool IsJoystickInputUpdateCallbackRegistered() const;
-  bool RegisterJoystickInputUpdateCallback(
-      int id, JoystickInputUpdateCallback callback);
-  void UnregisterJoystickInputUpdateCallback();
+  bool StartJoystickInputMonitoring(int id);
+  void StopJoystickInputMonitoring();
+  bool IsJoystickInputMonitoringActive() const;
 
   // window content rendering
   bool AddSceneObject(std::shared_ptr<SceneObject> obj);
@@ -67,6 +64,7 @@ class Viewer : public Window {
   void CreateNewImGuiFrame();
   void RenderImGuiFrame();
   void RenderSceneObjects();
+  void HandleJoystickInput();
 
  private:
   void LoadDefaultStyle();
@@ -79,8 +77,6 @@ class Viewer : public Window {
   bool handle_joystick_input_ = false;
   std::unordered_map<int, JoystickDevice> joysticks_;
   JoystickInput current_joystick_input_;
-  JoystickDeviceChangeCallback joystick_device_change_callback_;
-  JoystickInputUpdateCallback joystick_input_update_callback_;
 
   std::vector<std::shared_ptr<SceneObject>> scene_objects_;
   float bg_color_[4];

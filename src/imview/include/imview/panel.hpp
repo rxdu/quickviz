@@ -25,6 +25,7 @@ class Panel : public SceneObject {
   void SetAutoLayout(bool value);
   bool IsAutoLayout() const;
   void OnRender() override;
+  void OnJoystickUpdate(const JoystickInput& input) override;
 
   void SetNoTitleBar(bool value);
   void SetNoResize(bool value);
@@ -59,7 +60,7 @@ class Panel : public SceneObject {
 
  protected:
   // for derived classes
-  void Begin(bool *p_open = NULL);
+  void Begin(bool* p_open = NULL);
   void End();
 
  private:

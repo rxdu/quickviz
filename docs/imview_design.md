@@ -35,6 +35,7 @@ classDiagram
     Box ..|> Container
     SceneObject ..|> Resizable
     SceneObject ..|> Renderable
+    SceneObject ..|> InputHandler
     namespace quickviz {
         class Window {
             #GLFWwindow *win_
@@ -64,6 +65,11 @@ classDiagram
             +SetFlexDirection() void *
             +SetXYZ() void *
         }
+        class InputHandler {
+            <<Interface>>
+            +SetInputHandlingStrategy() void *
+            +OnJoystickUpdate() void *
+        }
         class Container {
             <<Interface>>
             +AddChild(std:: shared_ptr<SceneObject> obj) *;
@@ -74,8 +80,10 @@ classDiagram
             +GetName() std:: string
             +SetPosition() void
             +SetVisibility() void
+            +SetInputHandlingStrategy() void
             +OnResize() void
             +OnRender() void *
+            +OnJoystickUpdate() void *
         }
         class Box {
             +PrintLayout() const

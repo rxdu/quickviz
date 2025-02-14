@@ -9,16 +9,16 @@
 #define QUICKVIZ_OPENGL_SCENE_OBJECT_HPP
 
 #include "glad/glad.h"
-#include "imview/scene_object.hpp"
+#include "imview/panel.hpp"
 
 namespace quickviz {
-class OpenGLSceneObject : public SceneObject {
+class OpenGLSceneObject : public Panel {
  public:
   OpenGLSceneObject(std::string name, float r = 1.0, float g = 0.0,
                     float b = 0.0)
-      : SceneObject(name), r(r), g(g), b(b) {};
+      : Panel(name), r(r), g(g), b(b) {};
 
-  void OnRender() override {
+  void Draw() override {
     glEnable(GL_SCISSOR_TEST);
     glViewport(x_, y_, width_, height_);
     glScissor(x_, y_, width_, height_);
