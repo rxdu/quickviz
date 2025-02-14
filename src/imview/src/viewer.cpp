@@ -279,6 +279,16 @@ void Viewer::EnableJoystickInput(bool enable) {
   if (handle_joystick_input_) {
     EnumerateJoysticks();
 
+    // manually trigger the joystick device change callback to ensure
+    // all scene objects are aware of the initially available joysticks
+    std::vector<JoystickDevice> js;
+    for (const auto &pair : joysticks_) {
+      js.push_back(pair.second);
+    }
+    for (auto &obj : scene_objects_) {
+      obj->OnJoystickDeviceChange(js);
+    }
+
     JoystickCallback<void(int, int)>::func =
         std::bind(&Viewer::OnJoystickEvent, this, std::placeholders::_1,
                   std::placeholders::_2);

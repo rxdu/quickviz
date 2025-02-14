@@ -162,11 +162,12 @@ void SceneObject::SetInputHandlingStrategy(Type type, Strategy strategy) {
 void SceneObject::OnJoystickDeviceChange(
     const std::vector<JoystickDevice>& devices) {
   joysticks_ = devices;
-  std::cout << "Joystick device changed, available joystick number: "
-            << devices.size() << std::endl;
-  for (int i = 0; i < joysticks_.size(); ++i) {
-    std::cout << "Joystick " << i << ": " << joysticks_[i].id << " - "
-              << joysticks_[i].name << std::endl;
-  }
+  // std::cout << "Joystick device changed, available joystick number: "
+  //           << devices.size() << std::endl;
+  // std::cout << " - Current scene object: " << name_ << std::endl;
+  // for (int i = 0; i < joysticks_.size(); ++i) {
+  //   std::cout << " - Joystick " << i << ": " << joysticks_[i].id << " - "
+  //             << joysticks_[i].name << std::endl;
+  // }
 }
 }  // namespace quickviz

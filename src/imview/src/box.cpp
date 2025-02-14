@@ -92,6 +92,19 @@ void Box::OnRender() {
   }
 }
 
+void Box::OnJoystickDeviceChange(const std::vector<JoystickDevice>& devices) {
+  joysticks_ = devices;
+
+  auto strategy = input_handling_strategies_[InputHandler::Type::kJoystick];
+  if (strategy == Strategy::kPropagateOnly ||
+      strategy == Strategy::kProcessAndPropagate) {
+    // Send the event to child handlers
+    for (auto child : children_) {
+      child.second->OnJoystickDeviceChange(devices);
+    }
+  }
+}
+
 void Box::OnJoystickUpdate(const JoystickInput& input) {
   auto strategy = input_handling_strategies_[InputHandler::Type::kJoystick];
   if (strategy == Strategy::kProcessOnly ||
