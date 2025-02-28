@@ -16,14 +16,14 @@ class TestPanel : public TuiPanel {
  public:
   TestPanel(std::string panel) : TuiPanel(panel) {}
 
-  void Draw() override { mvprintw(0, 0, GetName().c_str()); }
+  void Draw() override { mvwprintw(window_, 1, 1, GetName().c_str()); }
 };
 
 int main(int argc, char **argv) {
   TuiComposer tui;
 
   auto box = std::make_shared<Box>("Box");
-  box->SetFlexDirection(Styling::FlexDirection::kColumn);
+  box->SetFlexDirection(Styling::FlexDirection::kRow);
   box->SetAlignItems(Styling::AlignItems::kStretch);
 
   auto test_panel = std::make_shared<TestPanel>("MyPanel1");
@@ -31,10 +31,10 @@ int main(int argc, char **argv) {
   test_panel->SetFlexShrink(0.5f);
   box->AddChild(test_panel);
 
-  //   auto test_panel2 = std::make_shared<TestPanel>("MyPanel2");
-  //   test_panel2->SetFlexGrow(0.3f);
-  //   test_panel2->SetFlexShrink(0.3f);
-  //   box->AddChild(test_panel2);
+  auto test_panel2 = std::make_shared<TestPanel>("MyPanel2");
+  test_panel2->SetFlexGrow(0.3f);
+  test_panel2->SetFlexShrink(0.3f);
+  box->AddChild(test_panel2);
 
   tui.AddSceneObject(box);
   tui.Show();

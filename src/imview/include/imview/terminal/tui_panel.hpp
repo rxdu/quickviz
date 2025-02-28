@@ -35,7 +35,7 @@ class TuiPanel : public SceneObject {
 
  protected:
   bool has_border_ = true;
-  WINDOW *window_;
+  WINDOW *window_ = nullptr;
 };
 }  // namespace quickviz
 

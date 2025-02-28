@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <fstream>
 
 #include "imview/terminal/tui_panel.hpp"
 
@@ -29,6 +30,8 @@ class TuiComposer {
   void Show();
 
  private:
+  void Init();
+  void Deinit();
   void Resize();
 
   std::string title_;
@@ -38,6 +41,10 @@ class TuiComposer {
   std::vector<std::shared_ptr<SceneObject>> scene_objects_;
 
   bool keep_running_{false};
+
+  // for debugging
+  // $ tail -f /tmp/tui_composer.log
+  std::ofstream log_file_;
 };
 }  // namespace quickviz
 

@@ -17,22 +17,16 @@
 namespace quickviz {
 TuiComposer::TuiComposer(const std::string &title, bool has_border)
     : title_(title), has_border_(has_border) {
-  if (!initscr()) {
-    throw std::runtime_error("Failed to initialize ncurses");
-  }
+  log_file_.open("/tmp/tui_composer.log", std::ios::out | std::ios::app);
 
-  refresh();
-  cbreak();
-  noecho();
-  nonl();
-  curs_set(FALSE);
-  intrflush(stdscr, FALSE);
-  keypad(stdscr, TRUE);
-
+  Init();
   Resize();
 }
 
-TuiComposer::~TuiComposer() { endwin(); }
+TuiComposer::~TuiComposer() {
+  log_file_.close();
+  Deinit();
+}
 
 bool TuiComposer::AddSceneObject(std::shared_ptr<SceneObject> obj) {
   if (obj == nullptr) {
@@ -44,24 +38,49 @@ bool TuiComposer::AddSceneObject(std::shared_ptr<SceneObject> obj) {
   return true;
 }
 
-void TuiComposer::Resize() {
-  getmaxyx(stdscr, term_size_y_, term_size_x_);
-  for (auto &panel : scene_objects_) {
-    panel->OnResize(term_size_y_, term_size_x_);
+void TuiComposer::Init() {
+  if (!initscr()) {
+    throw std::runtime_error("Failed to initialize ncurses");
   }
+
+  refresh();
+  cbreak();
+  noecho();
+  nonl();
+  curs_set(FALSE);
+  intrflush(stdscr, FALSE);
+  keypad(stdscr, TRUE);
+}
+
+void TuiComposer::Deinit() { endwin(); }
+
+void TuiComposer::Resize() {
+  Deinit();
+  Init();
+  getmaxyx(stdscr, term_size_y_, term_size_x_);
+  for (auto &obj : scene_objects_) {
+    obj->OnResize(term_size_y_, term_size_x_);
+  }
+  log_file_ << "term_size_y_: " << term_size_y_
+            << ", term_size_x_: " << term_size_x_ << std::endl;
 }
 
 void TuiComposer::Show() {
+  // refresh();
   while (true) {
-    // handle resize event
-    if (term_size_y_ != getmaxy(stdscr) || term_size_x_ != getmaxx(stdscr)) {
-      Resize();
+    // handle input
+    int input_ch = getch();
+    switch (input_ch) {
+      case KEY_RESIZE: {
+        Resize();
+        break;
+      }
     }
 
     // render border if needed
-    if (has_border_) {
-      box(stdscr, 0, 0);
-    }
+    // if (has_border_) {
+    //   box(stdscr, 0, 0);
+    // }
 
     // render panels
     for (auto &panel : scene_objects_) {
