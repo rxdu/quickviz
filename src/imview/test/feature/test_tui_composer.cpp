@@ -45,10 +45,23 @@ int main(int argc, char **argv) {
   test_panel->SetFlexShrink(0.5f);
   box->AddChild(test_panel);
 
+  auto vbox = std::make_shared<Box>("VBox");
+  vbox->SetFlexGrow(0.5f);
+  vbox->SetFlexShrink(0.5f);
+  vbox->SetFlexDirection(Styling::FlexDirection::kColumn);
+  vbox->SetAlignItems(Styling::AlignItems::kStretch);
+
   auto test_panel2 = std::make_shared<TestPanel>("MyPanel2");
-  test_panel2->SetFlexGrow(0.3f);
-  test_panel2->SetFlexShrink(0.3f);
-  box->AddChild(test_panel2);
+  test_panel2->SetFlexGrow(0.4f);
+  test_panel2->SetFlexShrink(0.4f);
+  vbox->AddChild(test_panel2);
+
+  auto test_panel3 = std::make_shared<TestPanel>("MyPanel3");
+  test_panel3->SetFlexGrow(0.6f);
+  test_panel3->SetFlexShrink(0.6f);
+  vbox->AddChild(test_panel3);
+
+  box->AddChild(vbox);
 
   tui.AddSceneObject(box);
   tui.Show();
