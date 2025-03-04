@@ -111,6 +111,16 @@ For Visual Studio, open "Build"-"Cmake Settings for quickfiz" and add the follow
 
 Then you should be able to configure and build the project successfully.
 
+## Sample Applications
+
+A GUI-based application that demonstrates the usage of the imview library.
+
+![](docs/screenshots/quickviz.png)
+
+A terminal-based application that demonstrates the terminal support of the imview library.
+
+![](docs/screenshots/tui.png)
+
 ## Reference
 
 The library is built on top of a few third-party libraries, you can refer to their documentation for more details:
