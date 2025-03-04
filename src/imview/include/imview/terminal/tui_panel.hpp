@@ -28,14 +28,16 @@ class TuiPanel : public SceneObject {
   void OnResize(float width, float height) override;
   void OnJoystickUpdate(const JoystickInput &input) override {};
 
+  void SetTitleBar(bool value);
   void SetNoBorder(bool value);
 
   // for derived classes
   virtual void Draw() = 0;
 
  protected:
-  bool has_border_ = true;
   WINDOW *window_ = nullptr;
+  bool has_border_ = true;
+  bool show_title_ = true;
 };
 }  // namespace quickviz
 

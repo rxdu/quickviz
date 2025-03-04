@@ -7,16 +7,15 @@
  * @copyright Copyright (c) 2023 Ruixiang Du (rdu)
  */
 
-#ifndef ROBOSW_SRC_VISUALIZATION_NCVIEW_INCLUDE_NCVIEW_NC_TEXT_HPP_
-#define ROBOSW_SRC_VISUALIZATION_NCVIEW_INCLUDE_NCVIEW_NC_TEXT_HPP_
+#ifndef IMVIEW_TERMINAL_NC_TEXT_HPP
+#define IMVIEW_TERMINAL_NC_TEXT_HPP
 
 #include <ncurses.h>
 
 #include <string>
 
-namespace xmotion {
-namespace swviz {
-class NcText {
+namespace quickviz {
+class TuiText {
  public:
   enum Color : short {
     kDefault = -1,
@@ -53,7 +52,7 @@ class NcText {
   static void ResetAttribute(WINDOW *win);
 
   template <typename... Args>
-  static void Printw(WINDOW *win, int y, int x, NcText::Color color,
+  static void Printw(WINDOW *win, int y, int x, TuiText::Color color,
                      const char *fmt, Args... args) {
     wattron(win, COLOR_PAIR(color));
     mvwprintw(win, y, x, fmt, args...);
@@ -62,8 +61,7 @@ class NcText {
 
  private:
   static int active_attributes;
-};  // namespace NcText
-}  // namespace swviz
-}  // namespace xmotion
+};
+}  // namespace quickviz
 
-#endif  // ROBOSW_SRC_VISUALIZATION_NCVIEW_INCLUDE_NCVIEW_NC_TEXT_HPP_
+#endif /* IMVIEW_TERMINAL_NC_TEXT_HPP */

@@ -27,10 +27,13 @@ void TuiPanel::OnRender() {
   if (window_ == nullptr) return;
 
   werase(window_);
+  Draw();
   if (has_border_) {
     box(window_, 0, 0);
   }
-  Draw();
+  if (show_title_) {
+    mvwprintw(window_, 0, 2, " %s ", GetName().c_str());
+  }
   wrefresh(window_);
 }
 
@@ -54,6 +57,8 @@ void TuiPanel::OnResize(float width, float height) {
     mvwin(window_, y_, x_);
   }
 }
+
+void TuiPanel::SetTitleBar(bool value) { show_title_ = value; }
 
 void TuiPanel::SetNoBorder(bool value) { has_border_ = !value; }
 }  // namespace quickviz

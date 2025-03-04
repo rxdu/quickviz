@@ -16,7 +16,21 @@ class TestPanel : public TuiPanel {
  public:
   TestPanel(std::string panel) : TuiPanel(panel) {}
 
-  void Draw() override { mvwprintw(window_, 1, 1, GetName().c_str()); }
+  void Draw() override {
+    TuiText::Printw(window_, 2, 1, TuiText::Color::kBlue,
+                    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz",
+                    NULL);
+
+    TuiText::SetAttribute(window_, TuiText::ATTR_UNDERLINE |
+                                       TuiText::ATTR_BOLD |
+                                       TuiText::ATTR_BLINK);
+    TuiText::Printw(window_, 2 + 3, 1, TuiText::Color::kRed,
+                    "012345678901234567890", NULL);
+    TuiText::ResetAttribute(window_);
+
+    TuiText::Printw(window_, 2 + 5, 1, TuiText::Color::kGreen,
+                    "012345678901234567890", NULL);
+  }
 };
 
 int main(int argc, char **argv) {

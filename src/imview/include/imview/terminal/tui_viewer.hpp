@@ -17,6 +17,7 @@
 #include <memory>
 #include <fstream>
 
+#include "imview/terminal/tui_text.hpp"
 #include "imview/terminal/tui_panel.hpp"
 
 namespace quickviz {

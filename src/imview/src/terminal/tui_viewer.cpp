@@ -50,6 +50,8 @@ void TuiViewer::Init() {
   curs_set(FALSE);
   intrflush(stdscr, FALSE);
   keypad(stdscr, TRUE);
+
+  TuiText::InitColor();
 }
 
 void TuiViewer::Deinit() { endwin(); }
