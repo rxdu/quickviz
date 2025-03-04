@@ -12,25 +12,25 @@
 #include <chrono>
 #include <iostream>
 
-#include "imview/terminal/tui_composer.hpp"
+#include "imview/terminal/tui_viewer.hpp"
 
 namespace quickviz {
-TuiComposer::TuiComposer(const std::string &title, bool has_border)
+TuiViewer::TuiViewer(const std::string &title, bool has_border)
     : title_(title), has_border_(has_border) {
-  log_file_.open("/tmp/tui_composer.log", std::ios::out | std::ios::app);
+  log_file_.open("/tmp/tui_viewer.log", std::ios::out | std::ios::app);
 
   Init();
   Resize();
 }
 
-TuiComposer::~TuiComposer() {
+TuiViewer::~TuiViewer() {
   log_file_.close();
   Deinit();
 }
 
-bool TuiComposer::AddSceneObject(std::shared_ptr<SceneObject> obj) {
+bool TuiViewer::AddSceneObject(std::shared_ptr<SceneObject> obj) {
   if (obj == nullptr) {
-    std::cerr << "[ERROR] TuiComposer::AddSceneObject(): object is nullptr"
+    std::cerr << "[ERROR] TuiViewer::AddSceneObject(): object is nullptr"
               << std::endl;
     return false;
   }
@@ -38,7 +38,7 @@ bool TuiComposer::AddSceneObject(std::shared_ptr<SceneObject> obj) {
   return true;
 }
 
-void TuiComposer::Init() {
+void TuiViewer::Init() {
   if (!initscr()) {
     throw std::runtime_error("Failed to initialize ncurses");
   }
@@ -52,21 +52,28 @@ void TuiComposer::Init() {
   keypad(stdscr, TRUE);
 }
 
-void TuiComposer::Deinit() { endwin(); }
+void TuiViewer::Deinit() { endwin(); }
 
-void TuiComposer::Resize() {
+void TuiViewer::Resize() {
   Deinit();
   Init();
   getmaxyx(stdscr, term_size_y_, term_size_x_);
   for (auto &obj : scene_objects_) {
-    obj->OnResize(term_size_y_, term_size_x_);
+    obj->OnResize(term_size_x_, term_size_y_);
   }
   log_file_ << "term_size_y_: " << term_size_y_
             << ", term_size_x_: " << term_size_x_ << std::endl;
 }
 
-void TuiComposer::Show() {
-  // refresh();
+void TuiViewer::ForceRefresh() {
+  Resize();
+  for (auto &panel : scene_objects_) {
+    panel->OnRender();
+  }
+}
+
+void TuiViewer::Show() {
+  ForceRefresh();
   while (true) {
     // handle input
     int input_ch = getch();

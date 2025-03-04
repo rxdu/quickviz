@@ -21,8 +21,8 @@ if(ENABLE_AUTO_LAYOUT)
 
   if(ENABLE_TUI_SUPPORT)
     set(TUI_SRC
-      src/terminal/tui_composer.cpp
-      src/terminal/tui_panel.cpp)
+      src/terminal/tui_panel.cpp
+      src/terminal/tui_viewer.cpp)
     set(TUI_LIBS ${CURSES_LIBRARIES})
   endif()
 endif()

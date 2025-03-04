@@ -1,5 +1,5 @@
 /**
- * @file tui.hpp
+ * @file tui_viewer.hpp
  * @author Ruixiang Du (ruixiang.du@gmail.com)
  * @date 2025-02-26
  * @brief
@@ -7,8 +7,8 @@
  * Copyright (c) 2025 Ruixiang Du (rdu)
  */
 
-#ifndef IMVIEW_TERMINAL_TUI_COMPOSER_HPP
-#define IMVIEW_TERMINAL_TUI_COMPOSER_HPP
+#ifndef IMVIEW_TERMINAL_TUI_VIEWER_HPP
+#define IMVIEW_TERMINAL_TUI_VIEWER_HPP
 
 #include <ncurses.h>
 
@@ -20,11 +20,10 @@
 #include "imview/terminal/tui_panel.hpp"
 
 namespace quickviz {
-class TuiComposer {
+class TuiViewer {
  public:
-  TuiComposer(const std::string &title = "TUI Composer",
-              bool has_border = true);
-  ~TuiComposer();
+  TuiViewer(const std::string &title = "TUI Composer", bool has_border = true);
+  ~TuiViewer();
 
   bool AddSceneObject(std::shared_ptr<SceneObject> obj);
   void Show();
@@ -33,6 +32,7 @@ class TuiComposer {
   void Init();
   void Deinit();
   void Resize();
+  void ForceRefresh();
 
   std::string title_;
   bool has_border_;
@@ -43,9 +43,9 @@ class TuiComposer {
   bool keep_running_{false};
 
   // for debugging
-  // $ tail -f /tmp/tui_composer.log
+  // $ tail -f /tmp/tui_viewer.log
   std::ofstream log_file_;
 };
 }  // namespace quickviz
 
-#endif /* IMVIEW_TERMINAL_TUI_COMPOSER_HPP */
+#endif /* IMVIEW_TERMINAL_TUI_VIEWER_HPP */

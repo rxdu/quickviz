@@ -8,7 +8,7 @@
  */
 
 #include "imview/box.hpp"
-#include "imview/terminal/tui_composer.hpp"
+#include "imview/terminal/tui_viewer.hpp"
 
 using namespace quickviz;
 
@@ -20,7 +20,7 @@ class TestPanel : public TuiPanel {
 };
 
 int main(int argc, char **argv) {
-  TuiComposer tui;
+  TuiViewer tui;
 
   auto box = std::make_shared<Box>("Box");
   box->SetFlexDirection(Styling::FlexDirection::kRow);

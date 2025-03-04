@@ -9,6 +9,8 @@
 
 #include "imview/terminal/tui_panel.hpp"
 
+#include <cmath>
+
 #ifdef ENABLE_AUTO_LAYOUT
 #include <yoga/Yoga.h>
 #include "yoga_utils.hpp"
@@ -33,13 +35,22 @@ void TuiPanel::OnRender() {
 }
 
 void TuiPanel::OnResize(float width, float height) {
-  width_ = width;
-  height_ = height;
+  // Round to nearest integer since ncurses uses integer coordinates
+  width_ = static_cast<int>(std::round(width));
+  height_ = static_cast<int>(std::round(height));
+
+  // Adjust dimensions if we have a border to ensure content fits
+  int effective_width = width_;
+  int effective_height = height_;
+  if (has_border_) {
+    effective_width = std::max(2, effective_width);
+    effective_height = std::max(2, effective_height);
+  }
 
   if (window_ == nullptr) {
-    window_ = newwin(height_, width_, y_, x_);
+    window_ = newwin(effective_height, effective_width, y_, x_);
   } else {
-    wresize(window_, height_, width_);
+    wresize(window_, effective_height, effective_width);
     mvwin(window_, y_, x_);
   }
 }
