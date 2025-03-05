@@ -30,6 +30,9 @@ target_link_libraries(test_implot_widget PRIVATE imview)
 add_executable(test_gl_widget test_gl_widget.cpp)
 target_link_libraries(test_gl_widget PRIVATE imview)
 
+add_executable(test_point_cloud test_point_cloud.cpp)
+target_link_libraries(test_point_cloud PRIVATE imview)
+
 add_executable(test_popup test_popup.cpp)
 target_link_libraries(test_popup PRIVATE imview)
 

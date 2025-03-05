@@ -56,6 +56,7 @@ add_library(imview
   src/component/opengl/triangle.cpp
   src/component/opengl/camera.cpp
   src/component/opengl/camera_controller.cpp
+  src/component/opengl/point_cloud.cpp
   src/component/buffer/buffer_registry.cpp
   src/component/buffer/scrolling_plot_buffer.cpp
   src/component/event/event_dispatcher.cpp
