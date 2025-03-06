@@ -18,6 +18,7 @@
 #include "imview/component/opengl/gl_scene_manager.hpp"
 #include "imview/component/opengl/triangle.hpp"
 #include "imview/component/opengl/grid.hpp"
+
 using namespace quickviz;
 
 int main(int argc, char* argv[]) {
@@ -39,7 +40,7 @@ int main(int argc, char* argv[]) {
   // now add the rendering objects to the OpenGL scene manager
   auto triangle = std::make_unique<Triangle>(1.0f, glm::vec3(0.0f, 0.5f, 0.5f));
   gl_sm->AddOpenGLObject("triangle", std::move(triangle));
-  
+
   auto grid = std::make_unique<Grid>(10.0f, 1.0f, glm::vec3(0.7f, 0.7f, 0.7f));
   gl_sm->AddOpenGLObject("grid", std::move(grid));
 

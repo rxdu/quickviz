@@ -43,7 +43,6 @@ add_library(imview
   src/widget/buffered_cv_image_widget.cpp
   src/widget/cairo_widget.cpp
   src/widget/rt_line_plot_widget.cpp
-  src/widget/gl_widget.cpp
   # components
   src/component/popup_manager.cpp
   src/component/image_utils.cpp
