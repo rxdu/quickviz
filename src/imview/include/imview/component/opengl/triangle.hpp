@@ -13,11 +13,11 @@
 
 #include <vector>
 
-#include "imview/interface/opengl_drawable.hpp"
+#include "imview/interface/opengl_object.hpp"
 #include "imview/component/opengl/shader_program.hpp"
 
 namespace quickviz {
-class Triangle : public OpenGLDrawable {
+class Triangle : public OpenGlObject {
  public:
   Triangle(float size = 1.0f, glm::vec3 color = glm::vec3(0.5f, 0.5f, 0.5f));
   ~Triangle();

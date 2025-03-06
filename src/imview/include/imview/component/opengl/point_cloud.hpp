@@ -14,7 +14,7 @@
 #include <memory>
 
 #include <glm/glm.hpp>
-#include "imview/interface/opengl_drawable.hpp"
+#include "imview/interface/opengl_object.hpp"
 #include "imview/component/opengl/shader_program.hpp"
 
 namespace quickviz {
@@ -24,7 +24,7 @@ enum class PointRenderMode {
   Spheres
 };
 
-class PointCloud : public OpenGLDrawable {
+class PointCloud : public OpenGlObject {
  public:
   PointCloud();
   ~PointCloud();

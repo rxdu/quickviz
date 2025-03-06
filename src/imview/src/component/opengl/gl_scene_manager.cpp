@@ -29,7 +29,7 @@ void GlSceneManager::SetShowRenderingInfo(bool show) {
 }
 
 void GlSceneManager::AddOpenGLObject(const std::string& name,
-                                     std::unique_ptr<OpenGLDrawable> object) {
+                                     std::unique_ptr<OpenGlObject> object) {
   if (object == nullptr) {
     throw std::invalid_argument("Object is nullptr");
   }

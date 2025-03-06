@@ -15,7 +15,7 @@
 #include <unordered_map>
 
 #include "imview/panel.hpp"
-#include "imview/interface/opengl_drawable.hpp"
+#include "imview/interface/opengl_object.hpp"
 #include "imview/component/opengl/frame_buffer.hpp"
 #include "imview/component/opengl/camera.hpp"
 #include "imview/component/opengl/camera_controller.hpp"
@@ -36,7 +36,7 @@ class GlSceneManager : public Panel {
   void SetShowRenderingInfo(bool show);
 
   void AddOpenGLObject(const std::string& name,
-                       std::unique_ptr<OpenGLDrawable> object);
+                       std::unique_ptr<OpenGlObject> object);
   void RemoveOpenGLObject(const std::string& name);
   void ClearOpenGLObjects();
   void UpdateView(const glm::mat4& projection, const glm::mat4& view);
@@ -48,7 +48,7 @@ class GlSceneManager : public Panel {
   std::unique_ptr<FrameBuffer> frame_buffer_;
   glm::mat4 projection_ = glm::mat4(1.0f);
   glm::mat4 view_ = glm::mat4(1.0f);
-  std::unordered_map<std::string, std::unique_ptr<OpenGLDrawable>>
+  std::unordered_map<std::string, std::unique_ptr<OpenGlObject>>
       drawable_objects_;
 
   std::unique_ptr<Camera> camera_;

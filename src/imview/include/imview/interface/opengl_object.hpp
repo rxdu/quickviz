@@ -12,9 +12,9 @@
 #include <glm/glm.hpp>
 
 namespace quickviz {
-class OpenGLDrawable {
+class OpenGlObject {
  public:
-  virtual ~OpenGLDrawable() = default;
+  virtual ~OpenGlObject() = default;
 
   /****** public methods ******/
   virtual void InitGraphicsResources() = 0;
