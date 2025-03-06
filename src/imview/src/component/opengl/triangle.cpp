@@ -65,10 +65,6 @@ void Triangle::SetColor(const glm::vec3& color, float alpha) {
   alpha_ = alpha;
 }
 
-void Triangle::InitGraphicsResources() {}
-
-void Triangle::DeinitGraphicsResources() {}
-
 void Triangle::OnDraw(const glm::mat4& projection, const glm::mat4& view) {
   shader_.Use();
   shader_.SetUniform("projection", projection);

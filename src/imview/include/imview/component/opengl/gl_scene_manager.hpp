@@ -40,11 +40,12 @@ class GlSceneManager : public Panel {
   void RemoveOpenGLObject(const std::string& name);
   void ClearOpenGLObjects();
   void UpdateView(const glm::mat4& projection, const glm::mat4& view);
-  void DrawOpenGLObject();
 
   void Draw() override;
 
- private:
+ protected:
+  void DrawOpenGLObject();
+
   std::unique_ptr<FrameBuffer> frame_buffer_;
   glm::mat4 projection_ = glm::mat4(1.0f);
   glm::mat4 view_ = glm::mat4(1.0f);

@@ -40,8 +40,6 @@ class PointCloud : public OpenGlObject {
   void SetRenderMode(PointRenderMode mode) { render_mode_ = mode; }
 
  private:
-  void InitGraphicsResources() override;
-  void DeinitGraphicsResources() override;
   void OnDraw(const glm::mat4& projection, const glm::mat4& view) override;
 
   // OpenGL resources
