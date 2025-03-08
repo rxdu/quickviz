@@ -1,6 +1,10 @@
 # vcpkg
 vcpkg_installed
 
+# Python 
+.venv
+venv
+
 # Build temporary files
 **build
 

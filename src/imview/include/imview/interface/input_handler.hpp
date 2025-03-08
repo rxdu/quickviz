@@ -9,7 +9,7 @@
 #ifndef INPUT_HANDLER_HPP
 #define INPUT_HANDLER_HPP
 
-#include "imview/user_input/joystick.hpp"
+#include "imview/input/joystick.hpp"
 
 namespace quickviz {
 class InputHandler {
