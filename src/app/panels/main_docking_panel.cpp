@@ -19,8 +19,8 @@ MainDockingPanel::MainDockingPanel(std::string name) : Panel(name) {
   this->SetNoTitleBar(true);
   this->SetNoBackground(true);
 
-  gl_widget_.SetNoMove(true);
-  gl_widget_.SetWindowNoTabBar();
+  scene_panel_.SetNoMove(true);
+  scene_panel_.SetWindowNoTabBar();
 }
 
 void MainDockingPanel::Draw() {
@@ -47,7 +47,7 @@ void MainDockingPanel::Draw() {
 
       ImGui::DockBuilderDockWindow(config_panel_.GetName().c_str(),
                                    config_panel_node_);
-      ImGui::DockBuilderDockWindow(gl_widget_.GetName().c_str(),
+      ImGui::DockBuilderDockWindow(scene_panel_.GetName().c_str(),
                                    gl_scene_widget_node_);
       ImGui::DockBuilderDockWindow(console_panel_.GetName().c_str(),
                                    console_panel_node_);
@@ -62,7 +62,7 @@ void MainDockingPanel::Draw() {
   // draw child panels
   if (config_panel_.IsVisible()) config_panel_.Draw();
   if (console_panel_.IsVisible()) console_panel_.Draw();
-  if (gl_widget_.IsVisible()) gl_widget_.Draw();
+  if (scene_panel_.IsVisible()) scene_panel_.Draw();
 
   End();
 }

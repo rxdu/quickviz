@@ -11,8 +11,6 @@
 
 #include "imview/panel.hpp"
 
-#include "imview/widget/gl_widget.hpp"
-
 #include "panels/menu_bar.hpp"
 #include "panels/config_panel.hpp"
 #include "panels/scene_panel.hpp"
@@ -37,8 +35,7 @@ class MainDockingPanel : public Panel {
 
   ConfigPanel config_panel_{"Config"};
   ConsolePanel console_panel_{"Console"};
-  //  GlWidget gl_widget_{"Scene"};
-  ScenePanel gl_widget_{"Scene"};
+  ScenePanel scene_panel_{"Scene"};
 };
 }  // namespace quickviz
 

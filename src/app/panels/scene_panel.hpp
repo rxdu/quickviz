@@ -11,27 +11,13 @@
 
 #include <memory>
 
-#include "imview/widget/gl_widget.hpp"
 #include "imview/component/opengl/grid.hpp"
-#include "imview/component/opengl/camera.hpp"
-#include "imview/component/opengl/camera_controller.hpp"
+#include "imview/component/opengl/gl_scene_manager.hpp"
 
 namespace quickviz {
-class ScenePanel : public GlWidget {
-  enum MouseButton {
-    kLeft = 0,
-    kRight = 1,
-    kMiddle = 2,
-  };
-
+class ScenePanel : public GlSceneManager {
  public:
   ScenePanel(const std::string& panel_name);
-
-  void Draw() override;
-
- private:
-  std::unique_ptr<Camera> camera_;
-  std::unique_ptr<CameraController> camera_controller_;
 };
 }  // namespace quickviz
 

@@ -6,14 +6,21 @@ This repository provides a collection of C++ libraries for creating data visuali
 
 The core component of this codebase is a library called "imview", which is designed to be both flexible and lightweight:
 
-* For data visualization, imview provides a set of API functions to easily plot 2D time-series data, draw 2D primitives
-  and render 3D objects in real-time.
+* For data visualization, imview provides a set of API functions to easily plot 2D time-series data, draw 2D primitives and render 3D objects in real-time.
 * For UI design, imview includes automatic layout management and widgets such as buttons, sliders, and text boxes.
 
-The design of imview is documented in [docs/imview_design.md](docs/imview_design.md). If you are interested in using the imview library in your 
-own project, it's recommended to read this design document first. Additionally, an app named "quickviz" is included with commonly used 
-data visualization functions (to support development of [libxmotion](https://github.com/rxdu/libxmotion)). It also serves as an example to demonstrate 
-the usage of the imview library.
+The design of imview is documented in [docs/imview_design.md](docs/imview_design.md). If you are interested in using the imview library in your own project, it's recommended to read this design document first. Additionally, an app named "quickviz" is included with commonly used data visualization functions (to support development of [libxmotion](https://github.com/rxdu/libxmotion)). It also serves as an example to demonstrate the usage of the imview library.
+
+<table>
+  <tr>
+    <td><img src="docs/screenshots/quickviz.png" alt="GUI Sample"></td>
+    <td><img src="docs/screenshots/cairo.png" alt="Cairo Sample"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/plot.png" alt="Plot Sample"></td>
+    <td><img src="docs/screenshots/tui.png" alt="TUI Sample"></td>
+  </tr>
+</table>
 
 ## Build
 
@@ -110,16 +117,6 @@ For Visual Studio, open "Build"-"Cmake Settings for quickfiz" and add the follow
 ```
 
 Then you should be able to configure and build the project successfully.
-
-## Sample Applications
-
-A GUI-based application that demonstrates the usage of the imview library.
-
-![](docs/screenshots/quickviz.png)
-
-A terminal-based application that demonstrates the terminal support of the imview library.
-
-![](docs/screenshots/tui.png)
 
 ## Reference
 

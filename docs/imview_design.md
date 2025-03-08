@@ -13,6 +13,8 @@ and text boxes.
 
 ## Implementation
 
+### Core Components
+
 * **Window management**: imview uses GLFW for window management. GLFW is a lightweight library that provides a simple
   API for creating windows and handling input events. GLFW is cross-platform and supports Windows, macOS, and Linux.
 * **Rendering**: imview uses OpenGL for rendering. OpenGL is a low-level graphics API that provides a set of functions
@@ -25,7 +27,7 @@ The class diagram below shows the main classes in the imview library:
 
 ```mermaid
 ---
-title: imview classes
+title: imview core components
 ---
 classDiagram
     Window <|-- Viewer
@@ -100,6 +102,86 @@ classDiagram
 
 You can refer to the [Mermaid documentation](https://mermaid.js.org/syntax/classDiagram.html) for the syntax of the
 class diagrams.
+
+### 2D/3D Rendering
+
+The rendering pipeline uses the render-to-texture approach and is built on top of the core components described above.
+
+```mermaid
+---
+title: rendering pipeline
+---
+classDiagram
+    SceneObject <|-- Panel
+    Panel <|-- GlSceneManager
+    GlSceneManager o--	OpenGlObject
+    GlSceneManager o-- FrameBuffer
+    GlSceneManager o-- CameraController
+    Camera <-- CameraController
+    OpenGlObject <|-- Grid
+    ShaderProgram *-- PointCloud
+    Shader --> ShaderProgram
+    OpenGlObject <|-- Triangle
+    OpenGlObject <|-- PointCloud
+
+
+    namespace quickviz {
+        class SceneObject {
+            <<Interface>>
+            +OnRender() void *
+        }
+        class Panel {
+            +SetAutoLayout(bool value) void
+            #Begin() void
+            #End() void
+        }     
+        class GlSceneManager {
+            +AddOpenGlObject(const std::string& name, std::unique_ptr<OpenGlObject> object) void
+        }
+        class OpenGlObject {
+            <<Interface>>
+            +OnDraw(const glm::mat4& projection, const glm::mat4& view) void
+        }
+        class FrameBuffer {
+            +Bind() void
+            +Unbind() void
+            +Clear() void
+            +GetTextureId() uint32_t
+        }
+        class Camera {
+            +SetPosition(const glm::vec3& position) void
+            +SetRotation(const glm::vec3& rotation) void
+            +SetFOV(float fov) void
+            +SetNearPlane(float near) void
+            +SetFarPlane(float far) void
+        }
+        class CameraController {
+            +SetCamera(std::shared_ptr<Camera> camera) void
+            +Update(float dt) void
+        }   
+        class Shader {
+            +Compile() void
+        }
+        class ShaderProgram {
+            +AttachShader(const Shader& shader) void
+            +LinkProgram() bool
+            +Use() void
+            +SetUniform(const std::string& name, const glm::vec3& value) void
+            +SetUniform(const std::string& name, const glm::mat4& value) void
+        }
+        class Grid {
+            +SetLineColor(const glm::vec3& color, float alpha) void
+        }
+        class Triangle {
+            +SetColor(const glm::vec3& color, float alpha) void
+        }   
+        class PointCloud {
+            +SetPointSize(float size) void
+            +SetOpacity(float opacity) void
+            +SetRenderMode(PointRenderMode mode) void
+        }
+    }
+```
 
 ## Use Cases
 

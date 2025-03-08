@@ -9,14 +9,14 @@
 
 #include <iostream>
 #include <thread>
-
-#include <opencv2/opencv.hpp>
+#include <cmath>
 
 #include "imview/component/buffer/buffer_registry.hpp"
 #include "imview/component/buffer/ring_buffer.hpp"
 
 #include "imview/viewer.hpp"
 #include "imview/widget/rt_line_plot_widget.hpp"
+#include "scene_objects/imtext_panel.hpp"
 #include "scene_objects/gl_triangle_scene_object.hpp"
 
 using namespace quickviz;
@@ -73,8 +73,10 @@ int main(int argc, char* argv[]) {
   std::thread data_thread(DataGenerator);
 
   // used as background for transparency test
-  auto gl_triangle = std::make_shared<GLTriangleSceneObject>();
-  viewer.AddSceneObject(gl_triangle);
+  // auto gl_triangle = std::make_shared<GLTriangleSceneObject>();
+  // viewer.AddSceneObject(gl_triangle);
+  auto imtext = std::make_shared<ImTextPanel>("text");
+  viewer.AddSceneObject(imtext);
 
   auto widget = std::make_shared<RtLinePlotWidget>("line_plot");
   widget->OnResize(300, 200);
@@ -86,6 +88,7 @@ int main(int argc, char* argv[]) {
   widget->AddLine("line1", pt_buffer_name);
   widget->AddLine("line2", pt_buffer_sin_name);
   viewer.AddSceneObject(widget);
+
   viewer.Show();
 
   keep_running = false;

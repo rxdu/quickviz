@@ -12,6 +12,7 @@
 #include <glm/glm.hpp>
 
 #include <cstdint>
+#include <stdexcept>
 #include <unordered_map>
 
 #include "imview/component/opengl/shader.hpp"
@@ -33,6 +34,52 @@ class ShaderProgram {
   void SetUniform(const std::string& name, float value);
   void SetUniform(const std::string& name, const glm::vec3& vector);
   void SetUniform(const std::string& name, const glm::mat4& matrix);
+
+  // Safe versions of SetUniform that don't throw if uniform doesn't exist
+  bool TrySetUniform(const std::string& name, bool value) {
+    try {
+        SetUniform(name, value);
+        return true;
+    } catch (const std::runtime_error& e) {
+        return false;
+    }
+  }
+
+  bool TrySetUniform(const std::string& name, int value) {
+    try {
+        SetUniform(name, value);
+        return true;
+    } catch (const std::runtime_error& e) {
+        return false;
+    }
+  }
+
+  bool TrySetUniform(const std::string& name, float value) {
+    try {
+        SetUniform(name, value);
+        return true;
+    } catch (const std::runtime_error& e) {
+        return false;
+    }
+  }
+
+  bool TrySetUniform(const std::string& name, const glm::vec3& vector) {
+    try {
+        SetUniform(name, vector);
+        return true;
+    } catch (const std::runtime_error& e) {
+        return false;
+    }
+  }
+
+  bool TrySetUniform(const std::string& name, const glm::mat4& matrix) {
+    try {
+        SetUniform(name, matrix);
+        return true;
+    } catch (const std::runtime_error& e) {
+        return false;
+    }
+  }
 
  private:
   uint32_t GetUniformLocation(const std::string& name);

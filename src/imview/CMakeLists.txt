@@ -5,26 +5,40 @@ pkg_check_modules(Fontconfig REQUIRED IMPORTED_TARGET fontconfig)
 
 find_package(Threads REQUIRED)
 find_package(OpenGL REQUIRED)
-find_package(OpenCV REQUIRED)
 
-set(CURSES_NEED_NCURSES TRUE)
-find_package(Curses QUIET)
-if(CURSES_FOUND)
-  set(ENABLE_TUI_SUPPORT ON)
+# (optional) OpenCV support
+find_package(OpenCV QUIET)
+if(OpenCV_FOUND)
+  message(STATUS "OpenCV found: ${OpenCV_VERSION}")
+  set(ENABLE_OPENCV_SUPPORT ON)
+  set(OPENCV_COMP_SRC
+    src/component/image_utils.cpp
+    src/widget/cv_image_widget.cpp
+    src/widget/buffered_cv_image_widget.cpp)
+  set(OPENCV_COMP_LIBS ${OpenCV_LIBS})
+else()
+  message(STATUS "OpenCV not found")
 endif()
 
+# (optional) auto layout and TUI support
 if(ENABLE_AUTO_LAYOUT)
   set(AUTO_LAYOUT_SRC
     src/box.cpp
     src/yoga_utils.cpp)
   set(AUTO_LAYOUT_LIBS yogacore)
 
+  set(CURSES_NEED_NCURSES TRUE)
+  find_package(Curses QUIET)
+  if(CURSES_FOUND)
+    set(ENABLE_TUI_SUPPORT ON)
+  endif()
+
   if(ENABLE_TUI_SUPPORT)
-    set(TUI_SRC
+    set(TUI_COMP_SRC
       src/terminal/tui_text.cpp
       src/terminal/tui_panel.cpp
       src/terminal/tui_viewer.cpp)
-    set(TUI_LIBS ${CURSES_LIBRARIES})
+    set(TUI_COMP_LIBS ${CURSES_LIBRARIES})
   endif()
 endif()
 
@@ -39,14 +53,11 @@ add_library(imview
   src/panel.cpp
   ${AUTO_LAYOUT_SRC}
   # widgets
-  src/widget/cv_image_widget.cpp
-  src/widget/buffered_cv_image_widget.cpp
   src/widget/cairo_widget.cpp
   src/widget/rt_line_plot_widget.cpp
-  src/widget/gl_widget.cpp
+  ${OPENCV_COMP_SRC}
   # components
   src/component/popup_manager.cpp
-  src/component/image_utils.cpp
   src/component/cairo_context.cpp
   src/component/cairo_draw.cpp
   src/component/opengl/shader.cpp
@@ -56,6 +67,8 @@ add_library(imview
   src/component/opengl/triangle.cpp
   src/component/opengl/camera.cpp
   src/component/opengl/camera_controller.cpp
+  src/component/opengl/point_cloud.cpp
+  src/component/opengl/gl_scene_manager.cpp
   src/component/buffer/buffer_registry.cpp
   src/component/buffer/scrolling_plot_buffer.cpp
   src/component/event/event_dispatcher.cpp
@@ -63,14 +76,14 @@ add_library(imview
   src/component/logging/log_processor.cpp
   src/component/logging/app_log_handler.cpp
   # terminal
-  ${TUI_SRC})
+  ${TUI_COMP_SRC})
 target_link_libraries(imview PUBLIC imcore
   PkgConfig::Cairo PkgConfig::Fontconfig
   Threads::Threads
   OpenGL::GL
   ${AUTO_LAYOUT_LIBS}
-  ${OpenCV_LIBS}
-  ${TUI_LIBS})
+  ${OPENCV_COMP_LIBS}
+  ${TUI_COMP_LIBS})
 if(ENABLE_AUTO_LAYOUT)
   target_compile_definitions(imview PUBLIC ENABLE_AUTO_LAYOUT)
 endif()

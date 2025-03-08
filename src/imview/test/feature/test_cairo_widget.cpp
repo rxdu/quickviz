@@ -10,8 +10,6 @@
 #include <iostream>
 #include <thread>
 
-#include <opencv2/opencv.hpp>
-
 #include "imview/viewer.hpp"
 #include "imview/widget/cairo_widget.hpp"
 
