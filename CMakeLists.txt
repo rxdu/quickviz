@@ -6,7 +6,7 @@ if (CCACHE_PROGRAM)
   set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
 endif ()
 
-project(quickviz VERSION 0.4.0)
+project(quickviz VERSION 0.5.0)
 
 message(STATUS "------------------------------------------------")
 if (PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME)
