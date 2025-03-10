@@ -51,9 +51,9 @@ int main(int argc, char* argv[]) {
 
   // Generate 1000 random points
   for (int i = 0; i < 1000; ++i) {
-    float x = dist(gen) * 10;
-    float y = dist(gen) * 10;
-    float z = dist(gen) * 10;
+    float x = dist(gen);
+    float y = dist(gen);
+    float z = dist(gen);
     points.push_back(glm::vec3(x, y, z));
 
     // Use bright colors for better visibility
@@ -68,16 +68,12 @@ int main(int argc, char* argv[]) {
   std::cout << "Generated " << points.size()
             << " random points with Gaussian distribution" << std::endl;
 
-  // Add a grid for reference
-  // auto grid = std::make_unique<Grid>(10.0f, 1.0f);
-  // gl_widget->AddOpenGLObject("grid", std::move(grid));
-
   // Create and configure point cloud with very large points
   auto point_cloud = std::make_unique<PointCloud>();
   point_cloud->SetPoints(points);
   point_cloud->SetColors(colors);  // Use direct colors
   point_cloud->SetPointSize(
-      50.0f);  // Make points extremely large for visibility
+      3.0f);  // Make points extremely large for visibility
   point_cloud->SetOpacity(1.0f);
   point_cloud->SetRenderMode(PointRenderMode::Points);
 
@@ -89,6 +85,7 @@ int main(int argc, char* argv[]) {
 
   gl_sm->AddOpenGLObject("point_cloud", std::move(point_cloud));
 
+  // Add a grid for reference
   auto grid = std::make_unique<Grid>(10.0f, 1.0f, glm::vec3(0.7f, 0.7f, 0.7f));
   gl_sm->AddOpenGLObject("grid", std::move(grid));
 

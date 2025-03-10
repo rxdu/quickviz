@@ -18,12 +18,13 @@ const char* vertex_shader_source = R"(
     
     uniform mat4 projection;
     uniform mat4 view;
+    uniform float pointSize;
     
     out vec3 vColor;
     
     void main() {
         gl_Position = projection * view * vec4(aPosition, 1.0);
-        gl_PointSize = 20.0;  // Hardcoded point size for testing
+        gl_PointSize = pointSize;  // Hardcoded point size for testing
         vColor = aColor;
     }
 )";
