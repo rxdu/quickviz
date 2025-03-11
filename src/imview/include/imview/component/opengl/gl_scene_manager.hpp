@@ -38,6 +38,7 @@ class GlSceneManager : public Panel {
   void AddOpenGLObject(const std::string& name,
                        std::unique_ptr<OpenGlObject> object);
   void RemoveOpenGLObject(const std::string& name);
+  OpenGlObject* GetOpenGLObject(const std::string& name);
   void ClearOpenGLObjects();
   void UpdateView(const glm::mat4& projection, const glm::mat4& view);
 

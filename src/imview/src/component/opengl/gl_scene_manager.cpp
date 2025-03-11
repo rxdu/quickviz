@@ -42,6 +42,13 @@ void GlSceneManager::RemoveOpenGLObject(const std::string& name) {
   }
 }
 
+OpenGlObject* GlSceneManager::GetOpenGLObject(const std::string& name) {
+  if (drawable_objects_.find(name) != drawable_objects_.end()) {
+    return drawable_objects_[name].get();
+  }
+  return nullptr;
+}
+
 void GlSceneManager::ClearOpenGLObjects() { drawable_objects_.clear(); }
 
 void GlSceneManager::UpdateView(const glm::mat4& projection,
