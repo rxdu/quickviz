@@ -46,15 +46,15 @@ int main(int argc, char* argv[]) {
       0.0f, 0.5f);  // Standard deviation of 0.5 instead of 1.0
 
   // Generate 3D points with a Gaussian distribution
-  std::vector<glm::vec3> points;
+  std::vector<glm::vec4> points;
   std::vector<glm::vec3> colors;
 
   // Generate 1000 random points
   for (int i = 0; i < 1000; ++i) {
-    float x = dist(gen) * 10;
-    float y = dist(gen) * 10;
-    float z = dist(gen) * 10;
-    points.push_back(glm::vec3(x, y, z));
+    float x = dist(gen);
+    float y = dist(gen);
+    float z = dist(gen);
+    points.push_back(glm::vec4(x, y, z, 0.0f));  // Using w=0 as default
 
     // Use bright colors for better visibility
     // Map each point to a bright color based on its position
@@ -68,27 +68,50 @@ int main(int argc, char* argv[]) {
   std::cout << "Generated " << points.size()
             << " random points with Gaussian distribution" << std::endl;
 
-  // Add a grid for reference
-  // auto grid = std::make_unique<Grid>(10.0f, 1.0f);
-  // gl_widget->AddOpenGLObject("grid", std::move(grid));
-
-  // Create and configure point cloud with very large points
-  auto point_cloud = std::make_unique<PointCloud>();
-  point_cloud->SetPoints(points);
-  point_cloud->SetColors(colors);  // Use direct colors
-  point_cloud->SetPointSize(
-      50.0f);  // Make points extremely large for visibility
-  point_cloud->SetOpacity(1.0f);
-  point_cloud->SetRenderMode(PointRenderMode::Points);
+  // Create point clouds with different color modes
+  
+  // 1. Static color mode
+  auto point_cloud_static = std::make_unique<PointCloud>();
+  point_cloud_static->SetPoints(points, PointCloud::ColorMode::kStatic);
+  point_cloud_static->SetDefaultColor(glm::vec3(0.25f, 0.0f, 1.0f)); // Purple
+  point_cloud_static->SetPointSize(3.0f);
+  point_cloud_static->SetOpacity(1.0f);
+  point_cloud_static->SetRenderMode(PointRenderMode::Points);
+  
+  // 2. Height field color mode
+  auto point_cloud_height = std::make_unique<PointCloud>();
+  point_cloud_height->SetScalarRange(-0.5f, 0.5f); // Set range for z values
+  point_cloud_height->SetPoints(points, PointCloud::ColorMode::kHeightField);
+  point_cloud_height->SetPointSize(3.0f);
+  point_cloud_height->SetOpacity(1.0f);
+  point_cloud_height->SetRenderMode(PointRenderMode::Points);
+  
+  // 3. Scalar field color mode - set w component to distance from origin
+  std::vector<glm::vec4> scalar_points = points;
+  for (size_t i = 0; i < scalar_points.size(); ++i) {
+    // Set w component to distance from origin
+    scalar_points[i].w = glm::length(glm::vec3(scalar_points[i]));
+  }
+  
+  auto point_cloud_scalar = std::make_unique<PointCloud>();
+  point_cloud_scalar->SetScalarRange(0.0f, 1.0f); // Set range for scalar values
+  point_cloud_scalar->SetPoints(scalar_points, PointCloud::ColorMode::kScalarField);
+  point_cloud_scalar->SetPointSize(3.0f);
+  point_cloud_scalar->SetOpacity(1.0f);
+  point_cloud_scalar->SetRenderMode(PointRenderMode::Points);
 
   // Add this line to print the point cloud data for debugging
   std::cout << "First point: " << points[0].x << ", " << points[0].y << ", "
-            << points[0].z << std::endl;
-  std::cout << "First color: " << colors[0].x << ", " << colors[0].y << ", "
-            << colors[0].z << std::endl;
+            << points[0].z << ", " << points[0].w << std::endl;
 
-  gl_sm->AddOpenGLObject("point_cloud", std::move(point_cloud));
-
+  // Add all point clouds to the scene manager
+  gl_sm->AddOpenGLObject("point_cloud_static", std::move(point_cloud_static));
+  
+  // Uncomment these lines to visualize the other color modes
+  // gl_sm->AddOpenGLObject("point_cloud_height", std::move(point_cloud_height));
+  // gl_sm->AddOpenGLObject("point_cloud_scalar", std::move(point_cloud_scalar));
+  
+  // Add a grid for reference
   auto grid = std::make_unique<Grid>(10.0f, 1.0f, glm::vec3(0.7f, 0.7f, 0.7f));
   gl_sm->AddOpenGLObject("grid", std::move(grid));
 

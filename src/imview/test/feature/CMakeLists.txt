@@ -35,6 +35,9 @@ target_link_libraries(test_gl_scene_manager PRIVATE imview)
 add_executable(test_point_cloud test_point_cloud.cpp)
 target_link_libraries(test_point_cloud PRIVATE imview)
 
+add_executable(test_point_cloud_realtime test_point_cloud_realtime.cpp)
+target_link_libraries(test_point_cloud_realtime PRIVATE imview)
+
 add_executable(test_popup test_popup.cpp)
 target_link_libraries(test_popup PRIVATE imview)
 
