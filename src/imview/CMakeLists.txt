@@ -67,6 +67,7 @@ add_library(imview
   src/component/opengl/renderer/triangle.cpp
   src/component/opengl/renderer/point_cloud.cpp
   src/component/opengl/renderer/canvas.cpp
+  src/component/opengl/renderer/coordinate_frame.cpp
   src/component/opengl/camera.cpp
   src/component/opengl/camera_controller.cpp
   src/component/opengl/gl_scene_manager.cpp

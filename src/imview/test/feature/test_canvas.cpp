@@ -17,6 +17,7 @@
 #include "imview/viewer.hpp"
 #include "imview/component/opengl/renderer/grid.hpp"
 #include "imview/component/opengl/renderer/triangle.hpp"
+#include "imview/component/opengl/renderer/coordinate_frame.hpp"
 #include "imview/component/opengl/renderer/canvas.hpp"
 #include "imview/component/opengl/gl_scene_manager.hpp"
 
@@ -33,7 +34,7 @@ int main(int argc, char* argv[]) {
 
   // create a OpenGL scene manager to manage the OpenGL objects
   auto gl_sm = std::make_shared<GlSceneManager>("OpenGL Scene",
-                                                GlSceneManager::Mode::k2D);
+                                                GlSceneManager::Mode::k3D);
   gl_sm->SetAutoLayout(true);
   gl_sm->SetNoTitleBar(true);
   gl_sm->SetFlexGrow(1.0f);
@@ -46,6 +47,9 @@ int main(int argc, char* argv[]) {
   auto grid = std::make_unique<Grid>(10.0f, 1.0f, glm::vec3(0.7f, 0.7f, 0.7f));
   gl_sm->AddOpenGLObject("grid", std::move(grid));
 
+  auto coord_frame = std::make_unique<CoordinateFrame>(1.0f);
+  gl_sm->AddOpenGLObject("coordinate_frame", std::move(coord_frame));
+
   auto canvas = std::make_unique<Canvas>(100.0f, 100.0f);
   gl_sm->AddOpenGLObject("canvas", std::move(canvas));
 
@@ -54,9 +58,9 @@ int main(int argc, char* argv[]) {
     auto canvas = static_cast<Canvas*>(gl_sm->GetOpenGLObject("canvas"));
 
     // Add a red point at the origin with a larger size
-    canvas->AddPoint(0.0f, 0.0f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 20.0f);
-    canvas->AddPoint(1.0f, 1.0f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 20.0f);
-    canvas->AddPoint(-1.5f, -1.5f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 20.0f);
+    canvas->AddPoint(0.0f, 0.0f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 5.0f);
+    canvas->AddPoint(1.0f, 1.0f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 5.0f);
+    canvas->AddPoint(-1.5f, -1.5f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 5.0f);
 
     // // Add points in a circle pattern
     // const int num_points = 12;
