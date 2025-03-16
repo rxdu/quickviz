@@ -25,6 +25,12 @@ class Grid : public OpenGlObject {
 
   void SetLineColor(const glm::vec3& color, float alpha = 0.5f);
 
+  // Accessor methods
+  float GetGridSize() const { return grid_size_; }
+  float GetSpacing() const { return spacing_; }
+  glm::vec3 GetColor() const { return color_; }
+  float GetAlpha() const { return alpha_; }
+
   void AllocateGpuResources() override;
   void ReleaseGpuResources() override;
   void OnDraw(const glm::mat4& projection, const glm::mat4& view) override;

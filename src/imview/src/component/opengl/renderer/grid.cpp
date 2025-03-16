@@ -84,8 +84,10 @@ void Grid::OnDraw(const glm::mat4& projection, const glm::mat4& view) {
 }
 
 void Grid::GenerateGrid() {
-  // generate grid vertices along X and Z axes
+  // Always generate grid in X-Z plane for consistency between 2D and 3D modes
   float half_grid_size = grid_size_ / 2.0f;
+  
+  // Generate grid in X-Z plane (y=0)
   for (float x = -half_grid_size; x <= half_grid_size; x += spacing_) {
     vertices_.emplace_back(x, 0.0f, -half_grid_size);
     vertices_.emplace_back(x, 0.0f, half_grid_size);

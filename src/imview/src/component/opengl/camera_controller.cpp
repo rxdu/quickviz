@@ -28,7 +28,8 @@ void CameraController::SetMode(CameraController::Mode mode) {
 
   mode_ = mode;
   if (mode_ == Mode::kTopDown) {
-    camera_.SetPosition(glm::vec3(0.0f, top_down_height_, 0.0f));
+    // Don't override the camera position, just set the pitch and yaw
+    // This allows the GlSceneManager to position the camera along the Z-axis
     camera_.SetPitch(-90.0f);
     camera_.SetYaw(0.0f);
   }
@@ -40,12 +41,15 @@ void CameraController::ProcessKeyboard(
   if (mode_ == Mode::kTopDown) {
     float velocity = camera_.GetMovementSpeed() * delta_time;
     glm::vec3 position = camera_.GetPosition();
+    
+    // In TopDown mode, camera is always looking at X-Z plane from above
     if (direction == CameraMovement::kUp) position.y -= velocity;
     if (direction == CameraMovement::kDown) position.y += velocity;
     if (direction == CameraMovement::kForward) position.x -= velocity;
     if (direction == CameraMovement::kBackward) position.x += velocity;
     if (direction == CameraMovement::kLeft) position.z += velocity;
     if (direction == CameraMovement::kRight) position.z -= velocity;
+    
     camera_.SetPosition(position);
   } else {
     camera_.ProcessKeyboard(direction, delta_time);
@@ -75,7 +79,8 @@ void CameraController::ProcessMouseScroll(float y_offset) {
     UpdateOrbitPosition();
   } else if (mode_ == Mode::kTopDown) {
     glm::vec3 position = camera_.GetPosition();
-    position.y -= y_offset;  // Adjust height (Y position) with scroll
+    // In TopDown mode, adjust Y position (height) with scroll
+    position.y -= y_offset;
     if (position.y < 1.0f) position.y = 1.0f;  // Set a minimum height
     camera_.SetPosition(position);
   } else {
