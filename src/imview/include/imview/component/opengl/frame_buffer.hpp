@@ -31,6 +31,7 @@ class FrameBuffer {
 
   uint32_t GetWidth() const { return width_; }
   uint32_t GetHeight() const { return height_; }
+  float GetAspectRatio() const { return aspect_ratio_; }
   uint32_t GetNumberOfSamples() const { return samples_; }
   void Resize(uint32_t width, uint32_t height);
 

@@ -14,18 +14,29 @@
 #include "imview/fonts.hpp"
 
 namespace quickviz {
-GlSceneManager::GlSceneManager(const std::string& name) : Panel(name) {
+GlSceneManager::GlSceneManager(const std::string& name, Mode mode)
+    : Panel(name), mode_(mode) {
   this->SetAutoLayout(false);
   this->SetWindowNoMenuButton();
   //   this->SetNoBackground(true);
 
   camera_ = std::make_unique<Camera>();
-  camera_controller_ = std::make_unique<CameraController>(
-      *camera_, glm::vec3(0.0f, 6.0f, 8.0f), 0.0f, 25.0f);
+  if (mode_ == Mode::k3D) {
+    camera_controller_ = std::make_unique<CameraController>(
+        *camera_, glm::vec3(0.0f, 6.0f, 8.0f), 0.0f, 25.0f);
+  } else {
+    camera_controller_ = std::make_unique<CameraController>(
+        *camera_, glm::vec3(0.0f, 0.0f, 8.0f), 0.0f, 0.0f);
+    camera_controller_->SetMode(CameraController::Mode::kTopDown);
+  }
 }
 
 void GlSceneManager::SetShowRenderingInfo(bool show) {
   show_rendering_info_ = show;
+}
+
+void GlSceneManager::SetBackgroundColor(float r, float g, float b, float a) {
+  background_color_ = glm::vec4(r, g, b, a);
 }
 
 void GlSceneManager::AddOpenGLObject(const std::string& name,
@@ -69,7 +80,8 @@ void GlSceneManager::DrawOpenGLObject() {
     }
     // render to frame buffer
     frame_buffer_->Bind();
-    frame_buffer_->Clear();
+    frame_buffer_->Clear(background_color_.r, background_color_.g,
+                         background_color_.b, background_color_.a);
     for (auto& obj : drawable_objects_) {
       obj.second->OnDraw(projection_, view_);
     }
@@ -108,8 +120,10 @@ void GlSceneManager::Draw() {
   }
 
   // get view matrices from camera
-  float aspect_ratio =
-      static_cast<float>(content_size.x) / static_cast<float>(content_size.y);
+  float aspect_ratio = (frame_buffer_ == nullptr)
+                           ? static_cast<float>(content_size.x) /
+                                 static_cast<float>(content_size.y)
+                           : frame_buffer_->GetAspectRatio();
   glm::mat4 projection = camera_->GetProjectionMatrix(aspect_ratio);
   glm::mat4 view = camera_->GetViewMatrix();
   UpdateView(projection, view);
