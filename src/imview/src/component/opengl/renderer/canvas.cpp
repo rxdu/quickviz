@@ -30,8 +30,8 @@ out vec4 vertexColor;
 
 void main()
 {
-    // Place points in the XZ plane (y=0) instead of XY plane (z=0)
-    // This makes the points appear in the same reference frame as the grid in 2D mode
+    // Place points in the X-Z plane (y=0) for consistency with 3D mode
+    // This makes the points appear in the same reference frame as the grid
     vec4 clipPos = projection * view * vec4(aPos.x, 0.0, aPos.y, 1.0);
     gl_Position = clipPos;
     

@@ -25,8 +25,10 @@ GlSceneManager::GlSceneManager(const std::string& name, Mode mode)
     camera_controller_ = std::make_unique<CameraController>(
         *camera_, glm::vec3(0.0f, 6.0f, 8.0f), 0.0f, 25.0f);
   } else {
+    // For 2D mode, position the camera above the X-Z plane looking down
+    // This gives a proper top-down view with Y as the up direction
     camera_controller_ = std::make_unique<CameraController>(
-        *camera_, glm::vec3(0.0f, 0.0f, 8.0f), 0.0f, 0.0f);
+        *camera_, glm::vec3(0.0f, 8.0f, 0.0f), 0.0f, -90.0f);
     camera_controller_->SetMode(CameraController::Mode::kTopDown);
   }
 }

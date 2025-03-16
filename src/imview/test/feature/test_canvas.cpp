@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
     // Add a red point at the origin with a larger size
     canvas->AddPoint(0.0f, 0.0f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 20.0f);
     canvas->AddPoint(1.0f, 1.0f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 20.0f);
-    canvas->AddPoint(-1.0f, -1.0f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 20.0f);
+    canvas->AddPoint(-1.5f, -1.5f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 20.0f);
 
     // // Add points in a circle pattern
     // const int num_points = 12;
