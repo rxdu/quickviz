@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
 
   // Create an OpenGL scene manager to manage the OpenGL objects
   auto gl_sm = std::make_shared<GlSceneManager>("OpenGL Scene",
-                                                GlSceneManager::Mode::k2D);
+                                                GlSceneManager::Mode::k3D);
   gl_sm->SetAutoLayout(true);
   gl_sm->SetNoTitleBar(true);
   gl_sm->SetFlexGrow(1.0f);
