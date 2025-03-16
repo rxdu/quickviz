@@ -15,6 +15,7 @@
 #include <unordered_map>
 
 #include "imview/panel.hpp"
+#include "imview/input/mouse.hpp"
 #include "imview/interface/opengl_object.hpp"
 #include "imview/component/opengl/frame_buffer.hpp"
 #include "imview/component/opengl/camera.hpp"
@@ -22,31 +23,33 @@
 
 namespace quickviz {
 class GlSceneManager : public Panel {
-  enum MouseButton {
-    kLeft = 0,
-    kRight = 1,
-    kMiddle = 2,
-  };
-
  public:
-  GlSceneManager(const std::string& name);
+  enum class Mode { k2D, k3D };
+
+  GlSceneManager(const std::string& name, Mode mode = Mode::k3D);
   ~GlSceneManager() = default;
 
   // public methods
+  Mode GetMode() const { return mode_; }
+
   void SetShowRenderingInfo(bool show);
+  void SetBackgroundColor(float r, float g, float b, float a);
 
   void AddOpenGLObject(const std::string& name,
                        std::unique_ptr<OpenGlObject> object);
   void RemoveOpenGLObject(const std::string& name);
   OpenGlObject* GetOpenGLObject(const std::string& name);
   void ClearOpenGLObjects();
-  void UpdateView(const glm::mat4& projection, const glm::mat4& view);
 
   void Draw() override;
 
  protected:
+  void UpdateView(const glm::mat4& projection, const glm::mat4& view);
   void DrawOpenGLObject();
 
+  glm::vec4 background_color_ = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+  Mode mode_ = Mode::k3D;
   std::unique_ptr<FrameBuffer> frame_buffer_;
   glm::mat4 projection_ = glm::mat4(1.0f);
   glm::mat4 view_ = glm::mat4(1.0f);
