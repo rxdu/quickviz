@@ -52,22 +52,24 @@ int main(int argc, char* argv[]) {
   // now let's do some drawing on the canvas
   {
     auto canvas = static_cast<Canvas*>(gl_sm->GetOpenGLObject("canvas"));
-    
-    // Add a red point at the origin
-    canvas->AddPoint(0.0f, 0.0f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 10.0f);
-    
-    // Add points in a circle pattern
+
+    // Add a red point at the origin with a larger size
+    canvas->AddPoint(0.0f, 0.0f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 20.0f);
+    canvas->AddPoint(1.0f, 1.0f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 20.0f);
+    canvas->AddPoint(-1.0f, -1.0f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 20.0f);
+
+    // // Add points in a circle pattern
     // const int num_points = 12;
     // const float radius = 5.0f;
     // for (int i = 0; i < num_points; ++i) {
     //   float angle = 2.0f * M_PI * i / num_points;
     //   float x = radius * cos(angle);
     //   float y = radius * sin(angle);
-      
+
     //   // Create a rainbow effect
     //   float hue = static_cast<float>(i) / num_points;
     //   glm::vec4 color;
-      
+
     //   // Simple HSV to RGB conversion
     //   if (hue < 1.0f/6.0f) {
     //     color = glm::vec4(1.0f, hue * 6.0f, 0.0f, 1.0f);
@@ -82,9 +84,9 @@ int main(int argc, char* argv[]) {
     //   } else {
     //     color = glm::vec4(1.0f, 0.0f, 1.0f - (hue - 5.0f/6.0f) * 6.0f, 1.0f);
     //   }
-      
-    //   // Add the point with varying sizes
-    //   canvas->AddPoint(x, y, color, 5.0f + 5.0f * i / num_points);
+
+    //   // Add the point with larger sizes
+    //   canvas->AddPoint(x, y, color, 10.0f + 10.0f * i / num_points);
     // }
   }
 
