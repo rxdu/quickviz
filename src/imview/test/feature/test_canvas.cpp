@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
   auto grid = std::make_unique<Grid>(10.0f, 1.0f, glm::vec3(0.7f, 0.7f, 0.7f));
   gl_sm->AddOpenGLObject("grid", std::move(grid));
 
-  auto coord_frame = std::make_unique<CoordinateFrame>(1.0f);
+  auto coord_frame = std::make_unique<CoordinateFrame>(3.0f);
   gl_sm->AddOpenGLObject("coordinate_frame", std::move(coord_frame));
 
   auto canvas = std::make_unique<Canvas>(100.0f, 100.0f);

@@ -167,64 +167,40 @@ void CoordinateFrame::OnDraw(const glm::mat4& projection, const glm::mat4& view)
   // Draw the axis lines (first 6 indices are for the 3 lines)
   glDrawElements(GL_LINES, 6, GL_UNSIGNED_INT, 0);
   
-  // Draw the arrow heads as triangles (remaining indices are for the 3 triangles)
+  // Draw the cone-shaped arrowheads as triangles (remaining indices are for the cone triangles)
   glDrawElements(GL_TRIANGLES, indices_.size() - 6, GL_UNSIGNED_INT, (void*)(6 * sizeof(unsigned int)));
   
   glBindVertexArray(0);
 }
 
 void CoordinateFrame::GenerateAxes() {
-  // Create vertices for the coordinate axes with arrows
+  // Create vertices for the coordinate axes with cone-shaped arrows
   const float arrow_size = axis_length_ * 0.1f; // Size of arrow head
+  const int num_segments = 12; // Number of segments for the cone base
   
   // X-axis line
   vertices_.push_back(glm::vec3(0.0f, 0.0f, 0.0f));                  // 0: Origin
   vertices_.push_back(glm::vec3(axis_length_, 0.0f, 0.0f));          // 1: X-axis endpoint
   
-  // X-axis arrow head (triangle) - rotated 90 degrees around X axis
-  vertices_.push_back(glm::vec3(axis_length_, 0.0f, 0.0f));          // 2: Arrow base
-  vertices_.push_back(glm::vec3(axis_length_ - arrow_size, 0.0f, arrow_size/2.0f));  // 3: Arrow top
-  vertices_.push_back(glm::vec3(axis_length_ - arrow_size, 0.0f, -arrow_size/2.0f)); // 4: Arrow bottom
-  
-  // Y-axis line
-  vertices_.push_back(glm::vec3(0.0f, 0.0f, 0.0f));                  // 5: Origin
-  vertices_.push_back(glm::vec3(0.0f, axis_length_, 0.0f));          // 6: Y-axis endpoint
-  
-  // Y-axis arrow head (triangle) - rotated 90 degrees around Y axis
-  vertices_.push_back(glm::vec3(0.0f, axis_length_, 0.0f));          // 7: Arrow base
-  vertices_.push_back(glm::vec3(0.0f, axis_length_ - arrow_size, arrow_size/2.0f));  // 8: Arrow right
-  vertices_.push_back(glm::vec3(0.0f, axis_length_ - arrow_size, -arrow_size/2.0f)); // 9: Arrow left
-  
-  // Z-axis line
-  vertices_.push_back(glm::vec3(0.0f, 0.0f, 0.0f));                  // 10: Origin
-  vertices_.push_back(glm::vec3(0.0f, 0.0f, axis_length_));          // 11: Z-axis endpoint
-  
-  // Z-axis arrow head (triangle) - rotated 90 degrees around Z axis
-  vertices_.push_back(glm::vec3(0.0f, 0.0f, axis_length_));          // 12: Arrow base
-  vertices_.push_back(glm::vec3(arrow_size/2.0f, 0.0f, axis_length_ - arrow_size));  // 13: Arrow top
-  vertices_.push_back(glm::vec3(-arrow_size/2.0f, 0.0f, axis_length_ - arrow_size)); // 14: Arrow bottom
-  
-  // Colors for each vertex
   // X-axis colors (red)
   colors_.push_back(glm::vec3(1.0f, 0.0f, 0.0f)); // Origin
   colors_.push_back(glm::vec3(1.0f, 0.0f, 0.0f)); // X-axis endpoint
-  colors_.push_back(glm::vec3(1.0f, 0.0f, 0.0f)); // Arrow base
-  colors_.push_back(glm::vec3(1.0f, 0.0f, 0.0f)); // Arrow top
-  colors_.push_back(glm::vec3(1.0f, 0.0f, 0.0f)); // Arrow bottom
+  
+  // Y-axis line
+  vertices_.push_back(glm::vec3(0.0f, 0.0f, 0.0f));                  // 2: Origin
+  vertices_.push_back(glm::vec3(0.0f, axis_length_, 0.0f));          // 3: Y-axis endpoint
   
   // Y-axis colors (green)
   colors_.push_back(glm::vec3(0.0f, 1.0f, 0.0f)); // Origin
   colors_.push_back(glm::vec3(0.0f, 1.0f, 0.0f)); // Y-axis endpoint
-  colors_.push_back(glm::vec3(0.0f, 1.0f, 0.0f)); // Arrow base
-  colors_.push_back(glm::vec3(0.0f, 1.0f, 0.0f)); // Arrow right
-  colors_.push_back(glm::vec3(0.0f, 1.0f, 0.0f)); // Arrow left
+  
+  // Z-axis line
+  vertices_.push_back(glm::vec3(0.0f, 0.0f, 0.0f));                  // 4: Origin
+  vertices_.push_back(glm::vec3(0.0f, 0.0f, axis_length_));          // 5: Z-axis endpoint
   
   // Z-axis colors (blue)
   colors_.push_back(glm::vec3(0.0f, 0.0f, 1.0f)); // Origin
   colors_.push_back(glm::vec3(0.0f, 0.0f, 1.0f)); // Z-axis endpoint
-  colors_.push_back(glm::vec3(0.0f, 0.0f, 1.0f)); // Arrow base
-  colors_.push_back(glm::vec3(0.0f, 0.0f, 1.0f)); // Arrow top
-  colors_.push_back(glm::vec3(0.0f, 0.0f, 1.0f)); // Arrow bottom
   
   // Indices for drawing lines
   // X-axis line
@@ -232,28 +208,93 @@ void CoordinateFrame::GenerateAxes() {
   indices_.push_back(1);
   
   // Y-axis line
-  indices_.push_back(5);
-  indices_.push_back(6);
-  
-  // Z-axis line
-  indices_.push_back(10);
-  indices_.push_back(11);
-  
-  // Indices for drawing arrow heads as triangles
-  // X-axis arrow head
   indices_.push_back(2);
   indices_.push_back(3);
+  
+  // Z-axis line
   indices_.push_back(4);
+  indices_.push_back(5);
   
-  // Y-axis arrow head
-  indices_.push_back(7);
-  indices_.push_back(8);
-  indices_.push_back(9);
+  // Create cone vertices for X-axis arrowhead
+  int x_cone_base_start_idx = vertices_.size();
+  glm::vec3 x_cone_tip(axis_length_, 0.0f, 0.0f);
+  glm::vec3 x_cone_center(axis_length_ - arrow_size, 0.0f, 0.0f);
   
-  // Z-axis arrow head
-  indices_.push_back(12);
-  indices_.push_back(13);
-  indices_.push_back(14);
+  // Add the cone tip
+  vertices_.push_back(x_cone_tip);
+  colors_.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+  
+  // Add vertices for the cone base
+  for (int i = 0; i < num_segments; ++i) {
+    float angle = 2.0f * M_PI * i / num_segments;
+    float y = arrow_size/2.0f * sin(angle);
+    float z = arrow_size/2.0f * cos(angle);
+    
+    vertices_.push_back(glm::vec3(axis_length_ - arrow_size, y, z));
+    colors_.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+  }
+  
+  // Add indices for the cone triangles
+  for (int i = 0; i < num_segments; ++i) {
+    // Cone tip to current and next base vertex
+    indices_.push_back(x_cone_base_start_idx); // Tip
+    indices_.push_back(x_cone_base_start_idx + 1 + i);
+    indices_.push_back(x_cone_base_start_idx + 1 + (i + 1) % num_segments);
+  }
+  
+  // Create cone vertices for Y-axis arrowhead
+  int y_cone_base_start_idx = vertices_.size();
+  glm::vec3 y_cone_tip(0.0f, axis_length_, 0.0f);
+  glm::vec3 y_cone_center(0.0f, axis_length_ - arrow_size, 0.0f);
+  
+  // Add the cone tip
+  vertices_.push_back(y_cone_tip);
+  colors_.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+  
+  // Add vertices for the cone base
+  for (int i = 0; i < num_segments; ++i) {
+    float angle = 2.0f * M_PI * i / num_segments;
+    float x = arrow_size/2.0f * sin(angle);
+    float z = arrow_size/2.0f * cos(angle);
+    
+    vertices_.push_back(glm::vec3(x, axis_length_ - arrow_size, z));
+    colors_.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+  }
+  
+  // Add indices for the cone triangles
+  for (int i = 0; i < num_segments; ++i) {
+    // Cone tip to current and next base vertex
+    indices_.push_back(y_cone_base_start_idx); // Tip
+    indices_.push_back(y_cone_base_start_idx + 1 + i);
+    indices_.push_back(y_cone_base_start_idx + 1 + (i + 1) % num_segments);
+  }
+  
+  // Create cone vertices for Z-axis arrowhead
+  int z_cone_base_start_idx = vertices_.size();
+  glm::vec3 z_cone_tip(0.0f, 0.0f, axis_length_);
+  glm::vec3 z_cone_center(0.0f, 0.0f, axis_length_ - arrow_size);
+  
+  // Add the cone tip
+  vertices_.push_back(z_cone_tip);
+  colors_.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+  
+  // Add vertices for the cone base
+  for (int i = 0; i < num_segments; ++i) {
+    float angle = 2.0f * M_PI * i / num_segments;
+    float x = arrow_size/2.0f * sin(angle);
+    float y = arrow_size/2.0f * cos(angle);
+    
+    vertices_.push_back(glm::vec3(x, y, axis_length_ - arrow_size));
+    colors_.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+  }
+  
+  // Add indices for the cone triangles
+  for (int i = 0; i < num_segments; ++i) {
+    // Cone tip to current and next base vertex
+    indices_.push_back(z_cone_base_start_idx); // Tip
+    indices_.push_back(z_cone_base_start_idx + 1 + i);
+    indices_.push_back(z_cone_base_start_idx + 1 + (i + 1) % num_segments);
+  }
 }
 
 }  // namespace quickviz
