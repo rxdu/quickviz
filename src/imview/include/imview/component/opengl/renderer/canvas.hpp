@@ -69,6 +69,9 @@ class Canvas : public OpenGlObject {
   
   // Data storage
   std::vector<Point> points_;
+  
+  // Store original sizes for scaling
+  std::vector<float> original_sizes_;
 };
 }  // namespace quickviz
 

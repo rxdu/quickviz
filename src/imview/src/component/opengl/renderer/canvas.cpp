@@ -12,6 +12,8 @@
 #include "glad/glad.h"
 
 #include <iostream>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 namespace quickviz {
 namespace {
@@ -28,21 +30,13 @@ out vec4 vertexColor;
 
 void main()
 {
-    // Calculate the position in clip space
-    vec4 clipPos = projection * view * vec4(aPos, 0.0, 1.0);
+    // Place points in the XZ plane (y=0) instead of XY plane (z=0)
+    // This makes the points appear in the same reference frame as the grid in 2D mode
+    vec4 clipPos = projection * view * vec4(aPos.x, 0.0, aPos.y, 1.0);
     gl_Position = clipPos;
     
-    // Extract scale from view matrix
-    float viewScale = abs(view[0][0]);
-    
-    // Calculate a reasonable point size that scales with zoom
-    // Base size is the input size parameter
-    // Scale factor ensures points get smaller when zoomed in (viewScale increases)
-    // and larger when zoomed out (viewScale decreases)
-    float scaleFactor = clamp(1.0 / viewScale, 0.1, 3.0);
-    
-    // Apply the scale factor to the base size
-    gl_PointSize = aSize * scaleFactor;
+    // Use the input size directly
+    gl_PointSize = aSize;
     
     vertexColor = aColor;
 }
@@ -130,6 +124,26 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view) {
         return;
     }
     
+    // Extract scale from view matrix
+    float scaleX = view[0][0];
+    float scaleY = view[1][1];
+    float current_scale = (std::abs(scaleX) + std::abs(scaleY)) * 0.5f;
+    
+    // Apply a scaling factor to make the effect more pronounced
+    float scaling_factor = 5.0f;
+    
+    // Create a copy of the points with scaled sizes
+    std::vector<Point> scaled_points = points_;
+    for (size_t i = 0; i < scaled_points.size(); ++i) {
+        // Scale the point size based on the current scale
+        scaled_points[i].size = original_sizes_[i] * current_scale * scaling_factor;
+        
+        // Ensure a minimum size
+        if (scaled_points[i].size < 3.0f) {
+            scaled_points[i].size = 3.0f;
+        }
+    }
+    
     // Use shader program
     shader_.Use();
     
@@ -140,15 +154,15 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view) {
     // Bind VAO
     glBindVertexArray(vao_);
     
-    // Update VBO data
+    // Update VBO data with scaled points
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
-    glBufferData(GL_ARRAY_BUFFER, points_.size() * sizeof(Point), points_.data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, scaled_points.size() * sizeof(Point), scaled_points.data(), GL_DYNAMIC_DRAW);
     
     // Enable point size
     glEnable(GL_PROGRAM_POINT_SIZE);
     
     // Draw points
-    glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(points_.size()));
+    glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(scaled_points.size()));
     
     // Disable point size
     glDisable(GL_PROGRAM_POINT_SIZE);
@@ -171,10 +185,14 @@ void Canvas::AddPoint(float x, float y, const glm::vec4& color,
     
     // Add point to the vector
     points_.push_back(point);
+    
+    // Store the original size
+    original_sizes_.push_back(thickness);
 }
 
 void Canvas::Clear() {
     // Clear all points
     points_.clear();
+    original_sizes_.clear();
 }
 }  // namespace quickviz
