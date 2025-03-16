@@ -42,6 +42,9 @@ target_link_libraries(test_canvas PRIVATE imview)
 add_executable(test_coordinate_frame test_coordinate_frame.cpp)
 target_link_libraries(test_coordinate_frame PRIVATE imview)
 
+add_executable(test_robot_frames test_robot_frames.cpp)
+target_link_libraries(test_robot_frames PRIVATE imview)
+
 if(ENABLE_OPENCV_SUPPORT)
   add_executable(test_cv_image_widget test_cv_image_widget.cpp)
   target_link_libraries(test_cv_image_widget PRIVATE imview)
