@@ -17,6 +17,8 @@ class OpenGlObject {
   virtual ~OpenGlObject() = default;
 
   /****** public methods ******/
+  virtual void AllocateGpuResources() = 0;
+  virtual void ReleaseGpuResources() = 0;
   virtual void OnDraw(const glm::mat4& projection, const glm::mat4& view) = 0;
 };
 }  // namespace quickviz

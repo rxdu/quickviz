@@ -25,6 +25,8 @@ class Grid : public OpenGlObject {
 
   void SetLineColor(const glm::vec3& color, float alpha = 0.5f);
 
+  void AllocateGpuResources() override;
+  void ReleaseGpuResources() override;
   void OnDraw(const glm::mat4& projection, const glm::mat4& view) override;
 
  private:

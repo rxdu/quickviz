@@ -63,11 +63,12 @@ add_library(imview
   src/component/opengl/shader.cpp
   src/component/opengl/shader_program.cpp
   src/component/opengl/frame_buffer.cpp
-  src/component/opengl/grid.cpp
-  src/component/opengl/triangle.cpp
+  src/component/opengl/renderer/grid.cpp
+  src/component/opengl/renderer/triangle.cpp
+  src/component/opengl/renderer/point_cloud.cpp
+  src/component/opengl/renderer/canvas.cpp
   src/component/opengl/camera.cpp
   src/component/opengl/camera_controller.cpp
-  src/component/opengl/point_cloud.cpp
   src/component/opengl/gl_scene_manager.cpp
   src/component/buffer/buffer_registry.cpp
   src/component/buffer/scrolling_plot_buffer.cpp

@@ -14,7 +14,7 @@
 
 #include "glad/glad.h"
 #include "imview/window.hpp"
-#include "imview/component/opengl/grid.hpp"
+#include "imview/component/opengl/renderer/grid.hpp"
 
 using namespace quickviz;
 
