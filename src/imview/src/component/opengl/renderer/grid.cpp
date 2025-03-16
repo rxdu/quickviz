@@ -6,7 +6,7 @@
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
-#include "imview/component/opengl/grid.hpp"
+#include "imview/component/opengl/renderer/grid.hpp"
 
 #include <iostream>
 
@@ -42,6 +42,12 @@ void main() {
 
 Grid::Grid(float grid_size, float spacing, glm::vec3 color)
     : grid_size_(grid_size), spacing_(spacing), color_(color) {
+  AllocateGpuResources();
+}
+
+Grid::~Grid() { ReleaseGpuResources(); }
+
+void Grid::AllocateGpuResources() {
   Shader vertex_shader(vertex_shader_source.c_str(), Shader::Type::kVertex);
   Shader fragment_shader(fragment_shader_source.c_str(),
                          Shader::Type::kFragment);
@@ -54,7 +60,7 @@ Grid::Grid(float grid_size, float spacing, glm::vec3 color)
   GenerateGrid();
 }
 
-Grid::~Grid() {
+void Grid::ReleaseGpuResources() {
   glDeleteVertexArrays(1, &vao_);
   glDeleteBuffers(1, &vbo_);
 }

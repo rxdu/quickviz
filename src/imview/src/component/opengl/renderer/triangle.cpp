@@ -6,7 +6,7 @@
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
-#include "imview/component/opengl/triangle.hpp"
+#include "imview/component/opengl/renderer/triangle.hpp"
 
 #include "glad/glad.h"
 
@@ -43,6 +43,12 @@ void main() {
 ///////////////////////////////////////////////////////////////////////////////
 
 Triangle::Triangle(float size, glm::vec3 color) : size_(size), color_(color) {
+  AllocateGpuResources();
+}
+
+Triangle::~Triangle() { ReleaseGpuResources(); }
+
+void Triangle::AllocateGpuResources() {
   Shader vertex_shader(vertex_shader_source.c_str(), Shader::Type::kVertex);
   Shader fragment_shader(fragment_shader_source.c_str(),
                          Shader::Type::kFragment);
@@ -55,7 +61,7 @@ Triangle::Triangle(float size, glm::vec3 color) : size_(size), color_(color) {
   GenerateTriangle();
 }
 
-Triangle::~Triangle() {
+void Triangle::ReleaseGpuResources() {
   glDeleteVertexArrays(1, &vao_);
   glDeleteBuffers(1, &vbo_);
 }

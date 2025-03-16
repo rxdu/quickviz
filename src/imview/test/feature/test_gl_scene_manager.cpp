@@ -15,9 +15,9 @@
 
 #include "imview/box.hpp"
 #include "imview/viewer.hpp"
+#include "imview/component/opengl/renderer/grid.hpp"
+#include "imview/component/opengl/renderer/triangle.hpp"
 #include "imview/component/opengl/gl_scene_manager.hpp"
-#include "imview/component/opengl/triangle.hpp"
-#include "imview/component/opengl/grid.hpp"
 
 using namespace quickviz;
 

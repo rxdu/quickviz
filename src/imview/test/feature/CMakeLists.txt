@@ -15,13 +15,11 @@ if(ENABLE_AUTO_LAYOUT)
 
 endif()
 
-if(ENABLE_OPENCV_SUPPORT)
-  add_executable(test_cv_image_widget test_cv_image_widget.cpp)
-  target_link_libraries(test_cv_image_widget PRIVATE imview)
+add_executable(test_popup test_popup.cpp)
+target_link_libraries(test_popup PRIVATE imview)
 
-  add_executable(test_buffered_cv_image_widget test_buffered_cv_image_widget.cpp)
-  target_link_libraries(test_buffered_cv_image_widget PRIVATE imview)
-endif()
+add_executable(test_joystick_input test_joystick_input.cpp)
+target_link_libraries(test_joystick_input PRIVATE imview)
 
 add_executable(test_implot_widget test_implot_widget.cpp)
 target_link_libraries(test_implot_widget PRIVATE imview)
@@ -38,8 +36,13 @@ target_link_libraries(test_point_cloud PRIVATE imview)
 add_executable(test_point_cloud_realtime test_point_cloud_realtime.cpp)
 target_link_libraries(test_point_cloud_realtime PRIVATE imview)
 
-add_executable(test_popup test_popup.cpp)
-target_link_libraries(test_popup PRIVATE imview)
+add_executable(test_canvas test_canvas.cpp)
+target_link_libraries(test_canvas PRIVATE imview)
 
-add_executable(test_joystick_input test_joystick_input.cpp)
-target_link_libraries(test_joystick_input PRIVATE imview)
+if(ENABLE_OPENCV_SUPPORT)
+  add_executable(test_cv_image_widget test_cv_image_widget.cpp)
+  target_link_libraries(test_cv_image_widget PRIVATE imview)
+
+  add_executable(test_buffered_cv_image_widget test_buffered_cv_image_widget.cpp)
+  target_link_libraries(test_buffered_cv_image_widget PRIVATE imview)
+endif()

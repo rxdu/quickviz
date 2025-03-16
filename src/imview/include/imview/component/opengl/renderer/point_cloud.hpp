@@ -35,25 +35,30 @@ class PointCloud : public OpenGlObject {
     kHeightField,  // use z-coordinate of points as height field
     kScalarField  // use last component of points as scalar field (x,y,z,scalar)
   };
-  
+
   // Buffer update strategy
   enum class BufferUpdateStrategy {
-    kAuto,         // Automatically choose based on point count and size
-    kBufferSubData, // Always use glBufferSubData
-    kMapBuffer      // Always use glMapBufferRange
+    kAuto,           // Automatically choose based on point count and size
+    kBufferSubData,  // Always use glBufferSubData
+    kMapBuffer       // Always use glMapBufferRange
   };
 
   // Thread-safe methods for setting and updating points
   void SetPoints(const std::vector<glm::vec4>& points, ColorMode color_mode);
   void SetPoints(std::vector<glm::vec4>&& points, ColorMode color_mode);
-  
+
   // Optimized methods for real-time updates
   void PreallocateBuffers(size_t max_points);
-  void UpdatePointSubset(const std::vector<glm::vec4>& points, size_t offset, ColorMode color_mode);
-  
+  void UpdatePointSubset(const std::vector<glm::vec4>& points, size_t offset,
+                         ColorMode color_mode);
+
   // Buffer update configuration
-  void SetBufferUpdateStrategy(BufferUpdateStrategy strategy) { buffer_update_strategy_ = strategy; }
-  void SetBufferUpdateThreshold(size_t threshold) { buffer_update_threshold_ = threshold; }
+  void SetBufferUpdateStrategy(BufferUpdateStrategy strategy) {
+    buffer_update_strategy_ = strategy;
+  }
+  void SetBufferUpdateThreshold(size_t threshold) {
+    buffer_update_threshold_ = threshold;
+  }
 
   // Appearance
   void SetPointSize(float size);
@@ -63,12 +68,16 @@ class PointCloud : public OpenGlObject {
   void SetRenderMode(PointRenderMode mode);
 
  private:
+  void AllocateGpuResources() override;
+  void ReleaseGpuResources() override;
   void OnDraw(const glm::mat4& projection, const glm::mat4& view) override;
   void UpdateColors(ColorMode color_mode, size_t start_idx, size_t count);
-  
+
   // Helper methods for buffer updates
-  void UpdateBufferWithSubData(uint32_t buffer, const void* data, size_t size_bytes, size_t offset_bytes = 0);
-  void UpdateBufferWithMapping(uint32_t buffer, const void* data, size_t size_bytes, size_t offset_bytes = 0);
+  void UpdateBufferWithSubData(uint32_t buffer, const void* data,
+                               size_t size_bytes, size_t offset_bytes = 0);
+  void UpdateBufferWithMapping(uint32_t buffer, const void* data,
+                               size_t size_bytes, size_t offset_bytes = 0);
   bool ShouldUseBufferMapping(size_t point_count) const;
 
   // Thread-safe data processing
@@ -92,7 +101,7 @@ class PointCloud : public OpenGlObject {
   std::mutex data_mutex_;
   std::queue<PendingUpdate> pending_updates_;
   std::atomic<bool> has_pending_update_{false};
-  
+
   // Thread-safe appearance settings
   std::mutex appearance_mutex_;
   std::atomic<float> point_size_{3.0f};
@@ -111,7 +120,7 @@ class PointCloud : public OpenGlObject {
   size_t active_points_ = 0;
   bool buffers_preallocated_ = false;
   BufferUpdateStrategy buffer_update_strategy_ = BufferUpdateStrategy::kAuto;
-  size_t buffer_update_threshold_ = 10000; // Default threshold: 10,000 points
+  size_t buffer_update_threshold_ = 10000;  // Default threshold: 10,000 points
 
   bool needs_update_ = false;
 };

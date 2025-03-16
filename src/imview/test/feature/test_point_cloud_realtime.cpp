@@ -19,8 +19,8 @@
 
 #include "imview/box.hpp"
 #include "imview/viewer.hpp"
-#include "imview/component/opengl/grid.hpp"
-#include "imview/component/opengl/point_cloud.hpp"
+#include "imview/component/opengl/renderer/grid.hpp"
+#include "imview/component/opengl/renderer/point_cloud.hpp"
 #include "imview/component/opengl/gl_scene_manager.hpp"
 
 using namespace quickviz;
