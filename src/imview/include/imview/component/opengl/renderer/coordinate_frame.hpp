@@ -12,6 +12,7 @@
 
 #include <vector>
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 #include "imview/interface/opengl_object.hpp"
 #include "imview/component/opengl/shader_program.hpp"
@@ -20,11 +21,25 @@ namespace quickviz {
 
 class CoordinateFrame : public OpenGlObject {
  public:
-  CoordinateFrame(float axis_length = 1.0f);
+  // Constructor with options for 2D mode and initial pose
+  CoordinateFrame(float axis_length = 1.0f, bool is_2d_mode = false);
   ~CoordinateFrame();
 
+  // Axis length control
   void SetAxisLength(float length);
   float GetAxisLength() const { return axis_length_; }
+  
+  // 2D/3D mode control
+  void Set2DMode(bool is_2d);
+  bool Is2DMode() const { return is_2d_mode_; }
+  
+  // Pose control
+  void SetPosition(const glm::vec3& position);
+  void SetOrientation(const glm::quat& orientation);
+  void SetPose(const glm::vec3& position, const glm::quat& orientation);
+  
+  glm::vec3 GetPosition() const { return position_; }
+  glm::quat GetOrientation() const { return orientation_; }
   
   // Kept for API compatibility but does nothing
   void SetShowLabels(bool show);
@@ -36,8 +51,15 @@ class CoordinateFrame : public OpenGlObject {
 
  private:
   void GenerateAxes();
+  void UpdateModelMatrix();
 
   float axis_length_ = 1.0f;
+  bool is_2d_mode_ = false;
+  
+  // Pose information
+  glm::vec3 position_ = glm::vec3(0.0f);
+  glm::quat orientation_ = glm::quat(1.0f, 0.0f, 0.0f, 0.0f); // Identity quaternion
+  glm::mat4 model_matrix_ = glm::mat4(1.0f);
   
   // OpenGL related
   uint32_t vao_ = 0;

@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
   gl_sm->AddOpenGLObject("grid", std::move(grid));
 
   // Add a coordinate frame 
-  auto coord_frame = std::make_unique<CoordinateFrame>(1.0f);
+  auto coord_frame = std::make_unique<CoordinateFrame>(1.0f, false);
   gl_sm->AddOpenGLObject("coordinate_frame", std::move(coord_frame));
 
   // Add the OpenGL scene manager to the box and add it to the viewer
