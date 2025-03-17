@@ -31,23 +31,40 @@ int main(int argc, char* argv[]) {
   box->SetAlignItems(Styling::AlignItems::kStretch);
 
   // Create an OpenGL scene manager to manage the OpenGL objects
-  auto gl_sm = std::make_shared<GlSceneManager>("OpenGL Scene",
+  auto gl_sm = std::make_shared<GlSceneManager>("OpenGL Scene (3D)",
                                                 GlSceneManager::Mode::k3D);
   gl_sm->SetAutoLayout(true);
   gl_sm->SetNoTitleBar(true);
-  gl_sm->SetFlexGrow(1.0f);
+  gl_sm->SetFlexGrow(0.5f);
   gl_sm->SetFlexShrink(0.0f);
 
   // Add a grid for reference
   auto grid = std::make_unique<Grid>(10.0f, 1.0f, glm::vec3(0.7f, 0.7f, 0.7f));
   gl_sm->AddOpenGLObject("grid", std::move(grid));
 
-  // Add a coordinate frame 
+  // Add a coordinate frame in 3D mode
   auto coord_frame = std::make_unique<CoordinateFrame>(1.0f, false);
   gl_sm->AddOpenGLObject("coordinate_frame", std::move(coord_frame));
 
-  // Add the OpenGL scene manager to the box and add it to the viewer
+  // Create a second OpenGL scene manager for 2D mode
+  auto gl_sm2 = std::make_shared<GlSceneManager>("OpenGL Scene (2D)",
+                                                GlSceneManager::Mode::k2D);
+  gl_sm2->SetAutoLayout(true);
+  gl_sm2->SetNoTitleBar(true);
+  gl_sm2->SetFlexGrow(0.5f);
+  gl_sm2->SetFlexShrink(0.0f);
+
+  // Add a grid for reference
+  auto grid2 = std::make_unique<Grid>(10.0f, 1.0f, glm::vec3(0.7f, 0.7f, 0.7f));
+  gl_sm2->AddOpenGLObject("grid", std::move(grid2));
+
+  // Add a coordinate frame in 2D mode (should show X and Z axes)
+  auto coord_frame2 = std::make_unique<CoordinateFrame>(1.0f, true);
+  gl_sm2->AddOpenGLObject("coordinate_frame", std::move(coord_frame2));
+
+  // Add the OpenGL scene managers to the box and add it to the viewer
   box->AddChild(gl_sm);
+  box->AddChild(gl_sm2);
   viewer.AddSceneObject(box);
 
   viewer.Show();

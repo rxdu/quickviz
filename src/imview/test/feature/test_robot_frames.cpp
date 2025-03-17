@@ -87,19 +87,19 @@ int main(int argc, char* argv[]) {
     
     // 2D links (same positions but with 2D frames)
     {"base_link_2d", glm::vec3(0.0f, 0.0f, 0.0f), 
-     glm::quat(1.0f, 0.0f, 0.0f, 0.0f), 1.5f, true},
+     glm::quat(1.0f, 0.0f, 0.0f, 0.0f), 1.0f, true},
     
-    {"link1_2d", glm::vec3(2.0f, 0.0f, 0.0f), 
-     glm::angleAxis(glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f)), 1.2f, true},
+    {"link1_2d", glm::vec3(1.0f, 0.0f, 0.0f), 
+     glm::angleAxis(glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f)), 0.8f, true},
     
-    {"link2_2d", glm::vec3(4.0f, 2.0f, 0.0f), 
-     glm::angleAxis(glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)), 1.0f, true},
+    {"link2_2d", glm::vec3(2.0f, 1.0f, 0.0f), 
+     glm::angleAxis(glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)), 0.6f, true},
     
-    {"link3_2d", glm::vec3(4.0f, 4.0f, 0.0f), 
-     glm::angleAxis(glm::radians(135.0f), glm::vec3(0.0f, 0.0f, 1.0f)), 0.8f, true},
+    {"link3_2d", glm::vec3(2.0f, 2.0f, 0.0f), 
+     glm::angleAxis(glm::radians(135.0f), glm::vec3(0.0f, 0.0f, 1.0f)), 0.4f, true},
     
-    {"end_effector_2d", glm::vec3(3.0f, 5.0f, 0.0f), 
-     glm::angleAxis(glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f)), 0.6f, true}
+    {"end_effector_2d", glm::vec3(1.5f, 2.5f, 0.0f), 
+     glm::angleAxis(glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f)), 0.3f, true}
   };
 
   // Add coordinate frames for each robot link
