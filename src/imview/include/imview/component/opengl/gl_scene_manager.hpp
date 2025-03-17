@@ -20,6 +20,7 @@
 #include "imview/component/opengl/frame_buffer.hpp"
 #include "imview/component/opengl/camera.hpp"
 #include "imview/component/opengl/camera_controller.hpp"
+#include "imview/component/opengl/coordinate_system_transformer.hpp"
 
 namespace quickviz {
 class GlSceneManager : public Panel {
@@ -41,6 +42,27 @@ class GlSceneManager : public Panel {
   OpenGlObject* GetOpenGLObject(const std::string& name);
   void ClearOpenGLObjects();
 
+  /**
+   * @brief Enable or disable coordinate system transformation
+   * 
+   * When enabled, the scene will use the standard coordinate system (Z-up)
+   * and transform it to OpenGL's coordinate system (Y-up) for rendering.
+   * 
+   * @param enable Whether to enable the transformation
+   */
+  void EnableCoordinateSystemTransformation(bool enable) { 
+    use_coord_transform_ = enable; 
+  }
+  
+  /**
+   * @brief Check if coordinate system transformation is enabled
+   * 
+   * @return true if enabled, false otherwise
+   */
+  bool IsCoordinateSystemTransformationEnabled() const { 
+    return use_coord_transform_; 
+  }
+
   void Draw() override;
 
  protected:
@@ -59,6 +81,10 @@ class GlSceneManager : public Panel {
   std::unique_ptr<Camera> camera_;
   std::unique_ptr<CameraController> camera_controller_;
   bool show_rendering_info_ = true;
+  
+  // Coordinate system transformation
+  bool use_coord_transform_ = true;
+  glm::mat4 coord_transform_ = glm::mat4(1.0f);
 };
 }  // namespace quickviz
 

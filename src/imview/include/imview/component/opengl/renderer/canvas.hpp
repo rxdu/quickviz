@@ -54,25 +54,26 @@ class Canvas : public OpenGlObject {
 
   void AllocateGpuResources() override;
   void ReleaseGpuResources() override;
-  void OnDraw(const glm::mat4& projection, const glm::mat4& view) override;
+  void OnDraw(const glm::mat4& projection, const glm::mat4& view,
+              const glm::mat4& coord_transform = glm::mat4(1.0f)) override;
 
  private:
-  ShaderProgram shader_;
-  
-  // Canvas dimensions
-  float width_ = 0.0f;
-  float height_ = 0.0f;
-  
-  // OpenGL objects
-  unsigned int vao_ = 0;
-  unsigned int vbo_ = 0;
-  
-  // Data storage
+  struct Point {
+    glm::vec3 position;
+    glm::vec4 color;
+    float size;
+  };
+
+  float width_;
+  float height_;
   std::vector<Point> points_;
-  
-  // Store original sizes for scaling
-  std::vector<float> original_sizes_;
+
+  uint32_t vao_ = 0;
+  uint32_t vbo_ = 0;
+
+  ShaderProgram shader_;
 };
+
 }  // namespace quickviz
 
 #endif /* OPENGL_RENDERER_CANVAS_HPP */

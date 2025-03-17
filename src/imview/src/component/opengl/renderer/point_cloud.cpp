@@ -28,12 +28,13 @@ const char* vertex_shader_source = R"(
     
     uniform mat4 projection;
     uniform mat4 view;
+    uniform mat4 coord_transform;
     uniform float pointSize;
     
     out vec3 vColor;
     
     void main() {
-        gl_Position = projection * view * vec4(aPosition, 1.0);
+        gl_Position = projection * view * coord_transform * vec4(aPosition, 1.0);
         gl_PointSize = pointSize;  // Hardcoded point size for testing
         vColor = aColor;
     }
@@ -45,8 +46,10 @@ const char* fragment_shader_source = R"(
     
     out vec4 FragColor;
     
+    uniform float opacity;
+    
     void main() {
-        FragColor = vec4(vColor, 1.0);  // Hardcoded full opacity for testing
+        FragColor = vec4(vColor, opacity);  // Use opacity uniform
     }
 )";
 }  // namespace
@@ -415,7 +418,8 @@ void PointCloud::UpdateBufferWithMapping(uint32_t buffer, const void* data,
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void PointCloud::OnDraw(const glm::mat4& projection, const glm::mat4& view) {
+void PointCloud::OnDraw(const glm::mat4& projection, const glm::mat4& view, 
+                       const glm::mat4& coord_transform) {
   // Process any pending updates first
   if (has_pending_update_) {
     ProcessPendingUpdates();
@@ -528,6 +532,7 @@ void PointCloud::OnDraw(const glm::mat4& projection, const glm::mat4& view) {
     // Use TrySetUniform instead of SetUniform to avoid exceptions
     shader_.TrySetUniform("projection", projection);
     shader_.TrySetUniform("view", view);
+    shader_.TrySetUniform("coord_transform", coord_transform);
     shader_.TrySetUniform("pointSize", current_point_size);
     shader_.TrySetUniform("opacity", current_opacity);
 

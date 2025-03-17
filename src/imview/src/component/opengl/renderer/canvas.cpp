@@ -9,46 +9,42 @@
 
 #include "imview/component/opengl/renderer/canvas.hpp"
 
-#include "glad/glad.h"
-
 #include <iostream>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/string_cast.hpp>
+#include <cmath>
+
+#include "glad/glad.h"
+#include <glm/gtc/type_ptr.hpp>
 
 namespace quickviz {
 namespace {
 std::string vertex_shader_source = R"(
 #version 330 core
-layout (location = 0) in vec2 aPos;
-layout (location = 1) in vec4 aColor;
-layout (location = 2) in float aSize;
+
+layout(location = 0) in vec3 aPos;
+layout(location = 1) in vec4 aColor;
+layout(location = 2) in float aSize;
 
 uniform mat4 projection;
 uniform mat4 view;
+uniform mat4 model;
+uniform mat4 coordSystemTransform;
 
 out vec4 vertexColor;
 
-void main()
-{
-    // Place points in the X-Z plane (y=0) for consistency with 3D mode
-    // This makes the points appear in the same reference frame as the grid
-    vec4 clipPos = projection * view * vec4(aPos.x, 0.0, aPos.y, 1.0);
-    gl_Position = clipPos;
-    
-    // Use the input size directly
+void main() {
+    gl_Position = projection * view * model * coordSystemTransform * vec4(aPos, 1.0);
     gl_PointSize = aSize;
-    
     vertexColor = aColor;
 }
 )";
 
 std::string fragment_shader_source = R"(
 #version 330 core
+
 in vec4 vertexColor;
 out vec4 FragColor;
 
-void main()
-{
+void main() {
     // Create a circular point by discarding fragments outside the circle
     vec2 circCoord = 2.0 * gl_PointCoord - 1.0;
     if (dot(circCoord, circCoord) > 1.0) {
@@ -62,8 +58,8 @@ void main()
 
 // Point structure to store point data
 struct Point {
-    float x, y;
-    float r, g, b, a;
+    glm::vec3 position;
+    glm::vec4 color;
     float size;
 };
 
@@ -75,11 +71,82 @@ Canvas::~Canvas() {
     ReleaseGpuResources();
 }
 
+void Canvas::AddPoint(float x, float y, const glm::vec4& color, float thickness) {
+    Point point;
+    point.position = glm::vec3(x, 0.0f, y); // Use X-Z plane for 2D drawing
+    point.color = color;
+    point.size = thickness;
+    
+    points_.push_back(point);
+    
+    // Update the VBO with the new data
+    if (vao_ != 0 && vbo_ != 0) {
+        glBindVertexArray(vao_);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+        glBufferData(GL_ARRAY_BUFFER, points_.size() * sizeof(Point), points_.data(), GL_STATIC_DRAW);
+        glBindVertexArray(0);
+    }
+}
+
+void Canvas::AddLine(float x1, float y1, float x2, float y2, const glm::vec4& color,
+                    float thickness, LineType line_type) {
+    // For simplicity, we'll just add two points for now
+    // In a more complete implementation, we would use line primitives
+    AddPoint(x1, y1, color, thickness);
+    AddPoint(x2, y2, color, thickness);
+}
+
+void Canvas::AddRectangle(float x, float y, float width, float height,
+                         const glm::vec4& color, bool filled, float thickness,
+                         LineType line_type) {
+    // For simplicity, we'll just add four points for the corners
+    // In a more complete implementation, we would use line or triangle primitives
+    AddPoint(x, y, color, thickness);
+    AddPoint(x + width, y, color, thickness);
+    AddPoint(x + width, y + height, color, thickness);
+    AddPoint(x, y + height, color, thickness);
+}
+
+void Canvas::AddCircle(float x, float y, float radius, const glm::vec4& color,
+                      bool filled, float thickness, LineType line_type) {
+    // For simplicity, we'll just add a single point at the center
+    // In a more complete implementation, we would use triangle primitives
+    AddPoint(x, y, color, radius * 2.0f);
+}
+
+void Canvas::AddEllipse(float x, float y, float rx, float ry, float angle,
+                       float start_angle, float end_angle, const glm::vec4& color,
+                       bool filled, float thickness, LineType line_type) {
+    // For simplicity, we'll just add a single point at the center
+    // In a more complete implementation, we would use triangle primitives
+    AddPoint(x, y, color, std::max(rx, ry) * 2.0f);
+}
+
+void Canvas::AddPolygon(const std::vector<glm::vec2>& points, const glm::vec4& color,
+                       bool filled, float thickness, LineType line_type) {
+    // For simplicity, we'll just add points for each vertex
+    // In a more complete implementation, we would use line or triangle primitives
+    for (const auto& point : points) {
+        AddPoint(point.x, point.y, color, thickness);
+    }
+}
+
+void Canvas::Clear() {
+    points_.clear();
+    
+    // Update the VBO with the new data
+    if (vao_ != 0 && vbo_ != 0) {
+        glBindVertexArray(vao_);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+        glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
+        glBindVertexArray(0);
+    }
+}
+
 void Canvas::AllocateGpuResources() {
-    // Create and compile shaders
+    // Compile and link shaders
     Shader vertex_shader(vertex_shader_source.c_str(), Shader::Type::kVertex);
     Shader fragment_shader(fragment_shader_source.c_str(), Shader::Type::kFragment);
-    
     shader_.AttachShader(vertex_shader);
     shader_.AttachShader(fragment_shader);
     
@@ -88,111 +155,67 @@ void Canvas::AllocateGpuResources() {
         throw std::runtime_error("Shader program linking failed");
     }
     
-    // Generate VAO and VBO
+    // Create and set up VAO and VBO
     glGenVertexArrays(1, &vao_);
     glGenBuffers(1, &vbo_);
     
-    // Setup VAO and VBO
     glBindVertexArray(vao_);
+    
+    // Set up VBO for points
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
     
+    // Set up vertex attributes
     // Position attribute
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Point), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Point), (void*)offsetof(Point, position));
     glEnableVertexAttribArray(0);
     
     // Color attribute
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Point), (void*)(2 * sizeof(float)));
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Point), (void*)offsetof(Point, color));
     glEnableVertexAttribArray(1);
     
     // Size attribute
-    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(Point), (void*)(6 * sizeof(float)));
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(Point), (void*)offsetof(Point, size));
     glEnableVertexAttribArray(2);
     
     // Unbind
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }
 
 void Canvas::ReleaseGpuResources() {
-    // Delete VAO and VBO
     glDeleteVertexArrays(1, &vao_);
     glDeleteBuffers(1, &vbo_);
 }
 
-void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view) {
+void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view, 
+                   const glm::mat4& coord_transform) {
     if (points_.empty()) {
         return;
     }
     
-    // Extract scale from view matrix
-    float scaleX = view[0][0];
-    float scaleY = view[1][1];
-    float current_scale = (std::abs(scaleX) + std::abs(scaleY)) * 0.5f;
-    
-    // Apply a scaling factor to make the effect more pronounced
-    float scaling_factor = 5.0f;
-    
-    // Create a copy of the points with scaled sizes
-    std::vector<Point> scaled_points = points_;
-    for (size_t i = 0; i < scaled_points.size(); ++i) {
-        // Scale the point size based on the current scale
-        scaled_points[i].size = original_sizes_[i] * current_scale * scaling_factor;
-        
-        // Ensure a minimum size
-        if (scaled_points[i].size < 3.0f) {
-            scaled_points[i].size = 3.0f;
-        }
-    }
-    
-    // Use shader program
     shader_.Use();
-    
-    // Set uniforms
     shader_.SetUniform("projection", projection);
     shader_.SetUniform("view", view);
+    shader_.SetUniform("model", glm::mat4(1.0f));
+    shader_.SetUniform("coordSystemTransform", coord_transform);
     
-    // Bind VAO
     glBindVertexArray(vao_);
     
-    // Update VBO data with scaled points
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_);
-    glBufferData(GL_ARRAY_BUFFER, scaled_points.size() * sizeof(Point), scaled_points.data(), GL_DYNAMIC_DRAW);
+    // Enable blending for transparency
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
     // Enable point size
     glEnable(GL_PROGRAM_POINT_SIZE);
     
-    // Draw points
-    glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(scaled_points.size()));
+    // Draw the points
+    glDrawArrays(GL_POINTS, 0, points_.size());
     
     // Disable point size
     glDisable(GL_PROGRAM_POINT_SIZE);
     
-    // Unbind VAO
+    // Disable blending
+    glDisable(GL_BLEND);
+    
     glBindVertexArray(0);
-}
-
-void Canvas::AddPoint(float x, float y, const glm::vec4& color,
-                      float thickness) {
-    // Create a new point
-    Point point;
-    point.x = x;
-    point.y = y;
-    point.r = color.r;
-    point.g = color.g;
-    point.b = color.b;
-    point.a = color.a;
-    point.size = thickness;
-    
-    // Add point to the vector
-    points_.push_back(point);
-    
-    // Store the original size
-    original_sizes_.push_back(thickness);
-}
-
-void Canvas::Clear() {
-    // Clear all points
-    points_.clear();
-    original_sizes_.clear();
 }
 }  // namespace quickviz

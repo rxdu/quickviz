@@ -70,7 +70,8 @@ class PointCloud : public OpenGlObject {
  private:
   void AllocateGpuResources() override;
   void ReleaseGpuResources() override;
-  void OnDraw(const glm::mat4& projection, const glm::mat4& view) override;
+  void OnDraw(const glm::mat4& projection, const glm::mat4& view, 
+              const glm::mat4& coord_transform = glm::mat4(1.0f)) override;
   void UpdateColors(ColorMode color_mode, size_t start_idx, size_t count);
 
   // Helper methods for buffer updates
