@@ -48,7 +48,7 @@ int main(int argc, char* argv[]) {
   gl_sm->AddOpenGLObject("grid", std::move(grid));
 
   // Add a coordinate frame in 2D mode (should show X and Z axes)
-  auto coord_frame = std::make_unique<CoordinateFrame>(3.0f, true);
+  auto coord_frame = std::make_unique<CoordinateFrame>(0.5f, true);
   gl_sm->AddOpenGLObject("coordinate_frame", std::move(coord_frame));
 
   auto canvas = std::make_unique<Canvas>(100.0f, 100.0f);
@@ -62,54 +62,37 @@ int main(int argc, char* argv[]) {
     canvas->AddPoint(0.0f, 0.0f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 5.0f);
     canvas->AddPoint(1.0f, 1.0f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 5.0f);
     canvas->AddPoint(-1.5f, -1.5f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 5.0f);
-
-    // Add points in a circle pattern
-    const int num_points = 12;
-    const float radius = 5.0f;
-    for (int i = 0; i < num_points; ++i) {
-      float angle = 2.0f * M_PI * i / num_points;
-      float x = radius * cos(angle);
-      float z = radius * sin(angle);  // Using z instead of y for 2D mode
-
-      // Create a rainbow effect
-      float hue = static_cast<float>(i) / num_points;
-      glm::vec4 color;
-
-      // Simple HSV to RGB conversion
-      if (hue < 1.0f/6.0f) {
-        color = glm::vec4(1.0f, hue * 6.0f, 0.0f, 1.0f);
-      } else if (hue < 2.0f/6.0f) {
-        color = glm::vec4(1.0f - (hue - 1.0f/6.0f) * 6.0f, 1.0f, 0.0f, 1.0f);
-      } else if (hue < 3.0f/6.0f) {
-        color = glm::vec4(0.0f, 1.0f, (hue - 2.0f/6.0f) * 6.0f, 1.0f);
-      } else if (hue < 4.0f/6.0f) {
-        color = glm::vec4(0.0f, 1.0f - (hue - 3.0f/6.0f) * 6.0f, 1.0f, 1.0f);
-      } else if (hue < 5.0f/6.0f) {
-        color = glm::vec4((hue - 4.0f/6.0f) * 6.0f, 0.0f, 1.0f, 1.0f);
-      } else {
-        color = glm::vec4(1.0f, 0.0f, 1.0f - (hue - 5.0f/6.0f) * 6.0f, 1.0f);
-      }
-
-      // Add the point with larger sizes
-      canvas->AddPoint(x, z, color, 10.0f + 10.0f * i / num_points);
-    }
   }
 
   // Create a second OpenGL scene manager for 3D mode
   auto gl_sm_3d = std::make_shared<GlSceneManager>("OpenGL Scene (3D)",
-                                                GlSceneManager::Mode::k3D);
+                                                   GlSceneManager::Mode::k3D);
   gl_sm_3d->SetAutoLayout(true);
   gl_sm_3d->SetNoTitleBar(true);
   gl_sm_3d->SetFlexGrow(0.5f);
   gl_sm_3d->SetFlexShrink(0.0f);
 
   // Add a grid for reference
-  auto grid_3d = std::make_unique<Grid>(10.0f, 1.0f, glm::vec3(0.7f, 0.7f, 0.7f));
+  auto grid_3d =
+      std::make_unique<Grid>(10.0f, 1.0f, glm::vec3(0.7f, 0.7f, 0.7f));
   gl_sm_3d->AddOpenGLObject("grid", std::move(grid_3d));
 
   // Add a coordinate frame in 3D mode
   auto coord_frame_3d = std::make_unique<CoordinateFrame>(3.0f, false);
   gl_sm_3d->AddOpenGLObject("coordinate_frame", std::move(coord_frame_3d));
+
+  auto canvas_3d = std::make_unique<Canvas>(100.0f, 100.0f);
+  gl_sm_3d->AddOpenGLObject("canvas", std::move(canvas_3d));
+
+  // now let's do some drawing on the canvas
+  {
+    auto canvas = static_cast<Canvas*>(gl_sm_3d->GetOpenGLObject("canvas"));
+
+    // Add a red point at the origin with a larger size
+    canvas->AddPoint(0.0f, 0.0f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 5.0f);
+    canvas->AddPoint(1.0f, 1.0f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 5.0f);
+    canvas->AddPoint(-1.5f, -1.5f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 5.0f);
+  }
 
   // finally pass the OpenGL scene managers to the box and add it to the viewer
   box->AddChild(gl_sm);
