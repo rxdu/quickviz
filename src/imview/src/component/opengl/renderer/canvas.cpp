@@ -73,7 +73,7 @@ Canvas::~Canvas() {
 
 void Canvas::AddPoint(float x, float y, const glm::vec4& color, float thickness) {
     Point point;
-    point.position = glm::vec3(x, 0.0f, y); // Use X-Z plane for 2D drawing
+    point.position = glm::vec3(x, y, 0.0f); // Use X-Y plane for 2D drawing
     point.color = color;
     point.size = thickness;
     
