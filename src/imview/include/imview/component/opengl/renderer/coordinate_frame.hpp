@@ -47,7 +47,8 @@ class CoordinateFrame : public OpenGlObject {
 
   void AllocateGpuResources() override;
   void ReleaseGpuResources() override;
-  void OnDraw(const glm::mat4& projection, const glm::mat4& view) override;
+  void OnDraw(const glm::mat4& projection, const glm::mat4& view, 
+              const glm::mat4& coord_transform = glm::mat4(1.0f)) override;
 
  private:
   void GenerateAxes();

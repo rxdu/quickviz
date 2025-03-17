@@ -1,16 +1,18 @@
-/*
+/**
  * @file triangle.cpp
- * @date 11/4/24
+ * @author Ruixiang Du (ruixiang.du@gmail.com)
+ * @date 2025-03-05
  * @brief
  *
- * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
+ * Copyright (c) 2025 Ruixiang Du (rdu)
  */
 
 #include "imview/component/opengl/renderer/triangle.hpp"
 
-#include "glad/glad.h"
-
 #include <iostream>
+
+#include "glad/glad.h"
+#include <glm/gtc/type_ptr.hpp>
 
 namespace quickviz {
 namespace {
@@ -18,47 +20,110 @@ std::string vertex_shader_source = R"(
 #version 330 core
 
 layout(location = 0) in vec3 aPos;
+
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
+uniform mat4 coordSystemTransform;
+uniform vec3 triangleColor;
+
+out vec4 vertexColor;
 
 void main() {
-    gl_Position = projection * view * model * vec4(aPos, 1.0);
+    gl_Position = projection * view * model * coordSystemTransform * vec4(aPos, 1.0);
+    vertexColor = vec4(triangleColor, 0.5);
 }
 )";
 
 std::string fragment_shader_source = R"(
 #version 330 core
 
+in vec4 vertexColor;
 out vec4 FragColor;
-uniform vec3 lineColor;
-uniform float lineAlpha;
 
 void main() {
-    FragColor = vec4(lineColor, lineAlpha);
+    FragColor = vertexColor;
 }
 )";
 }  // namespace
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Triangle::Triangle(float size, glm::vec3 color) : size_(size), color_(color) {
+Triangle::Triangle(float size, const glm::vec3& color)
+    : size_(size), color_(color) {
   AllocateGpuResources();
 }
 
-Triangle::~Triangle() { ReleaseGpuResources(); }
+Triangle::~Triangle() {
+  ReleaseGpuResources();
+}
+
+void Triangle::SetSize(float size) {
+  if (size <= 0.0f) {
+    std::cerr << "Warning: Triangle size must be positive. Using default value." << std::endl;
+    return;
+  }
+  
+  size_ = size;
+  
+  // Update the vertices with the new size
+  float half_size = size_ / 2.0f;
+  
+  glBindVertexArray(vao_);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+  
+  // Triangle vertices in X-Y plane (X-Z plane in OpenGL with coordinate transform)
+  glm::vec3 vertices[3] = {
+    glm::vec3(0.0f, -half_size, 0.0f),         // Bottom center
+    glm::vec3(-half_size, half_size, 0.0f),    // Top left
+    glm::vec3(half_size, half_size, 0.0f)      // Top right
+  };
+  
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+  glBindVertexArray(0);
+}
+
+void Triangle::SetColor(const glm::vec3& color) {
+  color_ = color;
+}
 
 void Triangle::AllocateGpuResources() {
+  // Compile and link shaders
   Shader vertex_shader(vertex_shader_source.c_str(), Shader::Type::kVertex);
-  Shader fragment_shader(fragment_shader_source.c_str(),
-                         Shader::Type::kFragment);
+  Shader fragment_shader(fragment_shader_source.c_str(), Shader::Type::kFragment);
   shader_.AttachShader(vertex_shader);
   shader_.AttachShader(fragment_shader);
+  
   if (!shader_.LinkProgram()) {
-    std::cout << "ERROR::GRID::SHADER_PROGRAM_LINKING_FAILED" << std::endl;
+    std::cerr << "ERROR::TRIANGLE::SHADER_PROGRAM_LINKING_FAILED" << std::endl;
     throw std::runtime_error("Shader program linking failed");
   }
-  GenerateTriangle();
+  
+  // Create and set up VAO and VBO
+  glGenVertexArrays(1, &vao_);
+  glGenBuffers(1, &vbo_);
+  
+  glBindVertexArray(vao_);
+  
+  // Set up VBO for vertices
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+  
+  // Triangle vertices in X-Y plane (X-Z plane in OpenGL with coordinate transform)
+  float half_size = size_ / 2.0f;
+  glm::vec3 vertices[3] = {
+    glm::vec3(0.0f, -half_size, 0.0f),         // Bottom center
+    glm::vec3(-half_size, half_size, 0.0f),    // Top left
+    glm::vec3(half_size, half_size, 0.0f)      // Top right
+  };
+  
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+  
+  // Set up vertex attributes
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+  glEnableVertexAttribArray(0);
+  
+  // Unbind
+  glBindVertexArray(0);
 }
 
 void Triangle::ReleaseGpuResources() {
@@ -66,49 +131,27 @@ void Triangle::ReleaseGpuResources() {
   glDeleteBuffers(1, &vbo_);
 }
 
-void Triangle::SetColor(const glm::vec3& color, float alpha) {
-  color_ = color;
-  alpha_ = alpha;
-}
-
-void Triangle::OnDraw(const glm::mat4& projection, const glm::mat4& view) {
+void Triangle::OnDraw(const glm::mat4& projection, const glm::mat4& view, 
+                     const glm::mat4& coord_transform) {
   shader_.Use();
   shader_.SetUniform("projection", projection);
   shader_.SetUniform("view", view);
-  shader_.SetUniform("model", glm::mat4(1.0f));  // Identity matrix for the grid
-  shader_.SetUniform("lineColor", color_);
-  shader_.SetUniform("lineAlpha", alpha_);
-
+  shader_.SetUniform("model", glm::mat4(1.0f));
+  shader_.SetUniform("coordSystemTransform", coord_transform);
+  shader_.SetUniform("triangleColor", color_);
+  
   glBindVertexArray(vao_);
-  glDrawArrays(GL_TRIANGLES, 0, vertices_.size());
-  glBindVertexArray(0);
-}
-
-void Triangle::GenerateTriangle() {
-  // clang-format off
-  vertices_ = {
-    glm::vec3(-0.5f, 0.0f, 0.0f),
-    glm::vec3(0.0f, 0.866f, 0.0f),
-    glm::vec3(0.5f, 0.0f, 0.0f)
-  };
-  // clang-format on
-
-  // create vertex array object
-  glGenVertexArrays(1, &vao_);
-  glBindVertexArray(vao_);
-
-  // create vertex buffer object
-  glGenBuffers(1, &vbo_);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo_);
-  glBufferData(GL_ARRAY_BUFFER, vertices_.size() * sizeof(glm::vec3),
-               vertices_.data(), GL_STATIC_DRAW);
-
-  // set vertex attribute pointers
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
-  glEnableVertexAttribArray(0);
-
-  // unbind vbo and vao
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  
+  // Enable blending for transparency
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  
+  // Draw the triangle
+  glDrawArrays(GL_TRIANGLES, 0, 3);
+  
+  // Disable blending
+  glDisable(GL_BLEND);
+  
   glBindVertexArray(0);
 }
 }  // namespace quickviz

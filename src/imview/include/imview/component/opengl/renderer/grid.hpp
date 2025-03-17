@@ -1,17 +1,18 @@
-/*
+/**
  * @file grid.hpp
- * @date 11/2/24
+ * @author Ruixiang Du (ruixiang.du@gmail.com)
+ * @date 2025-03-05
  * @brief
  *
- * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
+ * Copyright (c) 2025 Ruixiang Du (rdu)
  */
 
-#ifndef QUICKVIZ_GRID_HPP
-#define QUICKVIZ_GRID_HPP
-
-#include <glm/glm.hpp>
+#ifndef COMPONENT_OPENGL_GRID_HPP
+#define COMPONENT_OPENGL_GRID_HPP
 
 #include <vector>
+
+#include <glm/glm.hpp>
 
 #include "imview/interface/opengl_object.hpp"
 #include "imview/component/opengl/shader_program.hpp"
@@ -19,37 +20,36 @@
 namespace quickviz {
 class Grid : public OpenGlObject {
  public:
-  Grid(float grid_size = 10.0f, float spacing = 1.0f,
-       glm::vec3 color = glm::vec3(0.5f, 0.5f, 0.5f));
+  Grid(float size = 10.0f, float spacing = 1.0f,
+       const glm::vec3& color = glm::vec3(0.5f, 0.5f, 0.5f));
   ~Grid();
 
-  void SetLineColor(const glm::vec3& color, float alpha = 0.5f);
-
-  // Accessor methods
-  float GetGridSize() const { return grid_size_; }
-  float GetSpacing() const { return spacing_; }
-  glm::vec3 GetColor() const { return color_; }
-  float GetAlpha() const { return alpha_; }
+  // public methods
+  void SetSize(float size);
+  void SetSpacing(float spacing);
+  void SetColor(const glm::vec3& color);
 
   void AllocateGpuResources() override;
   void ReleaseGpuResources() override;
-  void OnDraw(const glm::mat4& projection, const glm::mat4& view) override;
+  void OnDraw(const glm::mat4& projection, const glm::mat4& view,
+              const glm::mat4& coord_transform = glm::mat4(1.0f)) override;
 
  private:
   void GenerateGrid();
 
-  // grid parameters
-  float grid_size_;
-  float spacing_;
-  glm::vec3 color_;
-  float alpha_ = 0.5f;
+  float size_ = 10.0f;
+  float spacing_ = 1.0f;
+  glm::vec3 color_ = glm::vec3(0.5f, 0.5f, 0.5f);
 
-  // OpenGL related
-  uint32_t vao_;
-  uint32_t vbo_;
   std::vector<glm::vec3> vertices_;
+  std::vector<unsigned int> indices_;
+
+  uint32_t vao_ = 0;
+  uint32_t vbo_ = 0;
+  uint32_t ebo_ = 0;
+
   ShaderProgram shader_;
 };
 }  // namespace quickviz
 
-#endif  // QUICKVIZ_GRID_HPP
+#endif /* COMPONENT_OPENGL_GRID_HPP */

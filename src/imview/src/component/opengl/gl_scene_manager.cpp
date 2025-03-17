@@ -12,6 +12,7 @@
 #include <stdexcept>
 
 #include "imview/fonts.hpp"
+#include "imview/component/opengl/coordinate_system_transformer.hpp"
 
 namespace quickviz {
 GlSceneManager::GlSceneManager(const std::string& name, Mode mode)
@@ -31,6 +32,9 @@ GlSceneManager::GlSceneManager(const std::string& name, Mode mode)
         *camera_, glm::vec3(0.0f, 8.0f, 0.0f), -90.0f, -90.0f);
     camera_controller_->SetMode(CameraController::Mode::kTopDown);
   }
+  
+  // Initialize the coordinate system transformation matrix
+  coord_transform_ = CoordinateSystemTransformer::GetStandardToOpenGLTransform();
 }
 
 void GlSceneManager::SetShowRenderingInfo(bool show) {
@@ -84,8 +88,12 @@ void GlSceneManager::DrawOpenGLObject() {
     frame_buffer_->Bind();
     frame_buffer_->Clear(background_color_.r, background_color_.g,
                          background_color_.b, background_color_.a);
+    
+    // Apply coordinate system transformation if enabled
+    glm::mat4 transform = use_coord_transform_ ? coord_transform_ : glm::mat4(1.0f);
+    
     for (auto& obj : drawable_objects_) {
-      obj.second->OnDraw(projection_, view_);
+      obj.second->OnDraw(projection_, view_, transform);
     }
     frame_buffer_->Unbind();
 
