@@ -32,6 +32,11 @@ void CameraController::SetMode(CameraController::Mode mode) {
     // This allows the GlSceneManager to position the camera along the Z-axis
     camera_.SetPitch(-90.0f);
     camera_.SetYaw(0.0f);
+
+    // make sure the position is not too low
+    glm::vec3 position = camera_.GetPosition();
+    if (position.y < 1.0f) position.y = 1.0f;  // Set a minimum height
+    camera_.SetPosition(position);
   }
 }
 
@@ -41,7 +46,7 @@ void CameraController::ProcessKeyboard(
   if (mode_ == Mode::kTopDown) {
     float velocity = camera_.GetMovementSpeed() * delta_time;
     glm::vec3 position = camera_.GetPosition();
-    
+
     // In TopDown mode, camera is always looking at X-Z plane from above
     if (direction == CameraMovement::kUp) position.y -= velocity;
     if (direction == CameraMovement::kDown) position.y += velocity;
@@ -49,7 +54,7 @@ void CameraController::ProcessKeyboard(
     if (direction == CameraMovement::kBackward) position.x += velocity;
     if (direction == CameraMovement::kLeft) position.z += velocity;
     if (direction == CameraMovement::kRight) position.z -= velocity;
-    
+
     camera_.SetPosition(position);
   } else {
     camera_.ProcessKeyboard(direction, delta_time);
