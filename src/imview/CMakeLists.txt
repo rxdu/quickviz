@@ -79,7 +79,7 @@ add_library(imview
   src/component/logging/app_log_handler.cpp
   # terminal
   ${TUI_COMP_SRC})
-target_link_libraries(imview PUBLIC imcore
+target_link_libraries(imview PUBLIC imcore stb
   PkgConfig::Cairo PkgConfig::Fontconfig
   Threads::Threads
   OpenGL::GL
