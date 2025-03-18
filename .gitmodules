@@ -10,3 +10,6 @@
 [submodule "src/third_party/googletest"]
 	path = src/third_party/googletest
 	url = https://github.com/google/googletest.git
+[submodule "src/third_party/stb"]
+	path = src/third_party/stb
+	url = git@github.com:rxdu/stb.git
