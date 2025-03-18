@@ -11,6 +11,7 @@
 #define OPENGL_RENDERER_CANVAS_HPP
 
 #include <vector>
+#include <string>
 
 #include <glm/glm.hpp>
 
@@ -48,7 +49,9 @@ class Canvas : public OpenGlObject {
   void AddPolygon(const std::vector<glm::vec2>& points, const glm::vec4& color,
                   bool filled = true, float thickness = 1.0f,
                   LineType line_type = LineType::SOLID);
-                  
+
+  void AddBackgroundImage(const std::string& image_path, const glm::vec3& origin, float resolution);
+
   // Clear all points from the canvas
   void Clear();
 
@@ -64,14 +67,29 @@ class Canvas : public OpenGlObject {
     float size;
   };
 
+  // Load and setup background image
+  void SetupBackgroundImage();
+
   float width_;
   float height_;
   std::vector<Point> points_;
 
-  uint32_t vao_ = 0;
-  uint32_t vbo_ = 0;
+  // Background image resources
+  bool has_background_ = false;
+  std::string background_image_path_;
+  unsigned char* background_image_data_ = nullptr;
+  int background_image_width_ = 0;
+  int background_image_height_ = 0;
+  int background_image_channels_ = 0;
+  uint32_t background_texture_ = 0;
+  uint32_t background_vao_ = 0;
+  uint32_t background_vbo_ = 0;
+  ShaderProgram background_shader_;
 
-  ShaderProgram shader_;
+  // Primitive rendering resources
+  uint32_t primitive_vao_ = 0;
+  uint32_t primitive_vbo_ = 0;
+  ShaderProgram primitive_shader_;
 };
 
 }  // namespace quickviz
