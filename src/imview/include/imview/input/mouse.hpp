@@ -11,11 +11,12 @@
 #define IMVIEW_INPUT_MOUSE_HPP
 
 namespace quickviz {
-enum MouseButton {
+enum MouseButton : int {
+  kNone = -1,
   kLeft = 0,
   kRight = 1,
   kMiddle = 2,
 };
 }  // namespace quickviz
 
-#endif /* IMVIEW_INPUT_MOUSE_HPP */
+#endif  // IMVIEW_INPUT_MOUSE_HPP
