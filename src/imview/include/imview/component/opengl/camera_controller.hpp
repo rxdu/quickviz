@@ -10,6 +10,7 @@
 #define QUICKVIZ_CAMERA_CONTROLLER_HPP
 
 #include "imview/component/opengl/camera.hpp"
+#include "imview/input/mouse.hpp"
 
 namespace quickviz {
 class CameraController {
@@ -26,6 +27,10 @@ class CameraController {
   void ProcessKeyboard(CameraMovement direction, float delta_time);
   void ProcessMouseMovement(float x_offset, float y_offset);
   void ProcessMouseScroll(float y_offset);
+  
+  // Set the current mouse button state for camera control
+  void SetActiveMouseButton(int button);
+  int GetActiveMouseButton() const { return active_mouse_button_; }
 
  private:
   static constexpr float initial_orbit_distance = 10.0f;
@@ -38,6 +43,12 @@ class CameraController {
   glm::vec3 orbit_target_ = glm::vec3(0.0f, 0.0f, 0.0f);
   float orbit_distance_ = initial_orbit_distance;
   float top_down_height_ = initial_top_down_height;
+  
+  // For tracking mouse button states, -1 means no button pressed
+  int active_mouse_button_ = MouseButton::kNone;
+  
+  // For tracking rotation in TopDown mode
+  float top_down_rotation_ = 0.0f;
 };
 }  // namespace quickviz
 

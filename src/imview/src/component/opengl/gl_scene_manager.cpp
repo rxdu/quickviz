@@ -9,6 +9,7 @@
 
 #include "imview/component/opengl/gl_scene_manager.hpp"
 
+#include <iostream>
 #include <stdexcept>
 
 #include "imview/fonts.hpp"
@@ -32,9 +33,10 @@ GlSceneManager::GlSceneManager(const std::string& name, Mode mode)
         *camera_, glm::vec3(0.0f, 8.0f, 0.0f), -90.0f, -90.0f);
     camera_controller_->SetMode(CameraController::Mode::kTopDown);
   }
-  
+
   // Initialize the coordinate system transformation matrix
-  coord_transform_ = CoordinateSystemTransformer::GetStandardToOpenGLTransform();
+  coord_transform_ =
+      CoordinateSystemTransformer::GetStandardToOpenGLTransform();
 }
 
 void GlSceneManager::SetShowRenderingInfo(bool show) {
@@ -88,10 +90,11 @@ void GlSceneManager::DrawOpenGLObject() {
     frame_buffer_->Bind();
     frame_buffer_->Clear(background_color_.r, background_color_.g,
                          background_color_.b, background_color_.a);
-    
+
     // Apply coordinate system transformation if enabled
-    glm::mat4 transform = use_coord_transform_ ? coord_transform_ : glm::mat4(1.0f);
-    
+    glm::mat4 transform =
+        use_coord_transform_ ? coord_transform_ : glm::mat4(1.0f);
+
     for (auto& obj : drawable_objects_) {
       obj.second->OnDraw(projection_, view_, transform);
     }
@@ -119,14 +122,31 @@ void GlSceneManager::Draw() {
   // only process mouse delta when mouse position is within the scene panel
   if (ImGui::IsMousePosValid() && io.WantCaptureMouse &&
       ImGui::IsWindowHovered()) {
-    // track mouse move delta only when the mouse left button is pressed
+    // Check for mouse buttons and update camera controller state accordingly
+    int active_button = MouseButton::kNone;
+
     if (ImGui::IsMouseDown(MouseButton::kLeft)) {
+      active_button = MouseButton::kLeft;
+    } else if (ImGui::IsMouseDown(MouseButton::kMiddle)) {
+      active_button = MouseButton::kMiddle;
+    } else if (ImGui::IsMouseDown(MouseButton::kRight)) {
+      active_button = MouseButton::kRight;
+    }
+
+    // Set the active mouse button in the camera controller
+    camera_controller_->SetActiveMouseButton(active_button);
+
+    // Process mouse movement if any button is pressed
+    if (active_button != MouseButton::kNone) {
       camera_controller_->ProcessMouseMovement(io.MouseDelta.x,
                                                io.MouseDelta.y);
     }
 
     // track mouse wheel scroll
     camera_controller_->ProcessMouseScroll(io.MouseWheel);
+  } else {
+    // Reset mouse button state when mouse is outside the window
+    camera_controller_->SetActiveMouseButton(MouseButton::kNone);
   }
 
   // get view matrices from camera
