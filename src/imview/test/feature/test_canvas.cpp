@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
   auto coord_frame = std::make_unique<CoordinateFrame>(0.5f, true);
   gl_sm->AddOpenGLObject("coordinate_frame", std::move(coord_frame));
 
-  auto canvas = std::make_unique<Canvas>(100.0f, 100.0f);
+  auto canvas = std::make_unique<Canvas>();
   gl_sm->AddOpenGLObject("canvas", std::move(canvas));
 
   // now let's do some drawing on the canvas
@@ -115,7 +115,7 @@ int main(int argc, char* argv[]) {
   auto coord_frame_3d = std::make_unique<CoordinateFrame>(3.0f, false);
   gl_sm_3d->AddOpenGLObject("coordinate_frame", std::move(coord_frame_3d));
 
-  auto canvas_3d = std::make_unique<Canvas>(100.0f, 100.0f);
+  auto canvas_3d = std::make_unique<Canvas>();
   gl_sm_3d->AddOpenGLObject("canvas", std::move(canvas_3d));
 
   // now let's do some drawing on the canvas
