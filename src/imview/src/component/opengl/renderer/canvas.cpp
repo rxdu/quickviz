@@ -18,6 +18,8 @@
 #include "glad/glad.h"
 #include <glm/gtc/type_ptr.hpp>
 
+#include "component/opengl/renderer/details/canvas_data.hpp"
+
 namespace quickviz {
 namespace {
 std::string vertex_shader_source = R"(
@@ -111,101 +113,93 @@ void main() {
 )";
 }  // namespace
 
-// Point structure to store point data
-struct Point {
-  glm::vec3 position;
-  glm::vec4 color;
-  float size;
-};
-
-Canvas::Canvas(float width, float height) : width_(width), height_(height) {
+Canvas::Canvas() {
+  data_ = std::make_unique<CanvasData>();
   AllocateGpuResources();
 }
 
-Canvas::~Canvas() {
-  ReleaseGpuResources();
+Canvas::~Canvas() { ReleaseGpuResources(); }
 
-  // Free the background image data if it exists
-  if (background_image_data_) {
-    stbi_image_free(background_image_data_);
-    background_image_data_ = nullptr;
-  }
-}
-
-void Canvas::AddBackgroundImage(const std::string& image_path, const glm::vec3& origin, float resolution) {
-  // Store the path
-  background_image_path_ = image_path;
-
-  // Free previous image data if it exists
-  if (background_image_data_) {
-    stbi_image_free(background_image_data_);
-    background_image_data_ = nullptr;
-  }
+void Canvas::AddBackgroundImage(const std::string& image_path,
+                                const glm::vec3& origin, float resolution) {
+  int background_image_width = 0;
+  int background_image_height = 0;
+  int background_image_channels = 0;
+  unsigned char* background_image_data = nullptr;
 
   // Delete previous texture if it exists
-  if (background_texture_ != 0) {
-    glDeleteTextures(1, &background_texture_);
-    background_texture_ = 0;
+  {
+    std::lock_guard<std::mutex> lock(background_mutex_);
+    uint32_t texture_id = background_texture_.load();
+    if (texture_id != 0) {
+      glDeleteTextures(1, &texture_id);
+      background_texture_ = 0;
+    }
   }
 
   std::cout << "Loading background image: " << image_path << std::endl;
-  std::cout << "Origin: (" << origin.x << ", " << origin.y << ", " << origin.z << ") - (x, y, yaw)" << std::endl;
+  std::cout << "Origin: (" << origin.x << ", " << origin.y << ", " << origin.z
+            << ") - (x, y, yaw)" << std::endl;
   std::cout << "Resolution: " << resolution << " meters/pixel" << std::endl;
 
   // Load the image using stb_image
-  stbi_set_flip_vertically_on_load(true);  // OpenGL expects texture coordinates with origin at bottom
-  
-  std::cout << "Attempting to load image from path: " << image_path << std::endl;
-  
-  background_image_data_ = stbi_load(
-      image_path.c_str(), 
-      &background_image_width_,
-      &background_image_height_, 
-      &background_image_channels_,
-      0  // Desired channels, 0 means use original
-  );
+  stbi_set_flip_vertically_on_load(
+      true);  // OpenGL expects texture coordinates with origin at bottom
 
-  if (!background_image_data_) {
+  std::cout << "Attempting to load image from path: " << image_path
+            << std::endl;
+
+  background_image_data =
+      stbi_load(image_path.c_str(), &background_image_width,
+                &background_image_height, &background_image_channels,
+                0  // Desired channels, 0 means use original
+      );
+
+  if (!background_image_data) {
     std::cerr << "ERROR::CANVAS::BACKGROUND_IMAGE_LOAD_FAILED: " << image_path
               << std::endl;
     std::cerr << "STB Error: " << stbi_failure_reason() << std::endl;
-    has_background_ = false;
     return;
   }
 
-  std::cout << "Background image loaded successfully: " 
-            << background_image_width_ << "x" << background_image_height_ 
-            << " with " << background_image_channels_ << " channels" << std::endl;
+  std::cout << "Background image loaded successfully: "
+            << background_image_width << "x" << background_image_height
+            << " with " << background_image_channels << " channels"
+            << std::endl;
 
   // Setup the background image resources
-  SetupBackgroundImage();
+  SetupBackgroundImage(background_image_width, background_image_height,
+                       background_image_channels, background_image_data);
 
   // Calculate the real-world dimensions of the image based on resolution
-  // Resolution is in meters/pixel, so we multiply by pixel dimensions to get real-world size
-  float real_width = background_image_width_ * resolution;
-  float real_height = background_image_height_ * resolution;
-  
-  std::cout << "Real-world dimensions: " << real_width << "m x " << real_height << "m" << std::endl;
-  
+  // Resolution is in meters/pixel, so we multiply by pixel dimensions to get
+  // real-world size
+  float real_width = background_image_width * resolution;
+  float real_height = background_image_height * resolution;
+
+  std::cout << "Real-world dimensions: " << real_width << "m x " << real_height
+            << "m" << std::endl;
+
   // Extract origin parameters
-  float origin_x = origin.x;        // x-coordinate of lower-left pixel
-  float origin_y = origin.y;        // y-coordinate of lower-left pixel
-  float yaw = origin.z;             // Rotation angle in radians (counterclockwise)
-  
-  std::cout << "Applying transform: origin_x=" << origin_x << ", origin_y=" << origin_y 
-            << ", yaw=" << yaw << " radians (" << (yaw * 180.0f / M_PI) << " degrees)" << std::endl;
-            
-  // Calculate the coordinates of the four corners of the image in real-world coordinates
-  // Start with the corners relative to origin (before rotation)
-  glm::vec2 bottom_left(0.0f, 0.0f);                  // Origin point
-  glm::vec2 bottom_right(real_width, 0.0f);           // Right from origin
-  glm::vec2 top_right(real_width, real_height);       // Top-right corner
-  glm::vec2 top_left(0.0f, real_height);              // Top from origin
-  
+  float origin_x = origin.x;  // x-coordinate of lower-left pixel
+  float origin_y = origin.y;  // y-coordinate of lower-left pixel
+  float yaw = origin.z;       // Rotation angle in radians (counterclockwise)
+
+  std::cout << "Applying transform: origin_x=" << origin_x
+            << ", origin_y=" << origin_y << ", yaw=" << yaw << " radians ("
+            << (yaw * 180.0f / M_PI) << " degrees)" << std::endl;
+
+  // Calculate the coordinates of the four corners of the image in real-world
+  // coordinates Start with the corners relative to origin (before rotation)
+  glm::vec2 bottom_left(0.0f, 0.0f);             // Origin point
+  glm::vec2 bottom_right(real_width, 0.0f);      // Right from origin
+  glm::vec2 top_right(real_width, real_height);  // Top-right corner
+  glm::vec2 top_left(0.0f, real_height);         // Top from origin
+
   // Create rotation matrix for yaw
   float cos_yaw = cos(yaw);
   float sin_yaw = sin(yaw);
-  
+
   // Apply rotation and translation to each corner
   // Rotation around origin, then translation
   auto rotatePoint = [&](const glm::vec2& p) -> glm::vec2 {
@@ -213,38 +207,43 @@ void Canvas::AddBackgroundImage(const std::string& image_path, const glm::vec3& 
     float rotated_y = p.x * sin_yaw + p.y * cos_yaw;
     return glm::vec2(rotated_x + origin_x, rotated_y + origin_y);
   };
-  
+
   glm::vec2 bl = rotatePoint(bottom_left);
   glm::vec2 br = rotatePoint(bottom_right);
   glm::vec2 tr = rotatePoint(top_right);
   glm::vec2 tl = rotatePoint(top_left);
-  
+
   std::cout << "Transformed corners: " << std::endl;
   std::cout << "  Bottom-left: (" << bl.x << ", " << bl.y << ")" << std::endl;
   std::cout << "  Bottom-right: (" << br.x << ", " << br.y << ")" << std::endl;
   std::cout << "  Top-right: (" << tr.x << ", " << tr.y << ")" << std::endl;
   std::cout << "  Top-left: (" << tl.x << ", " << tl.y << ")" << std::endl;
-  
+
   // Vertices for the transformed quad (all on z=0 plane)
   float vertices[] = {
       // Positions (x, y, z)              // Texture coords
-      bl.x, bl.y, 0.0f,   0.0f, 0.0f,  // Bottom left
-      br.x, br.y, 0.0f,   1.0f, 0.0f,  // Bottom right
-      tr.x, tr.y, 0.0f,   1.0f, 1.0f,  // Top right
-      tl.x, tl.y, 0.0f,   0.0f, 1.0f   // Top left
+      bl.x, bl.y, 0.0f, 0.0f, 0.0f,  // Bottom left
+      br.x, br.y, 0.0f, 1.0f, 0.0f,  // Bottom right
+      tr.x, tr.y, 0.0f, 1.0f, 1.0f,  // Top right
+      tl.x, tl.y, 0.0f, 0.0f, 1.0f   // Top left
   };
-  
+
   // Update the vertex buffer with the new positions
   glBindVertexArray(background_vao_);
   glBindBuffer(GL_ARRAY_BUFFER, background_vbo_);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
   glBindVertexArray(0);
 
-  has_background_ = true;
+  // Free the background image data
+  if (background_image_data) {
+    stbi_image_free(background_image_data);
+    background_image_data = nullptr;
+  }
 }
 
-void Canvas::SetupBackgroundImage() {
-  if (!background_image_data_) {
+void Canvas::SetupBackgroundImage(int width, int height, int channels,
+                                  unsigned char* data) {
+  if (!data) {
     std::cerr << "ERROR::CANVAS::BACKGROUND_IMAGE_DATA_NULL" << std::endl;
     return;
   }
@@ -252,117 +251,137 @@ void Canvas::SetupBackgroundImage() {
   // Setup the background shader if it hasn't been compiled yet
   try {
     Shader background_vertex_shader(background_vertex_shader_source.c_str(),
-                                  Shader::Type::kVertex);
+                                    Shader::Type::kVertex);
     Shader background_fragment_shader(background_fragment_shader_source.c_str(),
-                                    Shader::Type::kFragment);
+                                      Shader::Type::kFragment);
     background_shader_.AttachShader(background_vertex_shader);
     background_shader_.AttachShader(background_fragment_shader);
-    
+
     if (!background_shader_.LinkProgram()) {
       std::cerr << "ERROR::CANVAS::BACKGROUND_SHADER_PROGRAM_LINKING_FAILED"
-              << std::endl;
+                << std::endl;
       return;
     }
   } catch (const std::exception& e) {
-    std::cerr << "Exception during shader compilation: " << e.what() << std::endl;
+    std::cerr << "Exception during shader compilation: " << e.what()
+              << std::endl;
     return;
   }
 
   // Create texture for the background image
-  if (background_texture_ == 0) {
-    glGenTextures(1, &background_texture_);
+  {
+    std::lock_guard<std::mutex> lock(background_mutex_);
+    uint32_t texture_id = background_texture_.load();
+    if (texture_id == 0) {
+      GLuint new_texture_id = 0;
+      glGenTextures(1, &new_texture_id);
+      background_texture_ = new_texture_id;
+      texture_id = new_texture_id;
+    }
+
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+
+    // Set texture parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+                    GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   }
-
-  glBindTexture(GL_TEXTURE_2D, background_texture_);
-
-  // Set texture parameters
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
   // Determine the format based on the number of channels
   GLenum format;
   GLenum internal_format;
-  
-  if (background_image_channels_ == 1) {
+
+  if (channels == 1) {
     format = GL_RED;
     internal_format = GL_RED;
-  } else if (background_image_channels_ == 3) {
+  } else if (channels == 3) {
     format = GL_RGB;
-    internal_format = GL_SRGB; // Use SRGB for better color accuracy
-  } else if (background_image_channels_ == 4) {
+    internal_format = GL_SRGB;  // Use SRGB for better color accuracy
+  } else if (channels == 4) {
     format = GL_RGBA;
-    internal_format = GL_SRGB_ALPHA; // Use SRGB_ALPHA for better color accuracy with alpha
+    internal_format =
+        GL_SRGB_ALPHA;  // Use SRGB_ALPHA for better color accuracy with alpha
   } else {
-    std::cerr << "ERROR::CANVAS::UNSUPPORTED_IMAGE_FORMAT: "
-              << background_image_channels_ << " channels" << std::endl;
+    std::cerr << "ERROR::CANVAS::UNSUPPORTED_IMAGE_FORMAT: " << channels
+              << " channels" << std::endl;
     return;
   }
-  
-  std::cout << "Using texture format: " << (format == GL_RGBA ? "RGBA" : 
-                                          format == GL_RGB ? "RGB" : "RED")
-            << " with " << background_image_channels_ << " channels" << std::endl;
-  std::cout << "Internal format: " << (internal_format == GL_SRGB_ALPHA ? "SRGB_ALPHA" :
-                                      internal_format == GL_SRGB ? "SRGB" : "RED") << std::endl;
-            
+
+  std::cout << "Using texture format: "
+            << (format == GL_RGBA  ? "RGBA"
+                : format == GL_RGB ? "RGB"
+                                   : "RED")
+            << " with " << channels << " channels" << std::endl;
+  std::cout << "Internal format: "
+            << (internal_format == GL_SRGB_ALPHA ? "SRGB_ALPHA"
+                : internal_format == GL_SRGB     ? "SRGB"
+                                                 : "RED")
+            << std::endl;
+
   // Print first few pixels to debug
-  if (background_image_channels_ == 4) {
+  if (channels == 4) {
     std::cout << "First few pixels RGBA values:" << std::endl;
     for (int i = 0; i < 10; i++) {
       int idx = i * 4;
-      std::cout << "Pixel " << i << ": R=" << (int)background_image_data_[idx] 
-                << " G=" << (int)background_image_data_[idx+1] 
-                << " B=" << (int)background_image_data_[idx+2] 
-                << " A=" << (int)background_image_data_[idx+3] 
-                << " (alpha: " << (int)background_image_data_[idx+3] / 255.0f * 100.0f << "%)" << std::endl;
+      std::cout << "Pixel " << i << ": R=" << (int)data[idx]
+                << " G=" << (int)data[idx + 1] << " B=" << (int)data[idx + 2]
+                << " A=" << (int)data[idx + 3]
+                << " (alpha: " << (int)data[idx + 3] / 255.0f * 100.0f << "%)"
+                << std::endl;
     }
-    
+
     // Check some sample pixels in the middle of the image
     std::cout << "Middle area pixels:" << std::endl;
-    int middle_row = background_image_height_ / 2;
-    int middle_col = background_image_width_ / 2;
+    int middle_row = height / 2;
+    int middle_col = width / 2;
     for (int r = middle_row; r < middle_row + 5; r++) {
       for (int c = middle_col; c < middle_col + 5; c++) {
-        int pixel_idx = (r * background_image_width_ + c) * 4;
+        int pixel_idx = (r * width + c) * 4;
         std::cout << "Pixel at (" << r << "," << c << "): RGBA=("
-                  << (int)background_image_data_[pixel_idx] << ","
-                  << (int)background_image_data_[pixel_idx+1] << ","
-                  << (int)background_image_data_[pixel_idx+2] << ","
-                  << (int)background_image_data_[pixel_idx+3] << ")" << std::endl;
+                  << (int)data[pixel_idx] << "," << (int)data[pixel_idx + 1]
+                  << "," << (int)data[pixel_idx + 2] << ","
+                  << (int)data[pixel_idx + 3] << ")" << std::endl;
       }
     }
   }
 
   // Upload the image data to the texture
-  glTexImage2D(GL_TEXTURE_2D,
-               0,                      // Mipmap level
-               internal_format,        // Internal format
-               background_image_width_, 
-               background_image_height_,
-               0,                      // Border (always 0)
-               format,                 // Format
-               GL_UNSIGNED_BYTE,       // Type
-               background_image_data_  // Data
-  );
-  
-  // Generate mipmaps for better quality when scaled
-  glGenerateMipmap(GL_TEXTURE_2D);
-  
-  // Check for GL errors
-  GLenum error = glGetError();
-  if (error != GL_NO_ERROR) {
-    std::cerr << "OpenGL error after texture setup: " << error << std::endl;
-  }
+  {
+    std::lock_guard<std::mutex> lock(background_mutex_);
+    uint32_t texture_id = background_texture_.load();
+    glBindTexture(GL_TEXTURE_2D, texture_id);
 
-  // Unbind the texture
-  glBindTexture(GL_TEXTURE_2D, 0);
+    glTexImage2D(GL_TEXTURE_2D,
+                 0,                // Mipmap level
+                 internal_format,  // Internal format
+                 width, height,
+                 0,                 // Border (always 0)
+                 format,            // Format
+                 GL_UNSIGNED_BYTE,  // Type
+                 data               // Data
+    );
+
+    // Generate mipmaps for better quality when scaled
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    // Check for GL errors
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR) {
+      std::cerr << "OpenGL error after texture setup: " << error << std::endl;
+    }
+
+    // Unbind the texture
+    glBindTexture(GL_TEXTURE_2D, 0);
+  }
 
   // Create VAO and VBO for the background quad if they don't exist
   if (background_vao_ == 0) {
     glGenVertexArrays(1, &background_vao_);
     if (background_vao_ == 0) {
-      std::cerr << "ERROR::CANVAS::BACKGROUND_VAO_GENERATION_FAILED" << std::endl;
+      std::cerr << "ERROR::CANVAS::BACKGROUND_VAO_GENERATION_FAILED"
+                << std::endl;
       return;
     }
   }
@@ -370,19 +389,20 @@ void Canvas::SetupBackgroundImage() {
   if (background_vbo_ == 0) {
     glGenBuffers(1, &background_vbo_);
     if (background_vbo_ == 0) {
-      std::cerr << "ERROR::CANVAS::BACKGROUND_VBO_GENERATION_FAILED" << std::endl;
+      std::cerr << "ERROR::CANVAS::BACKGROUND_VBO_GENERATION_FAILED"
+                << std::endl;
       return;
     }
   }
 
-  // Default setup of a simple quad - actual coordinates will be updated in AddBackgroundImage
-  // We're creating a 1x1 quad centered at the origin
+  // Default setup of a simple quad - actual coordinates will be updated in
+  // AddBackgroundImage We're creating a 1x1 quad centered at the origin
   float vertices[] = {
       // Positions (x, y, z)       // Texture coords
       -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,  // Bottom left
-       0.5f, -0.5f, 0.0f, 1.0f, 0.0f,  // Bottom right
-       0.5f,  0.5f, 0.0f, 1.0f, 1.0f,  // Top right
-      -0.5f,  0.5f, 0.0f, 0.0f, 1.0f   // Top left
+      0.5f,  -0.5f, 0.0f, 1.0f, 0.0f,  // Bottom right
+      0.5f,  0.5f,  0.0f, 1.0f, 1.0f,  // Top right
+      -0.5f, 0.5f,  0.0f, 0.0f, 1.0f   // Top left
   };
 
   // Setup the VBO and VAO
@@ -400,25 +420,31 @@ void Canvas::SetupBackgroundImage() {
   glEnableVertexAttribArray(1);
 
   glBindVertexArray(0);
-  
+
   std::cout << "Background image setup completed successfully" << std::endl;
 }
 
 void Canvas::AddPoint(float x, float y, const glm::vec4& color,
                       float thickness) {
-  Point point;
-  point.position = glm::vec3(x, y, 0.0f);  // Use X-Y plane for 2D drawing
-  point.color = color;
-  point.size = thickness;
+  std::vector<Point> points;
+  {
+    std::lock_guard<std::mutex> lock(data_mutex_);
+    points = data_->points;
+    Point point;
+    point.position = glm::vec3(x, y, 0.0f);  // Use X-Y plane for 2D drawing
+    point.color = color;
+    point.size = thickness;
 
-  points_.push_back(point);
+    points.push_back(point);
+    data_->points = points;
+  }
 
   // Update the VBO with the new data
   if (primitive_vao_ != 0 && primitive_vbo_ != 0) {
     glBindVertexArray(primitive_vao_);
     glBindBuffer(GL_ARRAY_BUFFER, primitive_vbo_);
-    glBufferData(GL_ARRAY_BUFFER, points_.size() * sizeof(Point),
-                 points_.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(Point), points.data(),
+                 GL_STATIC_DRAW);
     glBindVertexArray(0);
   }
 }
@@ -470,7 +496,10 @@ void Canvas::AddPolygon(const std::vector<glm::vec2>& points,
 }
 
 void Canvas::Clear() {
-  points_.clear();
+  {
+    std::lock_guard<std::mutex> lock(data_mutex_);
+    data_->Clear();
+  }
 
   // Update the VBO with the new data
   if (primitive_vao_ != 0 && primitive_vbo_ != 0) {
@@ -484,7 +513,7 @@ void Canvas::Clear() {
 void Canvas::AllocateGpuResources() {
   // First make sure any existing resources are released
   ReleaseGpuResources();
-  
+
   // Compile and link shaders
   Shader vertex_shader(vertex_shader_source.c_str(), Shader::Type::kVertex);
   Shader fragment_shader(fragment_shader_source.c_str(),
@@ -528,9 +557,13 @@ void Canvas::AllocateGpuResources() {
 
 void Canvas::ReleaseGpuResources() {
   // Delete background resources
-  if (background_texture_ != 0) {
-    glDeleteTextures(1, &background_texture_);
-    background_texture_ = 0;
+  {
+    std::lock_guard<std::mutex> lock(background_mutex_);
+    uint32_t texture_id = background_texture_.load();
+    if (texture_id != 0) {
+      glDeleteTextures(1, &texture_id);
+      background_texture_ = 0;
+    }
   }
 
   if (background_vao_ != 0) {
@@ -548,88 +581,99 @@ void Canvas::ReleaseGpuResources() {
     glDeleteVertexArrays(1, &primitive_vao_);
     primitive_vao_ = 0;
   }
-  
+
   if (primitive_vbo_ != 0) {
     glDeleteBuffers(1, &primitive_vbo_);
     primitive_vbo_ = 0;
   }
-  
-  // Clear points vector to free memory
-  points_.clear();
 }
 
 void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
-                   const glm::mat4& coord_transform) {
+                    const glm::mat4& coord_transform) {
   // Draw background if available
-  if (has_background_ && background_texture_ != 0) {
-    // std::cout << "Drawing background image (texture ID: " << background_texture_ << ")" << std::endl;
-    
-    // Bind background shader and set uniforms
-    background_shader_.Use();
-    background_shader_.SetUniform("projection", projection);
-    background_shader_.SetUniform("view", view);
-    background_shader_.SetUniform("model", glm::mat4(1.0f));
-    background_shader_.SetUniform("coordSystemTransform", coord_transform);
+  {
+    std::lock_guard<std::mutex> lock(background_mutex_);
+    uint32_t texture_id = background_texture_.load();
+    if (texture_id != 0) {
+      // std::cout << "Drawing background image (texture ID: " <<
+      // background_texture_ << ")" << std::endl;
 
-    // Bind texture
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, background_texture_);
-    background_shader_.SetUniform("backgroundTexture", 0);
-    
-    // Check for errors after binding texture
-    GLenum error = glGetError();
-    if (error != GL_NO_ERROR) {
-        std::cerr << "OpenGL error after binding texture: " << error << std::endl;
-    }
+      // Bind background shader and set uniforms
+      background_shader_.Use();
+      background_shader_.SetUniform("projection", projection);
+      background_shader_.SetUniform("view", view);
+      background_shader_.SetUniform("model", glm::mat4(1.0f));
+      background_shader_.SetUniform("coordSystemTransform", coord_transform);
 
-    // Save current OpenGL state
-    GLboolean blendEnabled = glIsEnabled(GL_BLEND);
-    GLboolean depthTestEnabled = glIsEnabled(GL_DEPTH_TEST);
-    GLint blendSrcRGB, blendDstRGB, blendSrcAlpha, blendDstAlpha;
-    glGetIntegerv(GL_BLEND_SRC_RGB, &blendSrcRGB);
-    glGetIntegerv(GL_BLEND_DST_RGB, &blendDstRGB);
-    glGetIntegerv(GL_BLEND_SRC_ALPHA, &blendSrcAlpha);
-    glGetIntegerv(GL_BLEND_DST_ALPHA, &blendDstAlpha);
-    GLint depthFunc;
-    glGetIntegerv(GL_DEPTH_FUNC, &depthFunc);
+      // Bind texture
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, texture_id);
+      background_shader_.SetUniform("backgroundTexture", 0);
 
-    // Setup blending for proper transparency
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    
-    // Setup depth testing
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
+      // Check for errors after binding texture
+      GLenum error = glGetError();
+      if (error != GL_NO_ERROR) {
+        std::cerr << "OpenGL error after binding texture: " << error
+                  << std::endl;
+      }
 
-    // Draw quad
-    glBindVertexArray(background_vao_);
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-    
-    // Check for errors after drawing
-    error = glGetError();
-    if (error != GL_NO_ERROR) {
-        std::cerr << "OpenGL error after drawing background: " << error << std::endl;
-    }
-    
-    // Restore OpenGL state
-    if (!blendEnabled) {
+      // Save current OpenGL state
+      GLboolean blendEnabled = glIsEnabled(GL_BLEND);
+      GLboolean depthTestEnabled = glIsEnabled(GL_DEPTH_TEST);
+      GLint blendSrcRGB, blendDstRGB, blendSrcAlpha, blendDstAlpha;
+      glGetIntegerv(GL_BLEND_SRC_RGB, &blendSrcRGB);
+      glGetIntegerv(GL_BLEND_DST_RGB, &blendDstRGB);
+      glGetIntegerv(GL_BLEND_SRC_ALPHA, &blendSrcAlpha);
+      glGetIntegerv(GL_BLEND_DST_ALPHA, &blendDstAlpha);
+      GLint depthFunc;
+      glGetIntegerv(GL_DEPTH_FUNC, &depthFunc);
+
+      // Setup blending for proper transparency
+      glEnable(GL_BLEND);
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+      // Setup depth testing
+      glEnable(GL_DEPTH_TEST);
+      glDepthFunc(GL_LEQUAL);
+
+      // Draw quad
+      glBindVertexArray(background_vao_);
+      glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+      // Check for errors after drawing
+      error = glGetError();
+      if (error != GL_NO_ERROR) {
+        std::cerr << "OpenGL error after drawing background: " << error
+                  << std::endl;
+      }
+
+      // Restore OpenGL state
+      if (!blendEnabled) {
         glDisable(GL_BLEND);
-    } else {
-        glBlendFuncSeparate(blendSrcRGB, blendDstRGB, blendSrcAlpha, blendDstAlpha);
-    }
-    
-    if (!depthTestEnabled) {
+      } else {
+        glBlendFuncSeparate(blendSrcRGB, blendDstRGB, blendSrcAlpha,
+                            blendDstAlpha);
+      }
+
+      if (!depthTestEnabled) {
         glDisable(GL_DEPTH_TEST);
-    } else {
+      } else {
         glDepthFunc(depthFunc);
+      }
+
+      glBindVertexArray(0);
+      glBindTexture(GL_TEXTURE_2D, 0);
     }
-    
-    glBindVertexArray(0);
-    glBindTexture(GL_TEXTURE_2D, 0);
+  }
+
+  CanvasData data;
+  {
+    std::lock_guard<std::mutex> lock(data_mutex_);
+    data = *data_;
   }
 
   // Draw points if available
-  if (!points_.empty()) {
+  if (!data.points.empty()) {
     primitive_shader_.Use();
     primitive_shader_.SetUniform("projection", projection);
     primitive_shader_.SetUniform("view", view);
@@ -647,11 +691,11 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
     glEnable(GL_PROGRAM_POINT_SIZE);
 
     // Draw the points
-    glDrawArrays(GL_POINTS, 0, points_.size());
+    glDrawArrays(GL_POINTS, 0, data.points.size());
 
     // Disable point size
     glDisable(GL_PROGRAM_POINT_SIZE);
-    
+
     glBindVertexArray(0);
   }
 }

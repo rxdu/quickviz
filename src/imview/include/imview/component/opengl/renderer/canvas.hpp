@@ -12,6 +12,9 @@
 
 #include <vector>
 #include <string>
+#include <memory>
+#include <mutex>
+#include <atomic>
 
 #include <glm/glm.hpp>
 
@@ -22,10 +25,11 @@ namespace quickviz {
 
 // Forward declaration of Point struct
 struct Point;
+struct CanvasData;
 
 class Canvas : public OpenGlObject {
  public:
-  Canvas(float width, float height);
+  Canvas();
   ~Canvas();
 
   // public methods
@@ -50,7 +54,8 @@ class Canvas : public OpenGlObject {
                   bool filled = true, float thickness = 1.0f,
                   LineType line_type = LineType::SOLID);
 
-  void AddBackgroundImage(const std::string& image_path, const glm::vec3& origin, float resolution);
+  void AddBackgroundImage(const std::string& image_path,
+                          const glm::vec3& origin, float resolution);
 
   // Clear all points from the canvas
   void Clear();
@@ -61,32 +66,24 @@ class Canvas : public OpenGlObject {
               const glm::mat4& coord_transform = glm::mat4(1.0f)) override;
 
  private:
-  struct Point {
-    glm::vec3 position;
-    glm::vec4 color;
-    float size;
-  };
-
   // Load and setup background image
-  void SetupBackgroundImage();
+  void SetupBackgroundImage(int width, int height, int channels,
+                            unsigned char* data);
 
-  float width_;
-  float height_;
-  std::vector<Point> points_;
+  // Background image texture
+  std::mutex background_mutex_;
+  std::atomic<uint32_t> background_texture_{0};
 
-  // Background image resources
-  bool has_background_ = false;
-  std::string background_image_path_;
-  unsigned char* background_image_data_ = nullptr;
-  int background_image_width_ = 0;
-  int background_image_height_ = 0;
-  int background_image_channels_ = 0;
-  uint32_t background_texture_ = 0;
+  // Background rendering gpu resources
   uint32_t background_vao_ = 0;
   uint32_t background_vbo_ = 0;
   ShaderProgram background_shader_;
 
-  // Primitive rendering resources
+  // Data for primitive rendering
+  std::mutex data_mutex_;
+  std::unique_ptr<CanvasData> data_;
+
+  // Primitive rendering gpu resources
   uint32_t primitive_vao_ = 0;
   uint32_t primitive_vbo_ = 0;
   ShaderProgram primitive_shader_;
