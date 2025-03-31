@@ -15,14 +15,15 @@
 #include <memory>
 #include <mutex>
 #include <atomic>
+#include <queue>
 
 #include <glm/glm.hpp>
 
 #include "imview/interface/opengl_object.hpp"
 #include "imview/component/opengl/shader_program.hpp"
+#include "imview/component/opengl/renderer/types.hpp"
 
 namespace quickviz {
-
 // Forward declaration of Point struct
 struct Point;
 struct CanvasData;
@@ -33,26 +34,24 @@ class Canvas : public OpenGlObject {
   ~Canvas();
 
   // public methods
-  enum class LineType { SOLID, DASHED, DOTTED };
-
   void AddPoint(float x, float y, const glm::vec4& color,
                 float thickness = 1.0f);
   void AddLine(float x1, float y1, float x2, float y2, const glm::vec4& color,
-               float thickness = 1.0f, LineType line_type = LineType::SOLID);
+               float thickness = 1.0f, LineType line_type = LineType::kSolid);
   void AddRectangle(float x, float y, float width, float height,
                     const glm::vec4& color, bool filled = true,
                     float thickness = 1.0f,
-                    LineType line_type = LineType::SOLID);
+                    LineType line_type = LineType::kSolid);
   void AddCircle(float x, float y, float radius, const glm::vec4& color,
                  bool filled = true, float thickness = 1.0f,
-                 LineType line_type = LineType::SOLID);
+                 LineType line_type = LineType::kSolid);
   void AddEllipse(float x, float y, float rx, float ry, float angle,
                   float start_angle, float end_angle, const glm::vec4& color,
                   bool filled = true, float thickness = 1.0f,
-                  LineType line_type = LineType::SOLID);
+                  LineType line_type = LineType::kSolid);
   void AddPolygon(const std::vector<glm::vec2>& points, const glm::vec4& color,
                   bool filled = true, float thickness = 1.0f,
-                  LineType line_type = LineType::SOLID);
+                  LineType line_type = LineType::kSolid);
 
   void AddBackgroundImage(const std::string& image_path,
                           const glm::vec3& origin, float resolution);
@@ -70,6 +69,54 @@ class Canvas : public OpenGlObject {
   void SetupBackgroundImage(int width, int height, int channels,
                             unsigned char* data);
 
+  // Process pending updates
+  void ProcessPendingUpdates();
+
+  // Structure to hold pending updates
+  struct PendingUpdate {
+    enum class Type {
+      kPoint,
+      kLine,
+      kRectangle,
+      kCircle,
+      kEllipse,
+      kPolygon,
+      kClear
+    };
+
+    Type type;
+    glm::vec4 color;
+    float thickness;
+    LineType line_type;
+    bool filled;
+    
+    // Command-specific parameters
+    union {
+      struct {  // Point parameters
+        float x, y;
+      } point;
+      
+      struct {  // Line parameters
+        float x1, y1, x2, y2;
+      } line;
+      
+      struct {  // Rectangle parameters
+        float x, y, width, height;
+      } rect;
+      
+      struct {  // Circle parameters
+        float x, y, radius;
+      } circle;
+      
+      struct {  // Ellipse parameters
+        float x, y, rx, ry, angle, start_angle, end_angle;
+      } ellipse;
+    };
+    
+    // Polygon vertices (can't be in union)
+    std::vector<glm::vec2> polygon_vertices;
+  };
+
   // Background image texture
   std::mutex background_mutex_;
   std::atomic<uint32_t> background_texture_{0};
@@ -79,8 +126,10 @@ class Canvas : public OpenGlObject {
   uint32_t background_vbo_ = 0;
   ShaderProgram background_shader_;
 
-  // Data for primitive rendering
+  // Thread-safe data structures
   std::mutex data_mutex_;
+  std::queue<PendingUpdate> pending_updates_;
+  std::atomic<bool> has_pending_updates_{false};
   std::unique_ptr<CanvasData> data_;
 
   // Primitive rendering gpu resources
@@ -88,7 +137,6 @@ class Canvas : public OpenGlObject {
   uint32_t primitive_vbo_ = 0;
   ShaderProgram primitive_shader_;
 };
-
 }  // namespace quickviz
 
 #endif /* OPENGL_RENDERER_CANVAS_HPP */

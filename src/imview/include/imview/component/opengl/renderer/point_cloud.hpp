@@ -17,13 +17,12 @@
 #include <queue>
 
 #include <glm/glm.hpp>
+
 #include "imview/interface/opengl_object.hpp"
 #include "imview/component/opengl/shader_program.hpp"
+#include "imview/component/opengl/renderer/types.hpp"
 
 namespace quickviz {
-
-enum class PointRenderMode { Points, Spheres };
-
 class PointCloud : public OpenGlObject {
  public:
   PointCloud();
@@ -65,7 +64,7 @@ class PointCloud : public OpenGlObject {
   void SetDefaultColor(const glm::vec3& color);
   void SetOpacity(float opacity);
   void SetScalarRange(float min_val, float max_val);
-  void SetRenderMode(PointRenderMode mode);
+  void SetRenderMode(PointMode mode);
 
  private:
   void AllocateGpuResources() override;
@@ -110,7 +109,7 @@ class PointCloud : public OpenGlObject {
   std::atomic<float> opacity_{1.0f};
   std::atomic<float> min_scalar_{0.0f};
   std::atomic<float> max_scalar_{1.0f};
-  std::atomic<PointRenderMode> render_mode_{PointRenderMode::Points};
+  std::atomic<PointMode> render_mode_{PointMode::kPoint};
 
   // Data for OpenGL operations (only accessed in OnDraw)
   std::vector<glm::vec3> points_;
