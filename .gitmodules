@@ -12,4 +12,4 @@
 	url = https://github.com/google/googletest.git
 [submodule "src/third_party/stb"]
 	path = src/third_party/stb
-	url = git@github.com:rxdu/stb.git
+	url = https://github.com/rxdu/stb.git
