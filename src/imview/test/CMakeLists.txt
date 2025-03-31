@@ -43,8 +43,14 @@ if (OpenCV_FOUND)
   target_link_libraries(test_ring_buffer PRIVATE imview ${OpenCV_LIBS})
 endif ()
 
+add_executable(test_point_cloud_realtime test_point_cloud_realtime.cpp)
+target_link_libraries(test_point_cloud_realtime PRIVATE imview)
+
 add_executable(test_point_cloud_buffer_strategies test_point_cloud_buffer_strategies.cpp)
 target_link_libraries(test_point_cloud_buffer_strategies PRIVATE imview)
+
+add_executable(test_coordinate_system test_coordinate_system.cpp)
+target_link_libraries(test_coordinate_system PRIVATE imview)
 
 #add_executable(test_panel test_panel.cpp)
 #target_link_libraries(test_panel imview)
