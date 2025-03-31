@@ -1,0 +1,22 @@
+add_subdirectory(feature)
+
+add_executable(test_framebuffer test_framebuffer.cpp)
+target_link_libraries(test_framebuffer PRIVATE renderer)
+
+add_executable(test_shader test_shader.cpp)
+target_link_libraries(test_shader PRIVATE renderer)
+
+add_executable(test_grid test_grid.cpp)
+target_link_libraries(test_grid PRIVATE renderer)
+
+add_executable(test_camera test_camera.cpp)
+target_link_libraries(test_camera PRIVATE renderer)
+
+add_executable(test_point_cloud_realtime test_point_cloud_realtime.cpp)
+target_link_libraries(test_point_cloud_realtime PRIVATE renderer)
+
+add_executable(test_point_cloud_buffer_strategies test_point_cloud_buffer_strategies.cpp)
+target_link_libraries(test_point_cloud_buffer_strategies PRIVATE renderer)
+
+add_executable(test_coordinate_system test_coordinate_system.cpp)
+target_link_libraries(test_coordinate_system PRIVATE renderer)

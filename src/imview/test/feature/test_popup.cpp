@@ -15,7 +15,7 @@
 #include "imview/panel.hpp"
 #include "imview/popup.hpp"
 
-#include "imview/component/popup_manager.hpp"
+#include "imview/popup_manager.hpp"
 
 using namespace quickviz;
 
