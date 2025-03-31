@@ -515,7 +515,7 @@ void PointCloud::OnDraw(const glm::mat4& projection, const glm::mat4& view,
     // Get the current appearance settings
     float current_point_size = point_size_;
     float current_opacity = opacity_;
-    PointRenderMode current_render_mode;
+    PointMode current_render_mode;
 
     {
       std::lock_guard<std::mutex> lock(appearance_mutex_);
@@ -563,7 +563,7 @@ void PointCloud::OnDraw(const glm::mat4& projection, const glm::mat4& view,
       return;
     }
 
-    if (current_render_mode == PointRenderMode::Points) {
+    if (current_render_mode == PointMode::kPoint) {
       glDrawArrays(GL_POINTS, 0, active_points_);
       err = glGetError();
       if (err != GL_NO_ERROR) {
@@ -571,7 +571,7 @@ void PointCloud::OnDraw(const glm::mat4& projection, const glm::mat4& view,
                   << std::endl;
         // Continue anyway, as we've already done most of the work
       }
-    } else if (current_render_mode == PointRenderMode::Spheres) {
+    } else if (current_render_mode == PointMode::kSphere) {
       // Sphere rendering would go here
       // For now, fall back to points
       glDrawArrays(GL_POINTS, 0, active_points_);
@@ -754,6 +754,6 @@ void PointCloud::SetScalarRange(float min_val, float max_val) {
   max_scalar_ = max_val;
 }
 
-void PointCloud::SetRenderMode(PointRenderMode mode) { render_mode_ = mode; }
+void PointCloud::SetRenderMode(PointMode mode) { render_mode_ = mode; }
 
 }  // namespace quickviz

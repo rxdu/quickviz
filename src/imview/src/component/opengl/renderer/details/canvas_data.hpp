@@ -14,8 +14,13 @@
 
 #include <glm/glm.hpp>
 #include "glad/glad.h"
+#include "imview/component/opengl/renderer/types.hpp"
 
 namespace quickviz {
+
+// Forward declaration for Canvas::LineType
+class Canvas;
+
 // Point structure to store point data
 struct Point {
   glm::vec3 position;
@@ -23,10 +28,155 @@ struct Point {
   float size;
 };
 
+// Line structure
+struct Line {
+  glm::vec3 start;
+  glm::vec3 end;
+  glm::vec4 color;
+  float thickness;
+  LineType line_type;
+};
+
+// Rectangle structure
+struct Rectangle {
+  glm::vec3 position;  // bottom-left corner
+  float width;
+  float height;
+  glm::vec4 color;
+  bool filled;
+  float thickness;
+  LineType line_type;
+};
+
+// Circle structure
+struct Circle {
+  glm::vec3 center;
+  float radius;
+  glm::vec4 color;
+  bool filled;
+  float thickness;
+  LineType line_type;
+  int num_segments;  // Number of segments to approximate the circle
+};
+
+// Ellipse structure
+struct Ellipse {
+  glm::vec3 center;
+  float rx;  // x radius
+  float ry;  // y radius
+  float angle;  // rotation angle in radians
+  float start_angle;  // start angle in radians
+  float end_angle;    // end angle in radians
+  glm::vec4 color;
+  bool filled;
+  float thickness;
+  LineType line_type;
+  int num_segments;  // Number of segments to approximate the ellipse
+};
+
+// Polygon structure
+struct Polygon {
+  std::vector<glm::vec3> vertices;
+  glm::vec4 color;
+  bool filled;
+  float thickness;
+  LineType line_type;
+};
+
 struct CanvasData {
   std::vector<Point> points;
+  std::vector<Line> lines;
+  std::vector<Rectangle> rectangles;
+  std::vector<Circle> circles;
+  std::vector<Ellipse> ellipses;
+  std::vector<Polygon> polygons;
 
-  void Clear() { points.clear(); }
+  void Clear() {
+    points.clear();
+    lines.clear();
+    rectangles.clear();
+    circles.clear();
+    ellipses.clear();
+    polygons.clear();
+  }
+
+  void AddPoint(float x, float y, const glm::vec4& color, float thickness) {
+    Point point;
+    point.position = glm::vec3(x, y, 0.0f);
+    point.color = color;
+    point.size = thickness;
+    points.push_back(point);
+  }
+
+  void AddLine(float x1, float y1, float x2, float y2, const glm::vec4& color,
+               float thickness, LineType line_type) {
+    Line line;
+    line.start = glm::vec3(x1, y1, 0.0f);
+    line.end = glm::vec3(x2, y2, 0.0f);
+    line.color = color;
+    line.thickness = thickness;
+    line.line_type = line_type;
+    lines.push_back(line);
+  }
+
+  void AddRectangle(float x, float y, float width, float height,
+                   const glm::vec4& color, bool filled, float thickness,
+                   LineType line_type) {
+    Rectangle rect;
+    rect.position = glm::vec3(x, y, 0.0f);
+    rect.width = width;
+    rect.height = height;
+    rect.color = color;
+    rect.filled = filled;
+    rect.thickness = thickness;
+    rect.line_type = line_type;
+    rectangles.push_back(rect);
+  }
+
+  void AddCircle(float x, float y, float radius, const glm::vec4& color,
+                bool filled, float thickness, LineType line_type) {
+    Circle circle;
+    circle.center = glm::vec3(x, y, 0.0f);
+    circle.radius = radius;
+    circle.color = color;
+    circle.filled = filled;
+    circle.thickness = thickness;
+    circle.line_type = line_type;
+    circle.num_segments = 32;  // Default number of segments
+    circles.push_back(circle);
+  }
+
+  void AddEllipse(float x, float y, float rx, float ry, float angle,
+                  float start_angle, float end_angle, const glm::vec4& color,
+                  bool filled, float thickness, LineType line_type) {
+    Ellipse ellipse;
+    ellipse.center = glm::vec3(x, y, 0.0f);
+    ellipse.rx = rx;
+    ellipse.ry = ry;
+    ellipse.angle = angle;
+    ellipse.start_angle = start_angle;
+    ellipse.end_angle = end_angle;
+    ellipse.color = color;
+    ellipse.filled = filled;
+    ellipse.thickness = thickness;
+    ellipse.line_type = line_type;
+    ellipse.num_segments = 32;  // Default number of segments
+    ellipses.push_back(ellipse);
+  }
+
+  void AddPolygon(const std::vector<glm::vec2>& vertices, const glm::vec4& color,
+                 bool filled, float thickness, LineType line_type) {
+    Polygon polygon;
+    polygon.vertices.reserve(vertices.size());
+    for (const auto& v : vertices) {
+      polygon.vertices.push_back(glm::vec3(v, 0.0f));
+    }
+    polygon.color = color;
+    polygon.filled = filled;
+    polygon.thickness = thickness;
+    polygon.line_type = line_type;
+    polygons.push_back(polygon);
+  }
 };
 }  // namespace quickviz
 

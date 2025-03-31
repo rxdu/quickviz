@@ -93,7 +93,7 @@ int main(int argc, char* argv[]) {
   point_cloud->SetPointSize(3.0f);
   point_cloud->SetOpacity(1.0f);
   point_cloud->SetScalarRange(0.0f, 1.0f);
-  point_cloud->SetRenderMode(PointRenderMode::Points);
+  point_cloud->SetRenderMode(PointMode::kPoint);
   
   // Configure buffer update strategy
   point_cloud->SetBufferUpdateStrategy(PointCloud::BufferUpdateStrategy::kAuto);

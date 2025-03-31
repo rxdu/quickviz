@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
   point_cloud_static->SetDefaultColor(glm::vec3(0.25f, 0.0f, 1.0f)); // Purple
   point_cloud_static->SetPointSize(3.0f);
   point_cloud_static->SetOpacity(1.0f);
-  point_cloud_static->SetRenderMode(PointRenderMode::Points);
+  point_cloud_static->SetRenderMode(PointMode::kPoint);
   
   // 2. Height field color mode
   auto point_cloud_height = std::make_unique<PointCloud>();
@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
   point_cloud_height->SetPoints(points, PointCloud::ColorMode::kHeightField);
   point_cloud_height->SetPointSize(3.0f);
   point_cloud_height->SetOpacity(1.0f);
-  point_cloud_height->SetRenderMode(PointRenderMode::Points);
+  point_cloud_height->SetRenderMode(PointMode::kPoint);
   
   // 3. Scalar field color mode - set w component to distance from origin
   std::vector<glm::vec4> scalar_points = points;
@@ -98,17 +98,16 @@ int main(int argc, char* argv[]) {
   point_cloud_scalar->SetPoints(scalar_points, PointCloud::ColorMode::kScalarField);
   point_cloud_scalar->SetPointSize(3.0f);
   point_cloud_scalar->SetOpacity(1.0f);
-  point_cloud_scalar->SetRenderMode(PointRenderMode::Points);
+  point_cloud_scalar->SetRenderMode(PointMode::kPoint);
 
   // Add this line to print the point cloud data for debugging
   std::cout << "First point: " << points[0].x << ", " << points[0].y << ", "
             << points[0].z << ", " << points[0].w << std::endl;
 
   // Add all point clouds to the scene manager
-  gl_sm->AddOpenGLObject("point_cloud_static", std::move(point_cloud_static));
-  
-  // Uncomment these lines to visualize the other color modes
-  // gl_sm->AddOpenGLObject("point_cloud_height", std::move(point_cloud_height));
+  // (Uncomment one of these lines to visualize the other color modes)
+  // gl_sm->AddOpenGLObject("point_cloud_static", std::move(point_cloud_static));
+  gl_sm->AddOpenGLObject("point_cloud_height", std::move(point_cloud_height));
   // gl_sm->AddOpenGLObject("point_cloud_scalar", std::move(point_cloud_scalar));
   
   // Add a grid for reference
