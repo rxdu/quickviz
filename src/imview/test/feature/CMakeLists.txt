@@ -33,17 +33,11 @@ target_link_libraries(test_gl_scene_manager PRIVATE imview)
 add_executable(test_point_cloud test_point_cloud.cpp)
 target_link_libraries(test_point_cloud PRIVATE imview)
 
-add_executable(test_point_cloud_realtime test_point_cloud_realtime.cpp)
-target_link_libraries(test_point_cloud_realtime PRIVATE imview)
-
 add_executable(test_canvas test_canvas.cpp)
 target_link_libraries(test_canvas PRIVATE imview)
 
 add_executable(test_coordinate_frame test_coordinate_frame.cpp)
 target_link_libraries(test_coordinate_frame PRIVATE imview)
-
-add_executable(test_coordinate_system test_coordinate_system.cpp)
-target_link_libraries(test_coordinate_system PRIVATE imview)
 
 add_executable(test_robot_frames test_robot_frames.cpp)
 target_link_libraries(test_robot_frames PRIVATE imview)
