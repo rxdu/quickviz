@@ -23,3 +23,6 @@ target_link_libraries(test_coordinate_system PRIVATE renderer)
 
 add_executable(test_primitive_drawing test_primitive_drawing.cpp)
 target_link_libraries(test_primitive_drawing PRIVATE renderer)
+
+add_executable(test_texture test_texture.cpp)
+target_link_libraries(test_texture PRIVATE renderer)
