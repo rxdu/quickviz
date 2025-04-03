@@ -20,3 +20,6 @@ target_link_libraries(test_point_cloud_buffer_strategies PRIVATE renderer)
 
 add_executable(test_coordinate_system test_coordinate_system.cpp)
 target_link_libraries(test_coordinate_system PRIVATE renderer)
+
+add_executable(test_primitive_drawing test_primitive_drawing.cpp)
+target_link_libraries(test_primitive_drawing PRIVATE renderer)
