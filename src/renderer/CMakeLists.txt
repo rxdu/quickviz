@@ -16,6 +16,7 @@ add_library(renderer
     src/renderable/point_cloud.cpp
     src/renderable/canvas.cpp
     src/renderable/coordinate_frame.cpp
+    src/renderable/texture.cpp
     )
 target_link_libraries(renderer PUBLIC core imcore imview stb
     Threads::Threads
