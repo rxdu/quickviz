@@ -13,6 +13,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <functional>
 
 #include "imview/panel.hpp"
 #include "imview/input/mouse.hpp"
@@ -29,6 +30,8 @@ class GlSceneManager : public Panel {
  public:
   enum class Mode { k2D, k3D };
 
+  using PreDrawCallback = std::function<void()>;
+
   GlSceneManager(const std::string& name, Mode mode = Mode::k3D);
   ~GlSceneManager() = default;
 
@@ -43,6 +46,18 @@ class GlSceneManager : public Panel {
   void RemoveOpenGLObject(const std::string& name);
   OpenGlObject* GetOpenGLObject(const std::string& name);
   void ClearOpenGLObjects();
+
+  /**
+   * @brief Set a callback to be called before drawing the scene
+   * 
+   * This callback will be called in the main thread before any OpenGL objects
+   * are drawn. It can be used to update scene data in a thread-safe manner.
+   * 
+   * @param callback The callback function to be called
+   */
+  void SetPreDrawCallback(PreDrawCallback callback) {
+    pre_draw_callback_ = std::move(callback);
+  }
 
   /**
    * @brief Enable or disable coordinate system transformation
@@ -87,6 +102,9 @@ class GlSceneManager : public Panel {
   // Coordinate system transformation
   bool use_coord_transform_ = true;
   glm::mat4 coord_transform_ = glm::mat4(1.0f);
+
+  // Pre-draw callback
+  PreDrawCallback pre_draw_callback_;
 };
 }  // namespace quickviz
 

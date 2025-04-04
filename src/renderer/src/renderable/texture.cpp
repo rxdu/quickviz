@@ -64,7 +64,7 @@ void main() {
     FragColor = texColor;
     
     // Add a subtle border for visual feedback on the texture boundaries
-    float border = 0.001; // Increased border width
+    float border = 0.005; // Increased border width
     if (TexCoord.x < border || TexCoord.x > 1.0 - border || 
         TexCoord.y < border || TexCoord.y > 1.0 - border) {
         FragColor = mix(vec4(1.0, 0.0, 0.0, 1.0), texColor, 0.1); // More prominent red border
