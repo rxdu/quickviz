@@ -137,6 +137,8 @@ foreach (p LIB BIN INCLUDE CMAKE)
 endforeach ()
 
 # targets to install defined in each module
+add_library(quickviz INTERFACE)
+target_link_libraries(quickviz INTERFACE core imview widget renderer) 
 
 # export target configuration 
 include(CMakePackageConfigHelpers)

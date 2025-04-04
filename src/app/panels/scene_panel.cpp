@@ -13,7 +13,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "imview/component/logging/app_log_handler.hpp"
+#include "imview/logging/app_log_handler.hpp"
 
 namespace quickviz {
 ScenePanel::ScenePanel(const std::string& panel_name)
