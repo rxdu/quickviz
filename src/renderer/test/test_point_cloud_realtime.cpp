@@ -24,6 +24,9 @@
 #include "renderer/renderable/grid.hpp"
 #include "renderer/renderable/point_cloud.hpp"
 
+#include "core/buffer/buffer_registry.hpp"
+#include "core/buffer/ring_buffer.hpp"
+
 using namespace quickviz;
 
 // Simulated LiDAR data generator
@@ -68,106 +71,99 @@ class LidarSimulator {
   std::uniform_real_distribution<float> dist_;
 };
 
+// Function to generate point cloud data in a separate thread
+void GeneratePointCloud(std::string buffer_name, std::atomic<bool>& running) {
+  auto& buffer_registry = BufferRegistry::GetInstance();
+  auto point_buffer = buffer_registry.GetBuffer<std::vector<glm::vec4>>(buffer_name);
+  
+  LidarSimulator lidar_sim(10000, 5.0f);
+  auto start_time = std::chrono::high_resolution_clock::now();
+
+  while (running) {
+    // Get current time in seconds
+    auto now = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float>(now - start_time).count();
+    
+    // Generate new frame of LiDAR data
+    auto points = lidar_sim.GenerateFrame(time);
+    
+    // Write to buffer
+    point_buffer->Write(std::move(points));
+    
+    // Sleep to maintain reasonable frame rate
+    std::this_thread::sleep_for(std::chrono::milliseconds(33));  // ~30 FPS
+  }
+}
+
 int main(int argc, char* argv[]) {
+  // Set up buffer first
+  std::string buffer_name = "point_cloud_buffer";
+  auto& buffer_registry = BufferRegistry::GetInstance();
+  std::shared_ptr<BufferInterface<std::vector<glm::vec4>>> point_buffer =
+      std::make_shared<RingBuffer<std::vector<glm::vec4>, 8>>();
+  buffer_registry.AddBuffer(buffer_name, point_buffer);
+
+  // Create viewer and scene objects
   Viewer viewer;
 
-  // Create a box to manage size & position of the OpenGL scene
   auto box = std::make_shared<Box>("main_box");
   box->SetFlexDirection(Styling::FlexDirection::kRow);
   box->SetJustifyContent(Styling::JustifyContent::kFlexStart);
   box->SetAlignItems(Styling::AlignItems::kStretch);
 
-  // Create a OpenGL scene manager to manage the OpenGL objects
+  // Create scene manager
   auto gl_sm = std::make_shared<GlSceneManager>("OpenGL Scene");
   gl_sm->SetAutoLayout(true);
   gl_sm->SetNoTitleBar(true);
   gl_sm->SetFlexGrow(1.0f);
   gl_sm->SetFlexShrink(0.0f);
 
-  // Create LiDAR simulator
-  const size_t MAX_POINTS = 10000;
-  LidarSimulator lidar_sim(MAX_POINTS, 5.0f);
-
   // Create point cloud with preallocated buffers
   auto point_cloud = std::make_unique<PointCloud>();
-  point_cloud->PreallocateBuffers(MAX_POINTS);
+  point_cloud->PreallocateBuffers(10000);
   point_cloud->SetPointSize(3.0f);
   point_cloud->SetOpacity(1.0f);
   point_cloud->SetScalarRange(0.0f, 1.0f);
   point_cloud->SetRenderMode(PointMode::kPoint);
-  
-  // Configure buffer update strategy
   point_cloud->SetBufferUpdateStrategy(PointCloud::BufferUpdateStrategy::kAuto);
-  point_cloud->SetBufferUpdateThreshold(5000); // Use buffer mapping for more than 5000 points
+  point_cloud->SetBufferUpdateThreshold(5000);
 
   // Add a grid for reference
   auto grid = std::make_unique<Grid>(10.0f, 1.0f, glm::vec3(0.7f, 0.7f, 0.7f));
+  
+  // Get pointer to point cloud before moving it
+  auto* point_cloud_ptr = point_cloud.get();
   
   // Add objects to scene manager
   gl_sm->AddOpenGLObject("point_cloud", std::move(point_cloud));
   gl_sm->AddOpenGLObject("grid", std::move(grid));
 
+  // Set up pre-draw callback to update point cloud from buffer
+  gl_sm->SetPreDrawCallback([point_cloud_ptr, buffer_name]() {
+    auto& buffer_registry = BufferRegistry::GetInstance();
+    auto point_buffer = buffer_registry.GetBuffer<std::vector<glm::vec4>>(buffer_name);
+    
+    std::vector<glm::vec4> points;
+    if (point_buffer->Read(points)) {
+      point_cloud_ptr->SetPoints(std::move(points), PointCloud::ColorMode::kScalarField);
+    }
+  });
+
   // Add scene manager to box and add it to the viewer
   box->AddChild(gl_sm);
   viewer.AddSceneObject(box);
 
-  // Flag to signal when to stop the background thread
+  // Start point cloud generation thread
   std::atomic<bool> running{true};
-
-  // Start a background thread to generate point cloud data
-  std::thread update_thread([&]() {
-    auto start_time = std::chrono::high_resolution_clock::now();
-    float point_size = 3.0f;
-    bool increasing_size = true;
-    
-    while (running) {
-      // Get current time in seconds
-      auto now = std::chrono::high_resolution_clock::now();
-      float time = std::chrono::duration<float>(now - start_time).count();
-      
-      // Generate new frame of LiDAR data (this is thread-safe, no OpenGL calls)
-      auto points = lidar_sim.GenerateFrame(time);
-      
-      // Dynamically change point size to demonstrate automatic strategy selection
-      if (increasing_size) {
-        point_size += 0.1f;
-        if (point_size > 10.0f) increasing_size = false;
-      } else {
-        point_size -= 0.1f;
-        if (point_size < 1.0f) increasing_size = true;
-      }
-      
-      // Measure update time
-      auto update_start = std::chrono::high_resolution_clock::now();
-      
-      // Get point cloud from scene manager and update it (thread-safe now)
-      auto* point_cloud = static_cast<PointCloud*>(
-          gl_sm->GetOpenGLObject("point_cloud"));
-      if (point_cloud) {
-        point_cloud->SetPointSize(point_size);
-        // Use move semantics for better performance
-        point_cloud->SetPoints(std::move(points), PointCloud::ColorMode::kScalarField);
-      }
-      
-      auto update_end = std::chrono::high_resolution_clock::now();
-      auto update_duration = std::chrono::duration<float, std::milli>(
-          update_end - update_start).count();
-      
-      std::cout << "Updated points with size " << point_size
-                << " in " << update_duration << " ms" << std::endl;
-      
-      // Sleep to maintain reasonable frame rate
-      std::this_thread::sleep_for(std::chrono::milliseconds(33));  // ~30 FPS
-    }
-  });
+  std::thread generate_thread(GeneratePointCloud, buffer_name, std::ref(running));
 
   // Show the viewer
   viewer.Show();
   
   // Clean up
   running = false;
-  if (update_thread.joinable()) {
-    update_thread.join();
+  if (generate_thread.joinable()) {
+    generate_thread.join();
   }
 
   return 0;
