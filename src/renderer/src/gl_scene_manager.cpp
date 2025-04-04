@@ -39,6 +39,11 @@ GlSceneManager::GlSceneManager(const std::string& name, Mode mode)
       CoordinateSystemTransformer::GetStandardToOpenGLTransform();
 }
 
+GlSceneManager::~GlSceneManager() {
+  ClearOpenGLObjects();
+  frame_buffer_.reset();
+}
+
 void GlSceneManager::SetShowRenderingInfo(bool show) {
   show_rendering_info_ = show;
 }
@@ -139,7 +144,7 @@ void GlSceneManager::Draw() {
     // Process mouse movement if any button is pressed
     if (active_button != MouseButton::kNone) {
       camera_controller_->ProcessMouseMovement(io.MouseDelta.x,
-                                             io.MouseDelta.y);
+                                               io.MouseDelta.y);
     }
 
     // track mouse wheel scroll
@@ -151,9 +156,9 @@ void GlSceneManager::Draw() {
 
   // get view matrices from camera
   float aspect_ratio = (frame_buffer_ == nullptr)
-                         ? static_cast<float>(content_size.x) /
-                               static_cast<float>(content_size.y)
-                         : frame_buffer_->GetAspectRatio();
+                           ? static_cast<float>(content_size.x) /
+                                 static_cast<float>(content_size.y)
+                           : frame_buffer_->GetAspectRatio();
   glm::mat4 projection = camera_->GetProjectionMatrix(aspect_ratio);
   glm::mat4 view = camera_->GetViewMatrix();
   UpdateView(projection, view);

@@ -16,9 +16,6 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
 namespace quickviz {
 namespace {
 std::string texture_vertex_shader_source = R"(
@@ -228,38 +225,6 @@ void Texture::ReleaseGpuResources() {
     glDeleteBuffers(1, &vbo_);
     vbo_ = 0;
   }
-}
-
-bool Texture::LoadFromFile(const std::string& image_path) {
-  int width = 0, height = 0, channels = 0;
-  stbi_set_flip_vertically_on_load(true);
-
-  std::cout << "Loading image from path: " << image_path << std::endl;
-
-  unsigned char* data = stbi_load(image_path.c_str(), &width, &height, &channels, 0);
-
-  if (!data) {
-    std::cerr << "Failed to load image: " << image_path << std::endl;
-    std::cerr << "STB Error: " << stbi_failure_reason() << std::endl;
-    return false;
-  }
-
-  // Determine format based on channels
-  PixelFormat format;
-  switch (channels) {
-    case 1: format = PixelFormat::kGray; break;
-    case 3: format = PixelFormat::kRgb; break;
-    case 4: format = PixelFormat::kRgba; break;
-    default:
-      stbi_image_free(data);
-      std::cerr << "Unsupported number of channels: " << channels << std::endl;
-      return false;
-  }
-
-  // Update texture with loaded data
-  bool success = UpdateData(width, height, format, data);
-  stbi_image_free(data);
-  return success;
 }
 
 void Texture::PreallocateBuffer(int width, int height, PixelFormat format) {

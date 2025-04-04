@@ -26,13 +26,7 @@ class Texture : public OpenGlObject {
   ~Texture();
 
   // Pixel format enumeration
-  enum class PixelFormat {
-    kGray,
-    kRgb,
-    kRgba,
-    kBgr,
-    kBgra
-  };
+  enum class PixelFormat { kGray, kRgb, kRgba, kBgr, kBgra };
 
   // Buffer update strategy (similar to PointCloud)
   enum class BufferUpdateStrategy {
@@ -41,13 +35,12 @@ class Texture : public OpenGlObject {
     kMapBuffer       // Always use PBO for updates
   };
 
-  // Data management methods
-  bool LoadFromFile(const std::string& image_path);
-  
   // Efficient update methods with move semantics
-  bool UpdateData(int width, int height, PixelFormat format, const unsigned char* data);
-  bool UpdateData(int width, int height, PixelFormat format, std::vector<unsigned char>&& data);
-  
+  bool UpdateData(int width, int height, PixelFormat format,
+                  const unsigned char* data);
+  bool UpdateData(int width, int height, PixelFormat format,
+                  std::vector<unsigned char>&& data);
+
   // Buffer management
   void PreallocateBuffer(int width, int height, PixelFormat format);
   void SetBufferUpdateStrategy(BufferUpdateStrategy strategy) {
@@ -59,7 +52,7 @@ class Texture : public OpenGlObject {
 
   // Position and orientation
   void SetOrigin(const glm::vec3& origin, float resolution = 1.0f);
-  
+
   // Getters
   int GetWidth() const { return image_width_; }
   int GetHeight() const { return image_height_; }
@@ -76,7 +69,7 @@ class Texture : public OpenGlObject {
   void UpdateTextureWithSubData(const void* data, size_t size_bytes);
   void UpdateTextureWithPBO(const void* data, size_t size_bytes);
   bool ShouldUsePBO(size_t data_size) const;
-  
+
   // OpenGL resources
   uint32_t texture_id_ = 0;
   uint32_t pbo_id_ = 0;  // Pixel Buffer Object for efficient updates
@@ -88,7 +81,7 @@ class Texture : public OpenGlObject {
   int image_width_ = 0;
   int image_height_ = 0;
   PixelFormat pixel_format_ = PixelFormat::kRgba;
-  
+
   // Position and orientation
   glm::vec3 origin_ = glm::vec3(0.0f);
   float resolution_ = 1.0f;

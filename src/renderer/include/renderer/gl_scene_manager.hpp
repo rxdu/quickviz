@@ -33,7 +33,11 @@ class GlSceneManager : public Panel {
   using PreDrawCallback = std::function<void()>;
 
   GlSceneManager(const std::string& name, Mode mode = Mode::k3D);
-  ~GlSceneManager() = default;
+  ~GlSceneManager();
+
+  // do not allow copy
+  GlSceneManager(const GlSceneManager&) = delete;
+  GlSceneManager& operator=(const GlSceneManager&) = delete;
 
   // public methods
   Mode GetMode() const { return mode_; }
@@ -49,10 +53,10 @@ class GlSceneManager : public Panel {
 
   /**
    * @brief Set a callback to be called before drawing the scene
-   * 
+   *
    * This callback will be called in the main thread before any OpenGL objects
    * are drawn. It can be used to update scene data in a thread-safe manner.
-   * 
+   *
    * @param callback The callback function to be called
    */
   void SetPreDrawCallback(PreDrawCallback callback) {
@@ -61,23 +65,23 @@ class GlSceneManager : public Panel {
 
   /**
    * @brief Enable or disable coordinate system transformation
-   * 
+   *
    * When enabled, the scene will use the standard coordinate system (Z-up)
    * and transform it to OpenGL's coordinate system (Y-up) for rendering.
-   * 
+   *
    * @param enable Whether to enable the transformation
    */
-  void EnableCoordinateSystemTransformation(bool enable) { 
-    use_coord_transform_ = enable; 
+  void EnableCoordinateSystemTransformation(bool enable) {
+    use_coord_transform_ = enable;
   }
-  
+
   /**
    * @brief Check if coordinate system transformation is enabled
-   * 
+   *
    * @return true if enabled, false otherwise
    */
-  bool IsCoordinateSystemTransformationEnabled() const { 
-    return use_coord_transform_; 
+  bool IsCoordinateSystemTransformationEnabled() const {
+    return use_coord_transform_;
   }
 
   void Draw() override;
@@ -98,7 +102,7 @@ class GlSceneManager : public Panel {
   std::unique_ptr<Camera> camera_;
   std::unique_ptr<CameraController> camera_controller_;
   bool show_rendering_info_ = true;
-  
+
   // Coordinate system transformation
   bool use_coord_transform_ = true;
   glm::mat4 coord_transform_ = glm::mat4(1.0f);
