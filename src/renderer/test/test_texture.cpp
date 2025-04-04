@@ -13,6 +13,9 @@
 #include <iostream>
 #include <thread>
 #include <filesystem>
+#include <random>
+#include <chrono>
+#include <atomic>
 
 #include "imview/box.hpp"
 #include "imview/viewer.hpp"
@@ -22,117 +25,169 @@
 #include "renderer/renderable/coordinate_frame.hpp"
 #include "renderer/renderable/texture.hpp"
 
+#include "core/buffer/buffer_registry.hpp"
+#include "core/buffer/ring_buffer.hpp"
+
 using namespace quickviz;
 namespace fs = std::filesystem;
 
-int main(int argc, char* argv[]) {
-  bool thread_test = false;
-
-  // Check for thread test flag
-  if (argc > 1 && std::string(argv[1]) == "--thread-test") {
-    thread_test = true;
+// Helper class to generate dynamic texture data
+class DynamicTextureGenerator {
+ public:
+  DynamicTextureGenerator(int width, int height)
+      : width_(width), height_(height), gen_(rd_()), dist_(0, 255) {
+    // Pre-allocate buffer
+    buffer_.resize(width * height * 4);  // RGBA format
   }
+
+  // Generate a new frame with moving patterns
+  std::vector<unsigned char> GenerateFrame(float time) {
+    for (int y = 0; y < height_; ++y) {
+      for (int x = 0; x < width_; ++x) {
+        // Create dynamic patterns based on time and position
+        float dx = x - width_ / 2.0f;
+        float dy = y - height_ / 2.0f;
+        float distance = std::sqrt(dx * dx + dy * dy);
+        float angle = std::atan2(dy, dx);
+        
+        // Create moving circular patterns
+        float pattern1 = std::sin(distance * 0.05f - time * 2.0f) * 0.5f + 0.5f;
+        float pattern2 = std::cos(angle * 3.0f + time) * 0.5f + 0.5f;
+        float pattern3 = std::sin(distance * 0.02f + angle * 2.0f - time) * 0.5f + 0.5f;
+        
+        // Combine patterns and convert to RGB
+        int index = (y * width_ + x) * 4;
+        buffer_[index] = static_cast<unsigned char>(pattern1 * 255);  // R
+        buffer_[index + 1] = static_cast<unsigned char>(pattern2 * 255);  // G
+        buffer_[index + 2] = static_cast<unsigned char>(pattern3 * 255);  // B
+        buffer_[index + 3] = 255;  // A (fully opaque)
+      }
+    }
+    return buffer_;
+  }
+
+ private:
+  int width_, height_;
+  std::random_device rd_;
+  std::mt19937 gen_;
+  std::uniform_int_distribution<> dist_;
+  std::vector<unsigned char> buffer_;
+};
+
+// Function to generate texture data in a separate thread
+void GenerateTextureData(const std::string& buffer_name, std::atomic<bool>& running) {
+  const int TEX_WIDTH = 500;
+  const int TEX_HEIGHT = 500;
+  
+  auto& buffer_registry = BufferRegistry::GetInstance();
+  auto texture_buffer = buffer_registry.GetBuffer<std::vector<unsigned char>>(buffer_name);
+  
+  DynamicTextureGenerator generator(TEX_WIDTH, TEX_HEIGHT);
+  auto start_time = std::chrono::high_resolution_clock::now();
+  
+  while (running) {
+    auto now = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float>(now - start_time).count();
+    
+    // Generate new frame
+    auto data = generator.GenerateFrame(time);
+    
+    // Write to buffer
+    texture_buffer->Write(std::move(data));
+    
+    // Cap the update rate
+    std::this_thread::sleep_for(std::chrono::milliseconds(16));  // ~60 FPS
+  }
+}
+
+int main(int argc, char* argv[]) {
+  // Set up buffer first
+  const int TEX_WIDTH = 500;
+  const int TEX_HEIGHT = 500;
+  std::string buffer_name = "texture_buffer";
+  
+  auto& buffer_registry = BufferRegistry::GetInstance();
+  std::shared_ptr<BufferInterface<std::vector<unsigned char>>> texture_buffer =
+      std::make_shared<RingBuffer<std::vector<unsigned char>, 8>>();  // Triple buffering
+  buffer_registry.AddBuffer(buffer_name, texture_buffer);
 
   Viewer viewer;
 
-  // create a box to manage size & position of the OpenGL scene
+  // Create a box to manage size & position of the OpenGL scene
   auto box = std::make_shared<Box>("main_box");
   box->SetFlexDirection(Styling::FlexDirection::kRow);
   box->SetJustifyContent(Styling::JustifyContent::kFlexStart);
   box->SetAlignItems(Styling::AlignItems::kStretch);
 
-  // create a OpenGL scene manager to manage the OpenGL objects
+  // Create a OpenGL scene manager
   auto gl_sm = std::make_shared<GlSceneManager>("OpenGL Scene (2D)",
-                                                GlSceneManager::Mode::k2D);
+                                               GlSceneManager::Mode::k2D);
   gl_sm->SetAutoLayout(true);
   gl_sm->SetNoTitleBar(true);
   gl_sm->SetFlexGrow(1.0f);
   gl_sm->SetFlexShrink(1.0f);
 
-  std::cout << "\n=== Setting up Scene Objects ===\n" << std::endl;
+  std::cout << "Setting up scene objects..." << std::endl;
 
-  // Add a grid with smaller size and more visible color
-  std::cout << "Adding grid (10m x 10m, 1m spacing)..." << std::endl;
+  // Add a grid
   auto grid = std::make_unique<Grid>(10.0f, 1.0f, glm::vec3(0.5f, 0.5f, 0.5f));
   gl_sm->AddOpenGLObject("grid", std::move(grid));
 
-  // Add a larger coordinate frame for better visibility
-  std::cout << "Adding coordinate frame (2m size)..." << std::endl;
+  // Add coordinate frame
   auto coord_frame = std::make_unique<CoordinateFrame>(2.0f, true);
   gl_sm->AddOpenGLObject("coordinate_frame", std::move(coord_frame));
 
-  std::cout << "Creating texture object..." << std::endl;
+  // Create and add texture
+  std::cout << "Creating dynamic texture..." << std::endl;
   auto texture = std::make_unique<Texture>();
+  
+  // Get pointer before moving
+  auto* texture_ptr = texture.get();
   gl_sm->AddOpenGLObject("texture", std::move(texture));
 
-  // now let's do some drawing on the canvas
-  {
-    std::cout << "\n=== Loading Texture ===\n" << std::endl;
+  // Pre-allocate texture buffer and set update strategy
+  texture_ptr->PreallocateBuffer(TEX_WIDTH, TEX_HEIGHT, Texture::PixelFormat::kRgba);
+  texture_ptr->SetBufferUpdateStrategy(Texture::BufferUpdateStrategy::kAuto);
+  texture_ptr->SetBufferUpdateThreshold(TEX_WIDTH * TEX_HEIGHT * 4 / 2);  // Half the texture size
+
+  // Position the texture in the scene
+  texture_ptr->SetOrigin(glm::vec3(-2.5f, -2.5f, 0.0f), 0.01f);  // 1cm per pixel
+
+  // Set up pre-draw callback to update texture from buffer
+  gl_sm->SetPreDrawCallback([texture_ptr, buffer_name]() {
+    auto& buffer_registry = BufferRegistry::GetInstance();
+    auto texture_buffer = buffer_registry.GetBuffer<std::vector<unsigned char>>(buffer_name);
     
-    auto texture = static_cast<Texture*>(gl_sm->GetOpenGLObject("texture"));
-    if (!texture) {
-      std::cerr << "Failed to get texture object" << std::endl;
-      return -1;
+    std::vector<unsigned char> data;
+    if (texture_buffer->Read(data)) {
+      texture_ptr->UpdateData(TEX_WIDTH, TEX_HEIGHT, Texture::PixelFormat::kRgba, std::move(data));
     }
+  });
 
-    // Add background image first so it's behind all other drawings
-    std::string image_path = "../data/fish.png";
-
-    // Check if file exists and get absolute path
-    fs::path abs_path = fs::absolute(image_path);
-    std::cout << "Image path: " << abs_path.string() << std::endl;
-    if (fs::exists(abs_path)) {
-      std::cout << "✓ Image file exists" << std::endl;
-    } else {
-      std::cerr << "✗ Image file not found at: " << abs_path.string() << std::endl;
-      std::cerr << "Current working directory: " << fs::current_path() << std::endl;
-      return -1;
-    }
-    
-    std::cout << "Loading image..." << std::endl;
-    auto ret = texture->LoadData(abs_path.string());
-    if (!ret) {
-      std::cerr << "✗ Failed to load texture" << std::endl;
-      return -1;
-    }
-    std::cout << "✓ Image loaded successfully" << std::endl;
-
-    // Set the origin and resolution for the texture
-    std::cout << "\n=== Positioning Texture ===\n" << std::endl;
-    
-    // Calculate reasonable resolution based on image size
-    int image_width = 1500;  // Approximate width of the fish.png in pixels
-    float desired_world_size = 3.0f;  // We want the texture to be about 3 meters wide
-    float resolution = desired_world_size / image_width;
-    
-    // Set a rotation angle for testing (45 degrees = π/4 radians)
-    float rotation = M_PI / 4.0f;  // 45 degrees
-    
-    std::cout << "Setting texture position:" << std::endl;
-    std::cout << "- Position: (1.0, 1.0) meters" << std::endl;
-    std::cout << "- Rotation: " << rotation << " radians (" << (rotation * 180.0f / M_PI) << " degrees)" << std::endl;
-    std::cout << "- Resolution: " << resolution << " meters/pixel" << std::endl;
-    std::cout << "- Estimated world size: ~" << desired_world_size << " meters wide" << std::endl;
-    
-    // Set origin at (1,1) with 45-degree rotation and reasonable resolution
-    texture->SetOrigin(glm::vec3(1.0f, 1.0f, rotation), resolution);
-  }
-
-  std::cout << "\n=== Setup Complete ===\n" << std::endl;
-  std::cout << "You should see:" << std::endl;
-  std::cout << "1. A gray grid (10m x 10m)" << std::endl;
-  std::cout << "2. Coordinate axes (red = X, green = Y)" << std::endl;
-  std::cout << "3. The loaded texture at the origin" << std::endl;
-  std::cout << "\nIf you don't see the texture, check that:" << std::endl;
-  std::cout << "- The image file exists and is valid" << std::endl;
-  std::cout << "- The texture is not too small or too large (adjust resolution)" << std::endl;
-  std::cout << "- The texture is within the visible area" << std::endl;
-
-  // finally pass the OpenGL scene managers to the box and add it to the viewer
+  // Add scene manager to box and to viewer
   box->AddChild(gl_sm);
   viewer.AddSceneObject(box);
 
+  std::cout << "\nStarting texture generation thread..." << std::endl;
+  std::atomic<bool> running{true};
+  std::thread generate_thread(GenerateTextureData, buffer_name, std::ref(running));
+
+  std::cout << "\nTest is running. You should see:" << std::endl;
+  std::cout << "1. A gray grid (10m x 10m)" << std::endl;
+  std::cout << "2. Coordinate axes (red = X, green = Y)" << std::endl;
+  std::cout << "3. A dynamic texture with moving patterns" << std::endl;
+  std::cout << "\nThe texture should update continuously with:" << std::endl;
+  std::cout << "- Circular wave patterns" << std::endl;
+  std::cout << "- Color transitions" << std::endl;
+  std::cout << "- Smooth animations" << std::endl;
+
   viewer.Show();
+
+  // Cleanup
+  running = false;
+  if (generate_thread.joinable()) {
+    generate_thread.join();
+  }
 
   return 0;
 }

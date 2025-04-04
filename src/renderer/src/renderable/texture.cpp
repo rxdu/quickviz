@@ -11,7 +11,7 @@
 
 #include <iostream>
 #include <stdexcept>
-
+#include <cstring>
 #include "glad/glad.h"
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -119,12 +119,14 @@ void Texture::AllocateGpuResources() {
   ReleaseGpuResources();
 
   try {
-    // Generate texture
+    // Generate texture and PBO
     glGenTextures(1, &texture_id_);
+    glGenBuffers(1, &pbo_id_);
+    
     GLenum err = glGetError();
     if (err != GL_NO_ERROR) {
-      throw std::runtime_error("Failed to generate texture: OpenGL error " +
-                               std::to_string(err));
+      throw std::runtime_error("Failed to generate texture/PBO: OpenGL error " +
+                             std::to_string(err));
     }
 
     std::cout << "Compiling texture vertex shader..." << std::endl;
@@ -201,8 +203,8 @@ void Texture::AllocateGpuResources() {
   } catch (const std::exception& e) {
     std::cerr << "ERROR: Failed to allocate GPU resources: " << e.what()
               << std::endl;
-    ReleaseGpuResources();  // Clean up any resources that were created
-    throw;                  // Rethrow the exception
+    ReleaseGpuResources();
+    throw;
   }
 }
 
@@ -210,6 +212,11 @@ void Texture::ReleaseGpuResources() {
   if (texture_id_ != 0) {
     glDeleteTextures(1, &texture_id_);
     texture_id_ = 0;
+  }
+
+  if (pbo_id_ != 0) {
+    glDeleteBuffers(1, &pbo_id_);
+    pbo_id_ = 0;
   }
 
   if (vao_ != 0) {
@@ -223,100 +230,148 @@ void Texture::ReleaseGpuResources() {
   }
 }
 
-bool Texture::LoadData(const std::string& image_path) {
-  int background_image_width = 0;
-  int background_image_height = 0;
-  int background_image_channels = 0;
-  unsigned char* background_image_data = nullptr;
-
-  // Load the image using stb_image
-  // OpenGL expects texture coordinates with origin at bottom
+bool Texture::LoadFromFile(const std::string& image_path) {
+  int width = 0, height = 0, channels = 0;
   stbi_set_flip_vertically_on_load(true);
 
-  std::cout << "Attempting to load image from path: " << image_path
-            << std::endl;
+  std::cout << "Loading image from path: " << image_path << std::endl;
 
-  background_image_data =
-      stbi_load(image_path.c_str(), &background_image_width,
-                &background_image_height, &background_image_channels,
-                0  // Desired channels, 0 means use original
-      );
+  unsigned char* data = stbi_load(image_path.c_str(), &width, &height, &channels, 0);
 
-  if (!background_image_data) {
-    std::cerr << "ERROR::CANVAS::BACKGROUND_IMAGE_LOAD_FAILED: " << image_path
-              << std::endl;
+  if (!data) {
+    std::cerr << "Failed to load image: " << image_path << std::endl;
     std::cerr << "STB Error: " << stbi_failure_reason() << std::endl;
     return false;
   }
 
-  std::cout << "Background image loaded successfully: "
-            << background_image_width << "x" << background_image_height
-            << " with " << background_image_channels << " channels"
-            << std::endl;
+  // Determine format based on channels
+  PixelFormat format;
+  switch (channels) {
+    case 1: format = PixelFormat::kGray; break;
+    case 3: format = PixelFormat::kRgb; break;
+    case 4: format = PixelFormat::kRgba; break;
+    default:
+      stbi_image_free(data);
+      std::cerr << "Unsupported number of channels: " << channels << std::endl;
+      return false;
+  }
 
-  // Store image dimensions
-  image_width_ = background_image_width;
-  image_height_ = background_image_height;
-
-  auto ret = LoadData(background_image_width, background_image_height,
-                      PixelFormat::kRgba, background_image_data);
-  stbi_image_free(background_image_data);
-  return ret;
+  // Update texture with loaded data
+  bool success = UpdateData(width, height, format, data);
+  stbi_image_free(data);
+  return success;
 }
 
-bool Texture::LoadData(int width, int height, PixelFormat format,
-                       unsigned char* data) {
-  if (texture_id_ == 0) {
-    std::cerr << "Texture not initialized" << std::endl;
-    return false;
-  }
-
+void Texture::PreallocateBuffer(int width, int height, PixelFormat format) {
   if (width <= 0 || height <= 0) {
-    std::cerr << "Invalid texture dimensions" << std::endl;
-    return false;
+    throw std::invalid_argument("Invalid texture dimensions");
   }
 
-  // Store image dimensions
   image_width_ = width;
   image_height_ = height;
+  pixel_format_ = format;
 
   auto format_info = GetGlFormats(format);
 
   glBindTexture(GL_TEXTURE_2D, texture_id_);
-  {
-    // Enable sRGB if using an sRGB format
-    bool using_srgb = (format_info.internal_format == GL_SRGB8 ||
-                       format_info.internal_format == GL_SRGB8_ALPHA8);
-    if (using_srgb) {
-      glEnable(GL_FRAMEBUFFER_SRGB);
-    }
+  glTexImage2D(GL_TEXTURE_2D, 0, format_info.internal_format, width, height,
+               0, format_info.format, GL_UNSIGNED_BYTE, nullptr);
+  
+  // Set texture parameters
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, format_info.internal_format, width, height,
-                 0, format_info.format, GL_UNSIGNED_BYTE, data);
+  // Initialize PBO
+  size_t buffer_size = width * height * (format == PixelFormat::kGray ? 1 : 4);
+  glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo_id_);
+  glBufferData(GL_PIXEL_UNPACK_BUFFER, buffer_size, nullptr, GL_STREAM_DRAW);
+  glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
-    // Check for errors
-    GLenum err = glGetError();
-    if (err != GL_NO_ERROR) {
-      std::cerr << "OpenGL error when loading texture: " << err << std::endl;
-      std::cerr << "Format: " << format_info.format
-                << ", Internal format: " << format_info.internal_format
-                << std::endl;
-      glBindTexture(GL_TEXTURE_2D, 0);
+  buffer_preallocated_ = true;
+}
+
+bool Texture::ShouldUsePBO(size_t data_size) const {
+  switch (buffer_update_strategy_) {
+    case BufferUpdateStrategy::kAuto:
+      return data_size > buffer_update_threshold_;
+    case BufferUpdateStrategy::kBufferSubData:
       return false;
-    }
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    if (using_srgb) {
-      glDisable(GL_FRAMEBUFFER_SRGB);
-    }
+    case BufferUpdateStrategy::kMapBuffer:
+      return true;
+    default:
+      return false;
   }
-  glBindTexture(GL_TEXTURE_2D, 0);
+}
 
-  return true;
+void Texture::UpdateTextureWithSubData(const void* data, size_t size_bytes) {
+  auto format_info = GetGlFormats(pixel_format_);
+  
+  glBindTexture(GL_TEXTURE_2D, texture_id_);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image_width_, image_height_,
+                  format_info.format, GL_UNSIGNED_BYTE, data);
+  glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void Texture::UpdateTextureWithPBO(const void* data, size_t size_bytes) {
+  auto format_info = GetGlFormats(pixel_format_);
+
+  glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo_id_);
+  
+  // Map the PBO and update its contents
+  void* ptr = glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+  if (ptr) {
+    std::memcpy(ptr, data, size_bytes);
+    glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+    
+    // Update texture from PBO
+    glBindTexture(GL_TEXTURE_2D, texture_id_);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image_width_, image_height_,
+                    format_info.format, GL_UNSIGNED_BYTE, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+  }
+  
+  glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+}
+
+bool Texture::UpdateData(int width, int height, PixelFormat format, const unsigned char* data) {
+  if (!data) return false;
+
+  try {
+    // If dimensions changed or not preallocated, allocate new buffers
+    if (!buffer_preallocated_ || width != image_width_ || height != image_height_ || format != pixel_format_) {
+      PreallocateBuffer(width, height, format);
+    }
+
+    size_t pixel_size = (format == PixelFormat::kGray ? 1 : 4);
+    size_t data_size = width * height * pixel_size;
+
+    // Use appropriate update strategy
+    if (ShouldUsePBO(data_size)) {
+      UpdateTextureWithPBO(data, data_size);
+    } else {
+      UpdateTextureWithSubData(data, data_size);
+    }
+
+    needs_update_ = false;
+    return true;
+  } catch (const std::exception& e) {
+    std::cerr << "Error updating texture data: " << e.what() << std::endl;
+    return false;
+  }
+}
+
+bool Texture::UpdateData(int width, int height, PixelFormat format, std::vector<unsigned char>&& data) {
+  size_t pixel_size = (format == PixelFormat::kGray ? 1 : 4);
+  size_t expected_size = width * height * pixel_size;
+  
+  if (data.size() != expected_size) {
+    std::cerr << "Data size mismatch for texture update" << std::endl;
+    return false;
+  }
+
+  return UpdateData(width, height, format, data.data());
 }
 
 void Texture::SetOrigin(const glm::vec3& origin, float resolution) {
