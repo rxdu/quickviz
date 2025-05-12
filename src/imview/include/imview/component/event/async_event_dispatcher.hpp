@@ -31,6 +31,7 @@ class AsyncEventDispatcher {
   void RegisterHandler(const std::string& event_name, HandlerFunc handler);
   void Dispatch(std::shared_ptr<BaseEvent> event);
   void HandleEvents();
+  void Reset();
 
  private:
   AsyncEventDispatcher() = default;

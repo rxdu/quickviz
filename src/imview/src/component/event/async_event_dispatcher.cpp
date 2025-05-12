@@ -70,4 +70,21 @@ void AsyncEventDispatcher::HandleEvents() {
     }
   }
 }
+
+void AsyncEventDispatcher::Reset() {
+  {
+    std::lock_guard<std::mutex> lock(handler_mutex_);
+    handlers_.clear();
+  }
+
+  // Clear the event queue
+  std::shared_ptr<BaseEvent> event;
+  while (event_queue_.TryPop(event)) {
+    // Pop all events from the queue
+  }
+
+  // Reset thread IDs
+  dispatch_thread_id_ = std::thread::id();
+  handle_events_thread_id_ = std::thread::id();
+}
 }  // namespace quickviz
