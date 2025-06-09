@@ -16,6 +16,8 @@
 #include <mutex>
 #include <atomic>
 #include <queue>
+#include <chrono>
+#include <algorithm>
 
 #include <glm/glm.hpp>
 
@@ -89,12 +91,35 @@ class Canvas : public OpenGlObject {
   
   // Performance monitoring
   struct RenderStats {
+    // Rendering statistics
     uint32_t points_rendered = 0;
     uint32_t lines_rendered = 0;
     uint32_t shapes_rendered = 0;
     uint32_t draw_calls = 0;
     uint32_t state_changes = 0;
+    
+    // Timing statistics
     float last_frame_time_ms = 0.0f;
+    float avg_frame_time_ms = 0.0f;
+    float min_frame_time_ms = 999999.0f;
+    float max_frame_time_ms = 0.0f;
+    uint32_t frame_count = 0;
+    
+    // Memory statistics
+    size_t vertex_memory_used = 0;
+    size_t index_memory_used = 0;
+    size_t texture_memory_used = 0;
+    size_t total_memory_used = 0;
+    
+    // Batching efficiency
+    uint32_t batched_objects = 0;
+    uint32_t individual_objects = 0;
+    float batch_efficiency = 0.0f; // Percentage of objects that were batched
+    
+    // OpenGL resource usage
+    uint32_t active_vaos = 0;
+    uint32_t active_vbos = 0;
+    uint32_t active_textures = 0;
     
     void Reset() {
       points_rendered = 0;
@@ -103,11 +128,84 @@ class Canvas : public OpenGlObject {
       draw_calls = 0;
       state_changes = 0;
       last_frame_time_ms = 0.0f;
+      // Note: Don't reset cumulative stats like avg, min, max, frame_count
+      vertex_memory_used = 0;
+      index_memory_used = 0;
+      texture_memory_used = 0;
+      total_memory_used = 0;
+      batched_objects = 0;
+      individual_objects = 0;
+      batch_efficiency = 0.0f;
+      active_vaos = 0;
+      active_vbos = 0;
+      active_textures = 0;
     }
+    
+    void UpdateFrameStats(float frame_time_ms) {
+      last_frame_time_ms = frame_time_ms;
+      frame_count++;
+      
+      // Update min/max
+      min_frame_time_ms = std::min(min_frame_time_ms, frame_time_ms);
+      max_frame_time_ms = std::max(max_frame_time_ms, frame_time_ms);
+      
+      // Update rolling average (with decay factor)
+      const float alpha = 0.1f; // Smoothing factor
+      avg_frame_time_ms = avg_frame_time_ms * (1.0f - alpha) + frame_time_ms * alpha;
+      
+      // Calculate batch efficiency
+      uint32_t total_objects = batched_objects + individual_objects;
+      batch_efficiency = total_objects > 0 ? 
+        (static_cast<float>(batched_objects) / total_objects) * 100.0f : 0.0f;
+    }
+    
+    void UpdateOperationStats(float operation_time_ms) {
+      // Track individual operation timing (for non-batched operations)
+      last_frame_time_ms += operation_time_ms; // Add to total frame time
+    }
+    
+    // Convenience methods
+    float GetFPS() const { return last_frame_time_ms > 0 ? 1000.0f / last_frame_time_ms : 0.0f; }
+    float GetAvgFPS() const { return avg_frame_time_ms > 0 ? 1000.0f / avg_frame_time_ms : 0.0f; }
+    size_t GetTotalMemoryMB() const { return total_memory_used / (1024 * 1024); }
   };
   
   const RenderStats& GetRenderStats() const { return render_stats_; }
   void ResetRenderStats() { render_stats_.Reset(); }
+  
+  // Performance tuning and memory optimization
+  struct PerformanceConfig {
+    // Batching configuration
+    bool auto_batching_enabled = true;
+    size_t max_batch_size = 10000;           // Maximum objects per batch
+    size_t batch_resize_threshold = 5000;     // When to resize batch buffers
+    
+    // Memory management
+    bool object_pooling_enabled = true;
+    size_t initial_pool_size = 1000;         // Initial pool size for reusable objects
+    size_t max_pool_size = 50000;            // Maximum pool size
+    bool aggressive_memory_cleanup = false;   // Clean up unused memory more aggressively
+    
+    // Performance monitoring
+    bool detailed_timing_enabled = false;    // Enable detailed per-operation timing
+    bool memory_tracking_enabled = true;     // Track memory usage
+    size_t stats_update_frequency = 60;      // Update stats every N frames
+    
+    // Quality vs Performance trade-offs
+    int circle_segments = 32;                // Default circle tessellation
+    int ellipse_segments = 32;               // Default ellipse tessellation
+    bool adaptive_tessellation = true;       // Adjust tessellation based on size
+    float tessellation_scale_factor = 50.0f; // Pixels per segment for adaptive mode
+  };
+  
+  void SetPerformanceConfig(const PerformanceConfig& config) { perf_config_ = config; }
+  const PerformanceConfig& GetPerformanceConfig() const { return perf_config_; }
+  
+  // Memory optimization methods
+  void OptimizeMemory();                    // Trigger memory optimization pass
+  void PreallocateMemory(size_t estimated_objects); // Pre-allocate for known workloads
+  void ShrinkToFit();                       // Release unused memory
+  size_t GetMemoryUsage() const;            // Get current memory usage in bytes
 
   void AllocateGpuResources() override;
   void ReleaseGpuResources() override;
@@ -214,6 +312,101 @@ class Canvas : public OpenGlObject {
 
   // Performance monitoring
   RenderStats render_stats_;
+
+  // Performance tuning and memory optimization
+  PerformanceConfig perf_config_;
+  
+  // Object pooling for memory optimization
+  template<typename T>
+  struct ObjectPool {
+    std::vector<std::unique_ptr<T>> available_objects;
+    std::vector<std::unique_ptr<T>> used_objects;
+    size_t total_created = 0;
+    size_t peak_usage = 0;
+    
+    T* Acquire() {
+      if (available_objects.empty()) {
+        available_objects.push_back(std::make_unique<T>());
+        total_created++;
+      }
+      
+      auto obj = std::move(available_objects.back());
+      available_objects.pop_back();
+      T* ptr = obj.get();
+      used_objects.push_back(std::move(obj));
+      
+      peak_usage = std::max(peak_usage, used_objects.size());
+      return ptr;
+    }
+    
+    void Release(T* obj) {
+      auto it = std::find_if(used_objects.begin(), used_objects.end(),
+        [obj](const std::unique_ptr<T>& ptr) { return ptr.get() == obj; });
+      
+      if (it != used_objects.end()) {
+        available_objects.push_back(std::move(*it));
+        used_objects.erase(it);
+      }
+    }
+    
+    void ShrinkToFit(size_t max_size) {
+      while (available_objects.size() > max_size) {
+        available_objects.pop_back();
+      }
+    }
+    
+    size_t GetMemoryUsage() const {
+      return (available_objects.size() + used_objects.size()) * sizeof(T) + 
+             available_objects.capacity() * sizeof(std::unique_ptr<T>) +
+             used_objects.capacity() * sizeof(std::unique_ptr<T>);
+    }
+  };
+  
+  // Memory tracking
+  struct MemoryTracker {
+    std::atomic<size_t> current_usage{0};
+    std::atomic<size_t> peak_usage{0};
+    std::atomic<size_t> total_allocations{0};
+    std::atomic<size_t> total_deallocations{0};
+    
+    void RecordAllocation(size_t size) {
+      current_usage += size;
+      total_allocations++;
+      peak_usage = std::max(peak_usage.load(), current_usage.load());
+    }
+    
+    void RecordDeallocation(size_t size) {
+      current_usage -= size;
+      total_deallocations++;
+    }
+    
+    void Reset() {
+      current_usage = 0;
+      peak_usage = 0;
+      total_allocations = 0;
+      total_deallocations = 0;
+    }
+  };
+  
+  mutable MemoryTracker memory_tracker_;
+  
+  // Timing utilities for performance monitoring
+  struct PerformanceTimer {
+    std::chrono::high_resolution_clock::time_point start_time;
+    
+    void Start() {
+      start_time = std::chrono::high_resolution_clock::now();
+    }
+    
+    float ElapsedMs() const {
+      auto end_time = std::chrono::high_resolution_clock::now();
+      auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+      return duration.count() / 1000.0f;
+    }
+  };
+  
+  mutable PerformanceTimer frame_timer_;
+  mutable PerformanceTimer operation_timer_;
 };
 }  // namespace quickviz
 

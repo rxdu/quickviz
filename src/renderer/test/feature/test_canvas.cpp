@@ -90,10 +90,15 @@ void TestAllCanvasFunctions(Canvas* canvas) {
 
 int main(int argc, char* argv[]) {
   bool thread_test = false;
+  bool performance_test = false;
   
-  // Check for thread test flag
-  if (argc > 1 && std::string(argv[1]) == "--thread-test") {
-    thread_test = true;
+  // Check for test flags
+  for (int i = 1; i < argc; ++i) {
+    if (std::string(argv[i]) == "--thread-test") {
+      thread_test = true;
+    } else if (std::string(argv[i]) == "--performance-test") {
+      performance_test = true;
+    }
   }
 
   Viewer viewer;
@@ -159,11 +164,206 @@ int main(int argc, char* argv[]) {
       }
     }
     
+    // Configure performance monitoring if performance test is enabled
+    if (performance_test) {
+      Canvas::PerformanceConfig perf_config;
+      perf_config.detailed_timing_enabled = true;
+      perf_config.memory_tracking_enabled = true;
+      perf_config.aggressive_memory_cleanup = true;
+      perf_config.stats_update_frequency = 10; // Update every 10 frames
+      canvas->SetPerformanceConfig(perf_config);
+      
+      // Pre-allocate memory for better performance
+      canvas->PreallocateMemory(1000); // Expect ~1000 objects
+      
+      std::cout << "\n=== Performance Test Mode Enabled ===" << std::endl;
+      std::cout << "Detailed timing: ON" << std::endl;
+      std::cout << "Memory tracking: ON" << std::endl;
+      std::cout << "Aggressive cleanup: ON" << std::endl;
+      std::cout << "Pre-allocated for 1000 objects" << std::endl;
+      std::cout << "Initial memory usage: " << canvas->GetMemoryUsage() / 1024 << " KB" << std::endl;
+    }
+    
     // Add background image using a small origin offset and 1:100 resolution for debugging
     canvas->AddBackgroundImage(image_path, glm::vec3(1.0f, 1.0f, 0.785f), 0.005f);
     
     // Test all canvas drawing functions
     TestAllCanvasFunctions(canvas);
+    
+    // If performance test, add many more objects to stress test the system
+    if (performance_test) {
+      std::cout << "\n=== Adding Performance Test Objects ===" << std::endl;
+      
+      // Add many lines to test line batching
+      for (int i = 0; i < 100; ++i) {
+        float x1 = -5.0f + (i % 10);
+        float y1 = -5.0f + (i / 10);
+        float x2 = x1 + 0.5f;
+        float y2 = y1 + 0.5f;
+        canvas->AddLine(x1, y1, x2, y2, 
+                       glm::vec4(0.5f, 0.5f + i * 0.005f, 0.8f, 0.7f), 
+                       1.5f, LineType::kSolid);
+      }
+      
+      // Add many rectangles to test shape batching
+      for (int i = 0; i < 50; ++i) {
+        float x = -3.0f + (i % 10) * 0.6f;
+        float y = -3.0f + (i / 10) * 0.6f;
+        canvas->AddRectangle(x, y, 0.4f, 0.4f,
+                           glm::vec4(0.8f, 0.3f + i * 0.01f, 0.3f, 0.8f),
+                           i % 2 == 0, 2.0f);
+      }
+      
+      // Add many circles to test circle batching
+      for (int i = 0; i < 50; ++i) {
+        float x = 1.0f + (i % 10) * 0.8f;
+        float y = 1.0f + (i / 10) * 0.8f;
+        canvas->AddCircle(x, y, 0.3f,
+                         glm::vec4(0.3f, 0.8f, 0.3f + i * 0.01f, 0.8f),
+                         i % 2 == 0, 2.0f);
+      }
+      
+      // Add some ellipses (individual rendering)
+      for (int i = 0; i < 10; ++i) {
+        float x = -5.0f + i * 1.0f;
+        float y = 6.0f;
+        canvas->AddEllipse(x, y, 0.4f, 0.2f, i * 0.3f, 0.0f, 6.28f,
+                          glm::vec4(0.9f, 0.5f, 0.1f, 0.8f), true, 2.0f);
+      }
+      
+      // Add some polygons (individual rendering)
+      for (int i = 0; i < 10; ++i) {
+        std::vector<glm::vec2> triangle = {
+          {-5.0f + i * 1.0f, 8.0f},
+          {-4.5f + i * 1.0f, 8.5f},
+          {-5.5f + i * 1.0f, 8.5f}
+        };
+        canvas->AddPolygon(triangle, glm::vec4(0.7f, 0.2f, 0.9f, 0.8f), true, 2.0f);
+      }
+      
+      std::cout << "Added 100 lines, 50 rectangles, 50 circles, 10 ellipses, 10 polygons" << std::endl;
+      std::cout << "Expected: ~150 batched objects, ~20 individual objects" << std::endl;
+      
+      // FORCE RENDERING to collect real performance statistics
+      std::cout << "\n=== Forcing Rendering for Performance Measurement ===" << std::endl;
+      
+      // Create dummy projection/view matrices for rendering
+      glm::mat4 projection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, -1.0f, 1.0f);
+      glm::mat4 view = glm::mat4(1.0f);
+      glm::mat4 coord_transform = glm::mat4(1.0f);
+      
+      // Trigger multiple render calls to simulate real usage
+      for (int i = 0; i < 10; ++i) {
+        canvas->OnDraw(projection, view, coord_transform);
+      }
+      
+      std::cout << "Completed 10 render calls to collect statistics" << std::endl;
+    }
+    
+    // Print performance statistics if performance test is enabled
+    if (performance_test) {
+      // Force a render cycle by calling the update manually
+      // (In a real app, this would happen in the render loop)
+      std::cout << "\n=== Initial Performance Statistics ===" << std::endl;
+      const auto& stats = canvas->GetRenderStats();
+      std::cout << "Draw calls: " << stats.draw_calls << std::endl;
+      std::cout << "State changes: " << stats.state_changes << std::endl;
+      std::cout << "Batched objects: " << stats.batched_objects << std::endl;
+      std::cout << "Individual objects: " << stats.individual_objects << std::endl;
+      std::cout << "Batch efficiency: " << stats.batch_efficiency << "%" << std::endl;
+      std::cout << "Memory usage: " << canvas->GetMemoryUsage() / 1024 << " KB" << std::endl;
+      std::cout << "Vertex memory: " << stats.vertex_memory_used / 1024 << " KB" << std::endl;
+      std::cout << "Index memory: " << stats.index_memory_used / 1024 << " KB" << std::endl;
+      std::cout << "Total memory: " << stats.GetTotalMemoryMB() << " MB" << std::endl;
+      
+      // Performance evaluation and recommendations
+      std::cout << "\n=== Performance Evaluation ===" << std::endl;
+      
+      // Evaluate batch efficiency
+      if (stats.batch_efficiency >= 80.0f) {
+        std::cout << "✅ EXCELLENT: Batch efficiency " << stats.batch_efficiency << "% (>= 80%)" << std::endl;
+      } else if (stats.batch_efficiency >= 60.0f) {
+        std::cout << "✅ GOOD: Batch efficiency " << stats.batch_efficiency << "% (>= 60%)" << std::endl;
+      } else if (stats.batch_efficiency >= 40.0f) {
+        std::cout << "⚠️  ACCEPTABLE: Batch efficiency " << stats.batch_efficiency << "% (>= 40%)" << std::endl;
+        std::cout << "   Consider using more rectangles/circles vs ellipses/polygons" << std::endl;
+      } else {
+        std::cout << "❌ POOR: Batch efficiency " << stats.batch_efficiency << "% (< 40%)" << std::endl;
+        std::cout << "   Too many individual shapes (ellipses/polygons). Use circles/rectangles when possible." << std::endl;
+      }
+      
+      // Evaluate draw calls efficiency (estimate based on objects)
+      uint32_t total_objects = stats.batched_objects + stats.individual_objects;
+      float draw_call_efficiency = total_objects > 0 ? 
+        (static_cast<float>(total_objects) / std::max(1u, stats.draw_calls)) : 0.0f;
+      
+      if (draw_call_efficiency >= 50.0f) {
+        std::cout << "✅ EXCELLENT: Draw call efficiency " << draw_call_efficiency << " objects/call (>= 50)" << std::endl;
+      } else if (draw_call_efficiency >= 20.0f) {
+        std::cout << "✅ GOOD: Draw call efficiency " << draw_call_efficiency << " objects/call (>= 20)" << std::endl;
+      } else if (draw_call_efficiency >= 5.0f) {
+        std::cout << "⚠️  ACCEPTABLE: Draw call efficiency " << draw_call_efficiency << " objects/call (>= 5)" << std::endl;
+      } else {
+        std::cout << "❌ POOR: Draw call efficiency " << draw_call_efficiency << " objects/call (< 5)" << std::endl;
+        std::cout << "   Enable batching or reduce individual rendering shapes." << std::endl;
+      }
+      
+      // Evaluate memory usage
+      size_t memory_kb = canvas->GetMemoryUsage() / 1024;
+      if (memory_kb <= 100) {
+        std::cout << "✅ EXCELLENT: Memory usage " << memory_kb << " KB (<= 100 KB)" << std::endl;
+      } else if (memory_kb <= 500) {
+        std::cout << "✅ GOOD: Memory usage " << memory_kb << " KB (<= 500 KB)" << std::endl;
+      } else if (memory_kb <= 1000) {
+        std::cout << "⚠️  ACCEPTABLE: Memory usage " << memory_kb << " KB (<= 1 MB)" << std::endl;
+      } else {
+        std::cout << "❌ HIGH: Memory usage " << memory_kb << " KB (> 1 MB)" << std::endl;
+        std::cout << "   Consider calling OptimizeMemory() or reducing object count." << std::endl;
+      }
+      
+      // Expected vs Actual comparison
+      std::cout << "\n=== Expected vs Actual ===" << std::endl;
+      std::cout << "Expected ~150 batched + ~20 individual = ~170 total objects" << std::endl;
+      std::cout << "Actual: " << stats.batched_objects << " batched + " 
+                << stats.individual_objects << " individual = " 
+                << total_objects << " total objects" << std::endl;
+      
+      if (total_objects == 0) {
+        std::cout << "❌ CRITICAL: No objects detected! Rendering may not be working." << std::endl;
+        std::cout << "   Check if shapes are being added to canvas correctly." << std::endl;
+      } else if (total_objects < 150) {
+        std::cout << "⚠️  WARNING: Fewer objects than expected. Some may not be rendering." << std::endl;
+      } else {
+        std::cout << "✅ Object count looks reasonable." << std::endl;
+      }
+      
+      // Overall performance grade
+      std::cout << "\n=== Overall Performance Grade ===" << std::endl;
+      int score = 0;
+      if (stats.batch_efficiency >= 60.0f) score += 3;
+      else if (stats.batch_efficiency >= 40.0f) score += 2;
+      else if (stats.batch_efficiency >= 20.0f) score += 1;
+      
+      if (draw_call_efficiency >= 20.0f) score += 3;
+      else if (draw_call_efficiency >= 5.0f) score += 2;
+      else if (draw_call_efficiency >= 1.0f) score += 1;
+      
+      if (memory_kb <= 500) score += 2;
+      else if (memory_kb <= 1000) score += 1;
+      
+      if (total_objects >= 150) score += 2;
+      else if (total_objects >= 50) score += 1;
+      
+      if (score >= 8) {
+        std::cout << "🌟 GRADE A: Excellent performance! (" << score << "/10)" << std::endl;
+      } else if (score >= 6) {
+        std::cout << "✅ GRADE B: Good performance (" << score << "/10)" << std::endl;
+      } else if (score >= 4) {
+        std::cout << "⚠️  GRADE C: Acceptable performance (" << score << "/10)" << std::endl;
+      } else {
+        std::cout << "❌ GRADE D: Performance needs improvement (" << score << "/10)" << std::endl;
+      }
+    }
   }
 
   // Create a second OpenGL scene manager for 3D mode
@@ -199,11 +399,21 @@ int main(int argc, char* argv[]) {
 
   // If thread test is enabled, start a background thread that keeps adding shapes
   if (thread_test) {
-    std::thread worker_thread([&gl_sm, &gl_sm_3d]() {
+    std::thread worker_thread([&gl_sm, &gl_sm_3d, performance_test]() {
       std::cout << "Starting thread safety test..." << std::endl;
       
       auto canvas_2d = static_cast<Canvas*>(gl_sm->GetOpenGLObject("canvas"));
       auto canvas_3d = static_cast<Canvas*>(gl_sm_3d->GetOpenGLObject("canvas"));
+      
+      // Enable performance monitoring for thread test
+      if (performance_test) {
+        Canvas::PerformanceConfig perf_config;
+        perf_config.detailed_timing_enabled = true;
+        perf_config.memory_tracking_enabled = true;
+        perf_config.aggressive_memory_cleanup = false; // Don't cleanup during stress test
+        canvas_2d->SetPerformanceConfig(perf_config);
+        canvas_3d->SetPerformanceConfig(perf_config);
+      }
       
       float x = 0.0f;
       float y = 0.0f;
@@ -216,6 +426,23 @@ int main(int argc, char* argv[]) {
           canvas_2d->Clear();
           canvas_3d->Clear();
           std::cout << "Cleared canvases at iteration " << iteration << std::endl;
+          
+          // Print performance statistics periodically
+          if (performance_test && iteration % 500 == 0 && iteration > 0) {
+            const auto& stats_2d = canvas_2d->GetRenderStats();
+            std::cout << "\n=== Thread Test Performance (2D) - Iteration " << iteration << " ===" << std::endl;
+            std::cout << "FPS: " << stats_2d.GetFPS() << " (avg: " << stats_2d.GetAvgFPS() << ")" << std::endl;
+            std::cout << "Draw calls: " << stats_2d.draw_calls << std::endl;
+            std::cout << "Batch efficiency: " << stats_2d.batch_efficiency << "%" << std::endl;
+            std::cout << "Memory usage: " << canvas_2d->GetMemoryUsage() / 1024 << " KB" << std::endl;
+            
+            // Trigger memory optimization occasionally
+            if (iteration % 1000 == 0) {
+              canvas_2d->OptimizeMemory();
+              canvas_3d->OptimizeMemory();
+              std::cout << "Memory optimization triggered" << std::endl;
+            }
+          }
         }
         
         // Add a variety of shapes with different parameters

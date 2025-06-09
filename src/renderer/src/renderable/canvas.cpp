@@ -1392,8 +1392,28 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
 
 void Canvas::RenderBatches(const glm::mat4& projection, const glm::mat4& view,
                           const glm::mat4& coord_transform) {
-  auto start_time = std::chrono::high_resolution_clock::now();
+  if (perf_config_.detailed_timing_enabled) {
+    frame_timer_.Start();
+  }
+  
   render_stats_.Reset();
+  
+  // Track memory usage
+  if (perf_config_.memory_tracking_enabled) {
+    render_stats_.vertex_memory_used = 
+      line_batch_.vertices.size() * sizeof(glm::vec3) +
+      filled_shape_batch_.vertices.size() * sizeof(float) +
+      outline_shape_batch_.vertices.size() * sizeof(float);
+    
+    render_stats_.index_memory_used = 
+      filled_shape_batch_.indices.size() * sizeof(uint32_t) +
+      outline_shape_batch_.indices.size() * sizeof(uint32_t);
+    
+    render_stats_.total_memory_used = 
+      render_stats_.vertex_memory_used + 
+      render_stats_.index_memory_used +
+      memory_tracker_.current_usage.load();
+  }
   
   // Update batches if needed
   UpdateBatches();
@@ -1409,6 +1429,7 @@ void Canvas::RenderBatches(const glm::mat4& projection, const glm::mat4& view,
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  render_stats_.state_changes += 3; // Track state changes
   
   // Render lines batch
   if (!line_batch_.vertices.empty()) {
@@ -1420,7 +1441,9 @@ void Canvas::RenderBatches(const glm::mat4& projection, const glm::mat4& view,
     glBindVertexArray(0);
     
     render_stats_.lines_rendered = line_batch_.vertices.size() / 2;
+    render_stats_.batched_objects += line_batch_.vertices.size() / 2;
     render_stats_.draw_calls++;
+    render_stats_.state_changes += 2; // VAO bind/unbind
   }
   
   // Render filled shapes batch
@@ -1432,7 +1455,9 @@ void Canvas::RenderBatches(const glm::mat4& projection, const glm::mat4& view,
     glBindVertexArray(0);
     
     render_stats_.shapes_rendered += filled_shape_batch_.indices.size() / 3;
+    render_stats_.batched_objects += filled_shape_batch_.indices.size() / 3;
     render_stats_.draw_calls++;
+    render_stats_.state_changes += 2; // VAO bind/unbind
   }
   
   // Render outline shapes batch
@@ -1445,7 +1470,9 @@ void Canvas::RenderBatches(const glm::mat4& projection, const glm::mat4& view,
     glBindVertexArray(0);
     
     render_stats_.shapes_rendered += outline_shape_batch_.indices.size() / 8; // Approximate shapes
+    render_stats_.batched_objects += outline_shape_batch_.indices.size() / 8;
     render_stats_.draw_calls++;
+    render_stats_.state_changes += 2; // VAO bind/unbind
   }
   
   // Reset OpenGL state
@@ -1453,16 +1480,23 @@ void Canvas::RenderBatches(const glm::mat4& projection, const glm::mat4& view,
   glDisable(GL_BLEND);
   glBindVertexArray(0);
   glUseProgram(0);
+  render_stats_.state_changes += 4; // State reset
   
-  auto end_time = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-  render_stats_.last_frame_time_ms = duration.count() / 1000.0f;
+  // Update performance statistics
+  if (perf_config_.detailed_timing_enabled) {
+    float frame_time = frame_timer_.ElapsedMs();
+    render_stats_.UpdateFrameStats(frame_time);
+  }
 }
 
 void Canvas::RenderIndividualShapes(const CanvasData& data, const glm::mat4& projection,
                                    const glm::mat4& view, const glm::mat4& coord_transform) {
   if (data.ellipses.empty() && data.polygons.empty()) {
     return;
+  }
+  
+  if (perf_config_.detailed_timing_enabled) {
+    operation_timer_.Start();
   }
   
   // Setup rendering state - make sure we have the right shader program active
@@ -1476,6 +1510,7 @@ void Canvas::RenderIndividualShapes(const CanvasData& data, const glm::mat4& pro
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  render_stats_.state_changes += 3;
   
   // Render ellipses individually (not yet batched)
   for (const auto& ellipse : data.ellipses) {
@@ -1604,6 +1639,11 @@ void Canvas::RenderIndividualShapes(const CanvasData& data, const glm::mat4& pro
   glDisable(GL_BLEND);
   glBindVertexArray(0);
   glUseProgram(0);
+  
+  if (perf_config_.detailed_timing_enabled) {
+    float operation_time = operation_timer_.ElapsedMs();
+    render_stats_.UpdateOperationStats(operation_time);
+  }
 }
 
 void Canvas::InitializeBatches() {
@@ -1888,6 +1928,111 @@ void Canvas::GenerateRectangleVertices(float x, float y, float width, float heig
       base_index + 3, base_index      // Left edge
     });
   }
+}
+
+void Canvas::OptimizeMemory() {
+  std::lock_guard<std::mutex> lock(data_mutex_);
+  
+  if (perf_config_.aggressive_memory_cleanup) {
+    // Shrink batch vectors to fit current usage
+    line_batch_.vertices.shrink_to_fit();
+    line_batch_.colors.shrink_to_fit();
+    line_batch_.thicknesses.shrink_to_fit();
+    
+    filled_shape_batch_.vertices.shrink_to_fit();
+    filled_shape_batch_.indices.shrink_to_fit();
+    filled_shape_batch_.colors.shrink_to_fit();
+    
+    outline_shape_batch_.vertices.shrink_to_fit();
+    outline_shape_batch_.indices.shrink_to_fit();
+    outline_shape_batch_.colors.shrink_to_fit();
+    
+    // Clear pending updates queue if it's grown too large
+    if (pending_updates_.size() == 0) {
+      std::queue<PendingUpdate> empty_queue;
+      pending_updates_.swap(empty_queue);
+    }
+  }
+  
+  // Update memory tracking
+  if (perf_config_.memory_tracking_enabled) {
+    size_t current_usage = GetMemoryUsage();
+    memory_tracker_.current_usage = current_usage;
+  }
+}
+
+void Canvas::PreallocateMemory(size_t estimated_objects) {
+  std::lock_guard<std::mutex> lock(data_mutex_);
+  
+  // Pre-allocate batch vectors based on estimated usage
+  size_t reserve_size = std::min(estimated_objects, perf_config_.max_batch_size);
+  
+  line_batch_.vertices.reserve(reserve_size * 2); // 2 vertices per line
+  line_batch_.colors.reserve(reserve_size * 2);
+  line_batch_.thicknesses.reserve(reserve_size);
+  
+  filled_shape_batch_.vertices.reserve(reserve_size * 12); // ~4 vertices per shape * 3 components
+  filled_shape_batch_.indices.reserve(reserve_size * 6);   // ~2 triangles per shape
+  filled_shape_batch_.colors.reserve(reserve_size * 4);    // 4 vertices per shape
+  
+  outline_shape_batch_.vertices.reserve(reserve_size * 12);
+  outline_shape_batch_.indices.reserve(reserve_size * 8);  // ~4 edges per shape
+  outline_shape_batch_.colors.reserve(reserve_size * 4);
+  
+  // Record the pre-allocation
+  if (perf_config_.memory_tracking_enabled) {
+    size_t allocated_size = GetMemoryUsage();
+    memory_tracker_.RecordAllocation(allocated_size);
+  }
+}
+
+void Canvas::ShrinkToFit() {
+  std::lock_guard<std::mutex> lock(data_mutex_);
+  
+  // Shrink all batch vectors to minimum required size
+  line_batch_.vertices.shrink_to_fit();
+  line_batch_.colors.shrink_to_fit();
+  line_batch_.thicknesses.shrink_to_fit();
+  
+  filled_shape_batch_.vertices.shrink_to_fit();
+  filled_shape_batch_.indices.shrink_to_fit();
+  filled_shape_batch_.colors.shrink_to_fit();
+  
+  outline_shape_batch_.vertices.shrink_to_fit();
+  outline_shape_batch_.indices.shrink_to_fit();
+  outline_shape_batch_.colors.shrink_to_fit();
+  
+  // Clear and shrink pending updates queue
+  std::queue<PendingUpdate> empty_queue;
+  pending_updates_.swap(empty_queue);
+}
+
+size_t Canvas::GetMemoryUsage() const {
+  size_t total_usage = 0;
+  
+  // Calculate batch memory usage
+  total_usage += line_batch_.vertices.capacity() * sizeof(glm::vec3);
+  total_usage += line_batch_.colors.capacity() * sizeof(glm::vec4);
+  total_usage += line_batch_.thicknesses.capacity() * sizeof(float);
+  
+  total_usage += filled_shape_batch_.vertices.capacity() * sizeof(float);
+  total_usage += filled_shape_batch_.indices.capacity() * sizeof(uint32_t);
+  total_usage += filled_shape_batch_.colors.capacity() * sizeof(glm::vec4);
+  
+  total_usage += outline_shape_batch_.vertices.capacity() * sizeof(float);
+  total_usage += outline_shape_batch_.indices.capacity() * sizeof(uint32_t);
+  total_usage += outline_shape_batch_.colors.capacity() * sizeof(glm::vec4);
+  
+  // Add estimated size of pending updates queue
+  total_usage += pending_updates_.size() * sizeof(PendingUpdate);
+  
+  // Add estimated CanvasData memory usage
+  if (data_) {
+    // Rough estimation - in a real implementation you'd calculate exact sizes
+    total_usage += 1024; // Estimated base CanvasData size
+  }
+  
+  return total_usage;
 }
 
 }  // namespace quickviz
