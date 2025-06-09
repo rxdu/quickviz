@@ -56,10 +56,11 @@ out vec4 FragColor;
 uniform int lineType;
 uniform float thickness;
 uniform vec4 uColor;
+uniform int drawingMode; // 0 = points, 1 = lines/shapes
 
 void main() {
     // For points, use the per-vertex color that comes from the buffer
-    if (gl_PrimitiveID == 0) {
+    if (drawingMode == 0) {
         vec2 circCoord = 2.0 * gl_PointCoord - 1.0;
         if (dot(circCoord, circCoord) > 1.0) {
             discard;
@@ -773,12 +774,6 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
       glBindTexture(GL_TEXTURE_2D, texture_id);
       background_shader_.TrySetUniform("backgroundTexture", 0);
 
-      // Check for errors after binding texture
-      GLenum error = glGetError();
-      if (error != GL_NO_ERROR) {
-        std::cerr << "OpenGL error after binding texture: " << error << std::endl;
-      }
-
       // Setup blending for proper transparency
       glEnable(GL_BLEND);
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -786,7 +781,7 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
       // Draw quad
       glBindVertexArray(background_vao_);
       
-      // Make sure the right attributes are enabled
+      // Make sure the right attributes are enabled for background rendering
       glEnableVertexAttribArray(0);  // Position
       glEnableVertexAttribArray(1);  // Texture coordinates
       // Disable any other attributes that might be enabled
@@ -794,18 +789,13 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
       
       glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
-      // Cleanup
+      // Cleanup background rendering state
       glDisableVertexAttribArray(0);
       glDisableVertexAttribArray(1);
       glBindVertexArray(0);
       glBindTexture(GL_TEXTURE_2D, 0);
+      glActiveTexture(GL_TEXTURE0);
       glUseProgram(0);
-
-      // Check for errors after drawing
-      error = glGetError();
-      if (error != GL_NO_ERROR) {
-        std::cerr << "OpenGL error after drawing background: " << error << std::endl;
-      }
     }
   }
 
@@ -823,7 +813,7 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
     return;
   }
 
-  // Setup common rendering state
+  // Setup common rendering state for primitives
   primitive_shader_.Use();
   primitive_shader_.TrySetUniform("projection", projection);
   primitive_shader_.TrySetUniform("view", view);
@@ -843,6 +833,9 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
     glBindVertexArray(primitive_vao_);
     glEnable(GL_PROGRAM_POINT_SIZE);
     
+    // Set drawing mode to points
+    primitive_shader_.TrySetUniform("drawingMode", 0);
+    
     // Update the buffer with current point data
     glBindBuffer(GL_ARRAY_BUFFER, primitive_vbo_);
     glBufferData(GL_ARRAY_BUFFER, sizeof(Point) * data.points.size(), data.points.data(), GL_DYNAMIC_DRAW);
@@ -858,15 +851,9 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
     // Draw the points
     glDrawArrays(GL_POINTS, 0, data.points.size());
     
-    // Check for errors after drawing points
-    GLenum error = glGetError();
-    if (error != GL_NO_ERROR) {
-      std::cerr << "OpenGL error after drawing points: " << error << std::endl;
-    }
-    
     glDisable(GL_PROGRAM_POINT_SIZE);
     
-    // Disable attributes when done
+    // Clean up point rendering state
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
     glDisableVertexAttribArray(2);
@@ -874,6 +861,9 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
   }
+
+  // Set drawing mode to lines/shapes for all subsequent primitives
+  primitive_shader_.TrySetUniform("drawingMode", 1);
 
   // 2. Draw Lines - Use modern OpenGL approach
   if (!data.lines.empty()) {
@@ -916,6 +906,7 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
       glDrawArrays(GL_LINES, 0, 2);
       
       // Clean up
+      glDisableVertexAttribArray(0);
       glBindVertexArray(0);
       glBindBuffer(GL_ARRAY_BUFFER, 0);
       glDeleteVertexArrays(1, &tempVAO);
@@ -983,6 +974,7 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
       }
       
       // Clean up
+      glDisableVertexAttribArray(0);
       glBindVertexArray(0);
       glBindBuffer(GL_ARRAY_BUFFER, 0);
       glDeleteVertexArrays(1, &tempVAO);
@@ -1057,6 +1049,7 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
       }
       
       // Clean up
+      glDisableVertexAttribArray(0);
       glBindVertexArray(0);
       glBindBuffer(GL_ARRAY_BUFFER, 0);
       glDeleteVertexArrays(1, &tempVAO);
@@ -1141,6 +1134,7 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
       }
       
       // Clean up
+      glDisableVertexAttribArray(0);
       glBindVertexArray(0);
       glBindBuffer(GL_ARRAY_BUFFER, 0);
       glDeleteVertexArrays(1, &tempVAO);
@@ -1201,6 +1195,7 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
       }
       
       // Clean up
+      glDisableVertexAttribArray(0);
       glBindVertexArray(0);
       glBindBuffer(GL_ARRAY_BUFFER, 0);
       glDeleteVertexArrays(1, &tempVAO);
@@ -1209,6 +1204,8 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
   }
 
   // Reset OpenGL state
+  glDisable(GL_DEPTH_TEST);
+  glDisable(GL_BLEND);
   glBindVertexArray(0);
   glUseProgram(0);
 }

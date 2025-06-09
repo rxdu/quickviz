@@ -33,6 +33,7 @@ class ShaderProgram {
   void SetUniform(const std::string& name, int value);
   void SetUniform(const std::string& name, float value);
   void SetUniform(const std::string& name, const glm::vec3& vector);
+  void SetUniform(const std::string& name, const glm::vec4& vector);
   void SetUniform(const std::string& name, const glm::mat4& matrix);
 
   // Safe versions of SetUniform that don't throw if uniform doesn't exist
@@ -64,6 +65,15 @@ class ShaderProgram {
   }
 
   bool TrySetUniform(const std::string& name, const glm::vec3& vector) {
+    try {
+        SetUniform(name, vector);
+        return true;
+    } catch (const std::runtime_error& e) {
+        return false;
+    }
+  }
+
+  bool TrySetUniform(const std::string& name, const glm::vec4& vector) {
     try {
         SetUniform(name, vector);
         return true;

@@ -26,3 +26,6 @@ target_link_libraries(test_primitive_drawing PRIVATE renderer)
 
 add_executable(test_texture test_texture.cpp)
 target_link_libraries(test_texture PRIVATE renderer)
+
+add_executable(test_canvas_st test_canvas_st.cpp)
+target_link_libraries(test_canvas_st PRIVATE renderer)
