@@ -28,6 +28,29 @@ namespace quickviz {
 struct Point;
 struct CanvasData;
 
+// Batched rendering structures for improved performance
+struct LineBatch {
+  std::vector<glm::vec3> vertices;
+  std::vector<glm::vec4> colors;
+  std::vector<float> thicknesses;
+  std::vector<LineType> line_types;
+  uint32_t vao = 0;
+  uint32_t position_vbo = 0;
+  uint32_t color_vbo = 0;
+  bool needs_update = true;
+};
+
+struct ShapeBatch {
+  std::vector<float> vertices;
+  std::vector<uint32_t> indices;
+  std::vector<glm::vec4> colors;
+  uint32_t vao = 0;
+  uint32_t vertex_vbo = 0;
+  uint32_t color_vbo = 0;
+  uint32_t ebo = 0;
+  bool needs_update = true;
+};
+
 class Canvas : public OpenGlObject {
  public:
   Canvas();
@@ -58,6 +81,33 @@ class Canvas : public OpenGlObject {
 
   // Clear all points from the canvas
   void Clear();
+
+  // Performance and rendering methods
+  void SetBatchingEnabled(bool enabled) { batching_enabled_ = enabled; }
+  bool IsBatchingEnabled() const { return batching_enabled_; }
+  void FlushBatches(); // Force immediate rendering of all batches
+  
+  // Performance monitoring
+  struct RenderStats {
+    uint32_t points_rendered = 0;
+    uint32_t lines_rendered = 0;
+    uint32_t shapes_rendered = 0;
+    uint32_t draw_calls = 0;
+    uint32_t state_changes = 0;
+    float last_frame_time_ms = 0.0f;
+    
+    void Reset() {
+      points_rendered = 0;
+      lines_rendered = 0; 
+      shapes_rendered = 0;
+      draw_calls = 0;
+      state_changes = 0;
+      last_frame_time_ms = 0.0f;
+    }
+  };
+  
+  const RenderStats& GetRenderStats() const { return render_stats_; }
+  void ResetRenderStats() { render_stats_.Reset(); }
 
   void AllocateGpuResources() override;
   void ReleaseGpuResources() override;
@@ -136,6 +186,34 @@ class Canvas : public OpenGlObject {
   uint32_t primitive_vao_ = 0;
   uint32_t primitive_vbo_ = 0;
   ShaderProgram primitive_shader_;
+
+  // Batching-related members
+  bool batching_enabled_ = true;  // Re-enabled, ellipse/polygon renderMode fixed
+  LineBatch line_batch_;
+  ShapeBatch filled_shape_batch_;
+  ShapeBatch outline_shape_batch_;
+
+  // Batch management methods
+  void InitializeBatches();
+  void ClearBatches();
+  void UpdateBatches();
+  void RenderBatches(const glm::mat4& projection, const glm::mat4& view, 
+                     const glm::mat4& coord_transform);
+  
+  // Individual shape rendering for non-batched shapes
+  void RenderIndividualShapes(const CanvasData& data, const glm::mat4& projection, 
+                             const glm::mat4& view, const glm::mat4& coord_transform);
+  
+  // Shape generation helpers
+  void GenerateCircleVertices(float cx, float cy, float radius, int segments,
+                             std::vector<float>& vertices, std::vector<uint32_t>& indices,
+                             bool filled, uint32_t base_index);
+  void GenerateRectangleVertices(float x, float y, float width, float height,
+                                std::vector<float>& vertices, std::vector<uint32_t>& indices,
+                                bool filled, uint32_t base_index);
+
+  // Performance monitoring
+  RenderStats render_stats_;
 };
 }  // namespace quickviz
 

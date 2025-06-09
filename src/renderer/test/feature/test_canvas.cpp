@@ -77,6 +77,15 @@ void TestAllCanvasFunctions(Canvas* canvas) {
   }
   
   canvas->AddPolygon(star_vertices, glm::vec4(0.8f, 0.8f, 0.0f, 0.9f), true, 2.0f);  // Gold filled
+  
+  // Add a simple test polygon that should be very visible
+  std::vector<glm::vec2> test_polygon = {
+    {-1.5f, -1.5f},  // Bottom left
+    {-0.5f, -1.5f},  // Bottom right
+    {-0.5f, -0.5f},  // Top right
+    {-1.5f, -0.5f}   // Top left
+  };
+  canvas->AddPolygon(test_polygon, glm::vec4(1.0f, 0.0f, 1.0f, 1.0f), true, 3.0f);  // Bright magenta filled
 }
 
 int main(int argc, char* argv[]) {
