@@ -106,7 +106,7 @@ void PointCloud::AllocateGpuResources() {
   }
 }
 
-void PointCloud::ReleaseGpuResources() {
+void PointCloud::ReleaseGpuResources() noexcept {
   if (vao_) glDeleteVertexArrays(1, &vao_);
   if (position_vbo_) glDeleteBuffers(1, &position_vbo_);
   if (color_vbo_) glDeleteBuffers(1, &color_vbo_);

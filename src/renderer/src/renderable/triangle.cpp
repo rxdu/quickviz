@@ -126,7 +126,7 @@ void Triangle::AllocateGpuResources() {
   glBindVertexArray(0);
 }
 
-void Triangle::ReleaseGpuResources() {
+void Triangle::ReleaseGpuResources() noexcept {
   glDeleteVertexArrays(1, &vao_);
   glDeleteBuffers(1, &vbo_);
 }

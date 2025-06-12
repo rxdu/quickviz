@@ -62,12 +62,13 @@ class PointCloud : public OpenGlObject {
   }
   void SetRenderMode(PointMode mode) { render_mode_ = mode; }
 
- private:
   void AllocateGpuResources() override;
-  void ReleaseGpuResources() override;
+  void ReleaseGpuResources() noexcept override;
   void OnDraw(const glm::mat4& projection, const glm::mat4& view,
               const glm::mat4& coord_transform = glm::mat4(1.0f)) override;
+  bool IsGpuResourcesAllocated() const noexcept override { return vao_ != 0; }
 
+ private:
   // Helper methods for buffer updates
   void UpdateColors(ColorMode color_mode);
   void UpdateBufferWithSubData(uint32_t buffer, const void* data,

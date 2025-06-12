@@ -7,6 +7,7 @@
  * Copyright (c) 2021 Ruixiang Du (rdu)
  */
 
+#include <memory>
 #include <iostream>
 
 #include <glm/glm.hpp>
@@ -41,14 +42,14 @@ int main(int argc, char* argv[]) {
   );
 
   // set up grid
-  Grid grid(10.0f, 1.0f, glm::vec3(0.7f, 0.7f, 0.7f));
+  auto grid = std::make_unique<Grid>(10.0f, 1.0f, glm::vec3(0.7f, 0.7f, 0.7f));
 
   while (!win.ShouldClose()) {
     win.PollEvents();
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    grid.OnDraw(projection, view);
+    grid->OnDraw(projection, view);
 
     win.SwapBuffers();
   }

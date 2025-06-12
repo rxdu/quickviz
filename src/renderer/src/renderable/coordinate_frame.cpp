@@ -215,7 +215,7 @@ void CoordinateFrame::AllocateGpuResources() {
   glBindVertexArray(0);
 }
 
-void CoordinateFrame::ReleaseGpuResources() {
+void CoordinateFrame::ReleaseGpuResources() noexcept {
   glDeleteVertexArrays(1, &vao_);
   glDeleteBuffers(1, &vbo_);
   glDeleteBuffers(1, &ebo_);

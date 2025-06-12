@@ -46,9 +46,10 @@ class CoordinateFrame : public OpenGlObject {
   bool GetShowLabels() const { return false; }
 
   void AllocateGpuResources() override;
-  void ReleaseGpuResources() override;
+  void ReleaseGpuResources() noexcept override;
   void OnDraw(const glm::mat4& projection, const glm::mat4& view, 
               const glm::mat4& coord_transform = glm::mat4(1.0f)) override;
+  bool IsGpuResourcesAllocated() const noexcept override { return vao_ != 0; }
 
  private:
   void GenerateAxes();

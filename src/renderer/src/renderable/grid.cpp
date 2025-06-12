@@ -127,7 +127,7 @@ void Grid::AllocateGpuResources() {
   glBindVertexArray(0);
 }
 
-void Grid::ReleaseGpuResources() {
+void Grid::ReleaseGpuResources() noexcept {
   glDeleteVertexArrays(1, &vao_);
   glDeleteBuffers(1, &vbo_);
 }

@@ -208,9 +208,10 @@ class Canvas : public OpenGlObject {
   size_t GetMemoryUsage() const;            // Get current memory usage in bytes
 
   void AllocateGpuResources() override;
-  void ReleaseGpuResources() override;
+  void ReleaseGpuResources() noexcept override;
   void OnDraw(const glm::mat4& projection, const glm::mat4& view,
               const glm::mat4& coord_transform = glm::mat4(1.0f)) override;
+  bool IsGpuResourcesAllocated() const noexcept override { return primitive_vao_ != 0; }
 
  private:
   // Load and setup background image
@@ -326,8 +327,12 @@ class Canvas : public OpenGlObject {
     
     T* Acquire() {
       if (available_objects.empty()) {
-        available_objects.push_back(std::make_unique<T>());
-        total_created++;
+        try {
+          available_objects.push_back(std::make_unique<T>());
+          total_created++;
+        } catch (...) {
+          return nullptr; // Return nullptr on allocation failure
+        }
       }
       
       auto obj = std::move(available_objects.back());
@@ -340,6 +345,8 @@ class Canvas : public OpenGlObject {
     }
     
     void Release(T* obj) {
+      if (!obj) return; // Handle null pointer gracefully
+      
       auto it = std::find_if(used_objects.begin(), used_objects.end(),
         [obj](const std::unique_ptr<T>& ptr) { return ptr.get() == obj; });
       
@@ -350,15 +357,25 @@ class Canvas : public OpenGlObject {
     }
     
     void ShrinkToFit(size_t max_size) {
-      while (available_objects.size() > max_size) {
+      while (available_objects.size() > max_size && !available_objects.empty()) {
         available_objects.pop_back();
       }
+      available_objects.shrink_to_fit();
+      used_objects.shrink_to_fit();
     }
     
     size_t GetMemoryUsage() const {
       return (available_objects.size() + used_objects.size()) * sizeof(T) + 
              available_objects.capacity() * sizeof(std::unique_ptr<T>) +
              used_objects.capacity() * sizeof(std::unique_ptr<T>);
+    }
+    
+    // Add clear method for cleanup
+    void Clear() {
+      available_objects.clear();
+      used_objects.clear();
+      total_created = 0;
+      peak_usage = 0;
     }
   };
   

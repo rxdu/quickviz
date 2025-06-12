@@ -855,7 +855,7 @@ void Canvas::AllocateGpuResources() {
   }
 }
 
-void Canvas::ReleaseGpuResources() {
+void Canvas::ReleaseGpuResources() noexcept{
   // Delete background resources
   {
     std::lock_guard<std::mutex> lock(background_mutex_);

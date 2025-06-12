@@ -11,6 +11,7 @@
 
 #include <cstddef>
 #include <string>
+#include <stdexcept>
 
 #include "imview/interface/resizable.hpp"
 #include "imview/interface/renderable.hpp"
@@ -24,8 +25,16 @@ typedef struct YGNode* YGNodeRef;
 namespace quickviz {
 class SceneObject : public Resizable, public Renderable, public InputHandler {
  public:
-  SceneObject(std::string name);
+  explicit SceneObject(std::string name);
   virtual ~SceneObject();
+
+  // Disable copy construction and assignment for safety
+  SceneObject(const SceneObject&) = delete;
+  SceneObject& operator=(const SceneObject&) = delete;
+  
+  // Enable move construction and assignment
+  SceneObject(SceneObject&&) = default;
+  SceneObject& operator=(SceneObject&&) = default;
 
   /****** public methods ******/
   // functions to be (re)implemented by derived classes
@@ -34,9 +43,15 @@ class SceneObject : public Resizable, public Renderable, public InputHandler {
   virtual void OnRender() = 0;
 
   // common methods
-  std::string GetName() const { return name_; }
-  void SetVisibility(bool visible) { visible_ = visible; }
-  bool IsVisible() const override { return visible_; }
+  const std::string& GetName() const noexcept { return name_; }
+  void SetVisibility(bool visible) noexcept { visible_ = visible; }
+  bool IsVisible() const noexcept override { return visible_; }
+  
+  // Position and size getters
+  float GetX() const noexcept { return x_; }
+  float GetY() const noexcept { return y_; }
+  float GetWidth() const noexcept { return width_; }
+  float GetHeight() const noexcept { return height_; }
 
   // used for automatic layout only
 #ifdef ENABLE_AUTO_LAYOUT
@@ -80,10 +95,10 @@ class SceneObject : public Resizable, public Renderable, public InputHandler {
   std::string name_;
   bool visible_ = true;
 
-  float x_ = 0;
-  float y_ = 0;
-  float width_ = 0;
-  float height_ = 0;
+  float x_ = 0.0f;
+  float y_ = 0.0f;
+  float width_ = 0.0f;
+  float height_ = 0.0f;
 
 #ifdef ENABLE_AUTO_LAYOUT
   YGNodeRef yg_node_;

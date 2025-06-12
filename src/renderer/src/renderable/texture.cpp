@@ -205,7 +205,7 @@ void Texture::AllocateGpuResources() {
   }
 }
 
-void Texture::ReleaseGpuResources() {
+void Texture::ReleaseGpuResources() noexcept {
   if (texture_id_ != 0) {
     glDeleteTextures(1, &texture_id_);
     texture_id_ = 0;
