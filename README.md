@@ -17,6 +17,10 @@ The design of imview is documented in [docs/imview_design.md](docs/imview_design
     <td><img src="docs/screenshots/cairo.png" alt="Cairo Sample"></td>
   </tr>
   <tr>
+    <td><img src="docs/screenshots/pointcloud.png" alt="Pointcloud Sample"></td>
+    <td><img src="docs/screenshots/opengl_2d.png" alt="OpenGL 2D Sample"></td>
+  </tr>
+  <tr>
     <td><img src="docs/screenshots/plot.png" alt="Plot Sample"></td>
     <td><img src="docs/screenshots/tui.png" alt="TUI Sample"></td>
   </tr>
