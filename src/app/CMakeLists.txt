@@ -8,7 +8,7 @@ if (BUILD_QUICKVIZ_APP)
       panels/scene_panel.cpp
       panels/config_panel.cpp
       panels/console_panel.cpp)
-  target_link_libraries(quickviz PRIVATE imview)
+  target_link_libraries(quickviz PRIVATE imview renderer)
   target_include_directories(quickviz PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
   install(TARGETS quickviz

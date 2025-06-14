@@ -9,7 +9,7 @@
 #include "panels/console_panel.hpp"
 
 #include "imview/fonts.hpp"
-#include "imview/component/logging/app_log_handler.hpp"
+#include "imview/logging/app_log_handler.hpp"
 
 namespace quickviz {
 ConsolePanel::ConsolePanel(std::string name) : Panel(name) {
