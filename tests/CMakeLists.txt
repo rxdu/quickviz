@@ -13,6 +13,15 @@ if(NOT TARGET gtest_main)
     message(FATAL_ERROR "GoogleTest targets not found. Make sure googletest submodule is initialized and third_party is added before tests.")
 endif()
 
+# Detect CI environment
+if(DEFINED ENV{CI} OR DEFINED ENV{GITHUB_ACTIONS})
+    set(RUNNING_IN_CI TRUE)
+    message(STATUS "Detected CI environment - will skip OpenGL/GUI tests")
+else()
+    set(RUNNING_IN_CI FALSE)
+    message(STATUS "Not in CI environment - will run all tests")
+endif()
+
 # Optional: Find Google Benchmark for performance tests
 find_package(benchmark QUIET)
 
@@ -24,7 +33,7 @@ add_library(test_utils INTERFACE)
 target_include_directories(test_utils INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/utils)
 
 # ==============================================================================
-# Unit Tests
+# Unit Tests (Always run)
 # ==============================================================================
 
 # Event system unit tests
@@ -56,117 +65,133 @@ gtest_discover_tests(test_buffer_registry
 )
 
 # ==============================================================================
-# Integration Tests
+# Integration Tests (Skip in CI)
 # ==============================================================================
 
-# Renderer pipeline integration tests
-add_executable(test_renderer_pipeline
-    integration/test_renderer_pipeline.cpp
-)
-target_link_libraries(test_renderer_pipeline
-    PRIVATE
-    gtest_main
-    imview
-    renderer
-    test_utils
-)
-gtest_discover_tests(test_renderer_pipeline
-    PROPERTIES LABELS "integration"
-)
+if(NOT RUNNING_IN_CI)
+    # Renderer pipeline integration tests
+    add_executable(test_renderer_pipeline
+        integration/test_renderer_pipeline.cpp
+    )
+    target_link_libraries(test_renderer_pipeline
+        PRIVATE
+        gtest_main
+        imview
+        renderer
+        test_utils
+    )
+    gtest_discover_tests(test_renderer_pipeline
+        PROPERTIES LABELS "integration"
+    )
 
-# ImView integration tests
-add_executable(test_imview_integration
-    integration/test_imview_integration.cpp
-)
-target_link_libraries(test_imview_integration
-    PRIVATE
-    gtest_main
-    imview
-    test_utils
-)
-gtest_discover_tests(test_imview_integration
-    PROPERTIES LABELS "integration"
-)
+    # ImView integration tests
+    add_executable(test_imview_integration
+        integration/test_imview_integration.cpp
+    )
+    target_link_libraries(test_imview_integration
+        PRIVATE
+        gtest_main
+        imview
+        test_utils
+    )
+    gtest_discover_tests(test_imview_integration
+        PROPERTIES LABELS "integration"
+    )
+else()
+    message(STATUS "Skipping OpenGL/GUI integration tests in CI environment")
+endif()
 
 # ==============================================================================
-# Memory Leak Tests
+# Memory Leak Tests (Skip in CI)
 # ==============================================================================
 
-# Memory leak detection tests
-add_executable(test_memory_leaks
-    memory/test_memory_leaks.cpp
-)
-target_link_libraries(test_memory_leaks
-    PRIVATE
-    gtest_main
-    imview
-    renderer
-    test_utils
-)
-gtest_discover_tests(test_memory_leaks
-    PROPERTIES LABELS "memory"
-)
+if(NOT RUNNING_IN_CI)
+    # Memory leak detection tests
+    add_executable(test_memory_leaks
+        memory/test_memory_leaks.cpp
+    )
+    target_link_libraries(test_memory_leaks
+        PRIVATE
+        gtest_main
+        imview
+        renderer
+        test_utils
+    )
+    gtest_discover_tests(test_memory_leaks
+        PROPERTIES LABELS "memory"
+    )
+else()
+    message(STATUS "Skipping OpenGL memory leak tests in CI environment")
+endif()
 
 # ==============================================================================
 # Performance Benchmarks (Optional)
 # ==============================================================================
 
 if(benchmark_FOUND)
-    # Rendering performance benchmarks
-    add_executable(benchmark_rendering
-        benchmarks/benchmark_rendering.cpp
-    )
-    target_link_libraries(benchmark_rendering
-        PRIVATE
-        benchmark::benchmark
-        imview
-        renderer
-        core
-    )
-    
-    # Add benchmark as a test (optional)
-    add_test(NAME benchmark_rendering_test
-        COMMAND benchmark_rendering --benchmark_min_time=0.1
-    )
-    
-    message(STATUS "Google Benchmark found - building performance benchmarks")
+    if(NOT RUNNING_IN_CI)
+        # Rendering performance benchmarks
+        add_executable(benchmark_rendering
+            benchmarks/benchmark_rendering.cpp
+        )
+        target_link_libraries(benchmark_rendering
+            PRIVATE
+            benchmark::benchmark
+            imview
+            renderer
+            core
+        )
+        
+        # Add benchmark as a test (optional)
+        add_test(NAME benchmark_rendering_test
+            COMMAND benchmark_rendering --benchmark_min_time=0.1
+        )
+        
+        message(STATUS "Google Benchmark found - building performance benchmarks")
+    else()
+        message(STATUS "Google Benchmark found but skipping OpenGL benchmarks in CI environment")
+    endif()
 else()
     message(STATUS "Google Benchmark not found - skipping performance benchmarks")
 endif()
 
 # ==============================================================================
-# Valgrind Memory Testing
+# Valgrind Memory Testing (Skip in CI)
 # ==============================================================================
 
-# Find Valgrind for memory testing
-find_program(VALGRIND_EXECUTABLE valgrind)
+if(NOT RUNNING_IN_CI)
+    # Find Valgrind for memory testing
+    find_program(VALGRIND_EXECUTABLE valgrind)
 
-if(VALGRIND_EXECUTABLE)
-    # Add Valgrind tests for memory leak detection
-    add_test(NAME memory_leak_valgrind_test
-        COMMAND ${VALGRIND_EXECUTABLE}
-        --tool=memcheck
-        --leak-check=full
-        --show-leak-kinds=all
-        --track-origins=yes
-        --verbose
-        --error-exitcode=1
-        $<TARGET_FILE:test_memory_leaks>
-    )
-    
-    # Add Valgrind test for renderer pipeline
-    add_test(NAME renderer_valgrind_test
-        COMMAND ${VALGRIND_EXECUTABLE}
-        --tool=memcheck
-        --leak-check=full
-        --show-leak-kinds=all
-        --error-exitcode=1
-        $<TARGET_FILE:test_renderer_pipeline>
-    )
-    
-    message(STATUS "Valgrind found - adding memory leak tests")
+    if(VALGRIND_EXECUTABLE)
+        # Add Valgrind tests for memory leak detection
+        add_test(NAME memory_leak_valgrind_test
+            COMMAND ${VALGRIND_EXECUTABLE}
+            --tool=memcheck
+            --leak-check=full
+            --show-leak-kinds=all
+            --track-origins=yes
+            --verbose
+            --error-exitcode=1
+            $<TARGET_FILE:test_memory_leaks>
+        )
+        
+        # Add Valgrind test for renderer pipeline
+        add_test(NAME renderer_valgrind_test
+            COMMAND ${VALGRIND_EXECUTABLE}
+            --tool=memcheck
+            --leak-check=full
+            --show-leak-kinds=all
+            --error-exitcode=1
+            $<TARGET_FILE:test_renderer_pipeline>
+        )
+        
+        message(STATUS "Valgrind found - adding memory leak tests")
+    else()
+        message(STATUS "Valgrind not found - skipping memory leak tests")
+    endif()
 else()
-    message(STATUS "Valgrind not found - skipping memory leak tests")
+    message(STATUS "Skipping Valgrind tests in CI environment")
 endif()
 
 # ==============================================================================
@@ -214,18 +239,29 @@ endif()
 # ==============================================================================
 
 message(STATUS "Test Configuration Summary:")
+message(STATUS "  CI Environment: ${RUNNING_IN_CI}")
 message(STATUS "  Unit Tests: Enabled")
-message(STATUS "  Integration Tests: Enabled") 
-message(STATUS "  Memory Tests: Enabled")
+if(RUNNING_IN_CI)
+    message(STATUS "  Integration Tests: Disabled (CI environment)")
+    message(STATUS "  Memory Tests: Disabled (CI environment)")
+    message(STATUS "  Valgrind Memory Testing: Disabled (CI environment)")
+else()
+    message(STATUS "  Integration Tests: Enabled")
+    message(STATUS "  Memory Tests: Enabled")
+    if(VALGRIND_EXECUTABLE)
+        message(STATUS "  Valgrind Memory Testing: Enabled")
+    else()
+        message(STATUS "  Valgrind Memory Testing: Disabled (Valgrind not found)")
+    endif()
+endif()
 if(benchmark_FOUND)
-    message(STATUS "  Performance Benchmarks: Enabled")
+    if(RUNNING_IN_CI)
+        message(STATUS "  Performance Benchmarks: Disabled (CI environment)")
+    else()
+        message(STATUS "  Performance Benchmarks: Enabled")
+    endif()
 else()
     message(STATUS "  Performance Benchmarks: Disabled (Google Benchmark not found)")
-endif()
-if(VALGRIND_EXECUTABLE)
-    message(STATUS "  Valgrind Memory Testing: Enabled")
-else()
-    message(STATUS "  Valgrind Memory Testing: Disabled (Valgrind not found)")
 endif()
 if(ENABLE_COVERAGE)
     message(STATUS "  Code Coverage: Enabled")
