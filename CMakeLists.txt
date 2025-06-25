@@ -115,6 +115,11 @@ endif ()
 ## Add source directory
 add_subdirectory(src)
 
+## Add comprehensive test directory
+if(BUILD_TESTING)
+  add_subdirectory(tests)
+endif()
+
 ## Installation setup
 message(STATUS "Project will be installed to ${CMAKE_INSTALL_PREFIX} with 'make install'")
 

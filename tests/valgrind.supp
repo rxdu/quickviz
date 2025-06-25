@@ -1,0 +1,123 @@
+# Valgrind suppression file for QuickViz
+# This file contains known false positives from OpenGL drivers and system libraries
+
+# OpenGL driver issues
+{
+   OpenGL_driver_leak_1
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   obj:*/libGL.so*
+}
+
+{
+   OpenGL_driver_leak_2
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   obj:*/libglapi.so*
+}
+
+{
+   Mesa_driver_leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   obj:*/dri/*_dri.so
+}
+
+{
+   NVIDIA_driver_leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   obj:*/libnvidia-glcore.so*
+}
+
+# X11 related leaks
+{
+   X11_leak_1
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   obj:*/libX11.so*
+}
+
+{
+   X11_leak_2
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   obj:*/libxcb.so*
+}
+
+# GLFW leaks (often false positives)
+{
+   GLFW_leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   obj:*/libglfw.so*
+}
+
+# Fontconfig leaks
+{
+   Fontconfig_leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   obj:*/libfontconfig.so*
+}
+
+# Cairo leaks
+{
+   Cairo_leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   obj:*/libcairo.so*
+}
+
+# OpenCV leaks (if using OpenCV)
+{
+   OpenCV_leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   obj:*/libopencv_*.so*
+}
+
+# System library initialization
+{
+   libc_init
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:__libc_init
+}
+
+{
+   dl_init
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:_dl_*
+}
+
+# Thread-related false positives
+{
+   pthread_create
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   fun:pthread_create*
+}
+
+# Google Test internal allocations
+{
+   gtest_internal
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:*testing*
+}
