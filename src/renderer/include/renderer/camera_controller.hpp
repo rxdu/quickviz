@@ -27,14 +27,19 @@ class CameraController {
   void ProcessKeyboard(CameraMovement direction, float delta_time);
   void ProcessMouseMovement(float x_offset, float y_offset);
   void ProcessMouseScroll(float y_offset);
-  
+
   // Set the current mouse button state for camera control
   void SetActiveMouseButton(int button);
   int GetActiveMouseButton() const { return active_mouse_button_; }
 
+  float GetHeight() const { return camera_.GetPosition().y; }
+  void SetHeight(float height);
+
+  glm::vec2 GetPosition() const;
+  void SetPosition(const glm::vec2& position);
+
  private:
   static constexpr float initial_orbit_distance = 10.0f;
-  static constexpr float initial_top_down_height = 10.0f;
   static constexpr float default_orbit_zoom_speed = 2.0f;
   static constexpr float default_topdown_zoom_speed = 2.0f;
 
@@ -44,14 +49,13 @@ class CameraController {
   Mode mode_ = Mode::kOrbit;
   glm::vec3 orbit_target_ = glm::vec3(0.0f, 0.0f, 0.0f);
   float orbit_distance_ = initial_orbit_distance;
-  float top_down_height_ = initial_top_down_height;
-  
+
   // For tracking mouse button states, -1 means no button pressed
   int active_mouse_button_ = MouseButton::kNone;
-  
+
   // For tracking rotation in TopDown mode
   float top_down_rotation_ = 0.0f;
-  
+
   // Zoom speed multipliers
   float orbit_zoom_speed_ = default_orbit_zoom_speed;
   float topdown_zoom_speed_ = default_topdown_zoom_speed;
