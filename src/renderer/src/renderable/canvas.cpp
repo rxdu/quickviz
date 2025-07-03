@@ -142,11 +142,11 @@ void main() {
     FragColor = texColor;
     
     // Add a subtle border for visual feedback on the texture boundaries
-    float border = 0.005;
-    if (TexCoord.x < border || TexCoord.x > 1.0 - border || 
-        TexCoord.y < border || TexCoord.y > 1.0 - border) {
-        FragColor = mix(vec4(1.0, 0.0, 0.0, 1.0), texColor, 0.3); // Subtle red border
-    }
+   // float border = 0.005;
+   // if (TexCoord.x < border || TexCoord.x > 1.0 - border || 
+   //     TexCoord.y < border || TexCoord.y > 1.0 - border) {
+   //     FragColor = mix(vec4(1.0, 0.0, 0.0, 1.0), texColor, 0.3); // Subtle red border
+   // }
 }
 )";
 }  // namespace
@@ -408,6 +408,22 @@ void Canvas::SetupBackgroundImage(int width, int height, int channels,
     uint32_t texture_id = background_texture_.load();
     glBindTexture(GL_TEXTURE_2D, texture_id);
 
+    // Check for OpenGL row alignment issues
+    // OpenGL expects texture data to be aligned to 4-byte boundaries by default
+    int bytes_per_pixel = (format == GL_RGBA) ? 4 : (format == GL_RGB) ? 3 : 1;
+    int bytes_per_row = width * bytes_per_pixel;
+    bool alignment_issue = (bytes_per_row % 4) != 0;
+    
+    if (alignment_issue) {
+      std::cout << "Canvas: Adjusting alignment for " << width << "x" << height 
+                << " texture (row size: " << bytes_per_row << " bytes)" << std::endl;
+      // Set pixel alignment to 1 byte to handle unaligned row data
+      glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    }
+
+    // Clear any previous OpenGL errors
+    while (glGetError() != GL_NO_ERROR);
+
     glTexImage2D(GL_TEXTURE_2D,
                  0,                // Mipmap level
                  internal_format,  // Internal format
@@ -417,14 +433,59 @@ void Canvas::SetupBackgroundImage(int width, int height, int channels,
                  GL_UNSIGNED_BYTE,  // Type
                  data               // Data
     );
+    
+    // Restore default alignment if we changed it
+    if (alignment_issue) {
+      glPixelStorei(GL_UNPACK_ALIGNMENT, 4);  // Restore default
+    }
+
+    // Check for GL errors after texture upload
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR) {
+      std::cerr << "OpenGL error after glTexImage2D: " << error;
+      switch (error) {
+        case GL_INVALID_ENUM:
+          std::cerr << " (GL_INVALID_ENUM - format/internal format invalid)";
+          break;
+        case GL_INVALID_VALUE:
+          std::cerr << " (GL_INVALID_VALUE - width/height invalid)";
+          break;
+        case GL_INVALID_OPERATION:
+          std::cerr << " (GL_INVALID_OPERATION - format/internal format incompatible)";
+          break;
+        case GL_OUT_OF_MEMORY:
+          std::cerr << " (GL_OUT_OF_MEMORY - insufficient memory)";
+          break;
+        default:
+          std::cerr << " (Unknown error)";
+          break;
+      }
+      std::cerr << std::endl;
+      glBindTexture(GL_TEXTURE_2D, 0);
+      return;
+    }
 
     // Generate mipmaps for better quality when scaled
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    // Check for GL errors
-    GLenum error = glGetError();
+    // Check for GL errors after mipmap generation
+    error = glGetError();
     if (error != GL_NO_ERROR) {
-      std::cerr << "OpenGL error after texture setup: " << error << std::endl;
+      std::cerr << "OpenGL error after glGenerateMipmap: " << error;
+      switch (error) {
+        case GL_INVALID_ENUM:
+          std::cerr << " (GL_INVALID_ENUM - target invalid)";
+          break;
+        case GL_INVALID_OPERATION:
+          std::cerr << " (GL_INVALID_OPERATION - texture not complete)";
+          break;
+        default:
+          std::cerr << " (Unknown error)";
+          break;
+      }
+      std::cerr << std::endl;
+      glBindTexture(GL_TEXTURE_2D, 0);
+      return;
     }
 
     // Unbind the texture
