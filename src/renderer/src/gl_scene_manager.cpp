@@ -52,6 +52,11 @@ void GlSceneManager::SetBackgroundColor(float r, float g, float b, float a) {
   background_color_ = glm::vec4(r, g, b, a);
 }
 
+void GlSceneManager::SetClippingPlanes(float z_near, float z_far) {
+  z_near_ = z_near;
+  z_far_ = z_far;
+}
+
 void GlSceneManager::AddOpenGLObject(const std::string& name,
                                      std::unique_ptr<OpenGlObject> object) {
   if (object == nullptr) {
@@ -117,9 +122,7 @@ void GlSceneManager::DrawOpenGLObject() {
   }
 }
 
-void GlSceneManager::Draw() {
-  Begin();
-
+void GlSceneManager::RenderInsideWindow() {
   // update view according to user input
   ImGuiIO& io = ImGui::GetIO();
   ImVec2 content_size = ImGui::GetContentRegionAvail();
@@ -159,7 +162,8 @@ void GlSceneManager::Draw() {
                            ? static_cast<float>(content_size.x) /
                                  static_cast<float>(content_size.y)
                            : frame_buffer_->GetAspectRatio();
-  glm::mat4 projection = camera_->GetProjectionMatrix(aspect_ratio);
+  glm::mat4 projection =
+      camera_->GetProjectionMatrix(aspect_ratio, z_near_, z_far_);
   glm::mat4 view = camera_->GetViewMatrix();
   UpdateView(projection, view);
 
@@ -181,6 +185,12 @@ void GlSceneManager::Draw() {
     ImGui::PopStyleColor();
     ImGui::PopFont();
   }
+}
+
+void GlSceneManager::Draw() {
+  Begin();
+
+  RenderInsideWindow();
 
   End();
 }

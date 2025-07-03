@@ -131,7 +131,7 @@ void Camera::ProcessMouseMovement(float x_offset, float y_offset,
 }
 
 void Camera::ProcessMouseScroll(float y_offset) {
-  fov_ -= y_offset;
+  fov_ -= y_offset * zoom_speed_;
   if (fov_ < fov_min) fov_ = fov_min;
   if (fov_ > fov_max) fov_ = fov_max;
 }
