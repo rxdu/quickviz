@@ -44,6 +44,7 @@ class GlSceneManager : public Panel {
 
   void SetShowRenderingInfo(bool show);
   void SetBackgroundColor(float r, float g, float b, float a);
+  void SetClippingPlanes(float z_near, float z_far);
 
   void AddOpenGLObject(const std::string& name,
                        std::unique_ptr<OpenGlObject> object);
@@ -85,6 +86,7 @@ class GlSceneManager : public Panel {
   }
 
   void Draw() override;
+  void RenderInsideWindow();
 
  protected:
   void UpdateView(const glm::mat4& projection, const glm::mat4& view);
@@ -106,6 +108,8 @@ class GlSceneManager : public Panel {
   // Coordinate system transformation
   bool use_coord_transform_ = true;
   glm::mat4 coord_transform_ = glm::mat4(1.0f);
+  float z_near_ = 0.1f;
+  float z_far_ = 1000.0f;
 
   // Pre-draw callback
   PreDrawCallback pre_draw_callback_;

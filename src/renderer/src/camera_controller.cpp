@@ -132,13 +132,13 @@ void CameraController::ProcessMouseMovement(float x_offset, float y_offset) {
 
 void CameraController::ProcessMouseScroll(float y_offset) {
   if (mode_ == Mode::kOrbit) {
-    orbit_distance_ -= y_offset;
+    orbit_distance_ -= y_offset * orbit_zoom_speed_;
     if (orbit_distance_ < 1.0f) orbit_distance_ = 1.0f;
     UpdateOrbitPosition();
   } else if (mode_ == Mode::kTopDown) {
     glm::vec3 position = camera_.GetPosition();
     // In TopDown mode, adjust Y position (height) with scroll
-    position.y -= y_offset;
+    position.y -= y_offset * topdown_zoom_speed_;
     if (position.y < 1.0f) position.y = 1.0f;  // Set a minimum height
     camera_.SetPosition(position);
   } else {

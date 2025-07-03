@@ -35,6 +35,8 @@ class CameraController {
  private:
   static constexpr float initial_orbit_distance = 10.0f;
   static constexpr float initial_top_down_height = 10.0f;
+  static constexpr float default_orbit_zoom_speed = 2.0f;
+  static constexpr float default_topdown_zoom_speed = 2.0f;
 
   void UpdateOrbitPosition();
 
@@ -49,6 +51,10 @@ class CameraController {
   
   // For tracking rotation in TopDown mode
   float top_down_rotation_ = 0.0f;
+  
+  // Zoom speed multipliers
+  float orbit_zoom_speed_ = default_orbit_zoom_speed;
+  float topdown_zoom_speed_ = default_topdown_zoom_speed;
 };
 }  // namespace quickviz
 

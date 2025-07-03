@@ -22,6 +22,7 @@ class Camera {
   static constexpr float default_movement_speed = 2.5f;
   static constexpr float default_mouse_sensitivity = 0.05f;
   static constexpr float default_fov = 45.0f;
+  static constexpr float default_zoom_speed = 2.0f;
   static constexpr float pitch_min = -89.0f;
   static constexpr float pitch_max = 89.0f;
   static constexpr float fov_min = 1.0f;
@@ -49,7 +50,7 @@ class Camera {
   // public methods
   glm::mat4 GetViewMatrix() const;
   glm::mat4 GetProjectionMatrix(float aspect_ratio, float z_near = 0.1f,
-                                float z_far = 100.0f) const;
+                                float z_far = 1000.0f) const;
 
   void Reset();
   void SetWorldUpVector(glm::vec3 up);
@@ -83,6 +84,7 @@ class Camera {
   float movement_speed_ = default_movement_speed;
   float mouse_sensitivity_ = default_mouse_sensitivity;
   float fov_ = default_fov;
+  float zoom_speed_ = default_zoom_speed;
 };
 }  // namespace quickviz
 
