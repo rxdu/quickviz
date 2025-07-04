@@ -694,7 +694,6 @@ void Canvas::ProcessPendingUpdates() {
           // Points still use the original system since they're already efficient
           data_->AddPoint(update.point.x, update.point.y, update.color, update.thickness);
           break;
-          
         case PendingUpdate::Type::kLine:
           // Add line to batch
           line_batch_.vertices.emplace_back(update.line.x1, update.line.y1, 0.0f);
@@ -705,18 +704,16 @@ void Canvas::ProcessPendingUpdates() {
           line_batch_.line_types.push_back(update.line_type);
           line_batch_.needs_update = true;
           break;
-          
         case PendingUpdate::Type::kRectangle: {
-          uint32_t base_index = update.filled ? 
-            filled_shape_batch_.vertices.size() / 3 : 
-            outline_shape_batch_.vertices.size() / 3;
-          
+          uint32_t base_index = update.filled ?
+                                filled_shape_batch_.vertices.size() / 3 :
+                                outline_shape_batch_.vertices.size() / 3;
           if (update.filled) {
-            GenerateRectangleVertices(update.rect.x, update.rect.y, 
-                                    update.rect.width, update.rect.height,
-                                    filled_shape_batch_.vertices, 
-                                    filled_shape_batch_.indices,
-                                    true, base_index);
+            GenerateRectangleVertices(update.rect.x, update.rect.y,
+                                      update.rect.width, update.rect.height,
+                                      filled_shape_batch_.vertices,
+                                      filled_shape_batch_.indices,
+                                      true, base_index);
             // Add color for each vertex (4 vertices for rectangle)
             for (int i = 0; i < 4; i++) {
               filled_shape_batch_.colors.push_back(update.color);
@@ -724,10 +721,10 @@ void Canvas::ProcessPendingUpdates() {
             filled_shape_batch_.needs_update = true;
           } else {
             GenerateRectangleVertices(update.rect.x, update.rect.y,
-                                    update.rect.width, update.rect.height,
-                                    outline_shape_batch_.vertices,
-                                    outline_shape_batch_.indices,
-                                    false, base_index);
+                                      update.rect.width, update.rect.height,
+                                      outline_shape_batch_.vertices,
+                                      outline_shape_batch_.indices,
+                                      false, base_index);
             // Add color for each vertex (4 vertices for rectangle)
             for (int i = 0; i < 4; i++) {
               outline_shape_batch_.colors.push_back(update.color);
@@ -736,19 +733,17 @@ void Canvas::ProcessPendingUpdates() {
           }
           break;
         }
-        
         case PendingUpdate::Type::kCircle: {
           const int segments = 32; // Could be made adaptive based on radius
           uint32_t base_index = update.filled ?
-            filled_shape_batch_.vertices.size() / 3 :
-            outline_shape_batch_.vertices.size() / 3;
-          
+                                filled_shape_batch_.vertices.size() / 3 :
+                                outline_shape_batch_.vertices.size() / 3;
           if (update.filled) {
-            GenerateCircleVertices(update.circle.x, update.circle.y, 
-                                 update.circle.radius, segments,
-                                 filled_shape_batch_.vertices,
-                                 filled_shape_batch_.indices,
-                                 true, base_index);
+            GenerateCircleVertices(update.circle.x, update.circle.y,
+                                   update.circle.radius, segments,
+                                   filled_shape_batch_.vertices,
+                                   filled_shape_batch_.indices,
+                                   true, base_index);
             // Add color for center + perimeter vertices
             // Center vertex (1) + perimeter vertices (segments + 1) = segments + 2 total
             for (int i = 0; i < segments + 2; i++) {
@@ -757,10 +752,10 @@ void Canvas::ProcessPendingUpdates() {
             filled_shape_batch_.needs_update = true;
           } else {
             GenerateCircleVertices(update.circle.x, update.circle.y,
-                                 update.circle.radius, segments,
-                                 outline_shape_batch_.vertices,
-                                 outline_shape_batch_.indices,
-                                 false, base_index);
+                                   update.circle.radius, segments,
+                                   outline_shape_batch_.vertices,
+                                   outline_shape_batch_.indices,
+                                   false, base_index);
             // Add color for perimeter vertices
             // Perimeter vertices: segments + 1 total (0 to segments inclusive)
             for (int i = 0; i < segments + 1; i++) {
@@ -770,24 +765,21 @@ void Canvas::ProcessPendingUpdates() {
           }
           break;
         }
-        
         case PendingUpdate::Type::kEllipse:
           // For now, fall back to individual rendering for ellipses
           // TODO: Implement ellipse batching
           data_->AddEllipse(update.ellipse.x, update.ellipse.y, update.ellipse.rx,
-                           update.ellipse.ry, update.ellipse.angle,
-                           update.ellipse.start_angle, update.ellipse.end_angle,
-                           update.color, update.filled, update.thickness,
-                           update.line_type);
+                            update.ellipse.ry, update.ellipse.angle,
+                            update.ellipse.start_angle, update.ellipse.end_angle,
+                            update.color, update.filled, update.thickness,
+                            update.line_type);
           break;
-          
         case PendingUpdate::Type::kPolygon:
           // For now, fall back to individual rendering for polygons
           // TODO: Implement polygon batching
           data_->AddPolygon(update.polygon_vertices, update.color, update.filled,
-                           update.thickness, update.line_type);
+                            update.thickness, update.line_type);
           break;
-          
         case PendingUpdate::Type::kClear:
           // Clear both traditional data and batches
           data_->Clear();
@@ -1036,19 +1028,23 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
   }
   
   // Skip if there's no data to render
-  if (data.points.empty() && data.lines.empty() && 
-      data.rectangles.empty() && data.circles.empty() &&
-      data.ellipses.empty() && data.polygons.empty()) {
+  if (data.points.empty() && data.lines.empty() && data.rectangles.empty() &&
+      data.circles.empty() && data.ellipses.empty() &&
+      data.polygons.empty() && line_batch_.vertices.empty() &&
+      filled_shape_batch_.vertices.empty() &&
+      outline_shape_batch_.vertices.empty()) {
     return;
   }
 
-  // Use render strategy pattern for cleaner, more maintainable code
-  RenderStrategy* strategy = SelectRenderStrategy(data);
-  if (strategy) {
-    RenderContext context(projection, view, coord_transform,
-                         &primitive_shader_, primitive_vao_, primitive_vbo_,
-                         &render_stats_, &perf_config_);
-    strategy->Render(data, context);
+  // Render individual shapes
+  if (!data.ellipses.empty() || !data.polygons.empty()) {
+    RenderIndividualShapes(data, projection, view, coord_transform);
+  }
+
+  // Render batched shapes
+  if (!line_batch_.vertices.empty() || !filled_shape_batch_.vertices.empty() ||
+      !outline_shape_batch_.vertices.empty()) {
+    RenderBatches(projection, view, coord_transform);
   }
 }
 
@@ -1317,67 +1313,67 @@ void Canvas::InitializeBatches() {
   glGenVertexArrays(1, &line_batch_.vao);
   glGenBuffers(1, &line_batch_.position_vbo);
   glGenBuffers(1, &line_batch_.color_vbo);
-  
+
   glBindVertexArray(line_batch_.vao);
-  
+
   // Position buffer
+  glEnableVertexAttribArray(0);
   glBindBuffer(GL_ARRAY_BUFFER, line_batch_.position_vbo);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-  glEnableVertexAttribArray(0);
-  
-  // Color buffer  
+
+  // Color buffer
+  glEnableVertexAttribArray(1);
   glBindBuffer(GL_ARRAY_BUFFER, line_batch_.color_vbo);
   glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
-  glEnableVertexAttribArray(1);
-  
+
   glBindVertexArray(0);
-  
+
   // Initialize filled shape batch
   glGenVertexArrays(1, &filled_shape_batch_.vao);
   glGenBuffers(1, &filled_shape_batch_.vertex_vbo);
   glGenBuffers(1, &filled_shape_batch_.color_vbo);
   glGenBuffers(1, &filled_shape_batch_.ebo);
-  
+
   glBindVertexArray(filled_shape_batch_.vao);
-  
+
   // Vertex buffer
+  glEnableVertexAttribArray(0);
   glBindBuffer(GL_ARRAY_BUFFER, filled_shape_batch_.vertex_vbo);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-  glEnableVertexAttribArray(0);
-  
+
   // Color buffer
+  glEnableVertexAttribArray(1);
   glBindBuffer(GL_ARRAY_BUFFER, filled_shape_batch_.color_vbo);
   glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
-  glEnableVertexAttribArray(1);
-  
+
   // Element buffer
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, filled_shape_batch_.ebo);
-  
+
   glBindVertexArray(0);
-  
+
   // Initialize outline shape batch
   glGenVertexArrays(1, &outline_shape_batch_.vao);
   glGenBuffers(1, &outline_shape_batch_.vertex_vbo);
   glGenBuffers(1, &outline_shape_batch_.color_vbo);
   glGenBuffers(1, &outline_shape_batch_.ebo);
-  
+
   glBindVertexArray(outline_shape_batch_.vao);
-  
+
   // Vertex buffer
+  glEnableVertexAttribArray(0);
   glBindBuffer(GL_ARRAY_BUFFER, outline_shape_batch_.vertex_vbo);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-  glEnableVertexAttribArray(0);
-  
+
   // Color buffer
+  glEnableVertexAttribArray(1);
   glBindBuffer(GL_ARRAY_BUFFER, outline_shape_batch_.color_vbo);
   glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
-  glEnableVertexAttribArray(1);
-  
+
   // Element buffer
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, outline_shape_batch_.ebo);
-  
+
   glBindVertexArray(0);
-  
+
   std::cout << "Batching system initialized successfully." << std::endl;
 }
 
