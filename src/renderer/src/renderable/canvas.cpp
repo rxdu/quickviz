@@ -20,6 +20,12 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "renderable/details/canvas_data.hpp"
+#include "renderer/renderable/details/canvas_batching.hpp"
+#include "renderer/renderable/details/canvas_performance.hpp"
+#include "renderable/details/render_strategy.hpp"
+#include "renderable/details/batched_render_strategy.hpp"
+#include "renderable/details/individual_render_strategy.hpp"
+#include "renderable/details/shape_renderer.hpp"
 
 namespace quickviz {
 namespace {
@@ -163,11 +169,30 @@ Canvas::Canvas() {
   // Initialize the data object (just to be extra safe)
   data_->Clear();
   
+  // Initialize render strategies
+  // Note: shape_renderer_ will be created after GPU resources are allocated
+  batched_strategy_ = std::make_unique<BatchedRenderStrategy>(
+    line_batch_, filled_shape_batch_, outline_shape_batch_);
+  individual_strategy_ = std::make_unique<IndividualRenderStrategy>();
+  
+  // Set default strategy based on batching preference
+  current_render_strategy_ = batching_enabled_ ? 
+    static_cast<RenderStrategy*>(batched_strategy_.get()) : 
+    static_cast<RenderStrategy*>(individual_strategy_.get());
+  
   // Re-enable batching now that ellipse/polygon renderMode is fixed
   batching_enabled_ = true;
   
   AllocateGpuResources();
   InitializeBatches();
+  
+  // Create shape renderer after GPU resources are allocated
+  shape_renderer_ = std::make_unique<ShapeRenderer>(&primitive_shader_);
+  
+  // Update render strategies with shape renderer
+  batched_strategy_ = std::make_unique<BatchedRenderStrategy>(
+    line_batch_, filled_shape_batch_, outline_shape_batch_, shape_renderer_.get());
+  individual_strategy_ = std::make_unique<IndividualRenderStrategy>(shape_renderer_.get());
 }
 
 Canvas::~Canvas() { 
@@ -1004,7 +1029,6 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
     data = *data_;
   }
   
-
   // Skip if there's no data to render
   if (data.points.empty() && data.lines.empty() && 
       data.rectangles.empty() && data.circles.empty() &&
@@ -1012,6 +1036,18 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
     return;
   }
 
+  // Use render strategy pattern for cleaner, more maintainable code
+  RenderStrategy* strategy = SelectRenderStrategy(data);
+  if (strategy) {
+    RenderContext context(projection, view, coord_transform,
+                         &primitive_shader_, primitive_vao_, primitive_vbo_,
+                         &render_stats_, &perf_config_);
+    strategy->Render(data, context);
+  }
+  
+  // Legacy code preserved below for reference during transition
+  // TODO: Remove once render strategies are fully implemented
+  /*
   // Choose rendering path based on batching setting
   if (batching_enabled_) {
     // Use efficient batched rendering for better performance
@@ -1445,11 +1481,12 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
     }
   }
 
-  // Reset OpenGL state
-  glDisable(GL_DEPTH_TEST);
-  glDisable(GL_BLEND);
-  glBindVertexArray(0);
-  glUseProgram(0);
+  // Reset OpenGL state  
+  // glDisable(GL_DEPTH_TEST);
+  // glDisable(GL_BLEND);
+  // glBindVertexArray(0);
+  // glUseProgram(0);
+  */
 }
 
 void Canvas::RenderBatches(const glm::mat4& projection, const glm::mat4& view,
@@ -2099,6 +2136,44 @@ size_t Canvas::GetMemoryUsage() const {
   }
   
   return total_usage;
+}
+
+void Canvas::SetBatchingEnabled(bool enabled) { 
+  batching_enabled_ = enabled;
+  // Update current render strategy based on batching preference
+  current_render_strategy_ = enabled ? 
+    static_cast<RenderStrategy*>(batched_strategy_.get()) :
+    static_cast<RenderStrategy*>(individual_strategy_.get());
+}
+
+RenderStrategy* Canvas::SelectRenderStrategy(const CanvasData& data) {
+  // Select render strategy based on batching setting and data characteristics
+  if (batching_enabled_) {
+    return batched_strategy_.get();
+  } else {
+    return individual_strategy_.get();
+  }
+  
+  // Future enhancement: Could select strategy based on data characteristics
+  // For example, use individual strategy for scenes with many complex polygons
+  // and batched strategy for scenes with many simple shapes
+}
+
+// Performance monitoring methods (moved from inline in header)
+const RenderStats& Canvas::GetRenderStats() const {
+  return render_stats_;
+}
+
+void Canvas::ResetRenderStats() {
+  render_stats_.Reset();
+}
+
+void Canvas::SetPerformanceConfig(const PerformanceConfig& config) {
+  perf_config_ = config;
+}
+
+const PerformanceConfig& Canvas::GetPerformanceConfig() const {
+  return perf_config_;
 }
 
 }  // namespace quickviz
