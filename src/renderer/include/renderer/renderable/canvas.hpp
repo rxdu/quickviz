@@ -125,26 +125,28 @@ class Canvas : public OpenGlObject {
     bool filled;
     
     // Command-specific parameters
+    struct ellipse_params {
+      float x, y, rx, ry, angle, start_angle, end_angle;
+    };
+
     union {
       struct {  // Point parameters
         float x, y;
       } point;
-      
+
       struct {  // Line parameters
         float x1, y1, x2, y2;
       } line;
-      
+
       struct {  // Rectangle parameters
         float x, y, width, height;
       } rect;
-      
+
       struct {  // Circle parameters
         float x, y, radius;
       } circle;
-      
-      struct {  // Ellipse parameters
-        float x, y, rx, ry, angle, start_angle, end_angle;
-      } ellipse;
+
+      ellipse_params ellipse;
     };
     
     // Polygon vertices (can't be in union)
@@ -195,6 +197,12 @@ class Canvas : public OpenGlObject {
   void GenerateRectangleVertices(float x, float y, float width, float height,
                                 std::vector<float>& vertices, std::vector<uint32_t>& indices,
                                 bool filled, uint32_t base_index);
+  void GenerateEllipseVertices(const PendingUpdate::ellipse_params& ellipse,
+                               std::vector<float>& vertices, std::vector<uint32_t>& indices,
+                               bool filled, uint32_t base_index);
+  void GeneratePolygonVertices(const std::vector<glm::vec2>& points,
+                               std::vector<float>& vertices, std::vector<uint32_t>& indices,
+                               bool filled, uint32_t base_index);
 
   // Performance monitoring
   RenderStats render_stats_;

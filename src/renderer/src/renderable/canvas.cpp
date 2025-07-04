@@ -765,21 +765,49 @@ void Canvas::ProcessPendingUpdates() {
           }
           break;
         }
-        case PendingUpdate::Type::kEllipse:
-          // For now, fall back to individual rendering for ellipses
-          // TODO: Implement ellipse batching
-          data_->AddEllipse(update.ellipse.x, update.ellipse.y, update.ellipse.rx,
-                            update.ellipse.ry, update.ellipse.angle,
-                            update.ellipse.start_angle, update.ellipse.end_angle,
-                            update.color, update.filled, update.thickness,
-                            update.line_type);
+        case PendingUpdate::Type::kEllipse: {
+          const int segments = 32;
+          uint32_t base_index = update.filled ?
+                                filled_shape_batch_.vertices.size() / 3 :
+                                outline_shape_batch_.vertices.size() / 3;
+          if (update.filled) {
+            GenerateEllipseVertices(update.ellipse, filled_shape_batch_.vertices,
+                                    filled_shape_batch_.indices, true, base_index);
+            for (int i = 0; i < segments + 2; i++) {
+              filled_shape_batch_.colors.push_back(update.color);
+            }
+            filled_shape_batch_.needs_update = true;
+          } else {
+            GenerateEllipseVertices(update.ellipse, outline_shape_batch_.vertices,
+                                    outline_shape_batch_.indices, false, base_index);
+            for (int i = 0; i < segments + 1; i++) {
+              outline_shape_batch_.colors.push_back(update.color);
+            }
+            outline_shape_batch_.needs_update = true;
+          }
           break;
-        case PendingUpdate::Type::kPolygon:
-          // For now, fall back to individual rendering for polygons
-          // TODO: Implement polygon batching
-          data_->AddPolygon(update.polygon_vertices, update.color, update.filled,
-                            update.thickness, update.line_type);
+        }
+        case PendingUpdate::Type::kPolygon: {
+          uint32_t base_index = update.filled ?
+                                filled_shape_batch_.vertices.size() / 3 :
+                                outline_shape_batch_.vertices.size() / 3;
+          if (update.filled) {
+            GeneratePolygonVertices(update.polygon_vertices, filled_shape_batch_.vertices,
+                                    filled_shape_batch_.indices, true, base_index);
+            for (int i = 0; i < update.polygon_vertices.size(); i++) {
+              filled_shape_batch_.colors.push_back(update.color);
+            }
+            filled_shape_batch_.needs_update = true;
+          } else {
+            GeneratePolygonVertices(update.polygon_vertices, outline_shape_batch_.vertices,
+                                    outline_shape_batch_.indices, false, base_index);
+            for (int i = 0; i < update.polygon_vertices.size(); i++) {
+              outline_shape_batch_.colors.push_back(update.color);
+            }
+            outline_shape_batch_.needs_update = true;
+          }
           break;
+        }
         case PendingUpdate::Type::kClear:
           // Clear both traditional data and batches
           data_->Clear();
@@ -1295,6 +1323,157 @@ void Canvas::RenderIndividualShapes(const CanvasData& data, const glm::mat4& pro
     render_stats_.shapes_rendered++;
     render_stats_.draw_calls++;
   }
+
+  // Render lines individually
+  for (const auto& line : data.lines) {
+    GLuint tempVAO, tempVBO;
+    glGenVertexArrays(1, &tempVAO);
+    glGenBuffers(1, &tempVBO);
+
+    glBindVertexArray(tempVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, tempVBO);
+
+    std::vector<float> vertices = {line.start.x, line.start.y, line.start.z, line.end.x, line.end.y, line.end.z};
+
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glDisableVertexAttribArray(1);
+    glDisableVertexAttribArray(2);
+
+    glVertexAttrib4f(1, 0.0f, 0.0f, 0.0f, 0.0f);
+    glVertexAttrib1f(2, 1.0f);
+
+    primitive_shader_.TrySetUniform("uColor", line.color);
+    primitive_shader_.TrySetUniform("renderMode", 1);
+    primitive_shader_.TrySetUniform("lineType", static_cast<int>(line.line_type));
+
+    glLineWidth(line.thickness);
+    glDrawArrays(GL_LINES, 0, 2);
+    glLineWidth(1.0f);
+
+    glDisableVertexAttribArray(0);
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glDeleteVertexArrays(1, &tempVAO);
+    glDeleteBuffers(1, &tempVBO);
+
+    render_stats_.lines_rendered++;
+    render_stats_.draw_calls++;
+  }
+
+  // Render circles individually
+  for (const auto& circle : data.circles) {
+    GLuint tempVAO, tempVBO;
+    glGenVertexArrays(1, &tempVAO);
+    glGenBuffers(1, &tempVBO);
+
+    glBindVertexArray(tempVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, tempVBO);
+
+    const int segments = circle.num_segments;
+    std::vector<float> vertices;
+    vertices.reserve((segments + 2) * 3);
+
+    if (circle.filled) {
+      vertices.insert(vertices.end(), {circle.center.x, circle.center.y, circle.center.z});
+    }
+
+    for (int i = 0; i <= segments; i++) {
+      float angle = 2.0f * M_PI * i / segments;
+      float x = circle.center.x + circle.radius * std::cos(angle);
+      float y = circle.center.y + circle.radius * std::sin(angle);
+      float z = circle.center.z;
+      vertices.insert(vertices.end(), {x, y, z});
+    }
+
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glDisableVertexAttribArray(1);
+    glDisableVertexAttribArray(2);
+
+    glVertexAttrib4f(1, 0.0f, 0.0f, 0.0f, 0.0f);
+    glVertexAttrib1f(2, 1.0f);
+
+    primitive_shader_.TrySetUniform("uColor", circle.color);
+
+    if (circle.filled) {
+      primitive_shader_.TrySetUniform("renderMode", 2);
+      primitive_shader_.TrySetUniform("lineType", 0);
+      glDrawArrays(GL_TRIANGLE_FAN, 0, vertices.size() / 3);
+    } else {
+      primitive_shader_.TrySetUniform("renderMode", 3);
+      primitive_shader_.TrySetUniform("lineType", static_cast<int>(circle.line_type));
+      glLineWidth(circle.thickness);
+      glDrawArrays(GL_LINE_LOOP, circle.filled ? 1 : 0, segments + 1);
+      glLineWidth(1.0f);
+    }
+
+    glDisableVertexAttribArray(0);
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glDeleteVertexArrays(1, &tempVAO);
+    glDeleteBuffers(1, &tempVBO);
+
+    render_stats_.shapes_rendered++;
+    render_stats_.draw_calls++;
+  }
+
+  // Render rectangles individually
+  for (const auto& rect : data.rectangles) {
+    GLuint tempVAO, tempVBO;
+    glGenVertexArrays(1, &tempVAO);
+    glGenBuffers(1, &tempVBO);
+
+    glBindVertexArray(tempVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, tempVBO);
+
+    std::vector<float> vertices = {
+        rect.position.x, rect.position.y, rect.position.z,
+        rect.position.x + rect.width, rect.position.y, rect.position.z,
+        rect.position.x + rect.width, rect.position.y + rect.height, rect.position.z,
+        rect.position.x, rect.position.y + rect.height, rect.position.z
+    };
+
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glDisableVertexAttribArray(1);
+    glDisableVertexAttribArray(2);
+
+    glVertexAttrib4f(1, 0.0f, 0.0f, 0.0f, 0.0f);
+    glVertexAttrib1f(2, 1.0f);
+
+    primitive_shader_.TrySetUniform("uColor", rect.color);
+
+    if (rect.filled) {
+      primitive_shader_.TrySetUniform("renderMode", 2);
+      primitive_shader_.TrySetUniform("lineType", 0);
+      glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    } else {
+      primitive_shader_.TrySetUniform("renderMode", 3);
+      primitive_shader_.TrySetUniform("lineType", static_cast<int>(rect.line_type));
+      glLineWidth(rect.thickness);
+      glDrawArrays(GL_LINE_LOOP, 0, 4);
+      glLineWidth(1.0f);
+    }
+
+    glDisableVertexAttribArray(0);
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glDeleteVertexArrays(1, &tempVAO);
+    glDeleteBuffers(1, &tempVBO);
+
+    render_stats_.shapes_rendered++;
+    render_stats_.draw_calls++;
+  }
   
   // Clean up OpenGL state
   glDisable(GL_DEPTH_TEST);
@@ -1592,6 +1771,56 @@ void Canvas::GenerateRectangleVertices(float x, float y, float width, float heig
       base_index + 2, base_index + 3, // Top edge
       base_index + 3, base_index      // Left edge
     });
+  }
+}
+
+void Canvas::GenerateEllipseVertices(const PendingUpdate::ellipse_params& ellipse,
+                                     std::vector<float>& vertices, std::vector<uint32_t>& indices,
+                                     bool filled, uint32_t base_index) {
+  const int segments = 32;
+  if (filled) {
+    vertices.insert(vertices.end(), {ellipse.x, ellipse.y, 0.0f});
+    for (int i = 0; i <= segments; i++) {
+      float angle = ellipse.start_angle + (ellipse.end_angle - ellipse.start_angle) * i / segments;
+      float x_local = ellipse.rx * std::cos(angle);
+      float y_local = ellipse.ry * std::sin(angle);
+      float x_rotated = x_local * std::cos(ellipse.angle) - y_local * std::sin(ellipse.angle);
+      float y_rotated = x_local * std::sin(ellipse.angle) + y_local * std::cos(ellipse.angle);
+      vertices.insert(vertices.end(), {ellipse.x + x_rotated, ellipse.y + y_rotated, 0.0f});
+      if (i < segments) {
+        indices.insert(indices.end(), {base_index, base_index + 1 + i, base_index + 1 + ((i + 1) % segments)});
+      }
+    }
+  } else {
+    for (int i = 0; i <= segments; i++) {
+      float angle = ellipse.start_angle + (ellipse.end_angle - ellipse.start_angle) * i / segments;
+      float x_local = ellipse.rx * std::cos(angle);
+      float y_local = ellipse.ry * std::sin(angle);
+      float x_rotated = x_local * std::cos(ellipse.angle) - y_local * std::sin(ellipse.angle);
+      float y_rotated = x_local * std::sin(ellipse.angle) + y_local * std::cos(ellipse.angle);
+      vertices.insert(vertices.end(), {ellipse.x + x_rotated, ellipse.y + y_rotated, 0.0f});
+      if (i < segments) {
+        indices.insert(indices.end(), {base_index + i, base_index + (i + 1)});
+      }
+    }
+  }
+}
+
+void Canvas::GeneratePolygonVertices(const std::vector<glm::vec2>& points,
+                                     std::vector<float>& vertices, std::vector<uint32_t>& indices,
+                                     bool filled, uint32_t base_index) {
+  for (const auto& point : points) {
+    vertices.insert(vertices.end(), {point.x, point.y, 0.0f});
+  }
+  if (filled) {
+    // Simple fan triangulation, works for convex polygons
+    for (size_t i = 1; i < points.size() - 1; ++i) {
+      indices.insert(indices.end(), {static_cast<uint32_t>(base_index), static_cast<uint32_t>(base_index + i), static_cast<uint32_t>(base_index + i + 1)});
+    }
+  } else {
+    for (size_t i = 0; i < points.size(); ++i) {
+      indices.insert(indices.end(), {static_cast<uint32_t>(base_index + i), static_cast<uint32_t>(base_index + (i + 1) % points.size())});
+    }
   }
 }
 
