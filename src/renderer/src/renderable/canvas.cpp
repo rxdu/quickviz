@@ -299,13 +299,13 @@ void Canvas::AddBackgroundImage(const std::string& image_path,
   std::cout << "  Top-right: (" << tr.x << ", " << tr.y << ")" << std::endl;
   std::cout << "  Top-left: (" << tl.x << ", " << tl.y << ")" << std::endl;
 
-  // Vertices for the transformed quad (all on z=0 plane)
+  // Vertices for the transformed quad (placed behind primitives)
   float vertices[] = {
       // Positions (x, y, z)              // Texture coords
-      bl.x, bl.y, 0.0f, 0.0f, 0.0f,  // Bottom left
-      br.x, br.y, 0.0f, 1.0f, 0.0f,  // Bottom right
-      tr.x, tr.y, 0.0f, 1.0f, 1.0f,  // Top right
-      tl.x, tl.y, 0.0f, 0.0f, 1.0f   // Top left
+      bl.x, bl.y, -0.1f, 0.0f, 0.0f,  // Bottom left
+      br.x, br.y, -0.1f, 1.0f, 0.0f,  // Bottom right
+      tr.x, tr.y, -0.1f, 1.0f, 1.0f,  // Top right
+      tl.x, tl.y, -0.1f, 0.0f, 1.0f   // Top left
   };
 
   // Update the vertex buffer with the new positions
@@ -538,12 +538,13 @@ void Canvas::SetupBackgroundImage(int width, int height, int channels,
 
   // Default setup of a simple quad - actual coordinates will be updated in
   // AddBackgroundImage We're creating a 1x1 quad centered at the origin
+  // Using negative Z to ensure background renders behind primitives
   float vertices[] = {
       // Positions (x, y, z)       // Texture coords
-      -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,  // Bottom left
-      0.5f,  -0.5f, 0.0f, 1.0f, 0.0f,  // Bottom right
-      0.5f,  0.5f,  0.0f, 1.0f, 1.0f,  // Top right
-      -0.5f, 0.5f,  0.0f, 0.0f, 1.0f   // Top left
+      -0.5f, -0.5f, -0.1f, 0.0f, 0.0f,  // Bottom left
+      0.5f,  -0.5f, -0.1f, 1.0f, 0.0f,  // Bottom right
+      0.5f,  0.5f,  -0.1f, 1.0f, 1.0f,  // Top right
+      -0.5f, 0.5f,  -0.1f, 0.0f, 1.0f   // Top left
   };
 
   // Setup the VBO and VAO
@@ -980,7 +981,14 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
     ProcessPendingUpdates();
   }
 
-  // Draw background if available
+  // Get a copy of the data to avoid locking during rendering
+  CanvasData data;
+  {
+    std::lock_guard<std::mutex> lock(data_mutex_);
+    data = *data_;
+  }
+
+  // Draw background if available (render first, so primitives appear on top)
   {
     std::lock_guard<std::mutex> lock(background_mutex_);
     uint32_t texture_id = background_texture_.load();
@@ -1000,6 +1008,9 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
       // Setup blending for proper transparency
       glEnable(GL_BLEND);
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+      
+      // Enable depth testing to ensure background renders behind primitives
+      glEnable(GL_DEPTH_TEST);
 
       // Draw quad
       glBindVertexArray(background_vao_);
@@ -1021,13 +1032,6 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
       glUseProgram(0);
     }
   }
-
-  // Get a copy of the data to avoid locking during rendering
-  CanvasData data;
-  {
-    std::lock_guard<std::mutex> lock(data_mutex_);
-    data = *data_;
-  }
   
   // Skip if there's no data to render
   if (data.points.empty() && data.lines.empty() && 
@@ -1044,449 +1048,6 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
                          &render_stats_, &perf_config_);
     strategy->Render(data, context);
   }
-  
-  // Legacy code preserved below for reference during transition
-  // TODO: Remove once render strategies are fully implemented
-  /*
-  // Choose rendering path based on batching setting
-  if (batching_enabled_) {
-    // Use efficient batched rendering for better performance
-    RenderBatches(projection, view, coord_transform);
-    
-    // Still render points individually (they're already efficient)
-    if (!data.points.empty()) {
-      // Setup for point rendering
-      primitive_shader_.Use();
-      primitive_shader_.TrySetUniform("projection", projection);
-      primitive_shader_.TrySetUniform("view", view);
-      primitive_shader_.TrySetUniform("model", glm::mat4(1.0f));
-      primitive_shader_.TrySetUniform("coordSystemTransform", coord_transform);
-      primitive_shader_.TrySetUniform("renderMode", 0); // Points mode
-      
-      glEnable(GL_DEPTH_TEST);
-      glEnable(GL_BLEND);
-      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-      
-      glBindVertexArray(primitive_vao_);
-      glEnable(GL_PROGRAM_POINT_SIZE);
-      
-      // Update buffer with point data
-      glBindBuffer(GL_ARRAY_BUFFER, primitive_vbo_);
-      glBufferData(GL_ARRAY_BUFFER, sizeof(Point) * data.points.size(), 
-                   data.points.data(), GL_DYNAMIC_DRAW);
-      
-      // Enable point attributes
-      glEnableVertexAttribArray(0); // Position
-      glEnableVertexAttribArray(1); // Color
-      glEnableVertexAttribArray(2); // Size
-      
-      // Draw points
-      glDrawArrays(GL_POINTS, 0, data.points.size());
-      
-      // Cleanup point rendering
-      glDisable(GL_PROGRAM_POINT_SIZE);
-      glDisableVertexAttribArray(0);
-      glDisableVertexAttribArray(1);
-      glDisableVertexAttribArray(2);
-      glBindVertexArray(0);
-      glBindBuffer(GL_ARRAY_BUFFER, 0);
-      
-      // Update stats
-      render_stats_.points_rendered = data.points.size();
-      render_stats_.draw_calls++;
-    }
-    
-    // Handle non-batched shapes (ellipses, polygons) with individual rendering
-    if (!data.ellipses.empty() || !data.polygons.empty()) {
-      RenderIndividualShapes(data, projection, view, coord_transform);
-    }
-    
-    return; // Early return to skip the old rendering path
-  }
-
-  // Original individual rendering system (fallback when batching is disabled)
-  // Setup common rendering state for primitives
-  primitive_shader_.Use();
-  primitive_shader_.TrySetUniform("projection", projection);
-  primitive_shader_.TrySetUniform("view", view);
-  primitive_shader_.TrySetUniform("model", glm::mat4(1.0f));
-  primitive_shader_.TrySetUniform("coordSystemTransform", coord_transform);
-  primitive_shader_.TrySetUniform("lineType", 0); // Default to solid line
-  primitive_shader_.TrySetUniform("thickness", 1.0f); // Default thickness
-  primitive_shader_.TrySetUniform("uColor", glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)); // Default to white
-
-  // Enable depth test and blending
-  glEnable(GL_DEPTH_TEST);
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-  // 1. Draw Points
-  if (!data.points.empty()) {
-    glBindVertexArray(primitive_vao_);
-    glEnable(GL_PROGRAM_POINT_SIZE);
-    
-    // Set drawing mode to points
-    primitive_shader_.TrySetUniform("renderMode", 0);
-    
-    // Update the buffer with current point data
-    glBindBuffer(GL_ARRAY_BUFFER, primitive_vbo_);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(Point) * data.points.size(), data.points.data(), GL_DYNAMIC_DRAW);
-    
-    // For points, we use the per-vertex color from the buffer
-    // This color is passed to the shader via the 'aColor' attribute and becomes 'fragColor'
-    
-    // Make sure all attributes are correctly enabled for points
-    glEnableVertexAttribArray(0); // Position
-    glEnableVertexAttribArray(1); // Color
-    glEnableVertexAttribArray(2); // Size
-    
-    // Draw the points
-    glDrawArrays(GL_POINTS, 0, data.points.size());
-    
-    glDisable(GL_PROGRAM_POINT_SIZE);
-    
-    // Clean up point rendering state
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
-    glDisableVertexAttribArray(2);
-    
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-  }
-
-  // Set drawing mode to lines/shapes for all subsequent primitives
-  primitive_shader_.TrySetUniform("renderMode", 1);
-
-  // 2. Draw Lines - Use modern OpenGL approach
-  if (!data.lines.empty()) {
-    for (const auto& line : data.lines) {
-      // Set line width
-      glLineWidth(line.thickness);
-      
-      // Create temporary VBO/VAO for the line
-      GLuint tempVAO, tempVBO;
-      glGenVertexArrays(1, &tempVAO);
-      glGenBuffers(1, &tempVBO);
-      
-      glBindVertexArray(tempVAO);
-      glBindBuffer(GL_ARRAY_BUFFER, tempVBO);
-      
-      // Line vertices
-      float vertices[] = {
-          line.start.x, line.start.y, line.start.z,
-          line.end.x, line.end.y, line.end.z
-      };
-      
-      glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-      
-      // Position attribute
-      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-      glEnableVertexAttribArray(0);
-      
-      // Make sure other attributes are disabled
-      glDisableVertexAttribArray(1);
-      glDisableVertexAttribArray(2);
-      
-      // Set line color in the shader
-      primitive_shader_.TrySetUniform("uColor", line.color);
-      
-      // Handle different line types with shader-based approach
-      primitive_shader_.TrySetUniform("lineType", static_cast<int>(line.line_type));
-      primitive_shader_.TrySetUniform("thickness", line.thickness);
-      
-      // Draw the line
-      glDrawArrays(GL_LINES, 0, 2);
-      
-      // Clean up
-      glDisableVertexAttribArray(0);
-      glBindVertexArray(0);
-      glBindBuffer(GL_ARRAY_BUFFER, 0);
-      glDeleteVertexArrays(1, &tempVAO);
-      glDeleteBuffers(1, &tempVBO);
-    }
-    
-    // Reset line width
-    glLineWidth(1.0f);
-  }
-
-  // 3. Draw Rectangles - Use modern OpenGL approach
-  if (!data.rectangles.empty()) {
-    for (const auto& rect : data.rectangles) {
-      // Create temporary VBO/VAO for the rectangle
-      GLuint tempVAO, tempVBO;
-      glGenVertexArrays(1, &tempVAO);
-      glGenBuffers(1, &tempVBO);
-      
-      glBindVertexArray(tempVAO);
-      glBindBuffer(GL_ARRAY_BUFFER, tempVBO);
-      
-      // Rectangle vertices (2 triangles making a quad)
-      float x = rect.position.x;
-      float y = rect.position.y;
-      float z = rect.position.z;
-      float w = rect.width;
-      float h = rect.height;
-      
-      float vertices[] = {
-          x, y, z,           // Bottom left
-          x + w, y, z,       // Bottom right
-          x + w, y + h, z,   // Top right
-          x, y + h, z        // Top left
-      };
-      
-      glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-      
-      // Position attribute
-      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-      glEnableVertexAttribArray(0);
-      
-      // Make sure other attributes are disabled
-      glDisableVertexAttribArray(1);
-      glDisableVertexAttribArray(2);
-      
-      // Set rectangle color
-      primitive_shader_.TrySetUniform("uColor", rect.color);
-      
-      if (rect.filled) {
-        // Draw filled rectangle
-        primitive_shader_.TrySetUniform("lineType", 0); // Solid fill
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-      } else {
-        // Draw outline
-        glLineWidth(rect.thickness);
-        
-        // Handle different line types with shader-based approach
-        primitive_shader_.TrySetUniform("lineType", static_cast<int>(rect.line_type));
-        primitive_shader_.TrySetUniform("thickness", rect.thickness);
-        
-        // Draw rectangle outline
-        glDrawArrays(GL_LINE_LOOP, 0, 4);
-        
-        glLineWidth(1.0f);
-      }
-      
-      // Clean up
-      glDisableVertexAttribArray(0);
-      glBindVertexArray(0);
-      glBindBuffer(GL_ARRAY_BUFFER, 0);
-      glDeleteVertexArrays(1, &tempVAO);
-      glDeleteBuffers(1, &tempVBO);
-    }
-  }
-
-  // 4. Draw Circles - Use modern OpenGL approach
-  if (!data.circles.empty()) {
-    for (const auto& circle : data.circles) {
-      // Create temporary VBO/VAO for the circle
-      GLuint tempVAO, tempVBO;
-      glGenVertexArrays(1, &tempVAO);
-      glGenBuffers(1, &tempVBO);
-      
-      glBindVertexArray(tempVAO);
-      glBindBuffer(GL_ARRAY_BUFFER, tempVBO);
-      
-      // Generate circle vertices
-      const int segments = circle.num_segments;
-      std::vector<float> vertices;
-      vertices.reserve((segments + 2) * 3); // +2 for center and closing point
-      
-      // Center point (for filled circles)
-      if (circle.filled) {
-        vertices.push_back(circle.center.x);
-        vertices.push_back(circle.center.y);
-        vertices.push_back(circle.center.z);
-      }
-      
-      // Circle perimeter points
-      for (int i = 0; i <= segments; i++) {
-        float angle = 2.0f * M_PI * i / segments;
-        float x = circle.center.x + circle.radius * std::cos(angle);
-        float y = circle.center.y + circle.radius * std::sin(angle);
-        float z = circle.center.z;
-        
-        vertices.push_back(x);
-        vertices.push_back(y);
-        vertices.push_back(z);
-      }
-      
-      glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-      
-      // Position attribute
-      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-      glEnableVertexAttribArray(0);
-      
-      // Make sure other attributes are disabled
-      glDisableVertexAttribArray(1);
-      glDisableVertexAttribArray(2);
-      
-      // Set circle color
-      primitive_shader_.TrySetUniform("uColor", circle.color);
-      
-      if (circle.filled) {
-        // Draw filled circle
-        primitive_shader_.TrySetUniform("lineType", 0); // Solid fill
-        glDrawArrays(GL_TRIANGLE_FAN, 0, vertices.size() / 3);
-      } else {
-        // Draw outline
-        glLineWidth(circle.thickness);
-        
-        // Handle different line types with shader-based approach
-        primitive_shader_.TrySetUniform("lineType", static_cast<int>(circle.line_type));
-        primitive_shader_.TrySetUniform("thickness", circle.thickness);
-        
-        // Draw circle outline
-        glDrawArrays(GL_LINE_STRIP, circle.filled ? 1 : 0, segments + 1);
-        
-        glLineWidth(1.0f);
-      }
-      
-      // Clean up
-      glDisableVertexAttribArray(0);
-      glBindVertexArray(0);
-      glBindBuffer(GL_ARRAY_BUFFER, 0);
-      glDeleteVertexArrays(1, &tempVAO);
-      glDeleteBuffers(1, &tempVBO);
-    }
-  }
-
-  // 5. Draw Ellipses - Use modern OpenGL approach
-  if (!data.ellipses.empty()) {
-    for (const auto& ellipse : data.ellipses) {
-      // Create temporary VBO/VAO for the ellipse
-      GLuint tempVAO, tempVBO;
-      glGenVertexArrays(1, &tempVAO);
-      glGenBuffers(1, &tempVBO);
-      
-      glBindVertexArray(tempVAO);
-      glBindBuffer(GL_ARRAY_BUFFER, tempVBO);
-      
-      // Generate ellipse vertices
-      const int segments = ellipse.num_segments;
-      std::vector<float> vertices;
-      vertices.reserve((segments + 2) * 3); // +2 for center and closing point
-      
-      // Center point (for filled ellipses)
-      if (ellipse.filled) {
-        vertices.insert(vertices.end(), {ellipse.center.x, ellipse.center.y, ellipse.center.z});
-      }
-      
-      for (int i = 0; i <= segments; i++) {
-        float t = ellipse.start_angle + (ellipse.end_angle - ellipse.start_angle) * i / segments;
-        float x_local = ellipse.rx * std::cos(t);
-        float y_local = ellipse.ry * std::sin(t);
-        float x_rotated = x_local * std::cos(ellipse.angle) - y_local * std::sin(ellipse.angle);
-        float y_rotated = x_local * std::sin(ellipse.angle) + y_local * std::cos(ellipse.angle);
-        float x = ellipse.center.x + x_rotated;
-        float y = ellipse.center.y + y_rotated;
-        float z = ellipse.center.z;
-        vertices.insert(vertices.end(), {x, y, z});
-      }
-      
-      glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-      
-      // Set up vertex attributes correctly
-      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-      glEnableVertexAttribArray(0);
-      
-      // Explicitly set default values for disabled attributes to ensure proper shader behavior
-      glDisableVertexAttribArray(1);  // aColor - will default to (0,0,0,0)
-      glDisableVertexAttribArray(2);  // aSize - will default to 0
-      
-      // Set explicit default values for vertex attributes that aren't used
-      glVertexAttrib4f(1, 0.0f, 0.0f, 0.0f, 0.0f);  // Ensure fragColor.a = 0 to trigger uniform fallback
-      glVertexAttrib1f(2, 1.0f);  // Set default size
-      
-      primitive_shader_.TrySetUniform("uColor", ellipse.color);
-      
-      if (ellipse.filled) {
-        primitive_shader_.TrySetUniform("renderMode", 2); // Filled shapes mode
-        primitive_shader_.TrySetUniform("lineType", 0); // Solid fill
-        glDrawArrays(GL_TRIANGLE_FAN, 0, vertices.size() / 3);
-      } else {
-        primitive_shader_.TrySetUniform("renderMode", 3); // Outline shapes mode
-        primitive_shader_.TrySetUniform("lineType", static_cast<int>(ellipse.line_type));
-        glLineWidth(ellipse.thickness);
-        glDrawArrays(GL_LINE_STRIP, ellipse.filled ? 1 : 0, segments + 1);
-        glLineWidth(1.0f);
-      }
-      
-      glDisableVertexAttribArray(0);
-      glBindVertexArray(0);
-      glBindBuffer(GL_ARRAY_BUFFER, 0);
-      glDeleteVertexArrays(1, &tempVAO);
-      glDeleteBuffers(1, &tempVBO);
-      
-      render_stats_.shapes_rendered++;
-      render_stats_.draw_calls++;
-    }
-  }
-
-  // 6. Draw Polygons - Use modern OpenGL approach
-  if (!data.polygons.empty()) {
-    for (const auto& polygon : data.polygons) {
-      // Create temporary VBO/VAO for the polygon
-      GLuint tempVAO, tempVBO;
-      glGenVertexArrays(1, &tempVAO);
-      glGenBuffers(1, &tempVBO);
-      
-      glBindVertexArray(tempVAO);
-      glBindBuffer(GL_ARRAY_BUFFER, tempVBO);
-      
-      // Convert vertices to flat array
-      std::vector<float> vertices;
-      vertices.reserve(polygon.vertices.size() * 3);
-      
-      for (const auto& vertex : polygon.vertices) {
-        vertices.push_back(vertex.x);
-        vertices.push_back(vertex.y);
-        vertices.push_back(vertex.z);
-      }
-      
-      glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-      
-      // Position attribute
-      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-      glEnableVertexAttribArray(0);
-      
-      // Make sure other attributes are disabled
-      glDisableVertexAttribArray(1);
-      glDisableVertexAttribArray(2);
-      
-      // Set polygon color using the uniform (not per-vertex colors)
-      primitive_shader_.TrySetUniform("uColor", polygon.color);
-      
-      if (polygon.filled) {
-        // Draw filled polygon
-        primitive_shader_.TrySetUniform("renderMode", 2); // Filled shapes mode
-        primitive_shader_.TrySetUniform("lineType", 0); // Solid fill
-        glDrawArrays(GL_TRIANGLE_FAN, 0, polygon.vertices.size());
-      } else {
-        // Draw outline
-        primitive_shader_.TrySetUniform("renderMode", 3); // Outline shapes mode
-        primitive_shader_.TrySetUniform("lineType", static_cast<int>(polygon.line_type));
-        glLineWidth(polygon.thickness);
-        glDrawArrays(GL_LINE_LOOP, 0, polygon.vertices.size());
-        glLineWidth(1.0f);
-      }
-      
-      // Clean up
-      glDisableVertexAttribArray(0);
-      glBindVertexArray(0);
-      glBindBuffer(GL_ARRAY_BUFFER, 0);
-      glDeleteVertexArrays(1, &tempVAO);
-      glDeleteBuffers(1, &tempVBO);
-      
-      render_stats_.shapes_rendered++;
-      render_stats_.draw_calls++;
-    }
-  }
-
-  // Reset OpenGL state  
-  // glDisable(GL_DEPTH_TEST);
-  // glDisable(GL_BLEND);
-  // glBindVertexArray(0);
-  // glUseProgram(0);
-  */
 }
 
 void Canvas::RenderBatches(const glm::mat4& projection, const glm::mat4& view,
