@@ -1003,6 +1003,7 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
     std::lock_guard<std::mutex> lock(data_mutex_);
     data = *data_;
   }
+  
 
   // Skip if there's no data to render
   if (data.points.empty() && data.lines.empty() && 
@@ -1667,18 +1668,22 @@ void Canvas::RenderIndividualShapes(const CanvasData& data, const glm::mat4& pro
     glDisableVertexAttribArray(1);
     glDisableVertexAttribArray(2);
     
-    // Set polygon color using the uniform (not per-vertex colors)
-    primitive_shader_.TrySetUniform("uColor", polygon.color);
+    // Set default values for disabled attributes (CRITICAL FIX!)
+    glVertexAttrib4f(1, polygon.color.r, polygon.color.g, polygon.color.b, polygon.color.a);  // Set color attribute to match polygon
+    glVertexAttrib1f(2, 1.0f);  // Set default size attribute
     
     if (polygon.filled) {
-      // Draw filled polygon
+      // Draw filled polygon - set renderMode FIRST, then color
       primitive_shader_.TrySetUniform("renderMode", 2); // Filled shapes mode
       primitive_shader_.TrySetUniform("lineType", 0); // Solid fill
+      primitive_shader_.TrySetUniform("uColor", polygon.color);
       glDrawArrays(GL_TRIANGLE_FAN, 0, polygon.vertices.size());
     } else {
-      // Draw outline
+      // Draw outline - set renderMode FIRST, then color
       primitive_shader_.TrySetUniform("renderMode", 3); // Outline shapes mode
       primitive_shader_.TrySetUniform("lineType", static_cast<int>(polygon.line_type));
+      primitive_shader_.TrySetUniform("thickness", polygon.thickness);
+      primitive_shader_.TrySetUniform("uColor", polygon.color);
       glLineWidth(polygon.thickness);
       glDrawArrays(GL_LINE_LOOP, 0, polygon.vertices.size());
       glLineWidth(1.0f);
