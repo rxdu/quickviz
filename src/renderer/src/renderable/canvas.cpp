@@ -750,7 +750,8 @@ void Canvas::ProcessPendingUpdates() {
                                  filled_shape_batch_.indices,
                                  true, base_index);
             // Add color for center + perimeter vertices
-            for (int i = 0; i <= segments + 1; i++) {
+            // Center vertex (1) + perimeter vertices (segments + 1) = segments + 2 total
+            for (int i = 0; i < segments + 2; i++) {
               filled_shape_batch_.colors.push_back(update.color);
             }
             filled_shape_batch_.needs_update = true;
@@ -761,7 +762,8 @@ void Canvas::ProcessPendingUpdates() {
                                  outline_shape_batch_.indices,
                                  false, base_index);
             // Add color for perimeter vertices
-            for (int i = 0; i <= segments; i++) {
+            // Perimeter vertices: segments + 1 total (0 to segments inclusive)
+            for (int i = 0; i < segments + 1; i++) {
               outline_shape_batch_.colors.push_back(update.color);
             }
             outline_shape_batch_.needs_update = true;
@@ -1468,18 +1470,19 @@ void Canvas::UpdateBatches() {
                  filled_shape_batch_.vertices.size() * sizeof(float),
                  filled_shape_batch_.vertices.data(), GL_DYNAMIC_DRAW);
     
-    // Update color buffer (expand to match vertices)
-    std::vector<glm::vec4> expanded_colors;
-    expanded_colors.reserve(filled_shape_batch_.vertices.size() / 3);
-    for (size_t i = 0; i < filled_shape_batch_.colors.size(); ++i) {
-      // Each color applies to one vertex (vertices.size() / 3 vertices total)
-      expanded_colors.push_back(filled_shape_batch_.colors[i]);
+    // Update color buffer - colors should already match vertices 1:1
+    // Each color in filled_shape_batch_.colors corresponds to one vertex
+    size_t expected_vertex_count = filled_shape_batch_.vertices.size() / 3;
+    if (filled_shape_batch_.colors.size() != expected_vertex_count) {
+      std::cerr << "ERROR: Color count mismatch in filled_shape_batch! "
+                << "Expected " << expected_vertex_count << " colors, got " 
+                << filled_shape_batch_.colors.size() << std::endl;
     }
     
     glBindBuffer(GL_ARRAY_BUFFER, filled_shape_batch_.color_vbo);
     glBufferData(GL_ARRAY_BUFFER,
-                 expanded_colors.size() * sizeof(glm::vec4),
-                 expanded_colors.data(), GL_DYNAMIC_DRAW);
+                 filled_shape_batch_.colors.size() * sizeof(glm::vec4),
+                 filled_shape_batch_.colors.data(), GL_DYNAMIC_DRAW);
     
     // Update index buffer
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, filled_shape_batch_.ebo);
@@ -1501,17 +1504,19 @@ void Canvas::UpdateBatches() {
                  outline_shape_batch_.vertices.size() * sizeof(float),
                  outline_shape_batch_.vertices.data(), GL_DYNAMIC_DRAW);
     
-    // Update color buffer
-    std::vector<glm::vec4> expanded_colors;
-    expanded_colors.reserve(outline_shape_batch_.vertices.size() / 3);
-    for (size_t i = 0; i < outline_shape_batch_.colors.size(); ++i) {
-      expanded_colors.push_back(outline_shape_batch_.colors[i]);
+    // Update color buffer - colors should already match vertices 1:1
+    // Each color in outline_shape_batch_.colors corresponds to one vertex
+    size_t expected_vertex_count = outline_shape_batch_.vertices.size() / 3;
+    if (outline_shape_batch_.colors.size() != expected_vertex_count) {
+      std::cerr << "ERROR: Color count mismatch in outline_shape_batch! "
+                << "Expected " << expected_vertex_count << " colors, got " 
+                << outline_shape_batch_.colors.size() << std::endl;
     }
     
     glBindBuffer(GL_ARRAY_BUFFER, outline_shape_batch_.color_vbo);
     glBufferData(GL_ARRAY_BUFFER,
-                 expanded_colors.size() * sizeof(glm::vec4),
-                 expanded_colors.data(), GL_DYNAMIC_DRAW);
+                 outline_shape_batch_.colors.size() * sizeof(glm::vec4),
+                 outline_shape_batch_.colors.data(), GL_DYNAMIC_DRAW);
     
     // Update index buffer
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, outline_shape_batch_.ebo);
