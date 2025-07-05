@@ -18,6 +18,7 @@
 #include <queue>
 #include <chrono>
 #include <algorithm>
+#include <unordered_map>
 
 #include <glm/glm.hpp>
 
@@ -33,7 +34,7 @@ class RenderStrategy;
 class BatchedRenderStrategy;
 class IndividualRenderStrategy;
 class ShapeRenderer;
-}
+}  // namespace quickviz
 
 namespace quickviz {
 // Forward declaration of Point struct
@@ -43,6 +44,9 @@ struct CanvasData;
 // Note: LineBatch and ShapeBatch moved to details/canvas_batching.hpp
 
 class Canvas : public OpenGlObject {
+ public:
+  using PerformanceConfig = quickviz::PerformanceConfig;
+
  public:
   Canvas();
   ~Canvas();
@@ -76,27 +80,31 @@ class Canvas : public OpenGlObject {
   // Performance and rendering methods
   void SetBatchingEnabled(bool enabled);
   bool IsBatchingEnabled() const { return batching_enabled_; }
-  void FlushBatches(); // Force immediate rendering of all batches
-  
+  void FlushBatches();  // Force immediate rendering of all batches
+
   // Performance monitoring (moved to details/canvas_performance.hpp)
   const RenderStats& GetRenderStats() const;
   void ResetRenderStats();
-  
-  // Performance tuning and memory optimization (moved to details/canvas_performance.hpp)
+
+  // Performance tuning and memory optimization (moved to
+  // details/canvas_performance.hpp)
   void SetPerformanceConfig(const PerformanceConfig& config);
   const PerformanceConfig& GetPerformanceConfig() const;
-  
+
   // Memory optimization methods
-  void OptimizeMemory();                    // Trigger memory optimization pass
-  void PreallocateMemory(size_t estimated_objects); // Pre-allocate for known workloads
-  void ShrinkToFit();                       // Release unused memory
-  size_t GetMemoryUsage() const;            // Get current memory usage in bytes
+  void OptimizeMemory();  // Trigger memory optimization pass
+  void PreallocateMemory(
+      size_t estimated_objects);  // Pre-allocate for known workloads
+  void ShrinkToFit();             // Release unused memory
+  size_t GetMemoryUsage() const;  // Get current memory usage in bytes
 
   void AllocateGpuResources() override;
   void ReleaseGpuResources() noexcept override;
   void OnDraw(const glm::mat4& projection, const glm::mat4& view,
               const glm::mat4& coord_transform = glm::mat4(1.0f)) override;
-  bool IsGpuResourcesAllocated() const noexcept override { return primitive_vao_ != 0; }
+  bool IsGpuResourcesAllocated() const noexcept override {
+    return primitive_vao_ != 0;
+  }
 
  private:
   // Load and setup background image
@@ -123,7 +131,7 @@ class Canvas : public OpenGlObject {
     float thickness;
     LineType line_type;
     bool filled;
-    
+
     // Command-specific parameters
     struct ellipse_params {
       float x, y, rx, ry, angle, start_angle, end_angle;
@@ -148,7 +156,7 @@ class Canvas : public OpenGlObject {
 
       ellipse_params ellipse;
     };
-    
+
     // Polygon vertices (can't be in union)
     std::vector<glm::vec2> polygon_vertices;
   };
@@ -174,8 +182,9 @@ class Canvas : public OpenGlObject {
   ShaderProgram primitive_shader_;
 
   // Batching-related members
-  bool batching_enabled_ = true;  // Re-enabled, ellipse/polygon renderMode fixed
-  LineBatch line_batch_;
+  bool batching_enabled_ =
+      true;  // Re-enabled, ellipse/polygon renderMode fixed
+  std::unordered_map<LineType, LineBatch> line_batches_;
   ShapeBatch filled_shape_batch_;
   ShapeBatch outline_shape_batch_;
 
@@ -183,41 +192,47 @@ class Canvas : public OpenGlObject {
   void InitializeBatches();
   void ClearBatches();
   void UpdateBatches();
-  void RenderBatches(const glm::mat4& projection, const glm::mat4& view, 
+  void RenderBatches(const glm::mat4& projection, const glm::mat4& view,
                      const glm::mat4& coord_transform);
-  
+
   // Individual shape rendering for non-batched shapes
-  void RenderIndividualShapes(const CanvasData& data, const glm::mat4& projection, 
-                             const glm::mat4& view, const glm::mat4& coord_transform);
-  
+  void RenderIndividualShapes(const CanvasData& data,
+                              const glm::mat4& projection,
+                              const glm::mat4& view,
+                              const glm::mat4& coord_transform);
+
   // Shape generation helpers
   void GenerateCircleVertices(float cx, float cy, float radius, int segments,
-                             std::vector<float>& vertices, std::vector<uint32_t>& indices,
-                             bool filled, uint32_t base_index);
+                              std::vector<float>& vertices,
+                              std::vector<uint32_t>& indices, bool filled,
+                              uint32_t base_index);
   void GenerateRectangleVertices(float x, float y, float width, float height,
-                                std::vector<float>& vertices, std::vector<uint32_t>& indices,
-                                bool filled, uint32_t base_index);
+                                 std::vector<float>& vertices,
+                                 std::vector<uint32_t>& indices, bool filled,
+                                 uint32_t base_index);
   void GenerateEllipseVertices(const PendingUpdate::ellipse_params& ellipse,
-                               std::vector<float>& vertices, std::vector<uint32_t>& indices,
-                               bool filled, uint32_t base_index);
+                               std::vector<float>& vertices,
+                               std::vector<uint32_t>& indices, bool filled,
+                               uint32_t base_index);
   void GeneratePolygonVertices(const std::vector<glm::vec2>& points,
-                               std::vector<float>& vertices, std::vector<uint32_t>& indices,
-                               bool filled, uint32_t base_index);
+                               std::vector<float>& vertices,
+                               std::vector<uint32_t>& indices, bool filled,
+                               uint32_t base_index);
 
   // Performance monitoring
   RenderStats render_stats_;
 
   // Performance tuning and memory optimization
   PerformanceConfig perf_config_;
-  
+
   // Render strategy system (refactored from monolithic OnDraw)
   RenderStrategy* current_render_strategy_;
   std::unique_ptr<BatchedRenderStrategy> batched_strategy_;
   std::unique_ptr<IndividualRenderStrategy> individual_strategy_;
-  
+
   // Unified shape renderer (Phase 2 refactoring)
   std::unique_ptr<ShapeRenderer> shape_renderer_;
-  
+
   // Helper method to select appropriate render strategy
   RenderStrategy* SelectRenderStrategy(const CanvasData& data);
 
@@ -227,18 +242,18 @@ class Canvas : public OpenGlObject {
     std::atomic<size_t> peak_usage{0};
     std::atomic<size_t> total_allocations{0};
     std::atomic<size_t> total_deallocations{0};
-    
+
     void RecordAllocation(size_t size) {
       current_usage += size;
       total_allocations++;
       peak_usage = std::max(peak_usage.load(), current_usage.load());
     }
-    
+
     void RecordDeallocation(size_t size) {
       current_usage -= size;
       total_deallocations++;
     }
-    
+
     void Reset() {
       current_usage = 0;
       peak_usage = 0;
@@ -246,24 +261,23 @@ class Canvas : public OpenGlObject {
       total_deallocations = 0;
     }
   };
-  
+
   mutable MemoryTracker memory_tracker_;
-  
+
   // Timing utilities for performance monitoring
   struct PerformanceTimer {
     std::chrono::high_resolution_clock::time_point start_time;
-    
-    void Start() {
-      start_time = std::chrono::high_resolution_clock::now();
-    }
-    
+
+    void Start() { start_time = std::chrono::high_resolution_clock::now(); }
+
     float ElapsedMs() const {
       auto end_time = std::chrono::high_resolution_clock::now();
-      auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+      auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
+          end_time - start_time);
       return duration.count() / 1000.0f;
     }
   };
-  
+
   mutable PerformanceTimer frame_timer_;
   mutable PerformanceTimer operation_timer_;
 };

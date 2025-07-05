@@ -18,11 +18,11 @@
 
 namespace quickviz {
 
-BatchedRenderStrategy::BatchedRenderStrategy(LineBatch& line_batch, 
+BatchedRenderStrategy::BatchedRenderStrategy(std::unordered_map<LineType, LineBatch>& line_batches, 
                                            ShapeBatch& filled_batch, 
                                            ShapeBatch& outline_batch,
                                            ShapeRenderer* shape_renderer)
-  : line_batch_(line_batch), filled_shape_batch_(filled_batch), outline_shape_batch_(outline_batch), shape_renderer_(shape_renderer) {
+  : line_batches_(line_batches), filled_shape_batch_(filled_batch), outline_shape_batch_(outline_batch), shape_renderer_(shape_renderer) {
 }
 
 bool BatchedRenderStrategy::CanHandle(const CanvasData& data) const {

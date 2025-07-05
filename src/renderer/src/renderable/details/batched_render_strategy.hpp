@@ -10,8 +10,10 @@
 #ifndef OPENGL_RENDERER_BATCHED_RENDER_STRATEGY_HPP
 #define OPENGL_RENDERER_BATCHED_RENDER_STRATEGY_HPP
 
+#include <unordered_map>
 #include "render_strategy.hpp"
 #include "shape_renderer.hpp"
+#include "renderer/renderable/types.hpp"
 
 namespace quickviz {
 
@@ -34,7 +36,7 @@ public:
    * @param outline_batch Reference to outline shape batch data
    * @param shape_renderer Unified shape renderer for individual shapes
    */
-  BatchedRenderStrategy(LineBatch& line_batch, ShapeBatch& filled_batch, ShapeBatch& outline_batch, ShapeRenderer* shape_renderer = nullptr);
+  BatchedRenderStrategy(std::unordered_map<LineType, LineBatch>& line_batches, ShapeBatch& filled_batch, ShapeBatch& outline_batch, ShapeRenderer* shape_renderer = nullptr);
   
   ~BatchedRenderStrategy() override = default;
   
@@ -49,7 +51,7 @@ private:
   void RenderIndividualShapes(const CanvasData& data, const RenderContext& context);
   
   // References to batch data (owned by Canvas)
-  LineBatch& line_batch_;
+  std::unordered_map<LineType, LineBatch>& line_batches_;
   ShapeBatch& filled_shape_batch_;
   ShapeBatch& outline_shape_batch_;
   

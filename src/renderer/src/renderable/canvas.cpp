@@ -172,7 +172,7 @@ Canvas::Canvas() {
   // Initialize render strategies
   // Note: shape_renderer_ will be created after GPU resources are allocated
   batched_strategy_ = std::make_unique<BatchedRenderStrategy>(
-    line_batch_, filled_shape_batch_, outline_shape_batch_);
+    line_batches_, filled_shape_batch_, outline_shape_batch_);
   individual_strategy_ = std::make_unique<IndividualRenderStrategy>();
   
   // Set default strategy based on batching preference
@@ -191,7 +191,7 @@ Canvas::Canvas() {
   
   // Update render strategies with shape renderer
   batched_strategy_ = std::make_unique<BatchedRenderStrategy>(
-    line_batch_, filled_shape_batch_, outline_shape_batch_, shape_renderer_.get());
+    line_batches_, filled_shape_batch_, outline_shape_batch_, shape_renderer_.get());
   individual_strategy_ = std::make_unique<IndividualRenderStrategy>(shape_renderer_.get());
 }
 
@@ -694,16 +694,18 @@ void Canvas::ProcessPendingUpdates() {
           // Points still use the original system since they're already efficient
           data_->AddPoint(update.point.x, update.point.y, update.color, update.thickness);
           break;
-        case PendingUpdate::Type::kLine:
-          // Add line to batch
-          line_batch_.vertices.emplace_back(update.line.x1, update.line.y1, 0.0f);
-          line_batch_.vertices.emplace_back(update.line.x2, update.line.y2, 0.0f);
-          line_batch_.colors.push_back(update.color);
-          line_batch_.colors.push_back(update.color);
-          line_batch_.thicknesses.push_back(update.thickness);
-          line_batch_.line_types.push_back(update.line_type);
-          line_batch_.needs_update = true;
+        case PendingUpdate::Type::kLine: {
+          // Add line to batch based on line type
+          auto& line_batch = line_batches_[update.line_type];
+          line_batch.vertices.emplace_back(update.line.x1, update.line.y1, 0.0f);
+          line_batch.vertices.emplace_back(update.line.x2, update.line.y2, 0.0f);
+          line_batch.colors.push_back(update.color);
+          line_batch.colors.push_back(update.color);
+          line_batch.thicknesses.push_back(update.thickness);
+          line_batch.line_types.push_back(update.line_type);
+          line_batch.needs_update = true;
           break;
+        }
         case PendingUpdate::Type::kRectangle: {
           uint32_t base_index = update.filled ?
                                 filled_shape_batch_.vertices.size() / 3 :
@@ -811,17 +813,19 @@ void Canvas::ProcessPendingUpdates() {
         case PendingUpdate::Type::kClear:
           // Clear both traditional data and batches
           data_->Clear();
-          line_batch_.vertices.clear();
-          line_batch_.colors.clear();
-          line_batch_.thicknesses.clear();
-          line_batch_.line_types.clear();
+          for (auto& [line_type, line_batch] : line_batches_) {
+            line_batch.vertices.clear();
+            line_batch.colors.clear();
+            line_batch.thicknesses.clear();
+            line_batch.line_types.clear();
+            line_batch.needs_update = true;
+          }
           filled_shape_batch_.vertices.clear();
           filled_shape_batch_.indices.clear();
           filled_shape_batch_.colors.clear();
           outline_shape_batch_.vertices.clear();
           outline_shape_batch_.indices.clear();
           outline_shape_batch_.colors.clear();
-          line_batch_.needs_update = true;
           filled_shape_batch_.needs_update = true;
           outline_shape_batch_.needs_update = true;
           break;
@@ -1056,9 +1060,17 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
   }
   
   // Skip if there's no data to render
+  bool has_line_data = false;
+  for (const auto& [line_type, line_batch] : line_batches_) {
+    if (!line_batch.vertices.empty()) {
+      has_line_data = true;
+      break;
+    }
+  }
+  
   if (data.points.empty() && data.lines.empty() && data.rectangles.empty() &&
       data.circles.empty() && data.ellipses.empty() &&
-      data.polygons.empty() && line_batch_.vertices.empty() &&
+      data.polygons.empty() && !has_line_data &&
       filled_shape_batch_.vertices.empty() &&
       outline_shape_batch_.vertices.empty()) {
     return;
@@ -1070,7 +1082,7 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
   }
 
   // Render batched shapes
-  if (!line_batch_.vertices.empty() || !filled_shape_batch_.vertices.empty() ||
+  if (has_line_data || !filled_shape_batch_.vertices.empty() ||
       !outline_shape_batch_.vertices.empty()) {
     RenderBatches(projection, view, coord_transform);
   }
@@ -1086,8 +1098,13 @@ void Canvas::RenderBatches(const glm::mat4& projection, const glm::mat4& view,
   
   // Track memory usage
   if (perf_config_.memory_tracking_enabled) {
+    size_t line_vertex_memory = 0;
+    for (const auto& [key, batch] : line_batches_) {
+      line_vertex_memory += batch.vertices.size() * sizeof(glm::vec3);
+    }
+    
     render_stats_.vertex_memory_used = 
-      line_batch_.vertices.size() * sizeof(glm::vec3) +
+      line_vertex_memory +
       filled_shape_batch_.vertices.size() * sizeof(float) +
       outline_shape_batch_.vertices.size() * sizeof(float);
     
@@ -1117,19 +1134,21 @@ void Canvas::RenderBatches(const glm::mat4& projection, const glm::mat4& view,
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   render_stats_.state_changes += 3; // Track state changes
   
-  // Render lines batch
-  if (!line_batch_.vertices.empty()) {
-    primitive_shader_.TrySetUniform("renderMode", 1); // Lines mode
-    primitive_shader_.TrySetUniform("lineType", 0);   // Solid lines for now
-    
-    glBindVertexArray(line_batch_.vao);
-    glDrawArrays(GL_LINES, 0, line_batch_.vertices.size());
-    glBindVertexArray(0);
-    
-    render_stats_.lines_rendered = line_batch_.vertices.size() / 2;
-    render_stats_.batched_objects += line_batch_.vertices.size() / 2;
-    render_stats_.draw_calls++;
-    render_stats_.state_changes += 2; // VAO bind/unbind
+  // Render lines batch by line type
+  for (auto& [line_type, line_batch] : line_batches_) {
+    if (!line_batch.vertices.empty()) {
+      primitive_shader_.TrySetUniform("renderMode", 1); // Lines mode
+      primitive_shader_.TrySetUniform("lineType", static_cast<int>(line_type));
+      
+      glBindVertexArray(line_batch.vao);
+      glDrawArrays(GL_LINES, 0, line_batch.vertices.size());
+      glBindVertexArray(0);
+      
+      render_stats_.lines_rendered += line_batch.vertices.size() / 2;
+      render_stats_.batched_objects += line_batch.vertices.size() / 2;
+      render_stats_.draw_calls++;
+      render_stats_.state_changes += 2; // VAO bind/unbind
+    }
   }
   
   // Render filled shapes batch
@@ -1488,24 +1507,27 @@ void Canvas::RenderIndividualShapes(const CanvasData& data, const glm::mat4& pro
 }
 
 void Canvas::InitializeBatches() {
-  // Initialize line batch
-  glGenVertexArrays(1, &line_batch_.vao);
-  glGenBuffers(1, &line_batch_.position_vbo);
-  glGenBuffers(1, &line_batch_.color_vbo);
+  // Initialize line batches for each line type
+  for (auto line_type : {LineType::kSolid, LineType::kDashed, LineType::kDotted}) {
+    auto& line_batch = line_batches_[line_type];
+    glGenVertexArrays(1, &line_batch.vao);
+    glGenBuffers(1, &line_batch.position_vbo);
+    glGenBuffers(1, &line_batch.color_vbo);
 
-  glBindVertexArray(line_batch_.vao);
+    glBindVertexArray(line_batch.vao);
 
-  // Position buffer
-  glEnableVertexAttribArray(0);
-  glBindBuffer(GL_ARRAY_BUFFER, line_batch_.position_vbo);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    // Position buffer
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, line_batch.position_vbo);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-  // Color buffer
-  glEnableVertexAttribArray(1);
-  glBindBuffer(GL_ARRAY_BUFFER, line_batch_.color_vbo);
-  glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
+    // Color buffer
+    glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ARRAY_BUFFER, line_batch.color_vbo);
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
-  glBindVertexArray(0);
+    glBindVertexArray(0);
+  }
 
   // Initialize filled shape batch
   glGenVertexArrays(1, &filled_shape_batch_.vao);
@@ -1557,14 +1579,16 @@ void Canvas::InitializeBatches() {
 }
 
 void Canvas::ClearBatches() {
-  // Clean up line batch
-  if (line_batch_.vao != 0) {
-    glDeleteVertexArrays(1, &line_batch_.vao);
-    glDeleteBuffers(1, &line_batch_.position_vbo);
-    glDeleteBuffers(1, &line_batch_.color_vbo);
-    line_batch_.vao = 0;
-    line_batch_.position_vbo = 0;
-    line_batch_.color_vbo = 0;
+  // Clean up line batches
+  for (auto& [line_type, line_batch] : line_batches_) {
+    if (line_batch.vao != 0) {
+      glDeleteVertexArrays(1, &line_batch.vao);
+      glDeleteBuffers(1, &line_batch.position_vbo);
+      glDeleteBuffers(1, &line_batch.color_vbo);
+      line_batch.vao = 0;
+      line_batch.position_vbo = 0;
+      line_batch.color_vbo = 0;
+    }
   }
   
   // Clean up filled shape batch
@@ -1592,10 +1616,12 @@ void Canvas::ClearBatches() {
   }
   
   // Clear CPU data
-  line_batch_.vertices.clear();
-  line_batch_.colors.clear();
-  line_batch_.thicknesses.clear();
-  line_batch_.line_types.clear();
+  for (auto& [line_type, line_batch] : line_batches_) {
+    line_batch.vertices.clear();
+    line_batch.colors.clear();
+    line_batch.thicknesses.clear();
+    line_batch.line_types.clear();
+  }
   
   filled_shape_batch_.vertices.clear();
   filled_shape_batch_.indices.clear();
@@ -1608,31 +1634,35 @@ void Canvas::ClearBatches() {
 
 void Canvas::FlushBatches() {
   // Force update of all batches
-  line_batch_.needs_update = true;
+  for (auto& [line_type, line_batch] : line_batches_) {
+    line_batch.needs_update = true;
+  }
   filled_shape_batch_.needs_update = true;
   outline_shape_batch_.needs_update = true;
   UpdateBatches();
 }
 
 void Canvas::UpdateBatches() {
-  // Update line batch
-  if (line_batch_.needs_update && !line_batch_.vertices.empty()) {
-    glBindVertexArray(line_batch_.vao);
-    
-    // Update position buffer
-    glBindBuffer(GL_ARRAY_BUFFER, line_batch_.position_vbo);
-    glBufferData(GL_ARRAY_BUFFER, 
-                 line_batch_.vertices.size() * sizeof(glm::vec3),
-                 line_batch_.vertices.data(), GL_DYNAMIC_DRAW);
-    
-    // Update color buffer
-    glBindBuffer(GL_ARRAY_BUFFER, line_batch_.color_vbo);
-    glBufferData(GL_ARRAY_BUFFER,
-                 line_batch_.colors.size() * sizeof(glm::vec4),
-                 line_batch_.colors.data(), GL_DYNAMIC_DRAW);
-    
-    glBindVertexArray(0);
-    line_batch_.needs_update = false;
+  // Update line batches
+  for (auto& [line_type, line_batch] : line_batches_) {
+    if (line_batch.needs_update && !line_batch.vertices.empty()) {
+      glBindVertexArray(line_batch.vao);
+      
+      // Update position buffer
+      glBindBuffer(GL_ARRAY_BUFFER, line_batch.position_vbo);
+      glBufferData(GL_ARRAY_BUFFER, 
+                   line_batch.vertices.size() * sizeof(glm::vec3),
+                   line_batch.vertices.data(), GL_DYNAMIC_DRAW);
+      
+      // Update color buffer
+      glBindBuffer(GL_ARRAY_BUFFER, line_batch.color_vbo);
+      glBufferData(GL_ARRAY_BUFFER,
+                   line_batch.colors.size() * sizeof(glm::vec4),
+                   line_batch.colors.data(), GL_DYNAMIC_DRAW);
+      
+      glBindVertexArray(0);
+      line_batch.needs_update = false;
+    }
   }
   
   // Update filled shape batch
@@ -1829,9 +1859,11 @@ void Canvas::OptimizeMemory() {
   
   if (perf_config_.aggressive_memory_cleanup) {
     // Shrink batch vectors to fit current usage
-    line_batch_.vertices.shrink_to_fit();
-    line_batch_.colors.shrink_to_fit();
-    line_batch_.thicknesses.shrink_to_fit();
+    for (auto& [line_type, line_batch] : line_batches_) {
+      line_batch.vertices.shrink_to_fit();
+      line_batch.colors.shrink_to_fit();
+      line_batch.thicknesses.shrink_to_fit();
+    }
     
     filled_shape_batch_.vertices.shrink_to_fit();
     filled_shape_batch_.indices.shrink_to_fit();
@@ -1861,9 +1893,11 @@ void Canvas::PreallocateMemory(size_t estimated_objects) {
   // Pre-allocate batch vectors based on estimated usage
   size_t reserve_size = std::min(estimated_objects, perf_config_.max_batch_size);
   
-  line_batch_.vertices.reserve(reserve_size * 2); // 2 vertices per line
-  line_batch_.colors.reserve(reserve_size * 2);
-  line_batch_.thicknesses.reserve(reserve_size);
+  for (auto& [line_type, line_batch] : line_batches_) {
+    line_batch.vertices.reserve(reserve_size * 2); // 2 vertices per line
+    line_batch.colors.reserve(reserve_size * 2);
+    line_batch.thicknesses.reserve(reserve_size);
+  }
   
   filled_shape_batch_.vertices.reserve(reserve_size * 12); // ~4 vertices per shape * 3 components
   filled_shape_batch_.indices.reserve(reserve_size * 6);   // ~2 triangles per shape
@@ -1884,9 +1918,11 @@ void Canvas::ShrinkToFit() {
   std::lock_guard<std::mutex> lock(data_mutex_);
   
   // Shrink all batch vectors to minimum required size
-  line_batch_.vertices.shrink_to_fit();
-  line_batch_.colors.shrink_to_fit();
-  line_batch_.thicknesses.shrink_to_fit();
+  for (auto& [line_type, line_batch] : line_batches_) {
+    line_batch.vertices.shrink_to_fit();
+    line_batch.colors.shrink_to_fit();
+    line_batch.thicknesses.shrink_to_fit();
+  }
   
   filled_shape_batch_.vertices.shrink_to_fit();
   filled_shape_batch_.indices.shrink_to_fit();
@@ -1905,9 +1941,11 @@ size_t Canvas::GetMemoryUsage() const {
   size_t total_usage = 0;
   
   // Calculate batch memory usage
-  total_usage += line_batch_.vertices.capacity() * sizeof(glm::vec3);
-  total_usage += line_batch_.colors.capacity() * sizeof(glm::vec4);
-  total_usage += line_batch_.thicknesses.capacity() * sizeof(float);
+  for (const auto& [line_type, line_batch] : line_batches_) {
+    total_usage += line_batch.vertices.capacity() * sizeof(glm::vec3);
+    total_usage += line_batch.colors.capacity() * sizeof(glm::vec4);
+    total_usage += line_batch.thicknesses.capacity() * sizeof(float);
+  }
   
   total_usage += filled_shape_batch_.vertices.capacity() * sizeof(float);
   total_usage += filled_shape_batch_.indices.capacity() * sizeof(uint32_t);

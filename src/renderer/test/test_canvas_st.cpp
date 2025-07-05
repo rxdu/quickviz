@@ -28,59 +28,56 @@ namespace fs = std::filesystem;
 
 // Function to test all canvas drawing functions
 void TestAllCanvasFunctions(Canvas* canvas) {
-  // Add some points with different colors and sizes
-  canvas->AddPoint(0.0f, 0.0f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 5.0f);  // Red
-  canvas->AddPoint(1.0f, 1.0f, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), 8.0f);  // Green
-  canvas->AddPoint(-1.5f, -1.5f, glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), 10.0f);  // Blue
-  
-  // Add lines with different styles
-  canvas->AddLine(2.0f, 2.0f, 3.0f, 3.0f, glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), 2.0f, LineType::kSolid);  // Yellow solid
-  canvas->AddLine(-2.0f, 2.0f, -3.0f, 3.0f, glm::vec4(1.0f, 0.0f, 1.0f, 1.0f), 3.0f, LineType::kDashed);  // Magenta dashed
-  canvas->AddLine(3.0f, -2.0f, 4.0f, -3.0f, glm::vec4(0.0f, 1.0f, 1.0f, 1.0f), 4.0f, LineType::kDotted);  // Cyan dotted
-  
-  // Add rectangles - filled and outlined
-  canvas->AddRectangle(-4.0f, -4.0f, 1.0f, 1.0f, glm::vec4(1.0f, 0.5f, 0.0f, 0.7f), true, 2.0f);  // Orange filled
-  canvas->AddRectangle(3.0f, -4.0f, 1.0f, 1.0f, glm::vec4(0.5f, 0.0f, 0.5f, 0.7f), false, 2.0f);  // Purple outlined
-  
-  // Add circles - filled and outlined
-  canvas->AddCircle(-2.0f, -2.0f, 0.7f, glm::vec4(0.0f, 0.5f, 0.0f, 0.8f), true, 2.0f);  // Dark green filled
-  canvas->AddCircle(2.0f, 0.0f, 0.5f, glm::vec4(0.7f, 0.7f, 0.7f, 0.8f), false, 2.0f);  // Gray outlined
-  
-  // Add ellipses - filled and outlined
-  canvas->AddEllipse(0.0f, 3.0f, 1.0f, 0.5f, 0.0f, 0.0f, 6.28f, 
-                    glm::vec4(0.5f, 0.5f, 0.0f, 0.8f), true, 2.0f);  // Olive filled
-  canvas->AddEllipse(-3.0f, 0.0f, 0.7f, 0.4f, 0.7f, 0.0f, 6.28f, 
-                    glm::vec4(0.5f, 0.0f, 0.0f, 0.8f), false, 2.0f);  // Dark red outlined, rotated
-  
-  // Add a polygon
-  std::vector<glm::vec2> star_vertices = {
-    {0.0f, 5.0f},
-    {1.0f, 2.0f},
-    {4.0f, 2.0f},
-    {2.0f, 0.0f},
-    {3.0f, -3.0f},
-    {0.0f, -1.0f},
-    {-3.0f, -3.0f},
-    {-2.0f, 0.0f},
-    {-4.0f, 2.0f},
-    {-1.0f, 2.0f},
+  // Add reference points to verify coordinate system
+  canvas->AddPoint(0.0f, 0.0f, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
+                   10.0f);  // White center
+  canvas->AddPoint(0.0f, 2.0f, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f),
+                   8.0f);  // Green top
+  canvas->AddPoint(-4.0f, 1.0f, glm::vec4(0.0f, 0.0f, 1.0f, 1.0f),
+                   8.0f);  // Blue left
+  canvas->AddPoint(4.0f, 1.0f, glm::vec4(1.0f, 1.0f, 0.0f, 1.0f),
+                   8.0f);  // Yellow right
+
+  canvas->AddLine(-1.0f, -1.0f, -1.0f, 1.0f, glm::vec4(1.0f, 1.0f, 0.0f, 1.0f),
+                  2.0f, LineType::kSolid);  // Yellow solid
+  canvas->AddLine(-1.25f, -1.0f, -1.25f, 1.0f, glm::vec4(1.0f, 1.0f, 0.0f, 1.0f),
+                  2.0f, LineType::kDashed);
+  canvas->AddLine(-1.5f, -1.0f, -1.5f, 1.0f, glm::vec4(1.0f, 1.0f, 0.0f, 1.0f),
+                  2.0f, LineType::kDotted);
+
+  canvas->AddRectangle(-2.5, -2.5, 1.0, 1.0, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f),
+                       true, 2.0f);  // Red filled rectangle
+  canvas->AddRectangle(-2.25, -1.25, 0.5, 0.5,
+                       glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), false,
+                       2.0f);  // Red filled rectangle
+
+  canvas->AddCircle(3.0f, 0.0f, 0.5f, glm::vec4(0.0f, 0.5f, 0.0f, 0.8f), true,
+                    2.0f);  // Dark green filled
+  canvas->AddCircle(2.0f, 0.0f, 0.25f, glm::vec4(0.0f, 0.5f, 0.0f, 0.8f), false,
+                    2.0f);
+
+  canvas->AddEllipse(-3.0f, 0.0f, 1.0f, 0.5f, 0.0f, 0.0f, 6.28f,
+                     glm::vec4(0.5f, 0.5f, 0.0f, 0.8f), true,
+                     2.0f);  // Olive filled
+  canvas->AddEllipse(-3.0f, 1.5f, 0.5f, 0.25f, 0.0f, 0.0f, 6.28f,
+                     glm::vec4(0.5f, 0.5f, 0.0f, 0.8f), false, 2.0f);
+
+  // Add a simple test polygon
+  std::vector<glm::vec2> simple_triangle = {
+      {-0.5f, -1.0f},  // Bottom-left
+      {0.5f, -1.0f},   // Bottom-right
+      {0.0f, -0.5f}    // Top
   };
-  
-  // Scale down the star vertices
-  for (auto& vertex : star_vertices) {
-    vertex *= 0.3f;
+  canvas->AddPolygon(simple_triangle, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), true,
+                     3.0f);
+  for (auto& v : simple_triangle) {
+    v += glm::vec2(0.0f, -1.0f);
   }
-  
-  // Move the star to a different position
-  for (auto& vertex : star_vertices) {
-    vertex += glm::vec2(4.0f, 3.0f);
-  }
-  
-  canvas->AddPolygon(star_vertices, glm::vec4(0.8f, 0.8f, 0.0f, 0.9f), true, 2.0f);  // Gold filled
+  canvas->AddPolygon(simple_triangle, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), false,
+                     3.0f);
 }
 
 int main(int argc, char* argv[]) {
-
   Viewer viewer;
 
   // create a box to manage size & position of the OpenGL scene
@@ -109,6 +106,7 @@ int main(int argc, char* argv[]) {
   gl_sm->AddOpenGLObject("coordinate_frame", std::move(coord_frame));
 
   auto canvas = std::make_unique<Canvas>();
+  canvas->SetBatchingEnabled(false);
   gl_sm->AddOpenGLObject("canvas", std::move(canvas));
 
   // now let's do some drawing on the canvas
@@ -117,7 +115,7 @@ int main(int argc, char* argv[]) {
 
     // Add background image first so it's behind all other drawings
     std::string image_path = "../data/fish.png";
-    
+
     // Check if file exists and get absolute path
     fs::path abs_path = fs::absolute(image_path);
     std::cout << "Checking image path: " << abs_path.string() << std::endl;
@@ -125,32 +123,36 @@ int main(int argc, char* argv[]) {
       std::cout << "Image file exists!" << std::endl;
     } else {
       std::cout << "Image file does not exist!" << std::endl;
-      
+
       // Try alternative paths
       std::string alt_path1 = "data/fish.png";
       fs::path abs_alt_path1 = fs::absolute(alt_path1);
-      std::cout << "Trying alternative path: " << abs_alt_path1.string() << std::endl;
+      std::cout << "Trying alternative path: " << abs_alt_path1.string()
+                << std::endl;
       if (fs::exists(abs_alt_path1)) {
         std::cout << "Alternative image file exists!" << std::endl;
         image_path = alt_path1;
       }
-      
+
       std::string alt_path2 = "fish.png";
       fs::path abs_alt_path2 = fs::absolute(alt_path2);
-      std::cout << "Trying alternative path: " << abs_alt_path2.string() << std::endl;
+      std::cout << "Trying alternative path: " << abs_alt_path2.string()
+                << std::endl;
       if (fs::exists(abs_alt_path2)) {
         std::cout << "Alternative image file exists!" << std::endl;
         image_path = alt_path2;
       }
     }
-    
-    // Add background image using a small origin offset and 1:100 resolution for debugging
-    canvas->AddBackgroundImage(image_path, glm::vec3(1.0f, 1.0f, 0.785f), 0.005f);
-    
+
+    // Add background image using a small origin offset and 1:100 resolution for
+    // debugging
+    canvas->AddBackgroundImage(image_path, glm::vec3(1.0f, 1.0f, 0.785f),
+                               0.005f);
+
     // Test all canvas drawing functions
     TestAllCanvasFunctions(canvas);
   }
-  
+
   // finally pass the OpenGL scene managers to the box and add it to the viewer
   box->AddChild(gl_sm);
   viewer.AddSceneObject(box);
