@@ -106,7 +106,7 @@ int main(int argc, char* argv[]) {
   gl_sm->AddOpenGLObject("coordinate_frame", std::move(coord_frame));
 
   auto canvas = std::make_unique<Canvas>();
-  canvas->SetBatchingEnabled(false);
+  canvas->SetBatchingEnabled(true);
   gl_sm->AddOpenGLObject("canvas", std::move(canvas));
 
   // now let's do some drawing on the canvas

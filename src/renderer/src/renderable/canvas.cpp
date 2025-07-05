@@ -12,6 +12,7 @@
 #include <iostream>
 #include <cmath>
 #include <chrono>
+#include <map>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -1140,13 +1141,26 @@ void Canvas::RenderBatches(const glm::mat4& projection, const glm::mat4& view,
       primitive_shader_.TrySetUniform("renderMode", 1); // Lines mode
       primitive_shader_.TrySetUniform("lineType", static_cast<int>(line_type));
       
+      // Group by thickness and render each group
+      std::map<float, std::vector<std::pair<size_t, size_t>>> thickness_groups;
+      for (size_t i = 0; i < line_batch.thicknesses.size(); ++i) {
+        float thickness = line_batch.thicknesses[i];
+        thickness_groups[thickness].emplace_back(i * 2, 2); // vertex start, count
+      }
+      
       glBindVertexArray(line_batch.vao);
-      glDrawArrays(GL_LINES, 0, line_batch.vertices.size());
+      for (const auto& [thickness, ranges] : thickness_groups) {
+        glLineWidth(thickness);
+        for (const auto& [start, count] : ranges) {
+          glDrawArrays(GL_LINES, start, count);
+          render_stats_.draw_calls++;
+        }
+        render_stats_.lines_rendered += ranges.size();
+        render_stats_.batched_objects += ranges.size();
+      }
+      glLineWidth(1.0f); // Reset to default
       glBindVertexArray(0);
       
-      render_stats_.lines_rendered += line_batch.vertices.size() / 2;
-      render_stats_.batched_objects += line_batch.vertices.size() / 2;
-      render_stats_.draw_calls++;
       render_stats_.state_changes += 2; // VAO bind/unbind
     }
   }
