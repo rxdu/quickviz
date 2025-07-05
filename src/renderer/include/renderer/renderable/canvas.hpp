@@ -186,7 +186,7 @@ class Canvas : public OpenGlObject {
       true;  // Re-enabled, ellipse/polygon renderMode fixed
   std::unordered_map<LineType, LineBatch> line_batches_;
   ShapeBatch filled_shape_batch_;
-  ShapeBatch outline_shape_batch_;
+  std::unordered_map<LineType, ShapeBatch> outline_shape_batches_;
 
   // Batch management methods
   void InitializeBatches();

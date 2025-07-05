@@ -36,7 +36,7 @@ public:
    * @param outline_batch Reference to outline shape batch data
    * @param shape_renderer Unified shape renderer for individual shapes
    */
-  BatchedRenderStrategy(std::unordered_map<LineType, LineBatch>& line_batches, ShapeBatch& filled_batch, ShapeBatch& outline_batch, ShapeRenderer* shape_renderer = nullptr);
+  BatchedRenderStrategy(std::unordered_map<LineType, LineBatch>& line_batches, ShapeBatch& filled_batch, std::unordered_map<LineType, ShapeBatch>& outline_batches, ShapeRenderer* shape_renderer = nullptr);
   
   ~BatchedRenderStrategy() override = default;
   
@@ -53,7 +53,7 @@ private:
   // References to batch data (owned by Canvas)
   std::unordered_map<LineType, LineBatch>& line_batches_;
   ShapeBatch& filled_shape_batch_;
-  ShapeBatch& outline_shape_batch_;
+  std::unordered_map<LineType, ShapeBatch>& outline_shape_batches_;
   
   // Unified shape renderer for individual shapes
   ShapeRenderer* shape_renderer_;

@@ -173,7 +173,7 @@ Canvas::Canvas() {
   // Initialize render strategies
   // Note: shape_renderer_ will be created after GPU resources are allocated
   batched_strategy_ = std::make_unique<BatchedRenderStrategy>(
-    line_batches_, filled_shape_batch_, outline_shape_batch_);
+    line_batches_, filled_shape_batch_, outline_shape_batches_);
   individual_strategy_ = std::make_unique<IndividualRenderStrategy>();
   
   // Set default strategy based on batching preference
@@ -192,7 +192,7 @@ Canvas::Canvas() {
   
   // Update render strategies with shape renderer
   batched_strategy_ = std::make_unique<BatchedRenderStrategy>(
-    line_batches_, filled_shape_batch_, outline_shape_batch_, shape_renderer_.get());
+    line_batches_, filled_shape_batch_, outline_shape_batches_, shape_renderer_.get());
   individual_strategy_ = std::make_unique<IndividualRenderStrategy>(shape_renderer_.get());
 }
 
@@ -708,10 +708,8 @@ void Canvas::ProcessPendingUpdates() {
           break;
         }
         case PendingUpdate::Type::kRectangle: {
-          uint32_t base_index = update.filled ?
-                                filled_shape_batch_.vertices.size() / 3 :
-                                outline_shape_batch_.vertices.size() / 3;
           if (update.filled) {
+            uint32_t base_index = filled_shape_batch_.vertices.size() / 3;
             GenerateRectangleVertices(update.rect.x, update.rect.y,
                                       update.rect.width, update.rect.height,
                                       filled_shape_batch_.vertices,
@@ -723,25 +721,25 @@ void Canvas::ProcessPendingUpdates() {
             }
             filled_shape_batch_.needs_update = true;
           } else {
+            auto& outline_batch = outline_shape_batches_[update.line_type];
+            uint32_t base_index = outline_batch.vertices.size() / 3;
             GenerateRectangleVertices(update.rect.x, update.rect.y,
                                       update.rect.width, update.rect.height,
-                                      outline_shape_batch_.vertices,
-                                      outline_shape_batch_.indices,
+                                      outline_batch.vertices,
+                                      outline_batch.indices,
                                       false, base_index);
             // Add color for each vertex (4 vertices for rectangle)
             for (int i = 0; i < 4; i++) {
-              outline_shape_batch_.colors.push_back(update.color);
+              outline_batch.colors.push_back(update.color);
             }
-            outline_shape_batch_.needs_update = true;
+            outline_batch.needs_update = true;
           }
           break;
         }
         case PendingUpdate::Type::kCircle: {
           const int segments = 32; // Could be made adaptive based on radius
-          uint32_t base_index = update.filled ?
-                                filled_shape_batch_.vertices.size() / 3 :
-                                outline_shape_batch_.vertices.size() / 3;
           if (update.filled) {
+            uint32_t base_index = filled_shape_batch_.vertices.size() / 3;
             GenerateCircleVertices(update.circle.x, update.circle.y,
                                    update.circle.radius, segments,
                                    filled_shape_batch_.vertices,
@@ -754,26 +752,26 @@ void Canvas::ProcessPendingUpdates() {
             }
             filled_shape_batch_.needs_update = true;
           } else {
+            auto& outline_batch = outline_shape_batches_[update.line_type];
+            uint32_t base_index = outline_batch.vertices.size() / 3;
             GenerateCircleVertices(update.circle.x, update.circle.y,
                                    update.circle.radius, segments,
-                                   outline_shape_batch_.vertices,
-                                   outline_shape_batch_.indices,
+                                   outline_batch.vertices,
+                                   outline_batch.indices,
                                    false, base_index);
             // Add color for perimeter vertices
             // Perimeter vertices: segments + 1 total (0 to segments inclusive)
             for (int i = 0; i < segments + 1; i++) {
-              outline_shape_batch_.colors.push_back(update.color);
+              outline_batch.colors.push_back(update.color);
             }
-            outline_shape_batch_.needs_update = true;
+            outline_batch.needs_update = true;
           }
           break;
         }
         case PendingUpdate::Type::kEllipse: {
           const int segments = 32;
-          uint32_t base_index = update.filled ?
-                                filled_shape_batch_.vertices.size() / 3 :
-                                outline_shape_batch_.vertices.size() / 3;
           if (update.filled) {
+            uint32_t base_index = filled_shape_batch_.vertices.size() / 3;
             GenerateEllipseVertices(update.ellipse, filled_shape_batch_.vertices,
                                     filled_shape_batch_.indices, true, base_index);
             for (int i = 0; i < segments + 2; i++) {
@@ -781,20 +779,20 @@ void Canvas::ProcessPendingUpdates() {
             }
             filled_shape_batch_.needs_update = true;
           } else {
-            GenerateEllipseVertices(update.ellipse, outline_shape_batch_.vertices,
-                                    outline_shape_batch_.indices, false, base_index);
+            auto& outline_batch = outline_shape_batches_[update.line_type];
+            uint32_t base_index = outline_batch.vertices.size() / 3;
+            GenerateEllipseVertices(update.ellipse, outline_batch.vertices,
+                                    outline_batch.indices, false, base_index);
             for (int i = 0; i < segments + 1; i++) {
-              outline_shape_batch_.colors.push_back(update.color);
+              outline_batch.colors.push_back(update.color);
             }
-            outline_shape_batch_.needs_update = true;
+            outline_batch.needs_update = true;
           }
           break;
         }
         case PendingUpdate::Type::kPolygon: {
-          uint32_t base_index = update.filled ?
-                                filled_shape_batch_.vertices.size() / 3 :
-                                outline_shape_batch_.vertices.size() / 3;
           if (update.filled) {
+            uint32_t base_index = filled_shape_batch_.vertices.size() / 3;
             GeneratePolygonVertices(update.polygon_vertices, filled_shape_batch_.vertices,
                                     filled_shape_batch_.indices, true, base_index);
             for (int i = 0; i < update.polygon_vertices.size(); i++) {
@@ -802,12 +800,14 @@ void Canvas::ProcessPendingUpdates() {
             }
             filled_shape_batch_.needs_update = true;
           } else {
-            GeneratePolygonVertices(update.polygon_vertices, outline_shape_batch_.vertices,
-                                    outline_shape_batch_.indices, false, base_index);
+            auto& outline_batch = outline_shape_batches_[update.line_type];
+            uint32_t base_index = outline_batch.vertices.size() / 3;
+            GeneratePolygonVertices(update.polygon_vertices, outline_batch.vertices,
+                                    outline_batch.indices, false, base_index);
             for (int i = 0; i < update.polygon_vertices.size(); i++) {
-              outline_shape_batch_.colors.push_back(update.color);
+              outline_batch.colors.push_back(update.color);
             }
-            outline_shape_batch_.needs_update = true;
+            outline_batch.needs_update = true;
           }
           break;
         }
@@ -824,11 +824,13 @@ void Canvas::ProcessPendingUpdates() {
           filled_shape_batch_.vertices.clear();
           filled_shape_batch_.indices.clear();
           filled_shape_batch_.colors.clear();
-          outline_shape_batch_.vertices.clear();
-          outline_shape_batch_.indices.clear();
-          outline_shape_batch_.colors.clear();
+          for (auto& [line_type, outline_batch] : outline_shape_batches_) {
+            outline_batch.vertices.clear();
+            outline_batch.indices.clear();
+            outline_batch.colors.clear();
+            outline_batch.needs_update = true;
+          }
           filled_shape_batch_.needs_update = true;
-          outline_shape_batch_.needs_update = true;
           break;
       }
     } else {
@@ -1069,11 +1071,18 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
     }
   }
   
+  bool has_outline_data = false;
+  for (const auto& [line_type, outline_batch] : outline_shape_batches_) {
+    if (!outline_batch.vertices.empty()) {
+      has_outline_data = true;
+      break;
+    }
+  }
+  
   if (data.points.empty() && data.lines.empty() && data.rectangles.empty() &&
       data.circles.empty() && data.ellipses.empty() &&
       data.polygons.empty() && !has_line_data &&
-      filled_shape_batch_.vertices.empty() &&
-      outline_shape_batch_.vertices.empty()) {
+      filled_shape_batch_.vertices.empty() && !has_outline_data) {
     return;
   }
 
@@ -1083,8 +1092,7 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
   }
 
   // Render batched shapes
-  if (has_line_data || !filled_shape_batch_.vertices.empty() ||
-      !outline_shape_batch_.vertices.empty()) {
+  if (has_line_data || !filled_shape_batch_.vertices.empty() || has_outline_data) {
     RenderBatches(projection, view, coord_transform);
   }
 }
@@ -1104,14 +1112,21 @@ void Canvas::RenderBatches(const glm::mat4& projection, const glm::mat4& view,
       line_vertex_memory += batch.vertices.size() * sizeof(glm::vec3);
     }
     
+    size_t outline_vertex_memory = 0;
+    size_t outline_index_memory = 0;
+    for (const auto& [line_type, outline_batch] : outline_shape_batches_) {
+      outline_vertex_memory += outline_batch.vertices.size() * sizeof(float);
+      outline_index_memory += outline_batch.indices.size() * sizeof(uint32_t);
+    }
+    
     render_stats_.vertex_memory_used = 
       line_vertex_memory +
       filled_shape_batch_.vertices.size() * sizeof(float) +
-      outline_shape_batch_.vertices.size() * sizeof(float);
+      outline_vertex_memory;
     
     render_stats_.index_memory_used = 
       filled_shape_batch_.indices.size() * sizeof(uint32_t) +
-      outline_shape_batch_.indices.size() * sizeof(uint32_t);
+      outline_index_memory;
     
     render_stats_.total_memory_used = 
       render_stats_.vertex_memory_used + 
@@ -1179,19 +1194,21 @@ void Canvas::RenderBatches(const glm::mat4& projection, const glm::mat4& view,
     render_stats_.state_changes += 2; // VAO bind/unbind
   }
   
-  // Render outline shapes batch
-  if (!outline_shape_batch_.vertices.empty() && !outline_shape_batch_.indices.empty()) {
-    primitive_shader_.TrySetUniform("renderMode", 3); // Outline shapes mode
-    primitive_shader_.TrySetUniform("lineType", 0);   // Solid lines for now
-    
-    glBindVertexArray(outline_shape_batch_.vao);
-    glDrawElements(GL_LINES, outline_shape_batch_.indices.size(), GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
-    
-    render_stats_.shapes_rendered += outline_shape_batch_.indices.size() / 8; // Approximate shapes
-    render_stats_.batched_objects += outline_shape_batch_.indices.size() / 8;
-    render_stats_.draw_calls++;
-    render_stats_.state_changes += 2; // VAO bind/unbind
+  // Render outline shapes batch by line type
+  for (auto& [line_type, outline_batch] : outline_shape_batches_) {
+    if (!outline_batch.vertices.empty() && !outline_batch.indices.empty()) {
+      primitive_shader_.TrySetUniform("renderMode", 3); // Outline shapes mode
+      primitive_shader_.TrySetUniform("lineType", static_cast<int>(line_type));
+      
+      glBindVertexArray(outline_batch.vao);
+      glDrawElements(GL_LINES, outline_batch.indices.size(), GL_UNSIGNED_INT, 0);
+      glBindVertexArray(0);
+      
+      render_stats_.shapes_rendered += outline_batch.indices.size() / 8; // Approximate shapes
+      render_stats_.batched_objects += outline_batch.indices.size() / 8;
+      render_stats_.draw_calls++;
+      render_stats_.state_changes += 2; // VAO bind/unbind
+    }
   }
   
   // Reset OpenGL state
@@ -1566,28 +1583,31 @@ void Canvas::InitializeBatches() {
 
   glBindVertexArray(0);
 
-  // Initialize outline shape batch
-  glGenVertexArrays(1, &outline_shape_batch_.vao);
-  glGenBuffers(1, &outline_shape_batch_.vertex_vbo);
-  glGenBuffers(1, &outline_shape_batch_.color_vbo);
-  glGenBuffers(1, &outline_shape_batch_.ebo);
+  // Initialize outline shape batches for each line type
+  for (auto line_type : {LineType::kSolid, LineType::kDashed, LineType::kDotted}) {
+    auto& outline_batch = outline_shape_batches_[line_type];
+    glGenVertexArrays(1, &outline_batch.vao);
+    glGenBuffers(1, &outline_batch.vertex_vbo);
+    glGenBuffers(1, &outline_batch.color_vbo);
+    glGenBuffers(1, &outline_batch.ebo);
 
-  glBindVertexArray(outline_shape_batch_.vao);
+    glBindVertexArray(outline_batch.vao);
 
-  // Vertex buffer
-  glEnableVertexAttribArray(0);
-  glBindBuffer(GL_ARRAY_BUFFER, outline_shape_batch_.vertex_vbo);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    // Vertex buffer
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, outline_batch.vertex_vbo);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-  // Color buffer
-  glEnableVertexAttribArray(1);
-  glBindBuffer(GL_ARRAY_BUFFER, outline_shape_batch_.color_vbo);
-  glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
+    // Color buffer
+    glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ARRAY_BUFFER, outline_batch.color_vbo);
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
-  // Element buffer
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, outline_shape_batch_.ebo);
+    // Element buffer
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, outline_batch.ebo);
 
-  glBindVertexArray(0);
+    glBindVertexArray(0);
+  }
 
   std::cout << "Batching system initialized successfully." << std::endl;
 }
@@ -1617,16 +1637,18 @@ void Canvas::ClearBatches() {
     filled_shape_batch_.ebo = 0;
   }
   
-  // Clean up outline shape batch
-  if (outline_shape_batch_.vao != 0) {
-    glDeleteVertexArrays(1, &outline_shape_batch_.vao);
-    glDeleteBuffers(1, &outline_shape_batch_.vertex_vbo);
-    glDeleteBuffers(1, &outline_shape_batch_.color_vbo);
-    glDeleteBuffers(1, &outline_shape_batch_.ebo);
-    outline_shape_batch_.vao = 0;
-    outline_shape_batch_.vertex_vbo = 0;
-    outline_shape_batch_.color_vbo = 0;
-    outline_shape_batch_.ebo = 0;
+  // Clean up outline shape batches
+  for (auto& [line_type, outline_batch] : outline_shape_batches_) {
+    if (outline_batch.vao != 0) {
+      glDeleteVertexArrays(1, &outline_batch.vao);
+      glDeleteBuffers(1, &outline_batch.vertex_vbo);
+      glDeleteBuffers(1, &outline_batch.color_vbo);
+      glDeleteBuffers(1, &outline_batch.ebo);
+      outline_batch.vao = 0;
+      outline_batch.vertex_vbo = 0;
+      outline_batch.color_vbo = 0;
+      outline_batch.ebo = 0;
+    }
   }
   
   // Clear CPU data
@@ -1641,9 +1663,11 @@ void Canvas::ClearBatches() {
   filled_shape_batch_.indices.clear();
   filled_shape_batch_.colors.clear();
   
-  outline_shape_batch_.vertices.clear();
-  outline_shape_batch_.indices.clear();
-  outline_shape_batch_.colors.clear();
+  for (auto& [line_type, outline_batch] : outline_shape_batches_) {
+    outline_batch.vertices.clear();
+    outline_batch.indices.clear();
+    outline_batch.colors.clear();
+  }
 }
 
 void Canvas::FlushBatches() {
@@ -1652,7 +1676,9 @@ void Canvas::FlushBatches() {
     line_batch.needs_update = true;
   }
   filled_shape_batch_.needs_update = true;
-  outline_shape_batch_.needs_update = true;
+  for (auto& [line_type, outline_batch] : outline_shape_batches_) {
+    outline_batch.needs_update = true;
+  }
   UpdateBatches();
 }
 
@@ -1713,38 +1739,40 @@ void Canvas::UpdateBatches() {
     filled_shape_batch_.needs_update = false;
   }
   
-  // Update outline shape batch
-  if (outline_shape_batch_.needs_update && !outline_shape_batch_.vertices.empty()) {
-    glBindVertexArray(outline_shape_batch_.vao);
-    
-    // Update vertex buffer
-    glBindBuffer(GL_ARRAY_BUFFER, outline_shape_batch_.vertex_vbo);
-    glBufferData(GL_ARRAY_BUFFER,
-                 outline_shape_batch_.vertices.size() * sizeof(float),
-                 outline_shape_batch_.vertices.data(), GL_DYNAMIC_DRAW);
-    
-    // Update color buffer - colors should already match vertices 1:1
-    // Each color in outline_shape_batch_.colors corresponds to one vertex
-    size_t expected_vertex_count = outline_shape_batch_.vertices.size() / 3;
-    if (outline_shape_batch_.colors.size() != expected_vertex_count) {
-      std::cerr << "ERROR: Color count mismatch in outline_shape_batch! "
-                << "Expected " << expected_vertex_count << " colors, got " 
-                << outline_shape_batch_.colors.size() << std::endl;
+  // Update outline shape batches
+  for (auto& [line_type, outline_batch] : outline_shape_batches_) {
+    if (outline_batch.needs_update && !outline_batch.vertices.empty()) {
+      glBindVertexArray(outline_batch.vao);
+      
+      // Update vertex buffer
+      glBindBuffer(GL_ARRAY_BUFFER, outline_batch.vertex_vbo);
+      glBufferData(GL_ARRAY_BUFFER,
+                   outline_batch.vertices.size() * sizeof(float),
+                   outline_batch.vertices.data(), GL_DYNAMIC_DRAW);
+      
+      // Update color buffer - colors should already match vertices 1:1
+      // Each color in outline_batch.colors corresponds to one vertex
+      size_t expected_vertex_count = outline_batch.vertices.size() / 3;
+      if (outline_batch.colors.size() != expected_vertex_count) {
+        std::cerr << "ERROR: Color count mismatch in outline_batch! "
+                  << "Expected " << expected_vertex_count << " colors, got " 
+                  << outline_batch.colors.size() << std::endl;
+      }
+      
+      glBindBuffer(GL_ARRAY_BUFFER, outline_batch.color_vbo);
+      glBufferData(GL_ARRAY_BUFFER,
+                   outline_batch.colors.size() * sizeof(glm::vec4),
+                   outline_batch.colors.data(), GL_DYNAMIC_DRAW);
+      
+      // Update index buffer
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, outline_batch.ebo);
+      glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                   outline_batch.indices.size() * sizeof(uint32_t),
+                   outline_batch.indices.data(), GL_DYNAMIC_DRAW);
+      
+      glBindVertexArray(0);
+      outline_batch.needs_update = false;
     }
-    
-    glBindBuffer(GL_ARRAY_BUFFER, outline_shape_batch_.color_vbo);
-    glBufferData(GL_ARRAY_BUFFER,
-                 outline_shape_batch_.colors.size() * sizeof(glm::vec4),
-                 outline_shape_batch_.colors.data(), GL_DYNAMIC_DRAW);
-    
-    // Update index buffer
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, outline_shape_batch_.ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                 outline_shape_batch_.indices.size() * sizeof(uint32_t),
-                 outline_shape_batch_.indices.data(), GL_DYNAMIC_DRAW);
-    
-    glBindVertexArray(0);
-    outline_shape_batch_.needs_update = false;
   }
 }
 
@@ -1883,9 +1911,11 @@ void Canvas::OptimizeMemory() {
     filled_shape_batch_.indices.shrink_to_fit();
     filled_shape_batch_.colors.shrink_to_fit();
     
-    outline_shape_batch_.vertices.shrink_to_fit();
-    outline_shape_batch_.indices.shrink_to_fit();
-    outline_shape_batch_.colors.shrink_to_fit();
+    for (auto& [line_type, outline_batch] : outline_shape_batches_) {
+      outline_batch.vertices.shrink_to_fit();
+      outline_batch.indices.shrink_to_fit();
+      outline_batch.colors.shrink_to_fit();
+    }
     
     // Clear pending updates queue if it's grown too large
     if (pending_updates_.size() == 0) {
@@ -1917,9 +1947,11 @@ void Canvas::PreallocateMemory(size_t estimated_objects) {
   filled_shape_batch_.indices.reserve(reserve_size * 6);   // ~2 triangles per shape
   filled_shape_batch_.colors.reserve(reserve_size * 4);    // 4 vertices per shape
   
-  outline_shape_batch_.vertices.reserve(reserve_size * 12);
-  outline_shape_batch_.indices.reserve(reserve_size * 8);  // ~4 edges per shape
-  outline_shape_batch_.colors.reserve(reserve_size * 4);
+  for (auto& [line_type, outline_batch] : outline_shape_batches_) {
+    outline_batch.vertices.reserve(reserve_size * 12);
+    outline_batch.indices.reserve(reserve_size * 8);  // ~4 edges per shape
+    outline_batch.colors.reserve(reserve_size * 4);
+  }
   
   // Record the pre-allocation
   if (perf_config_.memory_tracking_enabled) {
@@ -1942,9 +1974,11 @@ void Canvas::ShrinkToFit() {
   filled_shape_batch_.indices.shrink_to_fit();
   filled_shape_batch_.colors.shrink_to_fit();
   
-  outline_shape_batch_.vertices.shrink_to_fit();
-  outline_shape_batch_.indices.shrink_to_fit();
-  outline_shape_batch_.colors.shrink_to_fit();
+  for (auto& [line_type, outline_batch] : outline_shape_batches_) {
+    outline_batch.vertices.shrink_to_fit();
+    outline_batch.indices.shrink_to_fit();
+    outline_batch.colors.shrink_to_fit();
+  }
   
   // Clear and shrink pending updates queue
   std::queue<PendingUpdate> empty_queue;
@@ -1965,9 +1999,11 @@ size_t Canvas::GetMemoryUsage() const {
   total_usage += filled_shape_batch_.indices.capacity() * sizeof(uint32_t);
   total_usage += filled_shape_batch_.colors.capacity() * sizeof(glm::vec4);
   
-  total_usage += outline_shape_batch_.vertices.capacity() * sizeof(float);
-  total_usage += outline_shape_batch_.indices.capacity() * sizeof(uint32_t);
-  total_usage += outline_shape_batch_.colors.capacity() * sizeof(glm::vec4);
+  for (const auto& [line_type, outline_batch] : outline_shape_batches_) {
+    total_usage += outline_batch.vertices.capacity() * sizeof(float);
+    total_usage += outline_batch.indices.capacity() * sizeof(uint32_t);
+    total_usage += outline_batch.colors.capacity() * sizeof(glm::vec4);
+  }
   
   // Add estimated size of pending updates queue
   total_usage += pending_updates_.size() * sizeof(PendingUpdate);
