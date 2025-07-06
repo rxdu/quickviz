@@ -29,3 +29,6 @@ target_link_libraries(test_texture PRIVATE renderer)
 
 add_executable(test_canvas_st test_canvas_st.cpp)
 target_link_libraries(test_canvas_st PRIVATE renderer)
+
+add_executable(test_nav_map_rendering test_nav_map_rendering.cpp)
+target_link_libraries(test_nav_map_rendering PRIVATE renderer)

@@ -303,10 +303,10 @@ void Canvas::AddBackgroundImage(const std::string& image_path,
   // Vertices for the transformed quad (placed behind primitives)
   float vertices[] = {
       // Positions (x, y, z)              // Texture coords
-      bl.x, bl.y, -0.1f, 0.0f, 0.0f,  // Bottom left
-      br.x, br.y, -0.1f, 1.0f, 0.0f,  // Bottom right
-      tr.x, tr.y, -0.1f, 1.0f, 1.0f,  // Top right
-      tl.x, tl.y, -0.1f, 0.0f, 1.0f   // Top left
+      bl.x, bl.y, -0.01f, 0.0f, 0.0f,  // Bottom left
+      br.x, br.y, -0.01f, 1.0f, 0.0f,  // Bottom right
+      tr.x, tr.y, -0.01f, 1.0f, 1.0f,  // Top right
+      tl.x, tl.y, -0.01f, 0.0f, 1.0f   // Top left
   };
 
   // Update the vertex buffer with the new positions
@@ -539,13 +539,13 @@ void Canvas::SetupBackgroundImage(int width, int height, int channels,
 
   // Default setup of a simple quad - actual coordinates will be updated in
   // AddBackgroundImage We're creating a 1x1 quad centered at the origin
-  // Using negative Z to ensure background renders behind primitives
+  // Using very small negative Z to ensure background renders behind primitives while minimizing alignment issues
   float vertices[] = {
       // Positions (x, y, z)       // Texture coords
-      -0.5f, -0.5f, -0.1f, 0.0f, 0.0f,  // Bottom left
-      0.5f,  -0.5f, -0.1f, 1.0f, 0.0f,  // Bottom right
-      0.5f,  0.5f,  -0.1f, 1.0f, 1.0f,  // Top right
-      -0.5f, 0.5f,  -0.1f, 0.0f, 1.0f   // Top left
+      -0.5f, -0.5f, -0.001f, 0.0f, 0.0f,  // Bottom left
+      0.5f,  -0.5f, -0.001f, 1.0f, 0.0f,  // Bottom right
+      0.5f,  0.5f,  -0.001f, 1.0f, 1.0f,  // Top right
+      -0.5f, 0.5f,  -0.001f, 0.0f, 1.0f   // Top left
   };
 
   // Setup the VBO and VAO
