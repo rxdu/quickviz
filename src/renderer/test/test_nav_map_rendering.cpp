@@ -95,7 +95,7 @@ void DrawRobotMarker(float x, float y, float theta, Canvas* canvas,
   const float inner_radius = 1.0f * size;
   const float fill_radius = 0.85f * size;
   const float arrow_length = 0.6f * size;
-  const float arrow_base_width = 0.7f * size;
+  const float arrow_base_width = 0.85f * size;
 
   // Draw layered circular background for depth
   canvas->AddCircle(x, y, fill_radius, circle_fill, true);
@@ -112,8 +112,8 @@ void DrawRobotMarker(float x, float y, float theta, Canvas* canvas,
   float base_offset_y = -arrow_base_width * 0.5f * cos_theta;
 
   // Position base closer to center for better proportions
-  float base_center_x = x - 0.8f * arrow_length * cos_theta;
-  float base_center_y = y - 0.8f * arrow_length * sin_theta;
+  float base_center_x = x - 0.7f * arrow_length * cos_theta;
+  float base_center_y = y - 0.7f * arrow_length * sin_theta;
 
   float base_left_x = base_center_x + base_offset_x;
   float base_left_y = base_center_y + base_offset_y;
@@ -135,38 +135,6 @@ void DrawRobotMarker(float x, float y, float theta, Canvas* canvas,
 
   // Draw white arrow fill first
   canvas->AddPolygon(notched_arrow_outline, arrow_fill, true, 2.0f);
-  
-  // Draw black arrow outline for definition
-  canvas->AddPolygon(notched_arrow_outline, arrow_outline, false, 3.0f);
-
-  //   // Create slightly smaller notched arrow for the main fill
-  //   float inner_tip_x = x + 0.9f * arrow_length * cos_theta;
-  //   float inner_tip_y = y + 0.9f * arrow_length * sin_theta;
-
-  //   float inner_base_offset_x = 0.9f * arrow_base_width * 0.5f * sin_theta;
-  //   float inner_base_offset_y = -0.9f * arrow_base_width * 0.5f * cos_theta;
-
-  //   float inner_base_center_x = x - 0.25f * arrow_length * cos_theta;
-  //   float inner_base_center_y = y - 0.25f * arrow_length * sin_theta;
-
-  //   float inner_base_left_x = inner_base_center_x + inner_base_offset_x;
-  //   float inner_base_left_y = inner_base_center_y + inner_base_offset_y;
-  //   float inner_base_right_x = inner_base_center_x - inner_base_offset_x;
-  //   float inner_base_right_y = inner_base_center_y - inner_base_offset_y;
-
-  //   float inner_notch_center_x = x - (0.25f - 0.9f * notch_depth) *
-  //   arrow_length * cos_theta; float inner_notch_center_y = y - (0.25f - 0.9f
-  //   * notch_depth) * arrow_length * sin_theta;
-
-  //   std::vector<glm::vec2> inner_notched_arrow = {
-  //       {inner_tip_x, inner_tip_y},
-  //       {inner_base_left_x, inner_base_left_y},
-  //       {inner_notch_center_x, inner_notch_center_y},
-  //       {inner_base_right_x, inner_base_right_y}
-  //   };
-
-  //   canvas->AddPolygon(inner_notched_arrow, arrow_fill, true, 2.0f);  // Main
-  //   fill
 }
 
 int main(int argc, char* argv[]) {
