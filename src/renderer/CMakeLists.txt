@@ -15,6 +15,10 @@ add_library(renderer
     src/renderable/triangle.cpp
     src/renderable/point_cloud.cpp
     src/renderable/canvas.cpp
+    src/renderable/details/batched_render_strategy.cpp
+    src/renderable/details/individual_render_strategy.cpp
+    src/renderable/details/shape_renderer.cpp
+    src/renderable/details/shape_generators.cpp
     src/renderable/coordinate_frame.cpp
     src/renderable/texture.cpp
     )
