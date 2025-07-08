@@ -38,6 +38,9 @@ class CameraController {
   glm::vec2 GetPosition() const;
   void SetPosition(const glm::vec2& position);
 
+  float GetYaw() const { return camera_.GetYaw(); }
+  void SetYaw(float yaw);
+
  private:
   static constexpr float initial_orbit_distance = 10.0f;
   static constexpr float default_orbit_zoom_speed = 2.0f;

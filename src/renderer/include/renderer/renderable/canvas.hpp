@@ -73,6 +73,7 @@ class Canvas : public OpenGlObject {
 
   void AddBackgroundImage(const std::string& image_path,
                           const glm::vec3& origin, float resolution);
+  glm::vec2 GetBackgroundImageSize() const;
 
   // Clear all points from the canvas
   void Clear();
@@ -162,6 +163,7 @@ class Canvas : public OpenGlObject {
   };
 
   // Background image texture
+  glm::vec2 background_image_size_{0.0f, 0.0f};
   std::mutex background_mutex_;
   std::atomic<uint32_t> background_texture_{0};
 
