@@ -61,9 +61,22 @@ glm::vec2 CameraController::GetPosition() const {
 
 void CameraController::SetPosition(const glm::vec2& position) {
   glm::vec3 pos = camera_.GetPosition();
-  pos.x = position.x;
-  pos.z = position.y;  // Use Y for Z in 2D view
-  camera_.SetPosition(pos);
+  if (mode_ == Mode::kTopDown) {
+    pos.x = position.x;
+    pos.z = -position.y;  // Use Y for Z in 2D view
+    camera_.SetPosition(pos);
+  }
+  // do nothing in other modes
+}
+
+void CameraController::SetYaw(float yaw) {
+  if (mode_ == Mode::kTopDown) {
+    // In TopDown mode, we set the yaw directly
+    top_down_rotation_ = yaw;
+    camera_.SetYaw(yaw);
+  } else {
+    camera_.SetYaw(yaw);
+  }
 }
 
 void CameraController::ProcessKeyboard(

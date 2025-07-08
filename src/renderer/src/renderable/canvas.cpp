@@ -322,12 +322,19 @@ void Canvas::AddBackgroundImage(const std::string& image_path,
   }
 }
 
+glm::vec2 Canvas::GetBackgroundImageSize() const {
+  return background_image_size_;
+}
+
 void Canvas::SetupBackgroundImage(int width, int height, int channels,
                                   unsigned char* data) {
   if (!data) {
     std::cerr << "ERROR::CANVAS::BACKGROUND_IMAGE_DATA_NULL" << std::endl;
     return;
   }
+
+  background_image_size_.x = static_cast<float>(width);
+  background_image_size_.y = static_cast<float>(height);
 
   // Setup the background shader if it hasn't been compiled yet
   try {
