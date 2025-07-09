@@ -129,15 +129,18 @@ void Texture::AllocateGpuResources() {
     std::cout << "Compiling texture vertex shader..." << std::endl;
     Shader vertex_shader(texture_vertex_shader_source.c_str(),
                          Shader::Type::kVertex);
+    
+    std::cout << "Compiling texture fragment shader..." << std::endl;
+    Shader fragment_shader(texture_fragment_shader_source.c_str(),
+                           Shader::Type::kFragment);
+
+    // IMPORTANT: Compile shaders before linking
     if (!vertex_shader.Compile()) {
       std::cerr << "ERROR::TEXTURE::VERTEX_SHADER_COMPILATION_FAILED"
                 << std::endl;
       throw std::runtime_error("Vertex shader compilation failed");
     }
 
-    std::cout << "Compiling texture fragment shader..." << std::endl;
-    Shader fragment_shader(texture_fragment_shader_source.c_str(),
-                           Shader::Type::kFragment);
     if (!fragment_shader.Compile()) {
       std::cerr << "ERROR::TEXTURE::FRAGMENT_SHADER_COMPILATION_FAILED"
                 << std::endl;

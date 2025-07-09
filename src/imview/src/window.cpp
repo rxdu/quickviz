@@ -10,6 +10,7 @@
 #include "imview/window.hpp"
 
 #include <stdexcept>
+#include <iostream>
 
 namespace quickviz {
 namespace {
@@ -34,7 +35,29 @@ Window::Window(std::string title, uint32_t width, uint32_t height,
   // create GLFW window
   win_ = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
   if (win_ == NULL) {
-    throw std::runtime_error("Failed to create GLFW window");
+    std::cerr << "Failed to create GLFW window with requested OpenGL version" << std::endl;
+    
+    // Try fallback to compatibility profile
+    std::cerr << "Attempting fallback to compatibility profile..." << std::endl;
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+    win_ = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
+    
+    if (win_ == NULL) {
+      // Try even lower OpenGL version
+      std::cerr << "Attempting fallback to OpenGL 3.0..." << std::endl;
+      glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+      glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+      glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+      win_ = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
+      
+      if (win_ == NULL) {
+        throw std::runtime_error("Failed to create GLFW window even with fallback options");
+      } else {
+        std::cerr << "Successfully created window with OpenGL 3.0 compatibility profile" << std::endl;
+      }
+    } else {
+      std::cerr << "Successfully created window with compatibility profile" << std::endl;
+    }
   }
   glfwMakeContextCurrent(win_);
   glfwSwapInterval(1);

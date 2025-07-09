@@ -342,6 +342,18 @@ void Canvas::SetupBackgroundImage(int width, int height, int channels,
                                     Shader::Type::kVertex);
     Shader background_fragment_shader(background_fragment_shader_source.c_str(),
                                       Shader::Type::kFragment);
+    
+    // IMPORTANT: Compile shaders before linking
+    if (!background_vertex_shader.Compile()) {
+      std::cerr << "ERROR::CANVAS::BACKGROUND_VERTEX_SHADER_COMPILATION_FAILED" << std::endl;
+      throw std::runtime_error("Background vertex shader compilation failed");
+    }
+    
+    if (!background_fragment_shader.Compile()) {
+      std::cerr << "ERROR::CANVAS::BACKGROUND_FRAGMENT_SHADER_COMPILATION_FAILED" << std::endl;
+      throw std::runtime_error("Background fragment shader compilation failed");
+    }
+    
     background_shader_.AttachShader(background_vertex_shader);
     background_shader_.AttachShader(background_fragment_shader);
 

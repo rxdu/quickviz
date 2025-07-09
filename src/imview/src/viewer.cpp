@@ -23,6 +23,7 @@
 #include "implot/implot.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "imview/opengl_capability_checker.hpp"
 
 namespace quickviz {
 namespace {
@@ -85,6 +86,9 @@ Viewer::Viewer(std::string title, uint32_t width, uint32_t height,
   const char *glsl_version = "#version 130";
 #endif
   ImGui_ImplOpenGL3_Init(glsl_version);
+
+  // Check OpenGL capabilities after context creation
+  CheckOpenGLCapabilities();
 
   // set up callbacks
   // convert callback-function to c-pointer first
@@ -408,6 +412,41 @@ void Viewer::OnResize(GLFWwindow *window, int width, int height) {
   //  std::endl;
   for (auto &obj : scene_objects_) {
     obj->OnResize(width, height);
+  }
+}
+
+void Viewer::CheckOpenGLCapabilities() {
+  // Check OpenGL capabilities and validate requirements
+  auto capabilities = OpenGLCapabilityChecker::CheckCapabilities(3, 3);
+  
+  if (!capabilities.error_message.empty()) {
+    std::cerr << "[ERROR] OpenGL Capability Check Failed: " << capabilities.error_message << std::endl;
+    OpenGLCapabilityChecker::PrintCapabilities(capabilities);
+    
+    // Try to provide helpful error messages
+    if (!capabilities.supports_required_version) {
+      std::cerr << std::endl << "=== TROUBLESHOOTING ===" << std::endl;
+      std::cerr << "This application requires OpenGL 3.3 or higher." << std::endl;
+      std::cerr << "Your system only supports OpenGL " << capabilities.major_version 
+                << "." << capabilities.minor_version << std::endl;
+      std::cerr << "Possible solutions:" << std::endl;
+      std::cerr << "1. Update your graphics drivers" << std::endl;
+      std::cerr << "2. Check if your GPU supports OpenGL 3.3+" << std::endl;
+      std::cerr << "3. For Intel GPUs, ensure you have the latest drivers" << std::endl;
+      std::cerr << "4. Try running with software rendering (slower performance)" << std::endl;
+      std::cerr << "===========================================" << std::endl;
+    }
+    
+    throw std::runtime_error("OpenGL capability check failed: " + capabilities.error_message);
+  }
+  
+  // Print capabilities for debugging
+  std::cout << "[INFO] OpenGL capabilities validated successfully" << std::endl;
+  OpenGLCapabilityChecker::PrintCapabilities(capabilities);
+  
+  // Validate required features
+  if (!OpenGLCapabilityChecker::ValidateRequiredFeatures(capabilities)) {
+    std::cerr << "[WARNING] Some required OpenGL features may not be fully supported" << std::endl;
   }
 }
 
