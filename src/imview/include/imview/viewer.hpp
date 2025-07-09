@@ -69,6 +69,7 @@ class Viewer : public Window {
  private:
   void LoadDefaultStyle();
   void OnResize(GLFWwindow* window, int width, int height);
+  void CheckOpenGLCapabilities();
 
   void EnumerateJoysticks();
   void OnJoystickEvent(int id, int event);

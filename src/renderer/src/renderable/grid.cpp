@@ -97,6 +97,18 @@ void Grid::AllocateGpuResources() {
   Shader vertex_shader(vertex_shader_source.c_str(), Shader::Type::kVertex);
   Shader fragment_shader(fragment_shader_source.c_str(),
                          Shader::Type::kFragment);
+  
+  // IMPORTANT: Compile shaders before linking
+  if (!vertex_shader.Compile()) {
+    std::cerr << "ERROR::GRID::VERTEX_SHADER_COMPILATION_FAILED" << std::endl;
+    throw std::runtime_error("Vertex shader compilation failed");
+  }
+  
+  if (!fragment_shader.Compile()) {
+    std::cerr << "ERROR::GRID::FRAGMENT_SHADER_COMPILATION_FAILED" << std::endl;
+    throw std::runtime_error("Fragment shader compilation failed");
+  }
+  
   shader_.AttachShader(vertex_shader);
   shader_.AttachShader(fragment_shader);
 

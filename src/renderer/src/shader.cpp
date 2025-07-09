@@ -11,6 +11,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <iomanip>
 
 #include "glad/glad.h"
 
@@ -76,12 +77,29 @@ bool Shader::Compile() {
   glCompileShader(shader_id_);
 
   GLint success;
-  GLchar infoLog[512];
+  GLchar infoLog[1024];
   glGetShaderiv(shader_id_, GL_COMPILE_STATUS, &success);
   if (!success) {
-    glGetShaderInfoLog(shader_id_, 512, NULL, infoLog);
-    std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n"
-              << infoLog << std::endl;
+    glGetShaderInfoLog(shader_id_, 1024, NULL, infoLog);
+    
+    // Provide more detailed error information
+    std::string shader_type_str = (type_ == Type::kVertex) ? "VERTEX" : "FRAGMENT";
+    std::cerr << "ERROR::SHADER::" << shader_type_str << "::COMPILATION_FAILED" << std::endl;
+    std::cerr << "Shader source file: " << source_file_ << std::endl;
+    std::cerr << "Compilation error: " << infoLog << std::endl;
+    
+    // Print the shader source code with line numbers for debugging
+    std::cerr << "Shader source code:" << std::endl;
+    std::cerr << "===================" << std::endl;
+    std::istringstream iss(source_code_);
+    std::string line;
+    int line_number = 1;
+    while (std::getline(iss, line)) {
+      std::cerr << std::setfill('0') << std::setw(3) << line_number << ": " << line << std::endl;
+      line_number++;
+    }
+    std::cerr << "===================" << std::endl;
+    
     return false;
   }
   return success;

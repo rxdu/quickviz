@@ -62,12 +62,15 @@ void PointCloud::AllocateGpuResources() {
     Shader vertexShader(vertex_shader_source, Shader::Type::kVertex);
     Shader fragmentShader(fragment_shader_source, Shader::Type::kFragment);
 
+    // IMPORTANT: Compile shaders before linking
     if (!vertexShader.Compile()) {
-      throw std::runtime_error("Failed to compile vertex shader for point cloud");
+      std::cerr << "ERROR::POINT_CLOUD::VERTEX_SHADER_COMPILATION_FAILED" << std::endl;
+      throw std::runtime_error("Vertex shader compilation failed");
     }
 
     if (!fragmentShader.Compile()) {
-      throw std::runtime_error("Failed to compile fragment shader for point cloud");
+      std::cerr << "ERROR::POINT_CLOUD::FRAGMENT_SHADER_COMPILATION_FAILED" << std::endl;
+      throw std::runtime_error("Fragment shader compilation failed");
     }
 
     // Create shader program

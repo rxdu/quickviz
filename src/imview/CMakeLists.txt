@@ -40,6 +40,7 @@ add_library(imview
     src/popup_manager.cpp
     src/logging/log_processor.cpp
     src/logging/app_log_handler.cpp
+    src/opengl_capability_checker.cpp
     ${AUTO_LAYOUT_SRC}
     # terminal
     ${TUI_COMP_SRC})

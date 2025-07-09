@@ -26,10 +26,54 @@ bool ShaderProgram::LinkProgram() {
   GLint success;
   glGetProgramiv(program_id_, GL_LINK_STATUS, &success);
   if (!success) {
-    GLchar infoLog[512];
-    glGetProgramInfoLog(program_id_, 512, NULL, infoLog);
-    std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n"
-              << infoLog << std::endl;
+    GLchar infoLog[1024];
+    glGetProgramInfoLog(program_id_, 1024, NULL, infoLog);
+    
+    std::cerr << "ERROR::SHADER::PROGRAM::LINKING_FAILED" << std::endl;
+    std::cerr << "Program ID: " << program_id_ << std::endl;
+    std::cerr << "Linking error: " << infoLog << std::endl;
+    
+    // Check if shaders were properly compiled before linking
+    GLint num_shaders;
+    glGetProgramiv(program_id_, GL_ATTACHED_SHADERS, &num_shaders);
+    std::cerr << "Number of attached shaders: " << num_shaders << std::endl;
+    
+    if (num_shaders > 0) {
+      GLuint shaders[10];
+      GLsizei count;
+      glGetAttachedShaders(program_id_, 10, &count, shaders);
+      
+      for (int i = 0; i < count; i++) {
+        GLint shader_type;
+        glGetShaderiv(shaders[i], GL_SHADER_TYPE, &shader_type);
+        
+        GLint compile_status;
+        glGetShaderiv(shaders[i], GL_COMPILE_STATUS, &compile_status);
+        
+        std::string type_str = (shader_type == GL_VERTEX_SHADER) ? "VERTEX" : 
+                              (shader_type == GL_FRAGMENT_SHADER) ? "FRAGMENT" : "UNKNOWN";
+        
+        std::cerr << "Shader " << i << " (ID: " << shaders[i] << ", Type: " << type_str 
+                  << ") - Compiled: " << (compile_status ? "YES" : "NO") << std::endl;
+        
+        if (!compile_status) {
+          GLchar shader_info[512];
+          glGetShaderInfoLog(shaders[i], 512, NULL, shader_info);
+          std::cerr << "Shader " << i << " compilation error: " << shader_info << std::endl;
+        }
+      }
+    }
+    
+    // Additional troubleshooting information
+    std::cerr << std::endl << "=== SHADER LINKING TROUBLESHOOTING ===" << std::endl;
+    std::cerr << "Common causes of linking failures:" << std::endl;
+    std::cerr << "1. Shader compilation failed (see above)" << std::endl;
+    std::cerr << "2. Vertex shader output doesn't match fragment shader input" << std::endl;
+    std::cerr << "3. Missing main() function in shader" << std::endl;
+    std::cerr << "4. OpenGL version mismatch (#version directive)" << std::endl;
+    std::cerr << "5. Hardware/driver doesn't support required features" << std::endl;
+    std::cerr << "=========================================" << std::endl;
+    
     return false;
   }
   return true;
