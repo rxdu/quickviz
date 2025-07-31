@@ -35,11 +35,10 @@ class BufferInterface : public BufferBase {
   /// \return 0 if failed, otherwise the number of bytes written (1)
   virtual std::size_t Write(const T& data) = 0;
 
-  /// \brief Peek at data at a specific position without consuming it
+  /// \brief Peek at the most recent data without consuming it
   /// \param data reference to store the peeked data
-  /// \param n position to peek at (0 = oldest, GetOccupiedSize()-1 = newest)
   /// \return 0 if failed, otherwise 1
-  virtual std::size_t PeekAt(T& data, std::size_t n) const = 0;
+  virtual std::size_t Peek(T& data) const = 0;
 
   /// \brief Read data from the buffer (burst read)
   /// \param data

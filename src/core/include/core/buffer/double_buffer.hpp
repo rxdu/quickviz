@@ -61,9 +61,9 @@ class DoubleBuffer : public BufferInterface<T> {
     return true;
   }
 
-  std::size_t PeekAt(T& data, std::size_t n) const override {
+  std::size_t Peek(T& data) const {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (n != 0 || !ready_.load(std::memory_order_acquire)) {
+    if (!ready_.load(std::memory_order_acquire)) {
       return 0;
     }
     

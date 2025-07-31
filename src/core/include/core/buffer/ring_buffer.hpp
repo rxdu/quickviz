@@ -138,6 +138,15 @@ class RingBuffer : public BufferInterface<T> {
     return count;
   }
 
+  // Get the most recent data
+  std::size_t Peek(T& data) const override {
+    std::lock_guard<std::mutex> lock(buffer_mutex_);
+    std::size_t occupied_size = (write_index_ - read_index_) & size_mask_;
+    if (occupied_size == 0) return 0;
+    data = buffer_[(write_index_ - 1) & size_mask_];
+    return 1;
+  }
+
   std::size_t Write(const std::vector<T>& new_data, std::size_t btw) override {
     assert(new_data.size() >= btw);
     std::lock_guard<std::mutex> lock(buffer_mutex_);
@@ -162,7 +171,7 @@ class RingBuffer : public BufferInterface<T> {
     return 1;
   }
 
-  std::size_t PeekAt(T& data, size_t n) const override {
+  std::size_t PeekAt(T& data, size_t n) const {
     std::lock_guard<std::mutex> lock(buffer_mutex_);
     // return 0 if requested data is beyond the available range
     if (n >= (write_index_ - read_index_) & size_mask_) return 0;
