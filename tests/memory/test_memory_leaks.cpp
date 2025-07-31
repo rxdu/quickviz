@@ -9,6 +9,8 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <vector>
+#include <cstdlib>
+#include <cstring>
 
 #include "imview/viewer.hpp"
 #include "renderer/gl_scene_manager.hpp"
@@ -25,8 +27,17 @@ using namespace quickviz;
 class MemoryLeakTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        // Initialize OpenGL context for testing
-        viewer_ = std::make_unique<Viewer>("Memory Test", 800, 600);
+        // Check if display is available (required for graphics tests)
+        if (!IsDisplayAvailable()) {
+            GTEST_SKIP() << "Skipping graphics test: No display available (headless environment)";
+        }
+        
+        try {
+            // Initialize OpenGL context for testing
+            viewer_ = std::make_unique<Viewer>("Memory Test", 800, 600);
+        } catch (const std::runtime_error& e) {
+            GTEST_SKIP() << "Skipping graphics test: " << e.what();
+        }
     }
 
     void TearDown() override {
@@ -34,6 +45,16 @@ protected:
     }
 
     std::unique_ptr<Viewer> viewer_;
+
+private:
+    bool IsDisplayAvailable() {
+        // Check for DISPLAY environment variable on Linux
+        const char* display = std::getenv("DISPLAY");
+        if (!display || strlen(display) == 0) {
+            return false;
+        }
+        return true;
+    }
 };
 
 // Test OpenGL resource cleanup

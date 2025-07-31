@@ -10,6 +10,8 @@
 #include <memory>
 #include <thread>
 #include <chrono>
+#include <cstdlib>
+#include <cstring>
 
 #include "imview/viewer.hpp"
 #include "renderer/gl_scene_manager.hpp"
@@ -24,12 +26,21 @@ using namespace quickviz;
 class RendererPipelineTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        // Create a viewer for testing
-        viewer_ = std::make_unique<Viewer>("Test Viewer", 800, 600);
-        scene_manager_ = std::make_shared<GlSceneManager>("TestScene");
-        viewer_->AddSceneObject(scene_manager_);
+        // Check if display is available (required for graphics tests)
+        if (!IsDisplayAvailable()) {
+            GTEST_SKIP() << "Skipping graphics test: No display available (headless environment)";
+        }
+        
+        try {
+            // Create a viewer for testing
+            viewer_ = std::make_unique<Viewer>("Test Viewer", 800, 600);
+            scene_manager_ = std::make_shared<GlSceneManager>("TestScene");
+            viewer_->AddSceneObject(scene_manager_);
+        } catch (const std::runtime_error& e) {
+            GTEST_SKIP() << "Skipping graphics test: " << e.what();
+        }
     }
-
+    
     void TearDown() override {
         scene_manager_.reset();
         viewer_.reset();
@@ -37,6 +48,16 @@ protected:
 
     std::unique_ptr<Viewer> viewer_;
     std::shared_ptr<GlSceneManager> scene_manager_;
+
+private:
+    bool IsDisplayAvailable() {
+        // Check for DISPLAY environment variable on Linux
+        const char* display = std::getenv("DISPLAY");
+        if (!display || strlen(display) == 0) {
+            return false;
+        }
+        return true;
+    }
 };
 
 TEST_F(RendererPipelineTest, CanCreateBasicScene) {

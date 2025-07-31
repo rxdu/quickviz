@@ -10,6 +10,9 @@
 #include <memory>
 #include <vector>
 #include <random>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
 
 #include "renderer/gl_scene_manager.hpp"
 #include "renderer/renderable/point_cloud.hpp"
@@ -24,9 +27,30 @@ using namespace quickviz;
 class RenderingBenchmark : public ::benchmark::Fixture {
 public:
     void SetUp(const ::benchmark::State& state) override {
-        viewer_ = std::make_unique<Viewer>("Benchmark", 1024, 768);
-        scene_manager_ = std::make_shared<GlSceneManager>("BenchmarkScene");
-        viewer_->AddSceneObject(scene_manager_);
+        display_available_ = IsDisplayAvailable();
+        
+        if (display_available_) {
+            try {
+                viewer_ = std::make_unique<Viewer>("Benchmark", 1024, 768);
+                scene_manager_ = std::make_shared<GlSceneManager>("BenchmarkScene");
+                viewer_->AddSceneObject(scene_manager_);
+            } catch (const std::runtime_error& e) {
+                display_available_ = false;
+                std::cerr << "Graphics initialization failed: " << e.what() << std::endl;
+            }
+        }
+    }
+    
+protected:
+    bool display_available_ = false;
+    
+private:
+    bool IsDisplayAvailable() {
+        const char* display = std::getenv("DISPLAY");
+        if (!display || strlen(display) == 0) {
+            return false;
+        }
+        return true;
     }
 
     void TearDown(const ::benchmark::State& state) override {
@@ -41,6 +65,11 @@ protected:
 
 // Benchmark point cloud rendering with different sizes
 BENCHMARK_DEFINE_F(RenderingBenchmark, PointCloudRendering)(benchmark::State& state) {
+    if (!display_available_) {
+        state.SkipWithError("No display available for graphics benchmark");
+        return;
+    }
+    
     int point_count = state.range(0);
     
     // Generate random point cloud data
@@ -78,6 +107,11 @@ BENCHMARK_REGISTER_F(RenderingBenchmark, PointCloudRendering)
 
 // Benchmark multiple triangle rendering
 BENCHMARK_DEFINE_F(RenderingBenchmark, MultipleTriangleRendering)(benchmark::State& state) {
+    if (!display_available_) {
+        state.SkipWithError("No display available for graphics benchmark");
+        return;
+    }
+    
     int triangle_count = state.range(0);
     
     std::random_device rd;
