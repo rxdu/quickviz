@@ -8,8 +8,8 @@ if(NOT BUILD_TESTING)
     return()
 endif()
 
-# Find required packages
-find_package(GTest REQUIRED)
+# Use GoogleTest from submodule (should be available from main CMakeLists.txt)
+# No find_package needed - using submodule targets: gtest_main, gmock
 
 # Optional: Find Google Benchmark for performance tests
 find_package(benchmark QUIET)
@@ -31,7 +31,7 @@ add_executable(test_event_system
 )
 target_link_libraries(test_event_system
     PRIVATE
-    GTest::gtest_main
+    gtest_main
     core
     test_utils
 )
@@ -45,7 +45,7 @@ add_executable(test_buffer_registry
 )
 target_link_libraries(test_buffer_registry
     PRIVATE
-    GTest::gtest_main
+    gtest_main
     core
     test_utils
 )
@@ -63,7 +63,7 @@ add_executable(test_renderer_pipeline
 )
 target_link_libraries(test_renderer_pipeline
     PRIVATE
-    GTest::gtest_main
+    gtest_main
     imview
     renderer
     test_utils
@@ -78,7 +78,7 @@ add_executable(test_imview_integration
 )
 target_link_libraries(test_imview_integration
     PRIVATE
-    GTest::gtest_main
+    gtest_main
     imview
     test_utils
 )
@@ -96,7 +96,7 @@ add_executable(test_memory_leaks
 )
 target_link_libraries(test_memory_leaks
     PRIVATE
-    GTest::gtest_main
+    gtest_main
     imview
     renderer
     test_utils

@@ -176,3 +176,125 @@ TEST_F(RingBufferTest, HandlesWrapAround) {
     EXPECT_EQ(buffer_with_overwrite.GetFreeSize(), 7);
   }
 }
+
+TEST_F(RingBufferTest, PeekSingleElement) {
+  buffer_no_overwrite.Reset();
+  buffer_with_overwrite.Reset();
+  
+  // Test peek on empty buffer
+  int value;
+  EXPECT_EQ(buffer_no_overwrite.Peek(value), 0);
+  EXPECT_EQ(buffer_with_overwrite.Peek(value), 0);
+  
+  // Test peek after single write
+  buffer_no_overwrite.Write(42);
+  buffer_with_overwrite.Write(42);
+  
+  EXPECT_EQ(buffer_no_overwrite.Peek(value), 1);
+  EXPECT_EQ(value, 42);
+  EXPECT_EQ(buffer_with_overwrite.Peek(value), 1);
+  EXPECT_EQ(value, 42);
+  
+  // Verify peek doesn't consume data
+  EXPECT_EQ(buffer_no_overwrite.GetOccupiedSize(), 1);
+  EXPECT_EQ(buffer_with_overwrite.GetOccupiedSize(), 1);
+}
+
+TEST_F(RingBufferTest, PeekMultipleElements) {
+  buffer_no_overwrite.Reset();
+  buffer_with_overwrite.Reset();
+  
+  // Write multiple elements
+  for (int i = 1; i <= 5; ++i) {
+    buffer_no_overwrite.Write(i);
+    buffer_with_overwrite.Write(i);
+  }
+  
+  // Peek should return the most recent element
+  int value;
+  EXPECT_EQ(buffer_no_overwrite.Peek(value), 1);
+  EXPECT_EQ(value, 5);
+  EXPECT_EQ(buffer_with_overwrite.Peek(value), 1);
+  EXPECT_EQ(value, 5);
+  
+  // Verify all data is still there
+  EXPECT_EQ(buffer_no_overwrite.GetOccupiedSize(), 5);
+  EXPECT_EQ(buffer_with_overwrite.GetOccupiedSize(), 5);
+}
+
+TEST_F(RingBufferTest, PeekAfterWraparound) {
+  buffer_no_overwrite.Reset();
+  buffer_with_overwrite.Reset();
+  
+  // Fill buffer completely (7 elements max)
+  for (int i = 0; i < 7; ++i) {
+    buffer_no_overwrite.Write(i);
+    buffer_with_overwrite.Write(i);
+  }
+  
+  // Read some elements to create space
+  int value;
+  for (int i = 0; i < 3; ++i) {
+    buffer_no_overwrite.Read(value);
+    buffer_with_overwrite.Read(value);
+  }
+  
+  // Write more to cause wraparound
+  for (int i = 10; i < 13; ++i) {
+    buffer_no_overwrite.Write(i);
+    buffer_with_overwrite.Write(i);
+  }
+  
+  // Peek should return the most recent (12)
+  EXPECT_EQ(buffer_no_overwrite.Peek(value), 1);
+  EXPECT_EQ(value, 12);
+  EXPECT_EQ(buffer_with_overwrite.Peek(value), 1);
+  EXPECT_EQ(value, 12);
+}
+
+TEST_F(RingBufferTest, PeekWithOverwrite) {
+  buffer_with_overwrite.Reset();
+  
+  // Fill buffer completely
+  for (int i = 0; i < 7; ++i) {
+    buffer_with_overwrite.Write(i);
+  }
+  
+  // Write one more to trigger overwrite
+  buffer_with_overwrite.Write(99);
+  
+  // Peek should return the most recent
+  int value;
+  EXPECT_EQ(buffer_with_overwrite.Peek(value), 1);
+  EXPECT_EQ(value, 99);
+  
+  // Read all values to verify order
+  std::vector<int> read_values;
+  while (buffer_with_overwrite.Read(value) == 1) {
+    read_values.push_back(value);
+  }
+  
+  // Should have values 1-6 and 99 (0 was overwritten)
+  EXPECT_EQ(read_values.size(), 7);
+  EXPECT_EQ(read_values[0], 1);
+  EXPECT_EQ(read_values[6], 99);
+}
+
+TEST_F(RingBufferTest, PeekEdgeCase_WriteIndexZero) {
+  // This test specifically checks the edge case where write_index_ is 0
+  RingBuffer<int, 4> small_buffer;
+  
+  // Write exactly enough to wrap write_index_ back to 0
+  for (int i = 0; i < 8; ++i) {
+    small_buffer.Write(i);
+    int dummy;
+    small_buffer.Read(dummy);
+  }
+  
+  // Now write_index_ should be 0
+  small_buffer.Write(123);
+  
+  int value;
+  EXPECT_EQ(small_buffer.Peek(value), 1);
+  EXPECT_EQ(value, 123);
+}

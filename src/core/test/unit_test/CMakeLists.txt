@@ -9,11 +9,12 @@ mark_as_advanced(
 )
 
 # add unit tests
-add_executable(utests
-    utest_ring_buffer.cpp)
-target_link_libraries(utests PRIVATE gtest gmock gtest_main imview)
+add_executable(core_unit_tests
+    utest_ring_buffer.cpp
+    utest_double_buffer.cpp)
+target_link_libraries(core_unit_tests PRIVATE gtest_main gmock imview)
 # get_target_property(PRIVATE_HEADERS imview INCLUDE_DIRECTORIES)
-target_include_directories(utests PRIVATE ${PRIVATE_HEADERS})
+target_include_directories(core_unit_tests PRIVATE ${PRIVATE_HEADERS})
 
-gtest_discover_tests(utests)
-add_test(NAME gtest_all COMMAND utests)
+gtest_discover_tests(core_unit_tests)
+add_test(NAME gtest_all COMMAND core_unit_tests)
