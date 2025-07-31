@@ -5,7 +5,7 @@ from conan.tools.scm import Git
 
 class QuickVizConan(ConanFile):
     name = "quickviz"
-    version = "0.5.0"
+    version = "0.6.5"
     license = "MIT"
     author = "<Ruixiang Du> <ruixiang.du@gmail.com>"
     url = "https://github.com/rxdu/quickviz"
