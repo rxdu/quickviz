@@ -61,11 +61,22 @@ class DoubleBuffer : public BufferInterface<T> {
     return true;
   }
 
+  std::size_t Peek(T& data) const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!ready_.load(std::memory_order_acquire)) {
+      return 0;
+    }
+    
+    int read_index = 1 - write_index_;
+    data = buffer_[read_index];
+    return 1;
+  }
+
  private:
   T buffer_[2];
   int write_index_;
   std::atomic<bool> ready_{false};
-  std::mutex mutex_;
+  mutable std::mutex mutex_;
   std::condition_variable cond_var_;
 };
 }  // namespace quickviz
