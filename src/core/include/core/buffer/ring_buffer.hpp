@@ -162,7 +162,7 @@ class RingBuffer : public BufferInterface<T> {
     return 1;
   }
 
-  std::size_t PeekAt(T& data, size_t n) const {
+  std::size_t PeekAt(T& data, size_t n) const override {
     std::lock_guard<std::mutex> lock(buffer_mutex_);
     // return 0 if requested data is beyond the available range
     if (n >= (write_index_ - read_index_) & size_mask_) return 0;
