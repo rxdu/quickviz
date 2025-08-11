@@ -189,6 +189,7 @@ class Canvas : public OpenGlObject {
   std::unordered_map<LineType, LineBatch> line_batches_;
   ShapeBatch filled_shape_batch_;
   std::unordered_map<LineType, ShapeBatch> outline_shape_batches_;
+  BatchOrderTracker batch_order_tracker_; // Unified ordering across all primitives
 
   // Batch management methods
   void InitializeBatches();
@@ -196,6 +197,8 @@ class Canvas : public OpenGlObject {
   void UpdateBatches();
   void RenderBatches(const glm::mat4& projection, const glm::mat4& view,
                      const glm::mat4& coord_transform);
+  void RenderBatchesInOrder(const glm::mat4& projection, const glm::mat4& view,
+                           const glm::mat4& coord_transform);
 
   // Individual shape rendering for non-batched shapes
   void RenderIndividualShapes(const CanvasData& data,

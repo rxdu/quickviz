@@ -57,6 +57,13 @@ void TestAllCanvasFunctions(Canvas* canvas) {
   canvas->AddCircle(2.0f, 0.0f, 0.5f, glm::vec4(0.7f, 0.7f, 0.7f, 0.8f), false,
                     2.0f);  // Gray outlined
 
+  canvas->AddCircle(2.0f, 2.0f, 0.7f, glm::vec4(0.0f, 0.5f, 0.0f, 0.8f), true,
+                    2.0f);
+  canvas->AddCircle(1.0f, 2.0f, 0.7f, glm::vec4(0.0f, 0.5f, 0.3f, 0.8f), true,
+                    2.0f);
+  canvas->AddCircle(3.0f, 2.0f, 0.7f, glm::vec4(0.5f, 0.5f, 0.3f, 0.8f), true,
+                    2.0f);
+
   // Add ellipses - filled and outlined
   canvas->AddEllipse(0.0f, 3.0f, 1.0f, 0.5f, 0.0f, 0.0f, 6.28f,
                      glm::vec4(0.5f, 0.5f, 0.0f, 0.8f), true,
@@ -127,6 +134,7 @@ int main(int argc, char* argv[]) {
   // now let's do some drawing on the canvas
   {
     auto canvas = static_cast<Canvas*>(gl_sm->GetOpenGLObject("canvas"));
+    canvas->SetBatchingEnabled(false);
 
     // Add background image first so it's behind all other drawings
     std::string image_path = "../data/fish.png";
