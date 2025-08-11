@@ -73,23 +73,112 @@ void IndividualRenderStrategy::CleanupRenderState() {
 }
 
 void IndividualRenderStrategy::RenderPoints(const CanvasData& data, const RenderContext& context) {
-  // TODO: Move point rendering logic from original Canvas implementation
-  // For now this is a placeholder
+  if (data.points.empty()) return;
+  
+  context.primitive_shader->TrySetUniform("renderMode", 0); // Point rendering mode
+  glBindVertexArray(context.primitive_vao);
+  glBindBuffer(GL_ARRAY_BUFFER, context.primitive_vbo);
+  
+  for (const auto& point : data.points) {
+    Point vertices[] = {point};
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
+    glPointSize(point.size);
+    glDrawArrays(GL_POINTS, 0, 1);
+  }
+  glPointSize(1.0f); // Reset
 }
 
 void IndividualRenderStrategy::RenderLines(const CanvasData& data, const RenderContext& context) {
-  // TODO: Move line rendering logic from original Canvas implementation
-  // For now this is a placeholder
+  if (data.lines.empty()) return;
+  
+  context.primitive_shader->TrySetUniform("renderMode", 1); // Line rendering mode
+  glBindVertexArray(context.primitive_vao);
+  glBindBuffer(GL_ARRAY_BUFFER, context.primitive_vbo);
+  
+  for (const auto& line : data.lines) {
+    context.primitive_shader->TrySetUniform("lineType", static_cast<int>(line.line_type));
+    Point vertices[] = {
+      {line.start, line.color, line.thickness},
+      {line.end, line.color, line.thickness}
+    };
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
+    glLineWidth(line.thickness);
+    glDrawArrays(GL_LINES, 0, 2);
+  }
+  glLineWidth(1.0f); // Reset
 }
 
 void IndividualRenderStrategy::RenderRectangles(const CanvasData& data, const RenderContext& context) {
-  // TODO: Move rectangle rendering logic from original Canvas implementation
-  // For now this is a placeholder
+  if (data.rectangles.empty()) return;
+  
+  glBindVertexArray(context.primitive_vao);
+  glBindBuffer(GL_ARRAY_BUFFER, context.primitive_vbo);
+  
+  for (const auto& rect : data.rectangles) {
+    // Generate rectangle vertices
+    glm::vec3 corners[4] = {
+      {rect.position.x, rect.position.y, 0.0f}, // bottom-left
+      {rect.position.x + rect.width, rect.position.y, 0.0f}, // bottom-right
+      {rect.position.x + rect.width, rect.position.y + rect.height, 0.0f}, // top-right
+      {rect.position.x, rect.position.y + rect.height, 0.0f} // top-left
+    };
+    
+    Point vertices[4];
+    for (int i = 0; i < 4; i++) {
+      vertices[i] = {corners[i], rect.color, rect.thickness};
+    }
+    
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
+    
+    if (rect.filled) {
+      context.primitive_shader->TrySetUniform("renderMode", 2); // Filled shapes
+      glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    } else {
+      context.primitive_shader->TrySetUniform("renderMode", 3); // Outlined shapes
+      context.primitive_shader->TrySetUniform("lineType", static_cast<int>(rect.line_type));
+      glLineWidth(rect.thickness);
+      glDrawArrays(GL_LINE_LOOP, 0, 4);
+      glLineWidth(1.0f);
+    }
+  }
 }
 
 void IndividualRenderStrategy::RenderCircles(const CanvasData& data, const RenderContext& context) {
-  // TODO: Move circle rendering logic from original Canvas implementation
-  // For now this is a placeholder
+  if (data.circles.empty()) return;
+  
+  glBindVertexArray(context.primitive_vao);
+  glBindBuffer(GL_ARRAY_BUFFER, context.primitive_vbo);
+  
+  for (const auto& circle : data.circles) {
+    const int segments = circle.num_segments;
+    std::vector<Point> vertices;
+    
+    if (circle.filled) {
+      // Add center point for triangle fan
+      vertices.push_back({{circle.center.x, circle.center.y, 0.0f}, circle.color, circle.thickness});
+    }
+    
+    // Generate circle points
+    for (int i = 0; i <= segments; i++) {
+      float angle = 2.0f * M_PI * i / segments;
+      float x = circle.center.x + circle.radius * cos(angle);
+      float y = circle.center.y + circle.radius * sin(angle);
+      vertices.push_back({{x, y, 0.0f}, circle.color, circle.thickness});
+    }
+    
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Point), vertices.data(), GL_DYNAMIC_DRAW);
+    
+    if (circle.filled) {
+      context.primitive_shader->TrySetUniform("renderMode", 2); // Filled shapes
+      glDrawArrays(GL_TRIANGLE_FAN, 0, vertices.size());
+    } else {
+      context.primitive_shader->TrySetUniform("renderMode", 3); // Outlined shapes
+      context.primitive_shader->TrySetUniform("lineType", static_cast<int>(circle.line_type));
+      glLineWidth(circle.thickness);
+      glDrawArrays(GL_LINE_LOOP, 1, segments); // Skip center point for outline
+      glLineWidth(1.0f);
+    }
+  }
 }
 
 void IndividualRenderStrategy::RenderEllipses(const CanvasData& data, const RenderContext& context) {

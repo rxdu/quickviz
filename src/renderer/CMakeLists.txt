@@ -19,6 +19,10 @@ add_library(renderer
     src/renderable/details/individual_render_strategy.cpp
     src/renderable/details/shape_renderer.cpp
     src/renderable/details/shape_generators.cpp
+    src/renderable/details/opengl_resource_pool.cpp
+    src/renderable/details/shape_renderer_utils.cpp
+    src/renderable/details/canvas_data_manager.cpp
+    src/renderable/details/data_aware_render_strategy.cpp
     src/renderable/coordinate_frame.cpp
     src/renderable/texture.cpp
     )
