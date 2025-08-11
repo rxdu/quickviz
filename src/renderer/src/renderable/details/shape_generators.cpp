@@ -19,7 +19,11 @@ std::vector<float> GenerateCircleVertices(const Circle& circle) {
 }
 
 std::vector<float> GenerateEllipseVertices(const Ellipse& ellipse) {
-  return GeometryUtils::CreateEllipse(ellipse.center, ellipse.rx, ellipse.ry,
+  // Use sequence number to determine Z depth for proper layering
+  float z_depth = ellipse.sequence_number * 0.001f;
+  glm::vec3 center_with_depth = {ellipse.center.x, ellipse.center.y, z_depth};
+  
+  return GeometryUtils::CreateEllipse(center_with_depth, ellipse.rx, ellipse.ry,
                                      ellipse.angle, ellipse.start_angle, ellipse.end_angle,
                                      ellipse.num_segments, ellipse.filled);
 }
@@ -28,8 +32,11 @@ std::vector<float> GeneratePolygonVertices(const Polygon& polygon) {
   std::vector<float> vertices;
   vertices.reserve(polygon.vertices.size() * 3);
   
+  // Use sequence number to determine Z depth for proper layering
+  float z_depth = polygon.sequence_number * 0.001f;
+  
   for (const auto& vertex : polygon.vertices) {
-    vertices.insert(vertices.end(), {vertex.x, vertex.y, vertex.z});
+    vertices.insert(vertices.end(), {vertex.x, vertex.y, z_depth});
   }
   
   return vertices;

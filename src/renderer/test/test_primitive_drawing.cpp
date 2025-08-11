@@ -137,7 +137,7 @@ int main(int argc, char* argv[]) {
     
     // Test batching mode (batching enabled) 
     std::cout << "\n=== Testing Batching Mode (Batching Enabled) ===" << std::endl;
-    canvas->SetBatchingEnabled(false);
+    canvas->SetBatchingEnabled(true);
 
     // Add background image first so it's behind all other drawings
     std::string image_path = "../data/fish.png";

@@ -71,13 +71,21 @@ struct BatchOrderTracker {
     enum class Type {
       kLine,
       kFilledShape,
-      kOutlineShape
+      kOutlineShape,
+      kIndividualShape  // For polygons, ellipses that use IndividualRenderStrategy
     };
     
     Type type;
     LineType line_type; // Only relevant for kLine and kOutlineShape
     uint32_t sequence_number;
-    uint32_t batch_index; // Index within the specific batch
+    uint32_t batch_index; // Index within the specific batch, or shape index for individual shapes
+    
+    // Additional data for individual shapes
+    enum class IndividualShapeType {
+      kNone,
+      kEllipse,
+      kPolygon
+    } individual_shape_type = IndividualShapeType::kNone;
   };
   
   std::vector<OrderedPrimitive> render_order;

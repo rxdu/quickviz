@@ -904,17 +904,41 @@ void Canvas::ProcessPendingUpdates() {
         }
         
         case PendingUpdate::Type::kEllipse:
-        case PendingUpdate::Type::kPolygon:
-          // These still use the original system as they're not batched
+        case PendingUpdate::Type::kPolygon: {
+          // These use individual rendering but still need sequence tracking
+          uint32_t sequence = batch_order_tracker_.GetNextSequence();
+          
+          BatchOrderTracker::OrderedPrimitive::IndividualShapeType shape_type;
+          uint32_t shape_index;
+          
           if (update.type == PendingUpdate::Type::kEllipse) {
+            shape_index = data_->ellipses.size(); // Index before adding
             data_->AddEllipse(update.ellipse.x, update.ellipse.y, update.ellipse.rx, update.ellipse.ry,
                              update.ellipse.angle, update.ellipse.start_angle, update.ellipse.end_angle,
                              update.color, update.filled, update.thickness, update.line_type);
+            // Fix the sequence number to match the batch order tracker
+            data_->ellipses.back().sequence_number = sequence;
+            shape_type = BatchOrderTracker::OrderedPrimitive::IndividualShapeType::kEllipse;
           } else {
+            shape_index = data_->polygons.size(); // Index before adding
             data_->AddPolygon(update.polygon_vertices, update.color, update.filled, 
                              update.thickness, update.line_type);
+            // Fix the sequence number to match the batch order tracker  
+            data_->polygons.back().sequence_number = sequence;
+            shape_type = BatchOrderTracker::OrderedPrimitive::IndividualShapeType::kPolygon;
           }
+          
+          // Add to batch order tracker for unified sequence rendering
+          BatchOrderTracker::OrderedPrimitive primitive = {
+            BatchOrderTracker::OrderedPrimitive::Type::kIndividualShape,
+            LineType::kSolid, // Not used for individual shapes
+            sequence,
+            shape_index // Index of the specific shape
+          };
+          primitive.individual_shape_type = shape_type;
+          batch_order_tracker_.render_order.push_back(primitive);
           break;
+        }
           
         case PendingUpdate::Type::kClear:
           data_->Clear();
@@ -1353,25 +1377,11 @@ void Canvas::UpdateBatches() {
 
 void Canvas::RenderBatches(const glm::mat4& projection, const glm::mat4& view,
                           const glm::mat4& coord_transform) {
-  // Both batching and non-batching modes need to respect sequence order
+  // Both batching and non-batching modes use unified sequence-based rendering
   if (batching_enabled_) {
-    // Batching mode: render batched primitives first, then individual primitives
+    // Batching mode: render all primitives in sequence order (batched + individual)
     if (!batch_order_tracker_.render_order.empty()) {
       RenderBatchesInOrder(projection, view, coord_transform);
-    }
-    
-    // Also render non-batched shapes (polygons, ellipses) that are stored in data_
-    if (current_render_strategy_) {
-      CanvasData data;
-      {
-        std::lock_guard<std::mutex> lock(data_mutex_);
-        data = *data_;
-      }
-      
-      RenderContext context(projection, view, coord_transform,
-                           &primitive_shader_, primitive_vao_, primitive_vbo_,
-                           &render_stats_, &perf_config_);
-      current_render_strategy_->Render(data, context);
     }
   } else if (current_render_strategy_) {
     // Non-batching mode: use individual rendering with sequence order
@@ -1543,6 +1553,33 @@ void Canvas::RenderBatchesInOrder(const glm::mat4& projection, const glm::mat4& 
         }
         
         glBindVertexArray(0);
+        break;
+      }
+      
+      case BatchOrderTracker::OrderedPrimitive::Type::kIndividualShape: {
+        // Render specific individual shape (polygon or ellipse) by index
+        if (individual_strategy_) {
+          CanvasData data;
+          {
+            std::lock_guard<std::mutex> lock(data_mutex_);
+            data = *data_;
+          }
+          
+          RenderContext context(projection, view, coord_transform,
+                               &primitive_shader_, primitive_vao_, primitive_vbo_,
+                               &render_stats_, &perf_config_);
+          
+          // Render only the specific shape based on type and index
+          if (primitive.individual_shape_type == BatchOrderTracker::OrderedPrimitive::IndividualShapeType::kPolygon) {
+            if (primitive.batch_index < data.polygons.size()) {
+              RenderSinglePolygon(data.polygons[primitive.batch_index], context);
+            }
+          } else if (primitive.individual_shape_type == BatchOrderTracker::OrderedPrimitive::IndividualShapeType::kEllipse) {
+            if (primitive.batch_index < data.ellipses.size()) {
+              RenderSingleEllipse(data.ellipses[primitive.batch_index], context);
+            }
+          }
+        }
         break;
       }
     }
@@ -1998,6 +2035,22 @@ void Canvas::RenderPolygonImmediate(const std::vector<glm::vec2>& points, const 
     glLineWidth(1.0f);
     
     glBindVertexArray(0);
+  }
+}
+
+void Canvas::RenderSinglePolygon(const Polygon& polygon, const RenderContext& context) {
+  if (individual_strategy_) {
+    // Cast to IndividualRenderStrategy and call the render method
+    auto* strategy = static_cast<IndividualRenderStrategy*>(individual_strategy_.get());
+    strategy->RenderSinglePolygon(polygon, context);
+  }
+}
+
+void Canvas::RenderSingleEllipse(const Ellipse& ellipse, const RenderContext& context) {
+  if (individual_strategy_) {
+    // Cast to IndividualRenderStrategy and call the render method
+    auto* strategy = static_cast<IndividualRenderStrategy*>(individual_strategy_.get());
+    strategy->RenderSingleEllipse(ellipse, context);
   }
 }
 

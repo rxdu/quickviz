@@ -30,6 +30,12 @@
 
 // Forward declarations for internal components
 namespace quickviz {
+
+// Forward declarations for shape and render context types
+struct Polygon;
+struct Ellipse;
+struct RenderContext;
+
 namespace internal {
 class OpenGLResourcePool;
 class EfficientShapeRenderer;
@@ -204,6 +210,10 @@ class Canvas : public OpenGlObject {
                               const glm::mat4& projection,
                               const glm::mat4& view,
                               const glm::mat4& coord_transform);
+
+  // Single shape rendering methods for selective batching
+  void RenderSinglePolygon(const Polygon& polygon, const RenderContext& context);
+  void RenderSingleEllipse(const Ellipse& ellipse, const RenderContext& context);
 
   // Phase 1.2: Resource pool helper for efficient individual shape rendering
   void RenderShapeWithPool(const std::vector<float>& vertices, 
