@@ -57,11 +57,11 @@ void TestAllCanvasFunctions(Canvas* canvas) {
   canvas->AddCircle(2.0f, 0.0f, 0.5f, glm::vec4(0.7f, 0.7f, 0.7f, 0.8f), false,
                     2.0f);  // Gray outlined
 
-  canvas->AddCircle(2.0f, 2.0f, 0.7f, glm::vec4(0.0f, 0.5f, 0.0f, 0.8f), true,
+  canvas->AddCircle(1.0f, 2.0f, 0.7f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), true,
                     2.0f);
-  canvas->AddCircle(1.0f, 2.0f, 0.7f, glm::vec4(0.0f, 0.5f, 0.3f, 0.8f), true,
+  canvas->AddCircle(2.0f, 2.0f, 0.7f, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), true,
                     2.0f);
-  canvas->AddCircle(3.0f, 2.0f, 0.7f, glm::vec4(0.5f, 0.5f, 0.3f, 0.8f), true,
+  canvas->AddCircle(3.0f, 2.0f, 0.7f, glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), true,
                     2.0f);
 
   // Add ellipses - filled and outlined
@@ -134,6 +134,9 @@ int main(int argc, char* argv[]) {
   // now let's do some drawing on the canvas
   {
     auto canvas = static_cast<Canvas*>(gl_sm->GetOpenGLObject("canvas"));
+    
+    // Test batching mode (batching enabled) 
+    std::cout << "\n=== Testing Batching Mode (Batching Enabled) ===" << std::endl;
     canvas->SetBatchingEnabled(false);
 
     // Add background image first so it's behind all other drawings
@@ -173,6 +176,8 @@ int main(int argc, char* argv[]) {
                                0.005f);
 
     // Test all canvas drawing functions
+    std::cout << "Drawing overlapping circles: Red(1,2), Green(2,2), Blue(3,2)" << std::endl;
+    std::cout << "In batching mode, expect Blue on top (last drawn), Green middle, Red bottom" << std::endl;
     TestAllCanvasFunctions(canvas);
   }
 

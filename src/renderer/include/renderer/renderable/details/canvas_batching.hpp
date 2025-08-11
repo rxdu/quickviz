@@ -45,6 +45,14 @@ struct ShapeBatch {
   std::vector<uint32_t> indices;
   std::vector<glm::vec4> colors;
   std::vector<uint32_t> sequence_numbers; // Global sequence order per primitive
+  
+  // Track index ranges for each individual shape to enable individual drawing
+  struct IndexRange {
+    uint32_t start;  // Starting index in the indices array
+    uint32_t count;  // Number of indices for this shape
+  };
+  std::vector<IndexRange> index_ranges; // One range per shape
+  
   uint32_t vao = 0;
   uint32_t vertex_vbo = 0;
   uint32_t color_vbo = 0;

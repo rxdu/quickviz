@@ -40,6 +40,14 @@ private:
   void RenderEllipses(const CanvasData& data, const RenderContext& context);
   void RenderPolygons(const CanvasData& data, const RenderContext& context);
   
+  // Single primitive rendering methods for sequence-ordered rendering
+  void RenderSinglePoint(const Point& point, const RenderContext& context);
+  void RenderSingleLine(const Line& line, const RenderContext& context);
+  void RenderSingleRectangle(const Rectangle& rect, const RenderContext& context);
+  void RenderSingleCircle(const Circle& circle, const RenderContext& context);
+  void RenderSingleEllipse(const Ellipse& ellipse, const RenderContext& context);
+  void RenderSinglePolygon(const Polygon& polygon, const RenderContext& context);
+  
   // Helper methods
   void SetupCommonRenderState(const RenderContext& context);
   void CleanupRenderState();
