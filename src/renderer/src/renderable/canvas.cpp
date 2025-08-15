@@ -13,6 +13,7 @@
 #include <cmath>
 #include <chrono>
 #include <map>
+#include <algorithm>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -27,6 +28,7 @@
 #include "renderable/details/batched_render_strategy.hpp"
 #include "renderable/details/individual_render_strategy.hpp"
 #include "renderable/details/shape_renderer.hpp"
+#include "renderable/details/shape_generators.hpp"
 
 namespace quickviz {
 namespace {
@@ -159,6 +161,7 @@ void main() {
 }  // namespace
 
 Canvas::Canvas() {
+  // Initialize core data storage (original working system)
   data_ = std::make_unique<CanvasData>();
   
   // Ensure data is not null
@@ -170,8 +173,7 @@ Canvas::Canvas() {
   // Initialize the data object (just to be extra safe)
   data_->Clear();
   
-  // Initialize render strategies
-  // Note: shape_renderer_ will be created after GPU resources are allocated
+  // Initialize render strategies (Phase 1 improvement - defer shape_renderer_ until after GPU resources)
   batched_strategy_ = std::make_unique<BatchedRenderStrategy>(
     line_batches_, filled_shape_batch_, outline_shape_batches_);
   individual_strategy_ = std::make_unique<IndividualRenderStrategy>();
@@ -194,10 +196,14 @@ Canvas::Canvas() {
   batched_strategy_ = std::make_unique<BatchedRenderStrategy>(
     line_batches_, filled_shape_batch_, outline_shape_batches_, shape_renderer_.get());
   individual_strategy_ = std::make_unique<IndividualRenderStrategy>(shape_renderer_.get());
+  
+  // Update current strategy pointer
+  current_render_strategy_ = batching_enabled_ ? 
+    static_cast<RenderStrategy*>(batched_strategy_.get()) : 
+    static_cast<RenderStrategy*>(individual_strategy_.get());
 }
 
 Canvas::~Canvas() { 
-  ClearBatches();
   ReleaseGpuResources(); 
 }
 
@@ -588,6 +594,11 @@ void Canvas::SetupBackgroundImage(int width, int height, int channels,
 
 void Canvas::AddPoint(float x, float y, const glm::vec4& color,
                       float thickness) {
+  // Always store the primitive - the difference between modes is in how they're rendered
+  // Non-batching mode: render individually in sequence order during OnDraw
+  // Batching mode: batch similar primitives for efficient rendering during OnDraw
+
+  // Batching mode - store for later rendering
   PendingUpdate update;
   update.type = PendingUpdate::Type::kPoint;
   update.color = color;
@@ -596,13 +607,16 @@ void Canvas::AddPoint(float x, float y, const glm::vec4& color,
   update.point.y = y;
 
   std::lock_guard<std::mutex> lock(data_mutex_);
-  pending_updates_.push(std::move(update));
+  pending_updates_.push(update);
   has_pending_updates_ = true;
 }
 
 void Canvas::AddLine(float x1, float y1, float x2, float y2,
                      const glm::vec4& color, float thickness,
                      LineType line_type) {
+  // Always store the primitive for proper rendering during OnDraw
+
+  // Batching mode - store for later rendering
   PendingUpdate update;
   update.type = PendingUpdate::Type::kLine;
   update.color = color;
@@ -614,13 +628,16 @@ void Canvas::AddLine(float x1, float y1, float x2, float y2,
   update.line.y2 = y2;
 
   std::lock_guard<std::mutex> lock(data_mutex_);
-  pending_updates_.push(std::move(update));
+  pending_updates_.push(update);
   has_pending_updates_ = true;
 }
 
 void Canvas::AddRectangle(float x, float y, float width, float height,
                           const glm::vec4& color, bool filled, float thickness,
                           LineType line_type) {
+  // Always store the primitive for proper rendering during OnDraw
+
+  // Batching mode - store for later rendering
   PendingUpdate update;
   update.type = PendingUpdate::Type::kRectangle;
   update.color = color;
@@ -633,12 +650,15 @@ void Canvas::AddRectangle(float x, float y, float width, float height,
   update.rect.height = height;
 
   std::lock_guard<std::mutex> lock(data_mutex_);
-  pending_updates_.push(std::move(update));
+  pending_updates_.push(update);
   has_pending_updates_ = true;
 }
 
 void Canvas::AddCircle(float x, float y, float radius, const glm::vec4& color,
                        bool filled, float thickness, LineType line_type) {
+  // Always store the primitive for proper rendering during OnDraw
+
+  // Batching mode - store for later rendering
   PendingUpdate update;
   update.type = PendingUpdate::Type::kCircle;
   update.color = color;
@@ -650,13 +670,16 @@ void Canvas::AddCircle(float x, float y, float radius, const glm::vec4& color,
   update.circle.radius = radius;
 
   std::lock_guard<std::mutex> lock(data_mutex_);
-  pending_updates_.push(std::move(update));
+  pending_updates_.push(update);
   has_pending_updates_ = true;
 }
 
 void Canvas::AddEllipse(float x, float y, float rx, float ry, float angle,
                         float start_angle, float end_angle, const glm::vec4& color,
                         bool filled, float thickness, LineType line_type) {
+  // Always store the primitive for proper rendering during OnDraw
+
+  // Batching mode - store for later rendering
   PendingUpdate update;
   update.type = PendingUpdate::Type::kEllipse;
   update.color = color;
@@ -672,13 +695,16 @@ void Canvas::AddEllipse(float x, float y, float rx, float ry, float angle,
   update.ellipse.end_angle = end_angle;
 
   std::lock_guard<std::mutex> lock(data_mutex_);
-  pending_updates_.push(std::move(update));
+  pending_updates_.push(update);
   has_pending_updates_ = true;
 }
 
 void Canvas::AddPolygon(const std::vector<glm::vec2>& points,
                         const glm::vec4& color, bool filled, float thickness,
                         LineType line_type) {
+  // Always store the primitive for proper rendering during OnDraw
+
+  // Batching mode - store for later rendering
   PendingUpdate update;
   update.type = PendingUpdate::Type::kPolygon;
   update.color = color;
@@ -688,17 +714,19 @@ void Canvas::AddPolygon(const std::vector<glm::vec2>& points,
   update.polygon_vertices = points;
 
   std::lock_guard<std::mutex> lock(data_mutex_);
-  pending_updates_.push(std::move(update));
+  pending_updates_.push(update);
   has_pending_updates_ = true;
 }
 
 void Canvas::Clear() {
-  PendingUpdate update;
-  update.type = PendingUpdate::Type::kClear;
-
   std::lock_guard<std::mutex> lock(data_mutex_);
-  pending_updates_.push(std::move(update));
-  has_pending_updates_ = true;
+  data_->Clear();
+  ClearBatches();
+  
+  // Clear pending updates
+  std::queue<PendingUpdate> empty_queue;
+  pending_updates_.swap(empty_queue);
+  has_pending_updates_ = false;
 }
 
 void Canvas::ProcessPendingUpdates() {
@@ -708,197 +736,268 @@ void Canvas::ProcessPendingUpdates() {
     const auto& update = pending_updates_.front();
     
     if (batching_enabled_) {
-      // Use batching system for better performance
+      // Use batching system with proper sequence tracking
       switch (update.type) {
         case PendingUpdate::Type::kPoint:
           // Points still use the original system since they're already efficient
           data_->AddPoint(update.point.x, update.point.y, update.color, update.thickness);
           break;
+          
         case PendingUpdate::Type::kLine: {
-          // Add line to batch based on line type
+          // Add line to batch with sequence tracking
           auto& line_batch = line_batches_[update.line_type];
+          uint32_t sequence = batch_order_tracker_.GetNextSequence();
+          uint32_t line_index = line_batch.vertices.size() / 2; // 2 vertices per line
+          
           line_batch.vertices.emplace_back(update.line.x1, update.line.y1, 0.0f);
           line_batch.vertices.emplace_back(update.line.x2, update.line.y2, 0.0f);
           line_batch.colors.push_back(update.color);
           line_batch.colors.push_back(update.color);
           line_batch.thicknesses.push_back(update.thickness);
           line_batch.line_types.push_back(update.line_type);
+          line_batch.sequence_numbers.push_back(sequence);
           line_batch.needs_update = true;
+          
+          // Record in order tracker
+          batch_order_tracker_.render_order.push_back({
+            BatchOrderTracker::OrderedPrimitive::Type::kLine,
+            update.line_type,
+            sequence,
+            line_index
+          });
           break;
         }
+        
         case PendingUpdate::Type::kRectangle: {
+          uint32_t sequence = batch_order_tracker_.GetNextSequence();
+          
           if (update.filled) {
+            uint32_t shape_index = filled_shape_batch_.sequence_numbers.size();
             uint32_t base_index = filled_shape_batch_.vertices.size() / 3;
+            uint32_t start_index_pos = filled_shape_batch_.indices.size();
+            
             GenerateRectangleVertices(update.rect.x, update.rect.y,
                                       update.rect.width, update.rect.height,
                                       filled_shape_batch_.vertices,
                                       filled_shape_batch_.indices,
-                                      true, base_index);
+                                      true, base_index, sequence);
+            
+            // Track index range for this rectangle (6 indices for 2 triangles)
+            uint32_t index_count = filled_shape_batch_.indices.size() - start_index_pos;
+            filled_shape_batch_.index_ranges.push_back({start_index_pos, index_count});
+            
+            
             // Add color for each vertex (4 vertices for rectangle)
             for (int i = 0; i < 4; i++) {
               filled_shape_batch_.colors.push_back(update.color);
             }
+            filled_shape_batch_.sequence_numbers.push_back(sequence);
             filled_shape_batch_.needs_update = true;
+            
+            // Record in order tracker
+            batch_order_tracker_.render_order.push_back({
+              BatchOrderTracker::OrderedPrimitive::Type::kFilledShape,
+              LineType::kSolid, // Not used for filled shapes
+              sequence,
+              shape_index
+            });
           } else {
             auto& outline_batch = outline_shape_batches_[update.line_type];
+            uint32_t shape_index = outline_batch.sequence_numbers.size();
             uint32_t base_index = outline_batch.vertices.size() / 3;
+            uint32_t start_index_pos = outline_batch.indices.size();
+            
             GenerateRectangleVertices(update.rect.x, update.rect.y,
                                       update.rect.width, update.rect.height,
                                       outline_batch.vertices,
                                       outline_batch.indices,
-                                      false, base_index);
+                                      false, base_index, sequence);
+            
+            // Track index range for this rectangle outline (8 indices for line loop)
+            uint32_t index_count = outline_batch.indices.size() - start_index_pos;
+            outline_batch.index_ranges.push_back({start_index_pos, index_count});
+            
             // Add color for each vertex (4 vertices for rectangle)
             for (int i = 0; i < 4; i++) {
               outline_batch.colors.push_back(update.color);
             }
+            outline_batch.sequence_numbers.push_back(sequence);
             outline_batch.needs_update = true;
+            
+            // Record in order tracker
+            batch_order_tracker_.render_order.push_back({
+              BatchOrderTracker::OrderedPrimitive::Type::kOutlineShape,
+              update.line_type,
+              sequence,
+              shape_index
+            });
           }
           break;
         }
+        
         case PendingUpdate::Type::kCircle: {
           const int segments = 32; // Could be made adaptive based on radius
+          uint32_t sequence = batch_order_tracker_.GetNextSequence();
+          
           if (update.filled) {
+            uint32_t shape_index = filled_shape_batch_.sequence_numbers.size();
             uint32_t base_index = filled_shape_batch_.vertices.size() / 3;
+            uint32_t start_index_pos = filled_shape_batch_.indices.size();
+            
             GenerateCircleVertices(update.circle.x, update.circle.y,
                                    update.circle.radius, segments,
                                    filled_shape_batch_.vertices,
                                    filled_shape_batch_.indices,
-                                   true, base_index);
+                                   true, base_index, sequence);
+            
+            // Track index range for this circle (3 * segments indices for triangle fan)
+            uint32_t index_count = filled_shape_batch_.indices.size() - start_index_pos;
+            filled_shape_batch_.index_ranges.push_back({start_index_pos, index_count});
+            
+            
             // Add color for center + perimeter vertices
-            // Center vertex (1) + perimeter vertices (segments + 1) = segments + 2 total
             for (int i = 0; i < segments + 2; i++) {
               filled_shape_batch_.colors.push_back(update.color);
             }
+            filled_shape_batch_.sequence_numbers.push_back(sequence);
             filled_shape_batch_.needs_update = true;
+            
+            // Record in order tracker
+            batch_order_tracker_.render_order.push_back({
+              BatchOrderTracker::OrderedPrimitive::Type::kFilledShape,
+              LineType::kSolid,
+              sequence,
+              shape_index
+            });
           } else {
             auto& outline_batch = outline_shape_batches_[update.line_type];
+            uint32_t shape_index = outline_batch.sequence_numbers.size();
             uint32_t base_index = outline_batch.vertices.size() / 3;
+            uint32_t start_index_pos = outline_batch.indices.size();
+            
             GenerateCircleVertices(update.circle.x, update.circle.y,
                                    update.circle.radius, segments,
                                    outline_batch.vertices,
                                    outline_batch.indices,
-                                   false, base_index);
+                                   false, base_index, sequence);
+            
+            // Track index range for this circle outline (segments * 2 indices for line loop)
+            uint32_t index_count = outline_batch.indices.size() - start_index_pos;
+            outline_batch.index_ranges.push_back({start_index_pos, index_count});
+            
             // Add color for perimeter vertices
-            // Perimeter vertices: segments + 1 total (0 to segments inclusive)
             for (int i = 0; i < segments + 1; i++) {
               outline_batch.colors.push_back(update.color);
             }
+            outline_batch.sequence_numbers.push_back(sequence);
             outline_batch.needs_update = true;
+            
+            // Record in order tracker
+            batch_order_tracker_.render_order.push_back({
+              BatchOrderTracker::OrderedPrimitive::Type::kOutlineShape,
+              update.line_type,
+              sequence,
+              shape_index
+            });
           }
           break;
         }
-        case PendingUpdate::Type::kEllipse: {
-          const int segments = 32;
-          if (update.filled) {
-            uint32_t base_index = filled_shape_batch_.vertices.size() / 3;
-            GenerateEllipseVertices(update.ellipse, filled_shape_batch_.vertices,
-                                    filled_shape_batch_.indices, true, base_index);
-            for (int i = 0; i < segments + 2; i++) {
-              filled_shape_batch_.colors.push_back(update.color);
-            }
-            filled_shape_batch_.needs_update = true;
-          } else {
-            auto& outline_batch = outline_shape_batches_[update.line_type];
-            uint32_t base_index = outline_batch.vertices.size() / 3;
-            GenerateEllipseVertices(update.ellipse, outline_batch.vertices,
-                                    outline_batch.indices, false, base_index);
-            for (int i = 0; i < segments + 1; i++) {
-              outline_batch.colors.push_back(update.color);
-            }
-            outline_batch.needs_update = true;
-          }
-          break;
-        }
+        
+        case PendingUpdate::Type::kEllipse:
         case PendingUpdate::Type::kPolygon: {
-          if (update.filled) {
-            uint32_t base_index = filled_shape_batch_.vertices.size() / 3;
-            GeneratePolygonVertices(update.polygon_vertices, filled_shape_batch_.vertices,
-                                    filled_shape_batch_.indices, true, base_index);
-            for (int i = 0; i < update.polygon_vertices.size(); i++) {
-              filled_shape_batch_.colors.push_back(update.color);
-            }
-            filled_shape_batch_.needs_update = true;
+          // These use individual rendering but still need sequence tracking
+          uint32_t sequence = batch_order_tracker_.GetNextSequence();
+          
+          BatchOrderTracker::OrderedPrimitive::IndividualShapeType shape_type;
+          uint32_t shape_index;
+          
+          if (update.type == PendingUpdate::Type::kEllipse) {
+            shape_index = data_->ellipses.size(); // Index before adding
+            data_->AddEllipse(update.ellipse.x, update.ellipse.y, update.ellipse.rx, update.ellipse.ry,
+                             update.ellipse.angle, update.ellipse.start_angle, update.ellipse.end_angle,
+                             update.color, update.filled, update.thickness, update.line_type);
+            // Fix the sequence number to match the batch order tracker
+            data_->ellipses.back().sequence_number = sequence;
+            shape_type = BatchOrderTracker::OrderedPrimitive::IndividualShapeType::kEllipse;
           } else {
-            auto& outline_batch = outline_shape_batches_[update.line_type];
-            uint32_t base_index = outline_batch.vertices.size() / 3;
-            GeneratePolygonVertices(update.polygon_vertices, outline_batch.vertices,
-                                    outline_batch.indices, false, base_index);
-            for (int i = 0; i < update.polygon_vertices.size(); i++) {
-              outline_batch.colors.push_back(update.color);
-            }
-            outline_batch.needs_update = true;
+            shape_index = data_->polygons.size(); // Index before adding
+            data_->AddPolygon(update.polygon_vertices, update.color, update.filled, 
+                             update.thickness, update.line_type);
+            // Fix the sequence number to match the batch order tracker  
+            data_->polygons.back().sequence_number = sequence;
+            shape_type = BatchOrderTracker::OrderedPrimitive::IndividualShapeType::kPolygon;
           }
+          
+          // Add to batch order tracker for unified sequence rendering
+          BatchOrderTracker::OrderedPrimitive primitive = {
+            BatchOrderTracker::OrderedPrimitive::Type::kIndividualShape,
+            LineType::kSolid, // Not used for individual shapes
+            sequence,
+            shape_index // Index of the specific shape
+          };
+          primitive.individual_shape_type = shape_type;
+          batch_order_tracker_.render_order.push_back(primitive);
           break;
         }
+          
         case PendingUpdate::Type::kClear:
-          // Clear both traditional data and batches
           data_->Clear();
-          for (auto& [line_type, line_batch] : line_batches_) {
-            line_batch.vertices.clear();
-            line_batch.colors.clear();
-            line_batch.thicknesses.clear();
-            line_batch.line_types.clear();
-            line_batch.needs_update = true;
-          }
-          filled_shape_batch_.vertices.clear();
-          filled_shape_batch_.indices.clear();
-          filled_shape_batch_.colors.clear();
-          for (auto& [line_type, outline_batch] : outline_shape_batches_) {
-            outline_batch.vertices.clear();
-            outline_batch.indices.clear();
-            outline_batch.colors.clear();
-            outline_batch.needs_update = true;
-          }
-          filled_shape_batch_.needs_update = true;
+          ClearBatches();
+          batch_order_tracker_.Clear();
           break;
       }
     } else {
-      // Use original individual rendering system
+      // Non-batching mode - use original system
       switch (update.type) {
         case PendingUpdate::Type::kPoint:
           data_->AddPoint(update.point.x, update.point.y, update.color, update.thickness);
           break;
-          
         case PendingUpdate::Type::kLine:
-          data_->AddLine(update.line.x1, update.line.y1, update.line.x2,
-                        update.line.y2, update.color, update.thickness,
-                        update.line_type);
+          data_->AddLine(update.line.x1, update.line.y1, update.line.x2, update.line.y2,
+                        update.color, update.thickness, update.line_type);
           break;
-          
         case PendingUpdate::Type::kRectangle:
-          data_->AddRectangle(update.rect.x, update.rect.y, update.rect.width,
-                            update.rect.height, update.color, update.filled,
-                            update.thickness, update.line_type);
+          data_->AddRectangle(update.rect.x, update.rect.y, update.rect.width, update.rect.height,
+                             update.color, update.filled, update.thickness, update.line_type);
           break;
-          
         case PendingUpdate::Type::kCircle:
           data_->AddCircle(update.circle.x, update.circle.y, update.circle.radius,
-                          update.color, update.filled, update.thickness,
-                          update.line_type);
+                          update.color, update.filled, update.thickness, update.line_type);
           break;
-          
         case PendingUpdate::Type::kEllipse:
-          data_->AddEllipse(update.ellipse.x, update.ellipse.y, update.ellipse.rx,
-                           update.ellipse.ry, update.ellipse.angle,
-                           update.ellipse.start_angle, update.ellipse.end_angle,
-                           update.color, update.filled, update.thickness,
-                           update.line_type);
+          data_->AddEllipse(update.ellipse.x, update.ellipse.y, update.ellipse.rx, update.ellipse.ry,
+                           update.ellipse.angle, update.ellipse.start_angle, update.ellipse.end_angle,
+                           update.color, update.filled, update.thickness, update.line_type);
           break;
-          
         case PendingUpdate::Type::kPolygon:
-          data_->AddPolygon(update.polygon_vertices, update.color, update.filled,
+          data_->AddPolygon(update.polygon_vertices, update.color, update.filled, 
                            update.thickness, update.line_type);
           break;
-          
         case PendingUpdate::Type::kClear:
           data_->Clear();
+          ClearBatches();
           break;
       }
     }
     
     pending_updates_.pop();
   }
+  
   has_pending_updates_ = false;
+  
+  // Update batches after processing updates
+  UpdateBatches();
+}
+
+void Canvas::SetBatchingEnabled(bool enabled) {
+  batching_enabled_ = enabled;
+  current_render_strategy_ = batching_enabled_ ? 
+    static_cast<RenderStrategy*>(batched_strategy_.get()) : 
+    static_cast<RenderStrategy*>(individual_strategy_.get());
+}
+
+bool Canvas::IsBatchingEnabled() const {
+  return batching_enabled_;
 }
 
 void Canvas::AllocateGpuResources() {
@@ -907,14 +1006,14 @@ void Canvas::AllocateGpuResources() {
 
   try {
     std::cout << "Compiling primitive vertex shader..." << std::endl;
-    Shader vertex_shader(vertex_shader_source.c_str(), Shader::Type::kVertex);
+    quickviz::Shader vertex_shader(vertex_shader_source.c_str(), quickviz::Shader::Type::kVertex);
     if (!vertex_shader.Compile()) {
       std::cerr << "ERROR::CANVAS::VERTEX_SHADER_COMPILATION_FAILED" << std::endl;
       throw std::runtime_error("Vertex shader compilation failed");
     }
     
     std::cout << "Compiling primitive fragment shader..." << std::endl;
-    Shader fragment_shader(fragment_shader_source.c_str(), Shader::Type::kFragment);
+    quickviz::Shader fragment_shader(fragment_shader_source.c_str(), quickviz::Shader::Type::kFragment);
     if (!fragment_shader.Compile()) {
       std::cerr << "ERROR::CANVAS::FRAGMENT_SHADER_COMPILATION_FAILED" << std::endl;
       throw std::runtime_error("Fragment shader compilation failed");
@@ -923,74 +1022,60 @@ void Canvas::AllocateGpuResources() {
     std::cout << "Attaching shaders to program and linking..." << std::endl;
     primitive_shader_.AttachShader(vertex_shader);
     primitive_shader_.AttachShader(fragment_shader);
-
     if (!primitive_shader_.LinkProgram()) {
       std::cerr << "ERROR::CANVAS::SHADER_PROGRAM_LINKING_FAILED" << std::endl;
       throw std::runtime_error("Shader program linking failed");
     }
-    
     std::cout << "Primitive shader program compiled and linked successfully." << std::endl;
-
-    // Create and set up VAO and VBO
+    
+    // Generate vertex array and vertex buffer for primitives
     glGenVertexArrays(1, &primitive_vao_);
     if (primitive_vao_ == 0) {
-      std::cerr << "ERROR::CANVAS::VAO_GENERATION_FAILED" << std::endl;
-      throw std::runtime_error("VAO generation failed");
+      throw std::runtime_error("Failed to generate vertex array object");
     }
     
     glGenBuffers(1, &primitive_vbo_);
     if (primitive_vbo_ == 0) {
-      std::cerr << "ERROR::CANVAS::VBO_GENERATION_FAILED" << std::endl;
-      throw std::runtime_error("VBO generation failed");
+      throw std::runtime_error("Failed to generate vertex buffer object");
     }
-
+    
+    // Bind and configure vertex array object
     glBindVertexArray(primitive_vao_);
-
-    // Set up VBO for points - initialize with a small amount of memory
     glBindBuffer(GL_ARRAY_BUFFER, primitive_vbo_);
     
-    // Allocate a small buffer initially (for 10 points) to prevent segmentation faults
-    // when drawing before data is added
-    const size_t initial_buffer_size = 10 * sizeof(Point);
+    // Setup vertex attributes for Point structure
+    const size_t initial_buffer_size = 10 * sizeof(quickviz::Point);
     glBufferData(GL_ARRAY_BUFFER, initial_buffer_size, nullptr, GL_DYNAMIC_DRAW);
     
-    // Check for errors
-    GLenum error = glGetError();
-    if (error != GL_NO_ERROR) {
-      std::cerr << "OpenGL error during VBO allocation: " << error << std::endl;
-      throw std::runtime_error("VBO allocation failed");
-    }
-
-    // Set up vertex attributes
-    // Position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Point),
-                          (void*)offsetof(Point, position));
+    // Position attribute (location = 0)
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(quickviz::Point), 
+                          (void*)offsetof(quickviz::Point, position));
     glEnableVertexAttribArray(0);
-
-    // Color attribute
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Point),
-                          (void*)offsetof(Point, color));
+    
+    // Color attribute (location = 1)
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(quickviz::Point), 
+                          (void*)offsetof(quickviz::Point, color));
     glEnableVertexAttribArray(1);
-
-    // Size attribute
-    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(Point),
-                          (void*)offsetof(Point, size));
+    
+    // Size attribute (location = 2)
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(quickviz::Point), 
+                          (void*)offsetof(quickviz::Point, size));
     glEnableVertexAttribArray(2);
-
-    // Unbind
+    
+    // Unbind for safety
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
     std::cout << "GPU resources allocated successfully." << std::endl;
-  }
-  catch (const std::exception& e) {
-    std::cerr << "ERROR: Failed to allocate GPU resources: " << e.what() << std::endl;
-    ReleaseGpuResources(); // Clean up any resources that were created
-    throw; // Rethrow the exception
+    
+  } catch (const std::exception& e) {
+    std::cerr << "ERROR::CANVAS::GPU_RESOURCE_ALLOCATION_FAILED: " << e.what() << std::endl;
+    ReleaseGpuResources();
+    throw;
   }
 }
 
-void Canvas::ReleaseGpuResources() noexcept{
+void Canvas::ReleaseGpuResources() noexcept {
   // Delete background resources
   {
     std::lock_guard<std::mutex> lock(background_mutex_);
@@ -1011,7 +1096,7 @@ void Canvas::ReleaseGpuResources() noexcept{
     background_vbo_ = 0;
   }
 
-  // Delete point resources
+  // Delete primitive rendering resources
   if (primitive_vao_ != 0) {
     glDeleteVertexArrays(1, &primitive_vao_);
     primitive_vao_ = 0;
@@ -1025,6 +1110,7 @@ void Canvas::ReleaseGpuResources() noexcept{
 
 void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
                     const glm::mat4& coord_transform) {
+  // Process any pending updates using original system
   if (has_pending_updates_) {
     ProcessPendingUpdates();
   }
@@ -1116,948 +1202,13 @@ void Canvas::OnDraw(const glm::mat4& projection, const glm::mat4& view,
   }
 }
 
-void Canvas::RenderBatches(const glm::mat4& projection, const glm::mat4& view,
-                          const glm::mat4& coord_transform) {
-  if (perf_config_.detailed_timing_enabled) {
-    frame_timer_.Start();
-  }
-  
-  render_stats_.Reset();
-  
-  // Track memory usage
-  if (perf_config_.memory_tracking_enabled) {
-    size_t line_vertex_memory = 0;
-    for (const auto& [key, batch] : line_batches_) {
-      line_vertex_memory += batch.vertices.size() * sizeof(glm::vec3);
-    }
-    
-    size_t outline_vertex_memory = 0;
-    size_t outline_index_memory = 0;
-    for (const auto& [line_type, outline_batch] : outline_shape_batches_) {
-      outline_vertex_memory += outline_batch.vertices.size() * sizeof(float);
-      outline_index_memory += outline_batch.indices.size() * sizeof(uint32_t);
-    }
-    
-    render_stats_.vertex_memory_used = 
-      line_vertex_memory +
-      filled_shape_batch_.vertices.size() * sizeof(float) +
-      outline_vertex_memory;
-    
-    render_stats_.index_memory_used = 
-      filled_shape_batch_.indices.size() * sizeof(uint32_t) +
-      outline_index_memory;
-    
-    render_stats_.total_memory_used = 
-      render_stats_.vertex_memory_used + 
-      render_stats_.index_memory_used +
-      memory_tracker_.current_usage.load();
-  }
-  
-  // Update batches if needed
-  UpdateBatches();
-  
-  // Setup common rendering state
-  primitive_shader_.Use();
-  primitive_shader_.TrySetUniform("projection", projection);
-  primitive_shader_.TrySetUniform("view", view);  
-  primitive_shader_.TrySetUniform("model", glm::mat4(1.0f));
-  primitive_shader_.TrySetUniform("coordSystemTransform", coord_transform);
-  
-  // Enable depth test and blending
-  glEnable(GL_DEPTH_TEST);
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  render_stats_.state_changes += 3; // Track state changes
-  
-  // Render lines batch by line type
-  for (auto& [line_type, line_batch] : line_batches_) {
-    if (!line_batch.vertices.empty()) {
-      primitive_shader_.TrySetUniform("renderMode", 1); // Lines mode
-      primitive_shader_.TrySetUniform("lineType", static_cast<int>(line_type));
-      
-      // Group by thickness and render each group
-      std::map<float, std::vector<std::pair<size_t, size_t>>> thickness_groups;
-      for (size_t i = 0; i < line_batch.thicknesses.size(); ++i) {
-        float thickness = line_batch.thicknesses[i];
-        thickness_groups[thickness].emplace_back(i * 2, 2); // vertex start, count
-      }
-      
-      glBindVertexArray(line_batch.vao);
-      for (const auto& [thickness, ranges] : thickness_groups) {
-        glLineWidth(thickness);
-        for (const auto& [start, count] : ranges) {
-          glDrawArrays(GL_LINES, start, count);
-          render_stats_.draw_calls++;
-        }
-        render_stats_.lines_rendered += ranges.size();
-        render_stats_.batched_objects += ranges.size();
-      }
-      glLineWidth(1.0f); // Reset to default
-      glBindVertexArray(0);
-      
-      render_stats_.state_changes += 2; // VAO bind/unbind
-    }
-  }
-  
-  // Render filled shapes batch
-  if (!filled_shape_batch_.vertices.empty() && !filled_shape_batch_.indices.empty()) {
-    primitive_shader_.TrySetUniform("renderMode", 2); // Filled shapes mode
-    
-    glBindVertexArray(filled_shape_batch_.vao);
-    glDrawElements(GL_TRIANGLES, filled_shape_batch_.indices.size(), GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
-    
-    render_stats_.shapes_rendered += filled_shape_batch_.indices.size() / 3;
-    render_stats_.batched_objects += filled_shape_batch_.indices.size() / 3;
-    render_stats_.draw_calls++;
-    render_stats_.state_changes += 2; // VAO bind/unbind
-  }
-  
-  // Render outline shapes batch by line type
-  for (auto& [line_type, outline_batch] : outline_shape_batches_) {
-    if (!outline_batch.vertices.empty() && !outline_batch.indices.empty()) {
-      primitive_shader_.TrySetUniform("renderMode", 3); // Outline shapes mode
-      primitive_shader_.TrySetUniform("lineType", static_cast<int>(line_type));
-      
-      glBindVertexArray(outline_batch.vao);
-      glDrawElements(GL_LINES, outline_batch.indices.size(), GL_UNSIGNED_INT, 0);
-      glBindVertexArray(0);
-      
-      render_stats_.shapes_rendered += outline_batch.indices.size() / 8; // Approximate shapes
-      render_stats_.batched_objects += outline_batch.indices.size() / 8;
-      render_stats_.draw_calls++;
-      render_stats_.state_changes += 2; // VAO bind/unbind
-    }
-  }
-  
-  // Reset OpenGL state
-  glDisable(GL_DEPTH_TEST);
-  glDisable(GL_BLEND);
-  glBindVertexArray(0);
-  glUseProgram(0);
-  render_stats_.state_changes += 4; // State reset
-  
-  // Update performance statistics
-  if (perf_config_.detailed_timing_enabled) {
-    float frame_time = frame_timer_.ElapsedMs();
-    render_stats_.UpdateFrameStats(frame_time);
-  }
-}
-
-void Canvas::RenderIndividualShapes(const CanvasData& data, const glm::mat4& projection,
-                                   const glm::mat4& view, const glm::mat4& coord_transform) {
-  if (data.ellipses.empty() && data.polygons.empty()) {
-    return;
-  }
-  
-  if (perf_config_.detailed_timing_enabled) {
-    operation_timer_.Start();
-  }
-  
-  // Setup rendering state - make sure we have the right shader program active
-  primitive_shader_.Use();
-  primitive_shader_.TrySetUniform("projection", projection);
-  primitive_shader_.TrySetUniform("view", view);
-  primitive_shader_.TrySetUniform("model", glm::mat4(1.0f));
-  primitive_shader_.TrySetUniform("coordSystemTransform", coord_transform);
-  
-  // Enable necessary OpenGL states
-  glEnable(GL_DEPTH_TEST);
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  render_stats_.state_changes += 3;
-  
-  // Render ellipses individually (not yet batched)
-  for (const auto& ellipse : data.ellipses) {
-    GLuint tempVAO, tempVBO;
-    glGenVertexArrays(1, &tempVAO);
-    glGenBuffers(1, &tempVBO);
-    
-    glBindVertexArray(tempVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, tempVBO);
-    
-    // Generate ellipse vertices
-    const int segments = ellipse.num_segments;
-    std::vector<float> vertices;
-    vertices.reserve((segments + 2) * 3);
-    
-    if (ellipse.filled) {
-      vertices.insert(vertices.end(), {ellipse.center.x, ellipse.center.y, ellipse.center.z});
-    }
-    
-    for (int i = 0; i <= segments; i++) {
-      float t = ellipse.start_angle + (ellipse.end_angle - ellipse.start_angle) * i / segments;
-      float x_local = ellipse.rx * std::cos(t);
-      float y_local = ellipse.ry * std::sin(t);
-      float x_rotated = x_local * std::cos(ellipse.angle) - y_local * std::sin(ellipse.angle);
-      float y_rotated = x_local * std::sin(ellipse.angle) + y_local * std::cos(ellipse.angle);
-      float x = ellipse.center.x + x_rotated;
-      float y = ellipse.center.y + y_rotated;
-      float z = ellipse.center.z;
-      vertices.insert(vertices.end(), {x, y, z});
-    }
-    
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-    
-    // Set up vertex attributes correctly
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    
-    // Explicitly set default values for disabled attributes to ensure proper shader behavior
-    glDisableVertexAttribArray(1);  // aColor - will default to (0,0,0,0)
-    glDisableVertexAttribArray(2);  // aSize - will default to 0
-    
-    // Set explicit default values for vertex attributes that aren't used
-    glVertexAttrib4f(1, 0.0f, 0.0f, 0.0f, 0.0f);  // Ensure fragColor.a = 0 to trigger uniform fallback
-    glVertexAttrib1f(2, 1.0f);  // Set default size
-    
-    primitive_shader_.TrySetUniform("uColor", ellipse.color);
-    
-    if (ellipse.filled) {
-      primitive_shader_.TrySetUniform("renderMode", 2); // Filled shapes mode
-      primitive_shader_.TrySetUniform("lineType", 0); // Solid fill
-      glDrawArrays(GL_TRIANGLE_FAN, 0, vertices.size() / 3);
-    } else {
-      primitive_shader_.TrySetUniform("renderMode", 3); // Outline shapes mode
-      primitive_shader_.TrySetUniform("lineType", static_cast<int>(ellipse.line_type));
-      glLineWidth(ellipse.thickness);
-      glDrawArrays(GL_LINE_STRIP, ellipse.filled ? 1 : 0, segments + 1);
-      glLineWidth(1.0f);
-    }
-    
-    glDisableVertexAttribArray(0);
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glDeleteVertexArrays(1, &tempVAO);
-    glDeleteBuffers(1, &tempVBO);
-    
-    render_stats_.shapes_rendered++;
-    render_stats_.draw_calls++;
-  }
-  
-  // Render polygons individually (not yet batched)
-  for (const auto& polygon : data.polygons) {
-    GLuint tempVAO, tempVBO;
-    glGenVertexArrays(1, &tempVAO);
-    glGenBuffers(1, &tempVBO);
-    
-    glBindVertexArray(tempVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, tempVBO);
-    
-    std::vector<float> vertices;
-    vertices.reserve(polygon.vertices.size() * 3);
-    for (size_t i = 0; i < polygon.vertices.size(); ++i) {
-      const auto& vertex = polygon.vertices[i];
-      vertices.insert(vertices.end(), {vertex.x, vertex.y, vertex.z});
-    }
-    
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-    
-    // Position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    
-    // Make sure other attributes are disabled
-    glDisableVertexAttribArray(1);
-    glDisableVertexAttribArray(2);
-    
-    // Set default values for disabled attributes (CRITICAL FIX!)
-    glVertexAttrib4f(1, polygon.color.r, polygon.color.g, polygon.color.b, polygon.color.a);  // Set color attribute to match polygon
-    glVertexAttrib1f(2, 1.0f);  // Set default size attribute
-    
-    if (polygon.filled) {
-      // Draw filled polygon - set renderMode FIRST, then color
-      primitive_shader_.TrySetUniform("renderMode", 2); // Filled shapes mode
-      primitive_shader_.TrySetUniform("lineType", 0); // Solid fill
-      primitive_shader_.TrySetUniform("uColor", polygon.color);
-      glDrawArrays(GL_TRIANGLE_FAN, 0, polygon.vertices.size());
-    } else {
-      // Draw outline - set renderMode FIRST, then color
-      primitive_shader_.TrySetUniform("renderMode", 3); // Outline shapes mode
-      primitive_shader_.TrySetUniform("lineType", static_cast<int>(polygon.line_type));
-      primitive_shader_.TrySetUniform("thickness", polygon.thickness);
-      primitive_shader_.TrySetUniform("uColor", polygon.color);
-      glLineWidth(polygon.thickness);
-      glDrawArrays(GL_LINE_LOOP, 0, polygon.vertices.size());
-      glLineWidth(1.0f);
-    }
-    
-    // Clean up
-    glDisableVertexAttribArray(0);
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glDeleteVertexArrays(1, &tempVAO);
-    glDeleteBuffers(1, &tempVBO);
-    
-    render_stats_.shapes_rendered++;
-    render_stats_.draw_calls++;
-  }
-
-  // Render lines individually
-  for (const auto& line : data.lines) {
-    GLuint tempVAO, tempVBO;
-    glGenVertexArrays(1, &tempVAO);
-    glGenBuffers(1, &tempVBO);
-
-    glBindVertexArray(tempVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, tempVBO);
-
-    std::vector<float> vertices = {line.start.x, line.start.y, line.start.z, line.end.x, line.end.y, line.end.z};
-
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glDisableVertexAttribArray(1);
-    glDisableVertexAttribArray(2);
-
-    glVertexAttrib4f(1, 0.0f, 0.0f, 0.0f, 0.0f);
-    glVertexAttrib1f(2, 1.0f);
-
-    primitive_shader_.TrySetUniform("uColor", line.color);
-    primitive_shader_.TrySetUniform("renderMode", 1);
-    primitive_shader_.TrySetUniform("lineType", static_cast<int>(line.line_type));
-
-    glLineWidth(line.thickness);
-    glDrawArrays(GL_LINES, 0, 2);
-    glLineWidth(1.0f);
-
-    glDisableVertexAttribArray(0);
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glDeleteVertexArrays(1, &tempVAO);
-    glDeleteBuffers(1, &tempVBO);
-
-    render_stats_.lines_rendered++;
-    render_stats_.draw_calls++;
-  }
-
-  // Render circles individually
-  for (const auto& circle : data.circles) {
-    GLuint tempVAO, tempVBO;
-    glGenVertexArrays(1, &tempVAO);
-    glGenBuffers(1, &tempVBO);
-
-    glBindVertexArray(tempVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, tempVBO);
-
-    const int segments = circle.num_segments;
-    std::vector<float> vertices;
-    vertices.reserve((segments + 2) * 3);
-
-    if (circle.filled) {
-      vertices.insert(vertices.end(), {circle.center.x, circle.center.y, circle.center.z});
-    }
-
-    for (int i = 0; i <= segments; i++) {
-      float angle = 2.0f * M_PI * i / segments;
-      float x = circle.center.x + circle.radius * std::cos(angle);
-      float y = circle.center.y + circle.radius * std::sin(angle);
-      float z = circle.center.z;
-      vertices.insert(vertices.end(), {x, y, z});
-    }
-
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glDisableVertexAttribArray(1);
-    glDisableVertexAttribArray(2);
-
-    glVertexAttrib4f(1, 0.0f, 0.0f, 0.0f, 0.0f);
-    glVertexAttrib1f(2, 1.0f);
-
-    primitive_shader_.TrySetUniform("uColor", circle.color);
-
-    if (circle.filled) {
-      primitive_shader_.TrySetUniform("renderMode", 2);
-      primitive_shader_.TrySetUniform("lineType", 0);
-      glDrawArrays(GL_TRIANGLE_FAN, 0, vertices.size() / 3);
-    } else {
-      primitive_shader_.TrySetUniform("renderMode", 3);
-      primitive_shader_.TrySetUniform("lineType", static_cast<int>(circle.line_type));
-      glLineWidth(circle.thickness);
-      glDrawArrays(GL_LINE_LOOP, circle.filled ? 1 : 0, segments + 1);
-      glLineWidth(1.0f);
-    }
-
-    glDisableVertexAttribArray(0);
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glDeleteVertexArrays(1, &tempVAO);
-    glDeleteBuffers(1, &tempVBO);
-
-    render_stats_.shapes_rendered++;
-    render_stats_.draw_calls++;
-  }
-
-  // Render rectangles individually
-  for (const auto& rect : data.rectangles) {
-    GLuint tempVAO, tempVBO;
-    glGenVertexArrays(1, &tempVAO);
-    glGenBuffers(1, &tempVBO);
-
-    glBindVertexArray(tempVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, tempVBO);
-
-    std::vector<float> vertices = {
-        rect.position.x, rect.position.y, rect.position.z,
-        rect.position.x + rect.width, rect.position.y, rect.position.z,
-        rect.position.x + rect.width, rect.position.y + rect.height, rect.position.z,
-        rect.position.x, rect.position.y + rect.height, rect.position.z
-    };
-
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glDisableVertexAttribArray(1);
-    glDisableVertexAttribArray(2);
-
-    glVertexAttrib4f(1, 0.0f, 0.0f, 0.0f, 0.0f);
-    glVertexAttrib1f(2, 1.0f);
-
-    primitive_shader_.TrySetUniform("uColor", rect.color);
-
-    if (rect.filled) {
-      primitive_shader_.TrySetUniform("renderMode", 2);
-      primitive_shader_.TrySetUniform("lineType", 0);
-      glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-    } else {
-      primitive_shader_.TrySetUniform("renderMode", 3);
-      primitive_shader_.TrySetUniform("lineType", static_cast<int>(rect.line_type));
-      glLineWidth(rect.thickness);
-      glDrawArrays(GL_LINE_LOOP, 0, 4);
-      glLineWidth(1.0f);
-    }
-
-    glDisableVertexAttribArray(0);
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glDeleteVertexArrays(1, &tempVAO);
-    glDeleteBuffers(1, &tempVBO);
-
-    render_stats_.shapes_rendered++;
-    render_stats_.draw_calls++;
-  }
-  
-  // Clean up OpenGL state
-  glDisable(GL_DEPTH_TEST);
-  glDisable(GL_BLEND);
-  glBindVertexArray(0);
-  glUseProgram(0);
-  
-  if (perf_config_.detailed_timing_enabled) {
-    float operation_time = operation_timer_.ElapsedMs();
-    render_stats_.UpdateOperationStats(operation_time);
-  }
-}
-
-void Canvas::InitializeBatches() {
-  // Initialize line batches for each line type
-  for (auto line_type : {LineType::kSolid, LineType::kDashed, LineType::kDotted}) {
-    auto& line_batch = line_batches_[line_type];
-    glGenVertexArrays(1, &line_batch.vao);
-    glGenBuffers(1, &line_batch.position_vbo);
-    glGenBuffers(1, &line_batch.color_vbo);
-
-    glBindVertexArray(line_batch.vao);
-
-    // Position buffer
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, line_batch.position_vbo);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-    // Color buffer
-    glEnableVertexAttribArray(1);
-    glBindBuffer(GL_ARRAY_BUFFER, line_batch.color_vbo);
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
-
-    glBindVertexArray(0);
-  }
-
-  // Initialize filled shape batch
-  glGenVertexArrays(1, &filled_shape_batch_.vao);
-  glGenBuffers(1, &filled_shape_batch_.vertex_vbo);
-  glGenBuffers(1, &filled_shape_batch_.color_vbo);
-  glGenBuffers(1, &filled_shape_batch_.ebo);
-
-  glBindVertexArray(filled_shape_batch_.vao);
-
-  // Vertex buffer
-  glEnableVertexAttribArray(0);
-  glBindBuffer(GL_ARRAY_BUFFER, filled_shape_batch_.vertex_vbo);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-  // Color buffer
-  glEnableVertexAttribArray(1);
-  glBindBuffer(GL_ARRAY_BUFFER, filled_shape_batch_.color_vbo);
-  glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
-
-  // Element buffer
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, filled_shape_batch_.ebo);
-
-  glBindVertexArray(0);
-
-  // Initialize outline shape batches for each line type
-  for (auto line_type : {LineType::kSolid, LineType::kDashed, LineType::kDotted}) {
-    auto& outline_batch = outline_shape_batches_[line_type];
-    glGenVertexArrays(1, &outline_batch.vao);
-    glGenBuffers(1, &outline_batch.vertex_vbo);
-    glGenBuffers(1, &outline_batch.color_vbo);
-    glGenBuffers(1, &outline_batch.ebo);
-
-    glBindVertexArray(outline_batch.vao);
-
-    // Vertex buffer
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, outline_batch.vertex_vbo);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-    // Color buffer
-    glEnableVertexAttribArray(1);
-    glBindBuffer(GL_ARRAY_BUFFER, outline_batch.color_vbo);
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
-
-    // Element buffer
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, outline_batch.ebo);
-
-    glBindVertexArray(0);
-  }
-
-  std::cout << "Batching system initialized successfully." << std::endl;
-}
-
-void Canvas::ClearBatches() {
-  // Clean up line batches
-  for (auto& [line_type, line_batch] : line_batches_) {
-    if (line_batch.vao != 0) {
-      glDeleteVertexArrays(1, &line_batch.vao);
-      glDeleteBuffers(1, &line_batch.position_vbo);
-      glDeleteBuffers(1, &line_batch.color_vbo);
-      line_batch.vao = 0;
-      line_batch.position_vbo = 0;
-      line_batch.color_vbo = 0;
-    }
-  }
-  
-  // Clean up filled shape batch
-  if (filled_shape_batch_.vao != 0) {
-    glDeleteVertexArrays(1, &filled_shape_batch_.vao);
-    glDeleteBuffers(1, &filled_shape_batch_.vertex_vbo);
-    glDeleteBuffers(1, &filled_shape_batch_.color_vbo);
-    glDeleteBuffers(1, &filled_shape_batch_.ebo);
-    filled_shape_batch_.vao = 0;
-    filled_shape_batch_.vertex_vbo = 0;
-    filled_shape_batch_.color_vbo = 0;
-    filled_shape_batch_.ebo = 0;
-  }
-  
-  // Clean up outline shape batches
-  for (auto& [line_type, outline_batch] : outline_shape_batches_) {
-    if (outline_batch.vao != 0) {
-      glDeleteVertexArrays(1, &outline_batch.vao);
-      glDeleteBuffers(1, &outline_batch.vertex_vbo);
-      glDeleteBuffers(1, &outline_batch.color_vbo);
-      glDeleteBuffers(1, &outline_batch.ebo);
-      outline_batch.vao = 0;
-      outline_batch.vertex_vbo = 0;
-      outline_batch.color_vbo = 0;
-      outline_batch.ebo = 0;
-    }
-  }
-  
-  // Clear CPU data
-  for (auto& [line_type, line_batch] : line_batches_) {
-    line_batch.vertices.clear();
-    line_batch.colors.clear();
-    line_batch.thicknesses.clear();
-    line_batch.line_types.clear();
-  }
-  
-  filled_shape_batch_.vertices.clear();
-  filled_shape_batch_.indices.clear();
-  filled_shape_batch_.colors.clear();
-  
-  for (auto& [line_type, outline_batch] : outline_shape_batches_) {
-    outline_batch.vertices.clear();
-    outline_batch.indices.clear();
-    outline_batch.colors.clear();
-  }
-}
-
 void Canvas::FlushBatches() {
-  // Force update of all batches
-  for (auto& [line_type, line_batch] : line_batches_) {
-    line_batch.needs_update = true;
-  }
-  filled_shape_batch_.needs_update = true;
-  for (auto& [line_type, outline_batch] : outline_shape_batches_) {
-    outline_batch.needs_update = true;
-  }
-  UpdateBatches();
-}
-
-void Canvas::UpdateBatches() {
-  // Update line batches
-  for (auto& [line_type, line_batch] : line_batches_) {
-    if (line_batch.needs_update && !line_batch.vertices.empty()) {
-      glBindVertexArray(line_batch.vao);
-      
-      // Update position buffer
-      glBindBuffer(GL_ARRAY_BUFFER, line_batch.position_vbo);
-      glBufferData(GL_ARRAY_BUFFER, 
-                   line_batch.vertices.size() * sizeof(glm::vec3),
-                   line_batch.vertices.data(), GL_DYNAMIC_DRAW);
-      
-      // Update color buffer
-      glBindBuffer(GL_ARRAY_BUFFER, line_batch.color_vbo);
-      glBufferData(GL_ARRAY_BUFFER,
-                   line_batch.colors.size() * sizeof(glm::vec4),
-                   line_batch.colors.data(), GL_DYNAMIC_DRAW);
-      
-      glBindVertexArray(0);
-      line_batch.needs_update = false;
-    }
-  }
-  
-  // Update filled shape batch
-  if (filled_shape_batch_.needs_update && !filled_shape_batch_.vertices.empty()) {
-    glBindVertexArray(filled_shape_batch_.vao);
-    
-    // Update vertex buffer
-    glBindBuffer(GL_ARRAY_BUFFER, filled_shape_batch_.vertex_vbo);
-    glBufferData(GL_ARRAY_BUFFER,
-                 filled_shape_batch_.vertices.size() * sizeof(float),
-                 filled_shape_batch_.vertices.data(), GL_DYNAMIC_DRAW);
-    
-    // Update color buffer - colors should already match vertices 1:1
-    // Each color in filled_shape_batch_.colors corresponds to one vertex
-    size_t expected_vertex_count = filled_shape_batch_.vertices.size() / 3;
-    if (filled_shape_batch_.colors.size() != expected_vertex_count) {
-      std::cerr << "ERROR: Color count mismatch in filled_shape_batch! "
-                << "Expected " << expected_vertex_count << " colors, got " 
-                << filled_shape_batch_.colors.size() << std::endl;
-    }
-    
-    glBindBuffer(GL_ARRAY_BUFFER, filled_shape_batch_.color_vbo);
-    glBufferData(GL_ARRAY_BUFFER,
-                 filled_shape_batch_.colors.size() * sizeof(glm::vec4),
-                 filled_shape_batch_.colors.data(), GL_DYNAMIC_DRAW);
-    
-    // Update index buffer
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, filled_shape_batch_.ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                 filled_shape_batch_.indices.size() * sizeof(uint32_t),
-                 filled_shape_batch_.indices.data(), GL_DYNAMIC_DRAW);
-    
-    glBindVertexArray(0);
-    filled_shape_batch_.needs_update = false;
-  }
-  
-  // Update outline shape batches
-  for (auto& [line_type, outline_batch] : outline_shape_batches_) {
-    if (outline_batch.needs_update && !outline_batch.vertices.empty()) {
-      glBindVertexArray(outline_batch.vao);
-      
-      // Update vertex buffer
-      glBindBuffer(GL_ARRAY_BUFFER, outline_batch.vertex_vbo);
-      glBufferData(GL_ARRAY_BUFFER,
-                   outline_batch.vertices.size() * sizeof(float),
-                   outline_batch.vertices.data(), GL_DYNAMIC_DRAW);
-      
-      // Update color buffer - colors should already match vertices 1:1
-      // Each color in outline_batch.colors corresponds to one vertex
-      size_t expected_vertex_count = outline_batch.vertices.size() / 3;
-      if (outline_batch.colors.size() != expected_vertex_count) {
-        std::cerr << "ERROR: Color count mismatch in outline_batch! "
-                  << "Expected " << expected_vertex_count << " colors, got " 
-                  << outline_batch.colors.size() << std::endl;
-      }
-      
-      glBindBuffer(GL_ARRAY_BUFFER, outline_batch.color_vbo);
-      glBufferData(GL_ARRAY_BUFFER,
-                   outline_batch.colors.size() * sizeof(glm::vec4),
-                   outline_batch.colors.data(), GL_DYNAMIC_DRAW);
-      
-      // Update index buffer
-      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, outline_batch.ebo);
-      glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                   outline_batch.indices.size() * sizeof(uint32_t),
-                   outline_batch.indices.data(), GL_DYNAMIC_DRAW);
-      
-      glBindVertexArray(0);
-      outline_batch.needs_update = false;
-    }
+  // Force processing of any pending updates
+  if (has_pending_updates_) {
+    ProcessPendingUpdates();
   }
 }
 
-void Canvas::GenerateCircleVertices(float cx, float cy, float radius, int segments,
-                                   std::vector<float>& vertices, std::vector<uint32_t>& indices,
-                                   bool filled, uint32_t base_index) {
-  if (filled) {
-    // Add center vertex for filled circle
-    vertices.insert(vertices.end(), {cx, cy, 0.0f});
-    
-    // Add perimeter vertices
-    for (int i = 0; i <= segments; i++) {
-      float angle = 2.0f * M_PI * i / segments;
-      float x = cx + radius * std::cos(angle);
-      float y = cy + radius * std::sin(angle);
-      vertices.insert(vertices.end(), {x, y, 0.0f});
-      
-      // Create triangle indices (center, current, next)
-      if (i < segments) {
-        indices.insert(indices.end(), {
-          base_index,           // Center
-          base_index + 1 + i,   // Current perimeter vertex
-          base_index + 1 + ((i + 1) % segments)  // Next perimeter vertex
-        });
-      }
-    }
-  } else {
-    // Add perimeter vertices for outline
-    for (int i = 0; i <= segments; i++) {
-      float angle = 2.0f * M_PI * i / segments;
-      float x = cx + radius * std::cos(angle);
-      float y = cy + radius * std::sin(angle);
-      vertices.insert(vertices.end(), {x, y, 0.0f});
-      
-      // Create line indices (current, next)
-      if (i < segments) {
-        indices.insert(indices.end(), {
-          base_index + i,           // Current vertex
-          base_index + (i + 1)      // Next vertex
-        });
-      }
-    }
-  }
-}
-
-void Canvas::GenerateRectangleVertices(float x, float y, float width, float height,
-                                      std::vector<float>& vertices, std::vector<uint32_t>& indices,
-                                      bool filled, uint32_t base_index) {
-  // Add the four corner vertices
-  vertices.insert(vertices.end(), {
-    x, y, 0.0f,                    // Bottom left
-    x + width, y, 0.0f,            // Bottom right  
-    x + width, y + height, 0.0f,   // Top right
-    x, y + height, 0.0f            // Top left
-  });
-  
-  if (filled) {
-    // Two triangles for filled rectangle
-    indices.insert(indices.end(), {
-      base_index, base_index + 1, base_index + 2,  // First triangle
-      base_index, base_index + 2, base_index + 3   // Second triangle
-    });
-  } else {
-    // Four lines for rectangle outline
-    indices.insert(indices.end(), {
-      base_index, base_index + 1,     // Bottom edge
-      base_index + 1, base_index + 2, // Right edge
-      base_index + 2, base_index + 3, // Top edge
-      base_index + 3, base_index      // Left edge
-    });
-  }
-}
-
-void Canvas::GenerateEllipseVertices(const PendingUpdate::ellipse_params& ellipse,
-                                     std::vector<float>& vertices, std::vector<uint32_t>& indices,
-                                     bool filled, uint32_t base_index) {
-  const int segments = 32;
-  if (filled) {
-    vertices.insert(vertices.end(), {ellipse.x, ellipse.y, 0.0f});
-    for (int i = 0; i <= segments; i++) {
-      float angle = ellipse.start_angle + (ellipse.end_angle - ellipse.start_angle) * i / segments;
-      float x_local = ellipse.rx * std::cos(angle);
-      float y_local = ellipse.ry * std::sin(angle);
-      float x_rotated = x_local * std::cos(ellipse.angle) - y_local * std::sin(ellipse.angle);
-      float y_rotated = x_local * std::sin(ellipse.angle) + y_local * std::cos(ellipse.angle);
-      vertices.insert(vertices.end(), {ellipse.x + x_rotated, ellipse.y + y_rotated, 0.0f});
-      if (i < segments) {
-        indices.insert(indices.end(), {base_index, base_index + 1 + i, base_index + 1 + ((i + 1) % segments)});
-      }
-    }
-  } else {
-    for (int i = 0; i <= segments; i++) {
-      float angle = ellipse.start_angle + (ellipse.end_angle - ellipse.start_angle) * i / segments;
-      float x_local = ellipse.rx * std::cos(angle);
-      float y_local = ellipse.ry * std::sin(angle);
-      float x_rotated = x_local * std::cos(ellipse.angle) - y_local * std::sin(ellipse.angle);
-      float y_rotated = x_local * std::sin(ellipse.angle) + y_local * std::cos(ellipse.angle);
-      vertices.insert(vertices.end(), {ellipse.x + x_rotated, ellipse.y + y_rotated, 0.0f});
-      if (i < segments) {
-        indices.insert(indices.end(), {base_index + i, base_index + (i + 1)});
-      }
-    }
-  }
-}
-
-void Canvas::GeneratePolygonVertices(const std::vector<glm::vec2>& points,
-                                     std::vector<float>& vertices, std::vector<uint32_t>& indices,
-                                     bool filled, uint32_t base_index) {
-  for (const auto& point : points) {
-    vertices.insert(vertices.end(), {point.x, point.y, 0.0f});
-  }
-  if (filled) {
-    // Simple fan triangulation, works for convex polygons
-    for (size_t i = 1; i < points.size() - 1; ++i) {
-      indices.insert(indices.end(), {static_cast<uint32_t>(base_index), static_cast<uint32_t>(base_index + i), static_cast<uint32_t>(base_index + i + 1)});
-    }
-  } else {
-    for (size_t i = 0; i < points.size(); ++i) {
-      indices.insert(indices.end(), {static_cast<uint32_t>(base_index + i), static_cast<uint32_t>(base_index + (i + 1) % points.size())});
-    }
-  }
-}
-
-void Canvas::OptimizeMemory() {
-  std::lock_guard<std::mutex> lock(data_mutex_);
-  
-  if (perf_config_.aggressive_memory_cleanup) {
-    // Shrink batch vectors to fit current usage
-    for (auto& [line_type, line_batch] : line_batches_) {
-      line_batch.vertices.shrink_to_fit();
-      line_batch.colors.shrink_to_fit();
-      line_batch.thicknesses.shrink_to_fit();
-    }
-    
-    filled_shape_batch_.vertices.shrink_to_fit();
-    filled_shape_batch_.indices.shrink_to_fit();
-    filled_shape_batch_.colors.shrink_to_fit();
-    
-    for (auto& [line_type, outline_batch] : outline_shape_batches_) {
-      outline_batch.vertices.shrink_to_fit();
-      outline_batch.indices.shrink_to_fit();
-      outline_batch.colors.shrink_to_fit();
-    }
-    
-    // Clear pending updates queue if it's grown too large
-    if (pending_updates_.size() == 0) {
-      std::queue<PendingUpdate> empty_queue;
-      pending_updates_.swap(empty_queue);
-    }
-  }
-  
-  // Update memory tracking
-  if (perf_config_.memory_tracking_enabled) {
-    size_t current_usage = GetMemoryUsage();
-    memory_tracker_.current_usage = current_usage;
-  }
-}
-
-void Canvas::PreallocateMemory(size_t estimated_objects) {
-  std::lock_guard<std::mutex> lock(data_mutex_);
-  
-  // Pre-allocate batch vectors based on estimated usage
-  size_t reserve_size = std::min(estimated_objects, perf_config_.max_batch_size);
-  
-  for (auto& [line_type, line_batch] : line_batches_) {
-    line_batch.vertices.reserve(reserve_size * 2); // 2 vertices per line
-    line_batch.colors.reserve(reserve_size * 2);
-    line_batch.thicknesses.reserve(reserve_size);
-  }
-  
-  filled_shape_batch_.vertices.reserve(reserve_size * 12); // ~4 vertices per shape * 3 components
-  filled_shape_batch_.indices.reserve(reserve_size * 6);   // ~2 triangles per shape
-  filled_shape_batch_.colors.reserve(reserve_size * 4);    // 4 vertices per shape
-  
-  for (auto& [line_type, outline_batch] : outline_shape_batches_) {
-    outline_batch.vertices.reserve(reserve_size * 12);
-    outline_batch.indices.reserve(reserve_size * 8);  // ~4 edges per shape
-    outline_batch.colors.reserve(reserve_size * 4);
-  }
-  
-  // Record the pre-allocation
-  if (perf_config_.memory_tracking_enabled) {
-    size_t allocated_size = GetMemoryUsage();
-    memory_tracker_.RecordAllocation(allocated_size);
-  }
-}
-
-void Canvas::ShrinkToFit() {
-  std::lock_guard<std::mutex> lock(data_mutex_);
-  
-  // Shrink all batch vectors to minimum required size
-  for (auto& [line_type, line_batch] : line_batches_) {
-    line_batch.vertices.shrink_to_fit();
-    line_batch.colors.shrink_to_fit();
-    line_batch.thicknesses.shrink_to_fit();
-  }
-  
-  filled_shape_batch_.vertices.shrink_to_fit();
-  filled_shape_batch_.indices.shrink_to_fit();
-  filled_shape_batch_.colors.shrink_to_fit();
-  
-  for (auto& [line_type, outline_batch] : outline_shape_batches_) {
-    outline_batch.vertices.shrink_to_fit();
-    outline_batch.indices.shrink_to_fit();
-    outline_batch.colors.shrink_to_fit();
-  }
-  
-  // Clear and shrink pending updates queue
-  std::queue<PendingUpdate> empty_queue;
-  pending_updates_.swap(empty_queue);
-}
-
-size_t Canvas::GetMemoryUsage() const {
-  size_t total_usage = 0;
-  
-  // Calculate batch memory usage
-  for (const auto& [line_type, line_batch] : line_batches_) {
-    total_usage += line_batch.vertices.capacity() * sizeof(glm::vec3);
-    total_usage += line_batch.colors.capacity() * sizeof(glm::vec4);
-    total_usage += line_batch.thicknesses.capacity() * sizeof(float);
-  }
-  
-  total_usage += filled_shape_batch_.vertices.capacity() * sizeof(float);
-  total_usage += filled_shape_batch_.indices.capacity() * sizeof(uint32_t);
-  total_usage += filled_shape_batch_.colors.capacity() * sizeof(glm::vec4);
-  
-  for (const auto& [line_type, outline_batch] : outline_shape_batches_) {
-    total_usage += outline_batch.vertices.capacity() * sizeof(float);
-    total_usage += outline_batch.indices.capacity() * sizeof(uint32_t);
-    total_usage += outline_batch.colors.capacity() * sizeof(glm::vec4);
-  }
-  
-  // Add estimated size of pending updates queue
-  total_usage += pending_updates_.size() * sizeof(PendingUpdate);
-  
-  // Add estimated CanvasData memory usage
-  if (data_) {
-    // Rough estimation - in a real implementation you'd calculate exact sizes
-    total_usage += 1024; // Estimated base CanvasData size
-  }
-  
-  return total_usage;
-}
-
-void Canvas::SetBatchingEnabled(bool enabled) { 
-  batching_enabled_ = enabled;
-  // Update current render strategy based on batching preference
-  current_render_strategy_ = enabled ? 
-    static_cast<RenderStrategy*>(batched_strategy_.get()) :
-    static_cast<RenderStrategy*>(individual_strategy_.get());
-}
-
-RenderStrategy* Canvas::SelectRenderStrategy(const CanvasData& data) {
-  // Select render strategy based on batching setting and data characteristics
-  if (batching_enabled_) {
-    return batched_strategy_.get();
-  } else {
-    return individual_strategy_.get();
-  }
-  
-  // Future enhancement: Could select strategy based on data characteristics
-  // For example, use individual strategy for scenes with many complex polygons
-  // and batched strategy for scenes with many simple shapes
-}
-
-// Performance monitoring methods (moved from inline in header)
 const RenderStats& Canvas::GetRenderStats() const {
   return render_stats_;
 }
@@ -2072,6 +1223,847 @@ void Canvas::SetPerformanceConfig(const PerformanceConfig& config) {
 
 const PerformanceConfig& Canvas::GetPerformanceConfig() const {
   return perf_config_;
+}
+
+size_t Canvas::GetMemoryUsage() const {
+  std::lock_guard<std::mutex> lock(data_mutex_);
+  size_t total = sizeof(Canvas);
+  
+  // Add data structure sizes
+  if (data_) {
+    total += data_->points.capacity() * sizeof(Point);
+    total += data_->lines.capacity() * sizeof(Line);
+    total += data_->rectangles.capacity() * sizeof(Rectangle);
+    total += data_->circles.capacity() * sizeof(Circle);
+    total += data_->ellipses.capacity() * sizeof(Ellipse);
+    total += data_->polygons.capacity() * sizeof(Polygon);
+  }
+  
+  // Add batch sizes
+  for (const auto& [type, batch] : line_batches_) {
+    total += batch.vertices.capacity() * sizeof(float);
+    total += batch.colors.capacity() * sizeof(float);
+  }
+  
+  total += filled_shape_batch_.vertices.capacity() * sizeof(float);
+  total += filled_shape_batch_.indices.capacity() * sizeof(uint32_t);
+  
+  return total;
+}
+
+void Canvas::OptimizeMemory() {
+  std::lock_guard<std::mutex> lock(data_mutex_);
+  
+  // Shrink data vectors to fit
+  if (data_) {
+    data_->points.shrink_to_fit();
+    data_->lines.shrink_to_fit();
+    data_->rectangles.shrink_to_fit();
+    data_->circles.shrink_to_fit();
+    data_->ellipses.shrink_to_fit();
+    data_->polygons.shrink_to_fit();
+  }
+  
+  // Clear empty pending updates queue
+  if (pending_updates_.empty()) {
+    std::queue<PendingUpdate> empty_queue;
+    pending_updates_.swap(empty_queue);
+  }
+}
+
+void Canvas::PreallocateMemory(size_t estimated_objects) {
+  std::lock_guard<std::mutex> lock(data_mutex_);
+  
+  if (data_) {
+    // Reserve based on typical distribution
+    data_->points.reserve(estimated_objects / 10);
+    data_->lines.reserve(estimated_objects / 4);
+    data_->rectangles.reserve(estimated_objects / 8);
+    data_->circles.reserve(estimated_objects / 8);
+    data_->ellipses.reserve(estimated_objects / 20);
+    data_->polygons.reserve(estimated_objects / 20);
+  }
+}
+
+void Canvas::ShrinkToFit() {
+  OptimizeMemory(); // Same operation
+}
+
+void Canvas::InitializeBatches() {
+  // Initialize line batches for each line type
+  line_batches_[LineType::kSolid] = LineBatch{};
+  line_batches_[LineType::kDashed] = LineBatch{};
+  line_batches_[LineType::kDotted] = LineBatch{};
+  
+  // Initialize shape batches
+  filled_shape_batch_ = ShapeBatch{};
+  outline_shape_batches_[LineType::kSolid] = ShapeBatch{};
+  outline_shape_batches_[LineType::kDashed] = ShapeBatch{};
+  outline_shape_batches_[LineType::kDotted] = ShapeBatch{};
+}
+
+void Canvas::ClearBatches() {
+  // Clean up line batches
+  for (auto& [line_type, line_batch] : line_batches_) {
+    if (line_batch.vao != 0) {
+      glDeleteVertexArrays(1, &line_batch.vao);
+      glDeleteBuffers(1, &line_batch.position_vbo);
+      glDeleteBuffers(1, &line_batch.color_vbo);
+      line_batch.vao = 0;
+      line_batch.position_vbo = 0;
+      line_batch.color_vbo = 0;
+    }
+    line_batch.vertices.clear();
+    line_batch.colors.clear();
+    line_batch.thicknesses.clear();
+    line_batch.line_types.clear();
+    line_batch.sequence_numbers.clear();
+  }
+  
+  // Clean up filled shape batch
+  if (filled_shape_batch_.vao != 0) {
+    glDeleteVertexArrays(1, &filled_shape_batch_.vao);
+    glDeleteBuffers(1, &filled_shape_batch_.vertex_vbo);
+    glDeleteBuffers(1, &filled_shape_batch_.color_vbo);
+    glDeleteBuffers(1, &filled_shape_batch_.ebo);
+    filled_shape_batch_.vao = 0;
+    filled_shape_batch_.vertex_vbo = 0;
+    filled_shape_batch_.color_vbo = 0;
+    filled_shape_batch_.ebo = 0;
+  }
+  filled_shape_batch_.vertices.clear();
+  filled_shape_batch_.indices.clear();
+  filled_shape_batch_.colors.clear();
+  filled_shape_batch_.sequence_numbers.clear();
+  
+  // Clean up outline shape batches
+  for (auto& [line_type, outline_batch] : outline_shape_batches_) {
+    if (outline_batch.vao != 0) {
+      glDeleteVertexArrays(1, &outline_batch.vao);
+      glDeleteBuffers(1, &outline_batch.vertex_vbo);
+      glDeleteBuffers(1, &outline_batch.color_vbo);
+      glDeleteBuffers(1, &outline_batch.ebo);
+      outline_batch.vao = 0;
+      outline_batch.vertex_vbo = 0;
+      outline_batch.color_vbo = 0;
+      outline_batch.ebo = 0;
+    }
+    outline_batch.vertices.clear();
+    outline_batch.indices.clear();
+    outline_batch.colors.clear();
+    outline_batch.sequence_numbers.clear();
+  }
+  
+  // Clear the batch order tracker
+  batch_order_tracker_.Clear();
+}
+
+void Canvas::UpdateBatches() {
+  // The batching system is managed by the render strategies
+  // This method primarily exists for API compatibility
+  // Actual batching happens in BatchedRenderStrategy
+  
+  // Mark batches as needing update
+  for (auto& [type, batch] : line_batches_) {
+    batch.needs_update = true;
+  }
+  
+  filled_shape_batch_.needs_update = true;
+  
+  for (auto& [type, batch] : outline_shape_batches_) {
+    batch.needs_update = true;
+  }
+}
+
+void Canvas::RenderBatches(const glm::mat4& projection, const glm::mat4& view,
+                          const glm::mat4& coord_transform) {
+  // Both batching and non-batching modes use unified sequence-based rendering
+  if (batching_enabled_) {
+    // Batching mode: render all primitives in sequence order (batched + individual)
+    if (!batch_order_tracker_.render_order.empty()) {
+      RenderBatchesInOrder(projection, view, coord_transform);
+    }
+  } else if (current_render_strategy_) {
+    // Non-batching mode: use individual rendering with sequence order
+    CanvasData data;
+    {
+      std::lock_guard<std::mutex> lock(data_mutex_);
+      data = *data_;
+    }
+    
+    RenderContext context(projection, view, coord_transform,
+                         &primitive_shader_, primitive_vao_, primitive_vbo_,
+                         &render_stats_, &perf_config_);
+    current_render_strategy_->Render(data, context);
+  }
+}
+
+void Canvas::RenderBatchesInOrder(const glm::mat4& projection, const glm::mat4& view,
+                                  const glm::mat4& coord_transform) {
+  // Sort primitives by sequence number to maintain draw order
+  std::vector<BatchOrderTracker::OrderedPrimitive> sorted_order = batch_order_tracker_.render_order;
+  std::sort(sorted_order.begin(), sorted_order.end(),
+            [](const auto& a, const auto& b) { return a.sequence_number < b.sequence_number; });
+  
+  // Setup shader
+  primitive_shader_.Use();
+  primitive_shader_.TrySetUniform("projection", projection);
+  primitive_shader_.TrySetUniform("view", view);
+  primitive_shader_.TrySetUniform("model", glm::mat4(1.0f));
+  primitive_shader_.TrySetUniform("coordSystemTransform", coord_transform);
+  
+  // Enable OpenGL states
+  glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LEQUAL);  // Ensure later primitives draw on top
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  
+  // Render each primitive in sequence order
+  for (const auto& primitive : sorted_order) {
+    switch (primitive.type) {
+      case BatchOrderTracker::OrderedPrimitive::Type::kLine: {
+        auto& line_batch = line_batches_[primitive.line_type];
+        if (line_batch.vertices.empty()) continue;
+        
+        // Setup VAO/VBO if needed
+        if (line_batch.vao == 0) {
+          glGenVertexArrays(1, &line_batch.vao);
+          glGenBuffers(1, &line_batch.position_vbo);
+          glGenBuffers(1, &line_batch.color_vbo);
+        }
+        
+        glBindVertexArray(line_batch.vao);
+        
+        // Upload vertex data
+        glBindBuffer(GL_ARRAY_BUFFER, line_batch.position_vbo);
+        glBufferData(GL_ARRAY_BUFFER, line_batch.vertices.size() * sizeof(glm::vec3),
+                     line_batch.vertices.data(), GL_DYNAMIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+        glEnableVertexAttribArray(0);
+        
+        // Upload color data
+        glBindBuffer(GL_ARRAY_BUFFER, line_batch.color_vbo);
+        glBufferData(GL_ARRAY_BUFFER, line_batch.colors.size() * sizeof(glm::vec4),
+                     line_batch.colors.data(), GL_DYNAMIC_DRAW);
+        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
+        glEnableVertexAttribArray(1);
+        
+        // Set uniforms
+        primitive_shader_.TrySetUniform("renderMode", 1); // Lines mode
+        primitive_shader_.TrySetUniform("lineType", static_cast<int>(primitive.line_type));
+        
+        // Draw this specific line (2 vertices per line)
+        uint32_t start_vertex = primitive.batch_index * 2;
+        glLineWidth(line_batch.thicknesses[primitive.batch_index]);
+        glDrawArrays(GL_LINES, start_vertex, 2);
+        
+        glBindVertexArray(0);
+        break;
+      }
+      
+      case BatchOrderTracker::OrderedPrimitive::Type::kFilledShape: {
+        if (filled_shape_batch_.vertices.empty()) continue;
+        
+        // Setup VAO/VBO/EBO if needed
+        if (filled_shape_batch_.vao == 0) {
+          glGenVertexArrays(1, &filled_shape_batch_.vao);
+          glGenBuffers(1, &filled_shape_batch_.vertex_vbo);
+          glGenBuffers(1, &filled_shape_batch_.color_vbo);
+          glGenBuffers(1, &filled_shape_batch_.ebo);
+        }
+        
+        glBindVertexArray(filled_shape_batch_.vao);
+        
+        // Upload vertex data
+        glBindBuffer(GL_ARRAY_BUFFER, filled_shape_batch_.vertex_vbo);
+        glBufferData(GL_ARRAY_BUFFER, filled_shape_batch_.vertices.size() * sizeof(float),
+                     filled_shape_batch_.vertices.data(), GL_DYNAMIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
+        glEnableVertexAttribArray(0);
+        
+        // Upload color data
+        glBindBuffer(GL_ARRAY_BUFFER, filled_shape_batch_.color_vbo);
+        glBufferData(GL_ARRAY_BUFFER, filled_shape_batch_.colors.size() * sizeof(glm::vec4),
+                     filled_shape_batch_.colors.data(), GL_DYNAMIC_DRAW);
+        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
+        glEnableVertexAttribArray(1);
+        
+        // Upload index data
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, filled_shape_batch_.ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, filled_shape_batch_.indices.size() * sizeof(uint32_t),
+                     filled_shape_batch_.indices.data(), GL_DYNAMIC_DRAW);
+        
+        // Set uniforms
+        primitive_shader_.TrySetUniform("renderMode", 2); // Filled shapes mode
+        
+        // Draw only the specific shape using its index range
+        if (primitive.batch_index < filled_shape_batch_.index_ranges.size()) {
+          const auto& range = filled_shape_batch_.index_ranges[primitive.batch_index];
+          glDrawElements(GL_TRIANGLES, range.count, GL_UNSIGNED_INT, 
+                        (void*)(range.start * sizeof(uint32_t)));
+        }
+        
+        glBindVertexArray(0);
+        break;
+      }
+      
+      case BatchOrderTracker::OrderedPrimitive::Type::kOutlineShape: {
+        auto& outline_batch = outline_shape_batches_[primitive.line_type];
+        if (outline_batch.vertices.empty()) continue;
+        
+        // Setup VAO/VBO/EBO if needed
+        if (outline_batch.vao == 0) {
+          glGenVertexArrays(1, &outline_batch.vao);
+          glGenBuffers(1, &outline_batch.vertex_vbo);
+          glGenBuffers(1, &outline_batch.color_vbo);
+          glGenBuffers(1, &outline_batch.ebo);
+        }
+        
+        glBindVertexArray(outline_batch.vao);
+        
+        // Upload vertex data
+        glBindBuffer(GL_ARRAY_BUFFER, outline_batch.vertex_vbo);
+        glBufferData(GL_ARRAY_BUFFER, outline_batch.vertices.size() * sizeof(float),
+                     outline_batch.vertices.data(), GL_DYNAMIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
+        glEnableVertexAttribArray(0);
+        
+        // Upload color data
+        glBindBuffer(GL_ARRAY_BUFFER, outline_batch.color_vbo);
+        glBufferData(GL_ARRAY_BUFFER, outline_batch.colors.size() * sizeof(glm::vec4),
+                     outline_batch.colors.data(), GL_DYNAMIC_DRAW);
+        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
+        glEnableVertexAttribArray(1);
+        
+        // Upload index data
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, outline_batch.ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, outline_batch.indices.size() * sizeof(uint32_t),
+                     outline_batch.indices.data(), GL_DYNAMIC_DRAW);
+        
+        // Set uniforms
+        primitive_shader_.TrySetUniform("renderMode", 3); // Outlined shapes mode
+        primitive_shader_.TrySetUniform("lineType", static_cast<int>(primitive.line_type));
+        
+        // Draw only the specific shape using its index range
+        if (primitive.batch_index < outline_batch.index_ranges.size()) {
+          const auto& range = outline_batch.index_ranges[primitive.batch_index];
+          glLineWidth(2.0f); // Default line width for outlines
+          glDrawElements(GL_LINE_LOOP, range.count, GL_UNSIGNED_INT, 
+                        (void*)(range.start * sizeof(uint32_t)));
+        }
+        
+        glBindVertexArray(0);
+        break;
+      }
+      
+      case BatchOrderTracker::OrderedPrimitive::Type::kIndividualShape: {
+        // Render specific individual shape (polygon or ellipse) by index
+        if (individual_strategy_) {
+          CanvasData data;
+          {
+            std::lock_guard<std::mutex> lock(data_mutex_);
+            data = *data_;
+          }
+          
+          RenderContext context(projection, view, coord_transform,
+                               &primitive_shader_, primitive_vao_, primitive_vbo_,
+                               &render_stats_, &perf_config_);
+          
+          // Render only the specific shape based on type and index
+          if (primitive.individual_shape_type == BatchOrderTracker::OrderedPrimitive::IndividualShapeType::kPolygon) {
+            if (primitive.batch_index < data.polygons.size()) {
+              RenderSinglePolygon(data.polygons[primitive.batch_index], context);
+            }
+          } else if (primitive.individual_shape_type == BatchOrderTracker::OrderedPrimitive::IndividualShapeType::kEllipse) {
+            if (primitive.batch_index < data.ellipses.size()) {
+              RenderSingleEllipse(data.ellipses[primitive.batch_index], context);
+            }
+          }
+        }
+        break;
+      }
+    }
+  }
+}
+
+void Canvas::RenderIndividualShapes(const CanvasData& data,
+                                   const glm::mat4& projection,
+                                   const glm::mat4& view,
+                                   const glm::mat4& coord_transform) {
+  if (individual_strategy_) {
+    RenderContext context(projection, view, coord_transform,
+                         &primitive_shader_, primitive_vao_, primitive_vbo_,
+                         &render_stats_, &perf_config_);
+    individual_strategy_->Render(data, context);
+  }
+}
+
+void Canvas::GenerateRectangleVertices(float x, float y, float width, float height,
+                                       std::vector<float>& vertices,
+                                       std::vector<uint32_t>& indices, bool filled,
+                                       uint32_t base_index, uint32_t sequence_number) {
+  // Use sequence number to determine Z depth for proper layering
+  float z_depth = sequence_number * 0.001f;
+  
+  // Generate 4 corner vertices for rectangle
+  float vertices_data[] = {
+    x, y, z_depth,                    // Bottom-left
+    x + width, y, z_depth,            // Bottom-right
+    x + width, y + height, z_depth,   // Top-right
+    x, y + height, z_depth            // Top-left
+  };
+  
+  // Add vertices to the vector
+  for (int i = 0; i < 12; i += 3) {
+    vertices.push_back(vertices_data[i]);
+    vertices.push_back(vertices_data[i + 1]);
+    vertices.push_back(vertices_data[i + 2]);
+  }
+  
+  if (filled) {
+    // Two triangles for filled rectangle
+    indices.insert(indices.end(), {
+      base_index, base_index + 1, base_index + 2,  // Triangle 1
+      base_index, base_index + 2, base_index + 3   // Triangle 2
+    });
+  } else {
+    // Line loop for outline
+    indices.insert(indices.end(), {
+      base_index, base_index + 1,
+      base_index + 1, base_index + 2,
+      base_index + 2, base_index + 3,
+      base_index + 3, base_index
+    });
+  }
+}
+
+void Canvas::GenerateCircleVertices(float cx, float cy, float radius, int segments,
+                                    std::vector<float>& vertices,
+                                    std::vector<uint32_t>& indices, bool filled,
+                                    uint32_t base_index, uint32_t sequence_number) {
+  // Use sequence number to determine Z depth for proper layering
+  float z_depth = sequence_number * 0.001f;
+  
+  if (filled) {
+    // Add center vertex
+    vertices.insert(vertices.end(), {cx, cy, z_depth});
+    
+    // Add perimeter vertices
+    for (int i = 0; i <= segments; ++i) {
+      float angle = 2.0f * M_PI * i / segments;
+      float x = cx + radius * std::cos(angle);
+      float y = cy + radius * std::sin(angle);
+      vertices.insert(vertices.end(), {x, y, z_depth});
+    }
+    
+    // Generate triangle fan indices
+    for (int i = 0; i < segments; ++i) {
+      indices.insert(indices.end(), {
+        base_index,           // Center
+        base_index + 1 + i,   // Current perimeter vertex
+        base_index + 1 + ((i + 1) % segments)  // Next perimeter vertex
+      });
+    }
+  } else {
+    // Add perimeter vertices only
+    for (int i = 0; i <= segments; ++i) {
+      float angle = 2.0f * M_PI * i / segments;
+      float x = cx + radius * std::cos(angle);
+      float y = cy + radius * std::sin(angle);
+      vertices.insert(vertices.end(), {x, y, z_depth});
+    }
+    
+    // Generate line loop indices
+    for (int i = 0; i < segments; ++i) {
+      indices.insert(indices.end(), {
+        base_index + i,
+        base_index + ((i + 1) % segments)
+      });
+    }
+  }
+}
+
+void Canvas::GenerateEllipseVertices(float x, float y, float rx, float ry, float angle,
+                                     float start_angle, float end_angle,
+                                     std::vector<float>& vertices,
+                                     std::vector<uint32_t>& indices, bool filled,
+                                     uint32_t base_index) {
+  const int segments = 32;
+  float cos_rot = std::cos(angle);
+  float sin_rot = std::sin(angle);
+  
+  if (filled) {
+    // Add center vertex
+    vertices.insert(vertices.end(), {x, y, 0.0f});
+    
+    // Add perimeter vertices
+    for (int i = 0; i <= segments; ++i) {
+      float t = start_angle + (end_angle - start_angle) * i / segments;
+      float local_x = rx * std::cos(t);
+      float local_y = ry * std::sin(t);
+      
+      // Apply rotation
+      float rotated_x = local_x * cos_rot - local_y * sin_rot;
+      float rotated_y = local_x * sin_rot + local_y * cos_rot;
+      
+      vertices.insert(vertices.end(), {x + rotated_x, y + rotated_y, 0.0f});
+    }
+    
+    // Generate triangle fan indices
+    for (int i = 0; i < segments; ++i) {
+      indices.insert(indices.end(), {
+        base_index,           // Center
+        base_index + 1 + i,   // Current perimeter vertex
+        base_index + 1 + ((i + 1) % segments)  // Next perimeter vertex
+      });
+    }
+  } else {
+    // Add perimeter vertices only
+    for (int i = 0; i <= segments; ++i) {
+      float t = start_angle + (end_angle - start_angle) * i / segments;
+      float local_x = rx * std::cos(t);
+      float local_y = ry * std::sin(t);
+      
+      // Apply rotation
+      float rotated_x = local_x * cos_rot - local_y * sin_rot;
+      float rotated_y = local_x * sin_rot + local_y * cos_rot;
+      
+      vertices.insert(vertices.end(), {x + rotated_x, y + rotated_y, 0.0f});
+    }
+    
+    // Generate line strip indices
+    for (int i = 0; i < segments; ++i) {
+      indices.insert(indices.end(), {
+        base_index + i,
+        base_index + i + 1
+      });
+    }
+  }
+}
+
+void Canvas::GeneratePolygonVertices(const std::vector<glm::vec2>& points,
+                                     std::vector<float>& vertices,
+                                     std::vector<uint32_t>& indices, bool filled,
+                                     uint32_t base_index) {
+  // Add vertices
+  for (const auto& point : points) {
+    vertices.insert(vertices.end(), {point.x, point.y, 0.0f});
+  }
+  
+  if (filled) {
+    // Simple triangulation (works for convex polygons)
+    for (size_t i = 1; i < points.size() - 1; ++i) {
+      indices.insert(indices.end(), {
+        base_index,         // First vertex
+        base_index + i,     // Current vertex
+        base_index + i + 1  // Next vertex
+      });
+    }
+  } else {
+    // Line loop for outline
+    for (size_t i = 0; i < points.size(); ++i) {
+      indices.insert(indices.end(), {
+        base_index + i,
+        base_index + ((i + 1) % points.size())
+      });
+    }
+  }
+}
+
+// Immediate rendering methods for non-batching mode
+void Canvas::RenderPointImmediate(float x, float y, const glm::vec4& color, float thickness) {
+  glm::mat4 projection, view, coord_transform;
+  GetCurrentMatrices(projection, view, coord_transform);
+  
+  // Setup shader
+  primitive_shader_.Use();
+  primitive_shader_.TrySetUniform("projection", projection);
+  primitive_shader_.TrySetUniform("view", view);
+  primitive_shader_.TrySetUniform("model", glm::mat4(1.0f));
+  primitive_shader_.TrySetUniform("coordSystemTransform", coord_transform);
+  primitive_shader_.TrySetUniform("renderMode", 0); // Points mode
+  
+  // Enable OpenGL states
+  glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LEQUAL);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  
+  glBindVertexArray(primitive_vao_);
+  glEnable(GL_PROGRAM_POINT_SIZE);
+  
+  Point point = {{x, y, 0.0f}, color, thickness};
+  glBindBuffer(GL_ARRAY_BUFFER, primitive_vbo_);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(Point), &point, GL_DYNAMIC_DRAW);
+  
+  glPointSize(thickness);
+  glDrawArrays(GL_POINTS, 0, 1);
+  glPointSize(1.0f); // Reset
+  
+  glBindVertexArray(0);
+}
+
+void Canvas::RenderLineImmediate(float x1, float y1, float x2, float y2, const glm::vec4& color, 
+                                float thickness, LineType line_type) {
+  glm::mat4 projection, view, coord_transform;
+  GetCurrentMatrices(projection, view, coord_transform);
+  
+  // Setup shader
+  primitive_shader_.Use();
+  primitive_shader_.TrySetUniform("projection", projection);
+  primitive_shader_.TrySetUniform("view", view);
+  primitive_shader_.TrySetUniform("model", glm::mat4(1.0f));
+  primitive_shader_.TrySetUniform("coordSystemTransform", coord_transform);
+  primitive_shader_.TrySetUniform("renderMode", 1); // Lines mode
+  primitive_shader_.TrySetUniform("lineType", static_cast<int>(line_type));
+  
+  // Enable OpenGL states
+  glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LEQUAL);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  
+  glBindVertexArray(primitive_vao_);
+  
+  Point vertices[] = {
+    {{x1, y1, 0.0f}, color, thickness},
+    {{x2, y2, 0.0f}, color, thickness}
+  };
+  
+  glBindBuffer(GL_ARRAY_BUFFER, primitive_vbo_);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
+  
+  glLineWidth(thickness);
+  glDrawArrays(GL_LINES, 0, 2);
+  glLineWidth(1.0f); // Reset
+  
+  glBindVertexArray(0);
+}
+
+void Canvas::RenderCircleImmediate(float x, float y, float radius, const glm::vec4& color,
+                                  bool filled, float thickness, LineType line_type) {
+  glm::mat4 projection, view, coord_transform;
+  GetCurrentMatrices(projection, view, coord_transform);
+  
+  // Setup shader
+  primitive_shader_.Use();
+  primitive_shader_.TrySetUniform("projection", projection);
+  primitive_shader_.TrySetUniform("view", view);
+  primitive_shader_.TrySetUniform("model", glm::mat4(1.0f));
+  primitive_shader_.TrySetUniform("coordSystemTransform", coord_transform);
+  
+  // Enable OpenGL states
+  glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LEQUAL);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  
+  glBindVertexArray(primitive_vao_);
+  
+  const int segments = 32;
+  std::vector<Point> vertices;
+  
+  if (filled) {
+    primitive_shader_.TrySetUniform("renderMode", 2); // Filled shapes
+    // Add center point for triangle fan
+    vertices.push_back({{x, y, 0.0f}, color, thickness});
+  } else {
+    primitive_shader_.TrySetUniform("renderMode", 3); // Outlined shapes
+    primitive_shader_.TrySetUniform("lineType", static_cast<int>(line_type));
+  }
+  
+  // Generate circle points
+  for (int i = 0; i <= segments; i++) {
+    float angle = 2.0f * M_PI * i / segments;
+    float px = x + radius * std::cos(angle);
+    float py = y + radius * std::sin(angle);
+    vertices.push_back({{px, py, 0.0f}, color, thickness});
+  }
+  
+  glBindBuffer(GL_ARRAY_BUFFER, primitive_vbo_);
+  glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Point), vertices.data(), GL_DYNAMIC_DRAW);
+  
+  if (filled) {
+    glDrawArrays(GL_TRIANGLE_FAN, 0, vertices.size());
+  } else {
+    glLineWidth(thickness);
+    glDrawArrays(GL_LINE_LOOP, 1, segments); // Skip center point for outline
+    glLineWidth(1.0f);
+  }
+  
+  glBindVertexArray(0);
+}
+
+void Canvas::RenderRectangleImmediate(float x, float y, float width, float height,
+                                     const glm::vec4& color, bool filled, float thickness, 
+                                     LineType line_type) {
+  glm::mat4 projection, view, coord_transform;
+  GetCurrentMatrices(projection, view, coord_transform);
+  
+  // Setup shader
+  primitive_shader_.Use();
+  primitive_shader_.TrySetUniform("projection", projection);
+  primitive_shader_.TrySetUniform("view", view);
+  primitive_shader_.TrySetUniform("model", glm::mat4(1.0f));
+  primitive_shader_.TrySetUniform("coordSystemTransform", coord_transform);
+  
+  // Enable OpenGL states
+  glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LEQUAL);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  
+  glBindVertexArray(primitive_vao_);
+  
+  // Generate rectangle vertices
+  Point vertices[4] = {
+    {{x, y, 0.0f}, color, thickness},                    // bottom-left
+    {{x + width, y, 0.0f}, color, thickness},            // bottom-right  
+    {{x + width, y + height, 0.0f}, color, thickness},   // top-right
+    {{x, y + height, 0.0f}, color, thickness}            // top-left
+  };
+  
+  glBindBuffer(GL_ARRAY_BUFFER, primitive_vbo_);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
+  
+  if (filled) {
+    primitive_shader_.TrySetUniform("renderMode", 2); // Filled shapes
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+  } else {
+    primitive_shader_.TrySetUniform("renderMode", 3); // Outlined shapes
+    primitive_shader_.TrySetUniform("lineType", static_cast<int>(line_type));
+    glLineWidth(thickness);
+    glDrawArrays(GL_LINE_LOOP, 0, 4);
+    glLineWidth(1.0f);
+  }
+  
+  glBindVertexArray(0);
+}
+
+void Canvas::RenderEllipseImmediate(float x, float y, float rx, float ry, float angle,
+                                   float start_angle, float end_angle, const glm::vec4& color,
+                                   bool filled, float thickness, LineType line_type) {
+  // For ellipses, use the shape renderer if available, or fall back to circle approximation
+  if (shape_renderer_) {
+    // Create ellipse data structure
+    Ellipse ellipse;
+    ellipse.center = glm::vec3(x, y, 0.0f);
+    ellipse.rx = rx;
+    ellipse.ry = ry; 
+    ellipse.angle = angle;
+    ellipse.start_angle = start_angle;
+    ellipse.end_angle = end_angle;
+    ellipse.color = color;
+    ellipse.filled = filled;
+    ellipse.thickness = thickness;
+    ellipse.line_type = line_type;
+    ellipse.num_segments = 32;
+    
+    auto vertices = ShapeGenerators::GenerateEllipseVertices(ellipse);
+    VertexLayout layout = VertexLayout::PositionOnly();
+    
+    RenderParams params;
+    params.color = color;
+    params.thickness = thickness;
+    params.filled = filled;
+    params.primitive_type = filled ? GL_TRIANGLE_FAN : GL_LINE_LOOP;
+    params.vertex_count = vertices.size() / 3;
+    
+    shape_renderer_->RenderShape(vertices, layout, params);
+  } else {
+    // Simple fallback: render as circle using average radius
+    float avg_radius = (rx + ry) / 2.0f;
+    RenderCircleImmediate(x, y, avg_radius, color, filled, thickness, line_type);
+  }
+}
+
+void Canvas::RenderPolygonImmediate(const std::vector<glm::vec2>& points, const glm::vec4& color,
+                                   bool filled, float thickness, LineType line_type) {
+  if (shape_renderer_) {
+    // Create polygon data structure
+    Polygon polygon;
+    polygon.vertices.reserve(points.size());
+    for (const auto& p : points) {
+      polygon.vertices.push_back(glm::vec3(p, 0.0f));
+    }
+    polygon.color = color;
+    polygon.filled = filled;
+    polygon.thickness = thickness;
+    polygon.line_type = line_type;
+    
+    auto vertices = ShapeGenerators::GeneratePolygonVertices(polygon);
+    VertexLayout layout = VertexLayout::PositionOnly();
+    
+    RenderParams params;
+    params.color = color;
+    params.thickness = thickness;
+    params.filled = filled;
+    params.primitive_type = filled ? GL_TRIANGLE_FAN : GL_LINE_LOOP;
+    params.vertex_count = vertices.size() / 3;
+    
+    shape_renderer_->RenderShape(vertices, layout, params);
+  } else {
+    // Simple fallback: render as line loop
+    glm::mat4 projection, view, coord_transform;
+    GetCurrentMatrices(projection, view, coord_transform);
+    
+    primitive_shader_.Use();
+    primitive_shader_.TrySetUniform("projection", projection);
+    primitive_shader_.TrySetUniform("view", view);
+    primitive_shader_.TrySetUniform("model", glm::mat4(1.0f));
+    primitive_shader_.TrySetUniform("coordSystemTransform", coord_transform);
+    primitive_shader_.TrySetUniform("renderMode", 3); // Outlined shapes
+    primitive_shader_.TrySetUniform("lineType", static_cast<int>(line_type));
+    
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+    glBindVertexArray(primitive_vao_);
+    
+    std::vector<Point> vertices;
+    for (const auto& p : points) {
+      vertices.push_back({{p.x, p.y, 0.0f}, color, thickness});
+    }
+    
+    glBindBuffer(GL_ARRAY_BUFFER, primitive_vbo_);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Point), vertices.data(), GL_DYNAMIC_DRAW);
+    
+    glLineWidth(thickness);
+    glDrawArrays(GL_LINE_LOOP, 0, vertices.size());
+    glLineWidth(1.0f);
+    
+    glBindVertexArray(0);
+  }
+}
+
+void Canvas::RenderSinglePolygon(const Polygon& polygon, const RenderContext& context) {
+  if (individual_strategy_) {
+    // Cast to IndividualRenderStrategy and call the render method
+    auto* strategy = static_cast<IndividualRenderStrategy*>(individual_strategy_.get());
+    strategy->RenderSinglePolygon(polygon, context);
+  }
+}
+
+void Canvas::RenderSingleEllipse(const Ellipse& ellipse, const RenderContext& context) {
+  if (individual_strategy_) {
+    // Cast to IndividualRenderStrategy and call the render method
+    auto* strategy = static_cast<IndividualRenderStrategy*>(individual_strategy_.get());
+    strategy->RenderSingleEllipse(ellipse, context);
+  }
+}
+
+void Canvas::GetCurrentMatrices(glm::mat4& projection, glm::mat4& view, glm::mat4& coord_transform) {
+  // For immediate rendering, we need to get the current matrices
+  // This is a simplified implementation - in a real application, you'd get these from the current render context
+  // For now, we'll use identity matrices as a fallback
+  projection = glm::mat4(1.0f);
+  view = glm::mat4(1.0f);
+  coord_transform = glm::mat4(1.0f);
+  
+  // TODO: In a complete implementation, this should retrieve the current view/projection matrices
+  // from the active rendering context or scene manager
 }
 
 }  // namespace quickviz

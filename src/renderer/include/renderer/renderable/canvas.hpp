@@ -28,6 +28,22 @@
 #include "renderer/renderable/details/canvas_batching.hpp"
 #include "renderer/renderable/details/canvas_performance.hpp"
 
+// Forward declarations for internal components
+namespace quickviz {
+
+// Forward declarations for shape and render context types
+struct Polygon;
+struct Ellipse;
+struct RenderContext;
+
+namespace internal {
+class OpenGLResourcePool;
+class EfficientShapeRenderer;
+class CanvasDataManager;
+class AdaptiveStrategySelector;
+}
+}
+
 // Forward declarations for render strategies
 namespace quickviz {
 class RenderStrategy;
@@ -80,7 +96,7 @@ class Canvas : public OpenGlObject {
 
   // Performance and rendering methods
   void SetBatchingEnabled(bool enabled);
-  bool IsBatchingEnabled() const { return batching_enabled_; }
+  bool IsBatchingEnabled() const;
   void FlushBatches();  // Force immediate rendering of all batches
 
   // Performance monitoring (moved to details/canvas_performance.hpp)
@@ -112,55 +128,8 @@ class Canvas : public OpenGlObject {
   void SetupBackgroundImage(int width, int height, int channels,
                             unsigned char* data);
 
-  // Process pending updates
+  // Data management helper (delegates to data manager)
   void ProcessPendingUpdates();
-
-  // Structure to hold pending updates
-  struct PendingUpdate {
-    enum class Type {
-      kPoint,
-      kLine,
-      kRectangle,
-      kCircle,
-      kEllipse,
-      kPolygon,
-      kClear
-    };
-
-    Type type;
-    glm::vec4 color;
-    float thickness;
-    LineType line_type;
-    bool filled;
-
-    // Command-specific parameters
-    struct ellipse_params {
-      float x, y, rx, ry, angle, start_angle, end_angle;
-    };
-
-    union {
-      struct {  // Point parameters
-        float x, y;
-      } point;
-
-      struct {  // Line parameters
-        float x1, y1, x2, y2;
-      } line;
-
-      struct {  // Rectangle parameters
-        float x, y, width, height;
-      } rect;
-
-      struct {  // Circle parameters
-        float x, y, radius;
-      } circle;
-
-      ellipse_params ellipse;
-    };
-
-    // Polygon vertices (can't be in union)
-    std::vector<glm::vec2> polygon_vertices;
-  };
 
   // Background image texture
   glm::vec2 background_image_size_{0.0f, 0.0f};
@@ -172,23 +141,60 @@ class Canvas : public OpenGlObject {
   uint32_t background_vbo_ = 0;
   ShaderProgram background_shader_;
 
-  // Thread-safe data structures
-  std::mutex data_mutex_;
+  // Core data storage - original working system
+  std::unique_ptr<CanvasData> data_;
+  mutable std::mutex data_mutex_;
+  
+  // Pending updates system
+  struct PendingUpdate {
+    enum class Type {
+      kPoint, kLine, kRectangle, kCircle, kEllipse, kPolygon, kClear
+    };
+    Type type;
+    glm::vec4 color;
+    float thickness;
+    LineType line_type;
+    bool filled;
+    
+    struct ellipse_params {
+      float x, y, rx, ry, angle, start_angle, end_angle;
+    };
+    
+    union {
+      struct { float x, y; } point;
+      struct { float x1, y1, x2, y2; } line;
+      struct { float x, y, width, height; } rect;
+      struct { float x, y, radius; } circle;
+      ellipse_params ellipse;
+    };
+    
+    std::vector<glm::vec2> polygon_vertices;
+  };
+  
   std::queue<PendingUpdate> pending_updates_;
   std::atomic<bool> has_pending_updates_{false};
-  std::unique_ptr<CanvasData> data_;
+  
+  // Batch data structures - original working system
+  std::unordered_map<LineType, LineBatch> line_batches_;
+  ShapeBatch filled_shape_batch_;
+  std::unordered_map<LineType, ShapeBatch> outline_shape_batches_;
+  
+  // Batch order tracking for preserving draw order
+  BatchOrderTracker batch_order_tracker_;
 
   // Primitive rendering gpu resources
   uint32_t primitive_vao_ = 0;
   uint32_t primitive_vbo_ = 0;
   ShaderProgram primitive_shader_;
 
-  // Batching-related members
-  bool batching_enabled_ =
-      true;  // Re-enabled, ellipse/polygon renderMode fixed
-  std::unordered_map<LineType, LineBatch> line_batches_;
-  ShapeBatch filled_shape_batch_;
-  std::unordered_map<LineType, ShapeBatch> outline_shape_batches_;
+  // Original working render strategy system
+  RenderStrategy* current_render_strategy_;
+  std::unique_ptr<BatchedRenderStrategy> batched_strategy_;
+  std::unique_ptr<IndividualRenderStrategy> individual_strategy_;
+  std::unique_ptr<ShapeRenderer> shape_renderer_;
+
+  // Batching configuration
+  bool batching_enabled_ = true;
 
   // Batch management methods
   void InitializeBatches();
@@ -196,6 +202,8 @@ class Canvas : public OpenGlObject {
   void UpdateBatches();
   void RenderBatches(const glm::mat4& projection, const glm::mat4& view,
                      const glm::mat4& coord_transform);
+  void RenderBatchesInOrder(const glm::mat4& projection, const glm::mat4& view,
+                           const glm::mat4& coord_transform);
 
   // Individual shape rendering for non-batched shapes
   void RenderIndividualShapes(const CanvasData& data,
@@ -203,16 +211,44 @@ class Canvas : public OpenGlObject {
                               const glm::mat4& view,
                               const glm::mat4& coord_transform);
 
+  // Single shape rendering methods for selective batching
+  void RenderSinglePolygon(const Polygon& polygon, const RenderContext& context);
+  void RenderSingleEllipse(const Ellipse& ellipse, const RenderContext& context);
+
+  // Phase 1.2: Resource pool helper for efficient individual shape rendering
+  void RenderShapeWithPool(const std::vector<float>& vertices, 
+                          const glm::vec4& color, float thickness,
+                          unsigned int primitive_type, LineType line_type = LineType::kSolid);
+  
+  // Immediate rendering methods for non-batching mode
+  void RenderPointImmediate(float x, float y, const glm::vec4& color, float thickness);
+  void RenderLineImmediate(float x1, float y1, float x2, float y2, const glm::vec4& color, 
+                          float thickness, LineType line_type);
+  void RenderRectangleImmediate(float x, float y, float width, float height,
+                               const glm::vec4& color, bool filled, float thickness, 
+                               LineType line_type);
+  void RenderCircleImmediate(float x, float y, float radius, const glm::vec4& color,
+                            bool filled, float thickness, LineType line_type);
+  void RenderEllipseImmediate(float x, float y, float rx, float ry, float angle,
+                             float start_angle, float end_angle, const glm::vec4& color,
+                             bool filled, float thickness, LineType line_type);
+  void RenderPolygonImmediate(const std::vector<glm::vec2>& points, const glm::vec4& color,
+                             bool filled, float thickness, LineType line_type);
+  
+  // Helper to get current view/projection matrices for immediate rendering
+  void GetCurrentMatrices(glm::mat4& projection, glm::mat4& view, glm::mat4& coord_transform);
+
   // Shape generation helpers
   void GenerateCircleVertices(float cx, float cy, float radius, int segments,
                               std::vector<float>& vertices,
                               std::vector<uint32_t>& indices, bool filled,
-                              uint32_t base_index);
+                              uint32_t base_index, uint32_t sequence_number = 0);
   void GenerateRectangleVertices(float x, float y, float width, float height,
                                  std::vector<float>& vertices,
                                  std::vector<uint32_t>& indices, bool filled,
-                                 uint32_t base_index);
-  void GenerateEllipseVertices(const PendingUpdate::ellipse_params& ellipse,
+                                 uint32_t base_index, uint32_t sequence_number = 0);
+  void GenerateEllipseVertices(float x, float y, float rx, float ry, float angle,
+                               float start_angle, float end_angle,
                                std::vector<float>& vertices,
                                std::vector<uint32_t>& indices, bool filled,
                                uint32_t base_index);
@@ -226,17 +262,6 @@ class Canvas : public OpenGlObject {
 
   // Performance tuning and memory optimization
   PerformanceConfig perf_config_;
-
-  // Render strategy system (refactored from monolithic OnDraw)
-  RenderStrategy* current_render_strategy_;
-  std::unique_ptr<BatchedRenderStrategy> batched_strategy_;
-  std::unique_ptr<IndividualRenderStrategy> individual_strategy_;
-
-  // Unified shape renderer (Phase 2 refactoring)
-  std::unique_ptr<ShapeRenderer> shape_renderer_;
-
-  // Helper method to select appropriate render strategy
-  RenderStrategy* SelectRenderStrategy(const CanvasData& data);
 
   // Memory tracking
   struct MemoryTracker {

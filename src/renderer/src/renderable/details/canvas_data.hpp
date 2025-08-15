@@ -27,6 +27,7 @@ struct Point {
   glm::vec3 position;
   glm::vec4 color;
   float size;
+  uint32_t sequence_number = 0;  // For maintaining draw order
 };
 
 // Line structure
@@ -36,6 +37,7 @@ struct Line {
   glm::vec4 color;
   float thickness;
   LineType line_type;
+  uint32_t sequence_number = 0;  // For maintaining draw order
 };
 
 // Rectangle structure
@@ -47,6 +49,7 @@ struct Rectangle {
   bool filled;
   float thickness;
   LineType line_type;
+  uint32_t sequence_number = 0;  // For maintaining draw order
 };
 
 // Circle structure
@@ -58,6 +61,7 @@ struct Circle {
   float thickness;
   LineType line_type;
   int num_segments;  // Number of segments to approximate the circle
+  uint32_t sequence_number = 0;  // For maintaining draw order
 };
 
 // Ellipse structure
@@ -73,6 +77,7 @@ struct Ellipse {
   float thickness;
   LineType line_type;
   int num_segments;  // Number of segments to approximate the ellipse
+  uint32_t sequence_number = 0;  // For maintaining draw order
 };
 
 // Polygon structure
@@ -82,6 +87,7 @@ struct Polygon {
   bool filled;
   float thickness;
   LineType line_type;
+  uint32_t sequence_number = 0;  // For maintaining draw order
 };
 
 struct CanvasData {
@@ -91,6 +97,9 @@ struct CanvasData {
   std::vector<Circle> circles;
   std::vector<Ellipse> ellipses;
   std::vector<Polygon> polygons;
+  
+  // Sequence counter for maintaining draw order across all primitive types
+  uint32_t next_sequence_number = 0;
 
   void Clear() {
     points.clear();
@@ -99,6 +108,7 @@ struct CanvasData {
     circles.clear();
     ellipses.clear();
     polygons.clear();
+    next_sequence_number = 0;
   }
 
   void AddPoint(float x, float y, const glm::vec4& color, float thickness) {
@@ -106,6 +116,7 @@ struct CanvasData {
     point.position = glm::vec3(x, y, 0.0f);
     point.color = color;
     point.size = thickness;
+    point.sequence_number = next_sequence_number++;
     points.push_back(point);
   }
 
@@ -117,6 +128,7 @@ struct CanvasData {
     line.color = color;
     line.thickness = thickness;
     line.line_type = line_type;
+    line.sequence_number = next_sequence_number++;
     lines.push_back(line);
   }
 
@@ -131,6 +143,7 @@ struct CanvasData {
     rect.filled = filled;
     rect.thickness = thickness;
     rect.line_type = line_type;
+    rect.sequence_number = next_sequence_number++;
     rectangles.push_back(rect);
   }
 
@@ -144,6 +157,7 @@ struct CanvasData {
     circle.thickness = thickness;
     circle.line_type = line_type;
     circle.num_segments = 32;  // Default number of segments
+    circle.sequence_number = next_sequence_number++;
     circles.push_back(circle);
   }
 
@@ -162,6 +176,7 @@ struct CanvasData {
     ellipse.thickness = thickness;
     ellipse.line_type = line_type;
     ellipse.num_segments = 32;  // Default number of segments
+    ellipse.sequence_number = next_sequence_number++;
     ellipses.push_back(ellipse);
   }
 
@@ -176,6 +191,7 @@ struct CanvasData {
     polygon.filled = filled;
     polygon.thickness = thickness;
     polygon.line_type = line_type;
+    polygon.sequence_number = next_sequence_number++;
     polygons.push_back(polygon);
   }
 };

@@ -31,6 +31,10 @@ public:
   void Render(const CanvasData& data, const RenderContext& context) override;
   bool CanHandle(const CanvasData& data) const override;
   
+  // Public single shape rendering methods for Canvas access
+  void RenderSingleEllipse(const Ellipse& ellipse, const RenderContext& context);
+  void RenderSinglePolygon(const Polygon& polygon, const RenderContext& context);
+  
 private:
   // Individual shape rendering methods
   void RenderPoints(const CanvasData& data, const RenderContext& context);
@@ -39,6 +43,12 @@ private:
   void RenderCircles(const CanvasData& data, const RenderContext& context);
   void RenderEllipses(const CanvasData& data, const RenderContext& context);
   void RenderPolygons(const CanvasData& data, const RenderContext& context);
+  
+  // Single primitive rendering methods for sequence-ordered rendering
+  void RenderSinglePoint(const Point& point, const RenderContext& context);
+  void RenderSingleLine(const Line& line, const RenderContext& context);
+  void RenderSingleRectangle(const Rectangle& rect, const RenderContext& context);
+  void RenderSingleCircle(const Circle& circle, const RenderContext& context);
   
   // Helper methods
   void SetupCommonRenderState(const RenderContext& context);
