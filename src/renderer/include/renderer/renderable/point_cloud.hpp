@@ -18,6 +18,7 @@
 #include "renderer/interface/opengl_object.hpp"
 #include "renderer/shader_program.hpp"
 #include "renderer/renderable/types.hpp"
+#include "renderer/renderable/layer_manager.hpp"
 
 namespace quickviz {
 class PointCloud : public OpenGlObject {
@@ -67,6 +68,42 @@ class PointCloud : public OpenGlObject {
   }
   void SetRenderMode(PointMode mode) { render_mode_ = mode; }
 
+  // Layer management
+  LayerManager& GetLayerManager() { return layer_manager_; }
+  const LayerManager& GetLayerManager() const { return layer_manager_; }
+  
+  std::shared_ptr<PointLayer> CreateLayer(const std::string& name, int priority = 0);
+  std::shared_ptr<PointLayer> GetLayer(const std::string& name);
+  bool RemoveLayer(const std::string& name);
+  void ClearAllLayers();
+  
+  // Point highlighting
+  void HighlightPoints(const std::vector<size_t>& point_indices, 
+                      const glm::vec3& color,
+                      const std::string& layer_name = "highlight",
+                      float size_multiplier = 1.5f);
+  void HighlightPoint(size_t point_index, 
+                     const glm::vec3& color,
+                     const std::string& layer_name = "highlight",
+                     float size_multiplier = 1.5f);
+  void ClearHighlights(const std::string& layer_name = "highlight");
+  
+  // Point selection support  
+  void SetSelectedPoints(const std::vector<size_t>& point_indices, 
+                        const glm::vec3& selection_color = glm::vec3(1.0f, 1.0f, 0.0f));
+  void AddToSelection(const std::vector<size_t>& point_indices);
+  void RemoveFromSelection(const std::vector<size_t>& point_indices);
+  void ClearSelection();
+  const std::vector<size_t>& GetSelectedPoints() const { return selected_points_; }
+  
+  // Data access for selection and PCL bridge
+  size_t GetPointCount() const { return points_.size(); }
+  const std::vector<glm::vec3>& GetPoints() const { return points_; }
+  const std::vector<glm::vec3>& GetColors() const { return colors_; }
+  
+  // Convert 3D points to 4D for PCL bridge compatibility
+  std::vector<glm::vec4> GetPointsAs4D() const;
+
   void AllocateGpuResources() override;
   void ReleaseGpuResources() noexcept override;
   void OnDraw(const glm::mat4& projection, const glm::mat4& view,
@@ -107,6 +144,15 @@ class PointCloud : public OpenGlObject {
   BufferUpdateStrategy buffer_update_strategy_ = BufferUpdateStrategy::kAuto;
   size_t buffer_update_threshold_ = 10000;  // Default threshold: 10,000 points
   bool needs_update_ = false;
+  
+  // Layer management
+  LayerManager layer_manager_;
+  std::vector<size_t> selected_points_;
+  
+  // Layer rendering support
+  void UpdateLayerRendering();
+  void ApplyLayerEffects(const glm::mat4& projection, const glm::mat4& view, 
+                        const glm::mat4& coord_transform);
 };
 }  // namespace quickviz
 

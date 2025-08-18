@@ -13,6 +13,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <stdexcept>
 #include <iostream>
+#include <algorithm>
 
 #include "renderer/shader.hpp"
 
@@ -379,5 +380,163 @@ void PointCloud::OnDraw(const glm::mat4& projection, const glm::mat4& view,
   } catch (const std::exception& e) {
     std::cerr << "Error in OnDraw: " << e.what() << std::endl;
   }
+  
+  // Apply layer effects after base rendering
+  ApplyLayerEffects(projection, view, coord_transform);
 }
+
+// Layer management implementations
+std::shared_ptr<PointLayer> PointCloud::CreateLayer(const std::string& name, int priority) {
+  return layer_manager_.CreateLayer(name, priority);
+}
+
+std::shared_ptr<PointLayer> PointCloud::GetLayer(const std::string& name) {
+  return layer_manager_.GetLayer(name);
+}
+
+bool PointCloud::RemoveLayer(const std::string& name) {
+  return layer_manager_.RemoveLayer(name);
+}
+
+void PointCloud::ClearAllLayers() {
+  layer_manager_.ClearAllLayers();
+}
+
+void PointCloud::HighlightPoints(const std::vector<size_t>& point_indices, 
+                                const glm::vec3& color,
+                                const std::string& layer_name,
+                                float size_multiplier) {
+  auto layer = layer_manager_.GetLayer(layer_name);
+  if (!layer) {
+    layer = layer_manager_.CreateLayer(layer_name, 100); // High priority for highlights
+  }
+  
+  layer->SetPoints(point_indices);
+  layer->SetColor(color);
+  layer->SetPointSizeMultiplier(size_multiplier);
+  layer->SetHighlightMode(PointLayer::HighlightMode::kColorAndSize);
+  layer->SetVisible(true);
+}
+
+void PointCloud::HighlightPoint(size_t point_index, 
+                               const glm::vec3& color,
+                               const std::string& layer_name,
+                               float size_multiplier) {
+  HighlightPoints({point_index}, color, layer_name, size_multiplier);
+}
+
+void PointCloud::ClearHighlights(const std::string& layer_name) {
+  auto layer = layer_manager_.GetLayer(layer_name);
+  if (layer) {
+    layer->ClearPoints();
+  }
+}
+
+void PointCloud::SetSelectedPoints(const std::vector<size_t>& point_indices, 
+                                  const glm::vec3& selection_color) {
+  selected_points_ = point_indices;
+  
+  // Create or update selection layer
+  auto selection_layer = layer_manager_.GetLayer("selection");
+  if (!selection_layer) {
+    selection_layer = layer_manager_.CreateLayer("selection", 200); // Very high priority
+  }
+  
+  selection_layer->SetPoints(point_indices);
+  selection_layer->SetColor(selection_color);
+  selection_layer->SetHighlightMode(PointLayer::HighlightMode::kColorAndSize);
+  selection_layer->SetPointSizeMultiplier(1.8f);
+  selection_layer->SetVisible(true);
+}
+
+void PointCloud::AddToSelection(const std::vector<size_t>& point_indices) {
+  // Add to internal selection list
+  selected_points_.insert(selected_points_.end(), point_indices.begin(), point_indices.end());
+  
+  // Remove duplicates
+  std::sort(selected_points_.begin(), selected_points_.end());
+  selected_points_.erase(std::unique(selected_points_.begin(), selected_points_.end()), 
+                        selected_points_.end());
+  
+  SetSelectedPoints(selected_points_);
+}
+
+void PointCloud::RemoveFromSelection(const std::vector<size_t>& point_indices) {
+  for (size_t idx : point_indices) {
+    selected_points_.erase(std::remove(selected_points_.begin(), selected_points_.end(), idx),
+                          selected_points_.end());
+  }
+  
+  SetSelectedPoints(selected_points_);
+}
+
+void PointCloud::ClearSelection() {
+  selected_points_.clear();
+  auto selection_layer = layer_manager_.GetLayer("selection");
+  if (selection_layer) {
+    selection_layer->ClearPoints();
+  }
+}
+
+std::vector<glm::vec4> PointCloud::GetPointsAs4D() const {
+  std::vector<glm::vec4> points_4d;
+  points_4d.reserve(points_.size());
+  
+  for (const auto& point : points_) {
+    points_4d.push_back(glm::vec4(point, 1.0f)); // w = 1.0f as default
+  }
+  
+  return points_4d;
+}
+
+void PointCloud::ApplyLayerEffects(const glm::mat4& projection, const glm::mat4& view, 
+                                  const glm::mat4& coord_transform) {
+  if (!IsGpuResourcesAllocated()) return;
+  
+  auto render_data = layer_manager_.GenerateRenderData();
+  if (render_data.empty()) return;
+  
+  // Enable blending for layer effects
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glEnable(GL_PROGRAM_POINT_SIZE);
+  glEnable(GL_DEPTH_TEST);
+  
+  shader_.Use();
+  shader_.SetUniform("projection", projection);
+  shader_.SetUniform("view", view);
+  shader_.SetUniform("coord_transform", coord_transform);
+  shader_.SetUniform("opacity", 1.0f); // Layer opacity handled separately
+  
+  glBindVertexArray(vao_);
+  
+  // Render each layer
+  for (const auto& layer_data : render_data) {
+    if (layer_data.point_indices.empty()) continue;
+    
+    // Set layer-specific uniforms
+    float layer_point_size = point_size_ * layer_data.point_size_multiplier;
+    shader_.SetUniform("pointSize", layer_point_size);
+    
+    // For now, render all points with layer color
+    // TODO: Implement proper per-point layer rendering with index buffers
+    shader_.TrySetUniform("layerColor", layer_data.color);
+    shader_.TrySetUniform("layerOpacity", layer_data.opacity);
+    
+    // This is a simplified version - ideally we'd use index buffers
+    // to render only the points in this layer
+    for (size_t idx : layer_data.point_indices) {
+      if (idx < active_points_) {
+        glDrawArrays(GL_POINTS, idx, 1);
+      }
+    }
+  }
+  
+  glBindVertexArray(0);
+  glDisable(GL_BLEND);
+  glDisable(GL_PROGRAM_POINT_SIZE);
+  glDisable(GL_DEPTH_TEST);
+  glUseProgram(0);
+}
+
 }  // namespace quickviz

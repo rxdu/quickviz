@@ -36,6 +36,9 @@ target_link_libraries(test_nav_map_rendering PRIVATE renderer)
 add_executable(test_camera_enhanced test_camera_enhanced.cpp)
 target_link_libraries(test_camera_enhanced PRIVATE renderer)
 
+add_executable(test_layer_system test_layer_system.cpp)
+target_link_libraries(test_layer_system PRIVATE renderer)
+
 # Silence PCL-era policy warnings, but keep modern behavior where safe
 if(POLICY CMP0144)
   cmake_policy(SET CMP0144 NEW)

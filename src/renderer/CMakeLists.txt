@@ -25,6 +25,7 @@ add_library(renderer
     src/renderable/details/data_aware_render_strategy.cpp
     src/renderable/coordinate_frame.cpp
     src/renderable/texture.cpp
+    src/renderable/layer_manager.cpp
     ## PCL bridge utilities (optional, depends on PCL)
     )
 
