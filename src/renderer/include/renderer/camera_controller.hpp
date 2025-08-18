@@ -40,6 +40,10 @@ class CameraController {
 
   float GetYaw() const { return camera_.GetYaw(); }
   void SetYaw(float yaw);
+  
+  // 3D translation support
+  glm::vec3 GetOrbitTarget() const { return orbit_target_; }
+  void SetOrbitTarget(const glm::vec3& target);
 
  private:
   static constexpr float initial_orbit_distance = 10.0f;

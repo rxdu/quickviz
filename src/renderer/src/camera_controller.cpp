@@ -79,6 +79,13 @@ void CameraController::SetYaw(float yaw) {
   }
 }
 
+void CameraController::SetOrbitTarget(const glm::vec3& target) {
+  orbit_target_ = target;
+  if (mode_ == Mode::kOrbit) {
+    UpdateOrbitPosition();
+  }
+}
+
 void CameraController::ProcessKeyboard(
     CameraController::CameraMovement direction, float delta_time) {
   if (mode_ == Mode::kOrbit) return;
@@ -104,11 +111,57 @@ void CameraController::ProcessMouseMovement(float x_offset, float y_offset) {
   switch (mode_) {
     case Mode::kFirstPerson:
     case Mode::kFreeLook:
-      camera_.ProcessMouseMovement(x_offset, y_offset);
+      if (active_mouse_button_ == MouseButton::kLeft) {
+        // Left mouse: standard look around
+        camera_.ProcessMouseMovement(x_offset, y_offset);
+      } else if (active_mouse_button_ == MouseButton::kMiddle) {
+        // Middle mouse: translate perpendicular to viewing direction
+        float sensitivity = 0.01f;
+        
+        // Get camera's right and up vectors
+        glm::vec3 right = camera_.GetRight();
+        glm::vec3 up = camera_.GetUp();
+        
+        // Calculate translation in world space
+        glm::vec3 position = camera_.GetPosition();
+        glm::vec3 translation = (-x_offset * right + y_offset * up) * sensitivity;
+        
+        camera_.SetPosition(position + translation);
+      } else if (active_mouse_button_ == MouseButton::kRight) {
+        // Right mouse: alternative - could be used for different behavior
+        camera_.ProcessMouseMovement(x_offset, y_offset);
+      }
       break;
     case Mode::kOrbit:
-      camera_.ProcessMouseMovement(x_offset, y_offset);
-      UpdateOrbitPosition();
+      if (active_mouse_button_ == MouseButton::kLeft) {
+        // Left mouse: rotation around target
+        camera_.ProcessMouseMovement(x_offset, y_offset);
+        UpdateOrbitPosition();
+      } else if (active_mouse_button_ == MouseButton::kMiddle) {
+        // Middle mouse: translate the orbit target
+        // Calculate movement in camera's local coordinate system
+        float sensitivity = 0.01f;
+        
+        // Scale movement based on distance for consistent speed
+        float distance_factor = orbit_distance_ / 10.0f;
+        if (distance_factor < 0.1f) distance_factor = 0.1f;
+        
+        // Get camera's right and up vectors
+        glm::vec3 right = camera_.GetRight();
+        glm::vec3 up = camera_.GetUp();
+        
+        // Calculate translation in world space
+        glm::vec3 translation = (-x_offset * right + y_offset * up) * 
+                               sensitivity * distance_factor;
+        
+        // Update orbit target
+        orbit_target_ += translation;
+        UpdateOrbitPosition();
+      } else if (active_mouse_button_ == MouseButton::kRight) {
+        // Right mouse: could be used for alternative rotation or other function
+        camera_.ProcessMouseMovement(x_offset, y_offset);
+        UpdateOrbitPosition();
+      }
       break;
     case Mode::kTopDown:
       // Handle mouse movement for top-down view based on mouse button

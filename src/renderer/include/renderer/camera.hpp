@@ -56,6 +56,8 @@ class Camera {
   void SetWorldUpVector(glm::vec3 up);
   void LookAt(const glm::vec3& target);
   glm::vec3 GetFront() const { return current_state_.front; }
+  glm::vec3 GetUp() const { return current_state_.up; }
+  glm::vec3 GetRight() const { return current_state_.right; }
 
   void SetPosition(const glm::vec3& position);
   glm::vec3 GetPosition() const { return current_state_.position; }
