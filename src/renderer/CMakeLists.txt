@@ -25,7 +25,23 @@ add_library(renderer
     src/renderable/details/data_aware_render_strategy.cpp
     src/renderable/coordinate_frame.cpp
     src/renderable/texture.cpp
+    ## PCL bridge utilities (optional, depends on PCL)
     )
+
+# Check for PCL and conditionally compile PCL bridge
+find_package(PCL QUIET COMPONENTS common io)
+if(PCL_FOUND)
+    message(STATUS "Found PCL: ${PCL_VERSION} - enabling PCL bridge utilities")
+    target_sources(renderer PRIVATE
+        src/pcl_bridge/pcl_conversions.cpp
+        src/pcl_bridge/pcl_visualization.cpp
+    )
+    target_include_directories(renderer PRIVATE ${PCL_INCLUDE_DIRS})
+    target_link_libraries(renderer PRIVATE ${PCL_LIBRARIES})
+    target_compile_definitions(renderer PUBLIC QUICKVIZ_WITH_PCL PRIVATE ${PCL_DEFINITIONS})
+else()
+    message(STATUS "PCL not found - PCL bridge utilities will not be available")
+endif()
 target_link_libraries(renderer PUBLIC core imcore imview stb
     Threads::Threads
     OpenGL::GL)
