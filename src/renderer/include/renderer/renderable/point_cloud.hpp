@@ -29,7 +29,8 @@ class PointCloud : public OpenGlObject {
   enum class ColorMode {
     kStatic,       // use default color
     kHeightField,  // use z-coordinate of points as height field
-    kScalarField   // use last component of points as scalar field (x,y,z,scalar)
+    kScalarField,  // use last component of points as scalar field (x,y,z,scalar)
+    kRGB           // use provided RGB colors per point
   };
 
   // Buffer update strategy
@@ -42,6 +43,10 @@ class PointCloud : public OpenGlObject {
   // Point data update methods
   void SetPoints(const std::vector<glm::vec4>& points, ColorMode color_mode);
   void SetPoints(std::vector<glm::vec4>&& points, ColorMode color_mode);
+  
+  // RGB point cloud support
+  void SetPoints(const std::vector<glm::vec3>& points, const std::vector<glm::vec3>& colors);
+  void SetPoints(std::vector<glm::vec3>&& points, std::vector<glm::vec3>&& colors);
 
   // Buffer management
   void PreallocateBuffers(size_t max_points);

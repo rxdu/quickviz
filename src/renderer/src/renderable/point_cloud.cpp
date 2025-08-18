@@ -185,6 +185,56 @@ void PointCloud::SetPoints(std::vector<glm::vec4>&& points, ColorMode color_mode
   needs_update_ = true;
 }
 
+void PointCloud::SetPoints(const std::vector<glm::vec3>& points, const std::vector<glm::vec3>& colors) {
+  if (points.empty() || colors.empty()) return;
+  if (points.size() != colors.size()) {
+    std::cerr << "Error: Points and colors vectors must have the same size" << std::endl;
+    return;
+  }
+
+  // Resize vectors if needed
+  if (!buffers_preallocated_ || points.size() > buffer_capacity_) {
+    points_.resize(points.size());
+    colors_.resize(points.size());
+    active_points_ = points.size();
+  } else {
+    active_points_ = points.size();
+  }
+
+  // Copy points and colors directly
+  for (size_t i = 0; i < points.size(); ++i) {
+    points_[i] = points[i];
+    colors_[i] = colors[i];
+  }
+  
+  needs_update_ = true;
+}
+
+void PointCloud::SetPoints(std::vector<glm::vec3>&& points, std::vector<glm::vec3>&& colors) {
+  if (points.empty() || colors.empty()) return;
+  if (points.size() != colors.size()) {
+    std::cerr << "Error: Points and colors vectors must have the same size" << std::endl;
+    return;
+  }
+
+  // Resize vectors if needed
+  if (!buffers_preallocated_ || points.size() > buffer_capacity_) {
+    points_.resize(points.size());
+    colors_.resize(points.size());
+    active_points_ = points.size();
+  } else {
+    active_points_ = points.size();
+  }
+
+  // Move points and colors directly
+  for (size_t i = 0; i < points.size(); ++i) {
+    points_[i] = std::move(points[i]);
+    colors_[i] = std::move(colors[i]);
+  }
+  
+  needs_update_ = true;
+}
+
 void PointCloud::PreallocateBuffers(size_t max_points) {
   if (max_points == 0) {
     std::cerr << "Cannot preallocate buffers with zero size" << std::endl;
@@ -231,6 +281,10 @@ void PointCloud::UpdateColors(ColorMode color_mode) {
       break;
     case ColorMode::kScalarField:
       // Handled in SetPoints
+      break;
+    case ColorMode::kRGB:
+      // RGB colors are set directly via SetPoints(points, colors)
+      // No additional processing needed
       break;
   }
 }
