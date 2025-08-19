@@ -13,12 +13,12 @@
 #include <cstring>
 
 #include "imview/viewer.hpp"
-#include "renderer/gl_scene_manager.hpp"
-#include "renderer/renderable/triangle.hpp"
-#include "renderer/renderable/point_cloud.hpp"
-#include "renderer/renderable/grid.hpp"
-#include "renderer/shader_program.hpp"
-#include "renderer/frame_buffer.hpp"
+#include "gldraw/gl_scene_manager.hpp"
+#include "gldraw/renderable/triangle.hpp"
+#include "gldraw/renderable/point_cloud.hpp"
+#include "gldraw/renderable/grid.hpp"
+#include "gldraw/shader_program.hpp"
+#include "gldraw/frame_buffer.hpp"
 #include "core/event/event.hpp"
 #include "core/event/event_dispatcher.hpp"
 

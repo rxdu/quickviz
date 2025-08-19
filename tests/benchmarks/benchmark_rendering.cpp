@@ -14,9 +14,9 @@
 #include <cstring>
 #include <iostream>
 
-#include "renderer/gl_scene_manager.hpp"
-#include "renderer/renderable/point_cloud.hpp"
-#include "renderer/renderable/triangle.hpp"
+#include "gldraw/gl_scene_manager.hpp"
+#include "gldraw/renderable/point_cloud.hpp"
+#include "gldraw/renderable/triangle.hpp"
 #include "imview/viewer.hpp"
 #include "core/buffer/ring_buffer.hpp"
 #include "core/event/event.hpp"
