@@ -12,3 +12,6 @@ target_link_libraries(test_robot_frames PRIVATE gldraw)
 
 add_executable(test_canvas test_canvas.cpp)
 target_link_libraries(test_canvas PRIVATE gldraw)
+
+add_executable(test_camera test_camera.cpp)
+target_link_libraries(test_camera PRIVATE gldraw)

@@ -9,8 +9,8 @@ target_link_libraries(test_shader PRIVATE gldraw)
 add_executable(test_grid test_grid.cpp)
 target_link_libraries(test_grid PRIVATE gldraw)
 
-add_executable(test_camera test_camera.cpp)
-target_link_libraries(test_camera PRIVATE gldraw)
+add_executable(test_camera_raw test_camera_raw.cpp)
+target_link_libraries(test_camera_raw PRIVATE gldraw)
 
 add_executable(test_point_cloud_realtime test_point_cloud_realtime.cpp)
 target_link_libraries(test_point_cloud_realtime PRIVATE gldraw)
@@ -32,9 +32,6 @@ target_link_libraries(test_canvas_st PRIVATE gldraw)
 
 add_executable(test_nav_map_rendering test_nav_map_rendering.cpp)
 target_link_libraries(test_nav_map_rendering PRIVATE gldraw)
-
-add_executable(test_camera_enhanced test_camera_enhanced.cpp)
-target_link_libraries(test_camera_enhanced PRIVATE gldraw)
 
 add_executable(test_layer_system test_layer_system.cpp)
 target_link_libraries(test_layer_system PRIVATE gldraw)
