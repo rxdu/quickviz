@@ -114,6 +114,7 @@ endif ()
 
 ## Add source directory
 add_subdirectory(src)
+add_subdirectory(third_party)
 
 ## Add comprehensive test directory
 if(BUILD_TESTING)
