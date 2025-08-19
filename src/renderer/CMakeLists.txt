@@ -26,6 +26,9 @@ add_library(renderer
     src/renderable/coordinate_frame.cpp
     src/renderable/texture.cpp
     src/renderable/layer_manager.cpp
+    ## Selection tools
+    src/selection/selection_result.cpp
+    src/selection/selection_tools.cpp
     ## PCL bridge utilities (optional, depends on PCL)
     )
 

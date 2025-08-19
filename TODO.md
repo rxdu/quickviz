@@ -50,16 +50,16 @@ This section tracks the implementation progress for enhanced point cloud visuali
   - [x] Outline/glow effects (framework in place)
   - [x] Multiple highlight groups
 
-### 1.2 Interactive Selection APIs
-- [ ] **Screen-space selection** (`src/renderer/include/renderer/selection/selection_tools.hpp`)
-  - [ ] Point picking at mouse position
-  - [ ] Rectangle selection
-  - [ ] Lasso/polygon selection
-  - [ ] Selection state management
-- [ ] **Selection result structures**
-  - [ ] SelectionResult with indices, bounds, centroid
-  - [ ] Selection export utilities
-  - [ ] Selection callbacks and events
+### 1.2 Interactive Selection APIs ✅
+- [x] **Screen-space selection** (`src/renderer/include/renderer/selection/selection_tools.hpp`)
+  - [x] Point picking at mouse position
+  - [x] Rectangle selection
+  - [x] Lasso/polygon selection
+  - [x] Selection state management
+- [x] **Selection result structures**
+  - [x] SelectionResult with indices, bounds, centroid
+  - [x] Selection export utilities
+  - [x] Selection callbacks and events
 
 ### 1.3 PCL Integration Bridge ✅
 - [x] **PCL bridge utilities** (`src/renderer/include/renderer/pcl_bridge/`)
@@ -316,6 +316,17 @@ src/renderer/
 
 ## Recent Implementation Notes (December 2024)
 
+### Interactive Selection Tools (December 19, 2024)
+- Implemented comprehensive `SelectionTools` class for screen-space point selection
+- Created `SelectionResult` structure with bounds, centroid, and statistics computation
+- Support for multiple selection modes: point pick, rectangle, lasso/polygon, radius
+- Selection operations: grow, shrink, invert, clear with mode support (replace/add/remove/toggle)
+- Screen-space to world-space coordinate transformations
+- Hover detection and highlighting support
+- Callback system for selection and hover events
+- Efficient screen position caching for performance
+- Unit tests covering core selection functionality
+
 ### PCL Bridge Implementation
 - Created comprehensive PCL ↔ Renderer conversion utilities
 - Template-based design supports all major PCL point types (XYZ, XYZI, XYZRGB, XYZRGBA)
@@ -347,6 +358,9 @@ src/renderer/
 │   ├── renderable/
 │   │   ├── point_cloud.hpp          # Enhanced with layer support
 │   │   └── layer_manager.hpp        # New: Multi-layer system
+│   ├── selection/                   # New: Interactive selection
+│   │   ├── selection_result.hpp     # Selection data structures
+│   │   └── selection_tools.hpp      # Screen-space selection tools
 │   └── pcl_bridge/
 │       ├── pcl_conversions.hpp      # New: Type conversions
 │       └── pcl_visualization.hpp    # New: Result visualization
@@ -354,12 +368,16 @@ src/renderer/
 │   ├── renderable/
 │   │   ├── point_cloud.cpp          # Enhanced with layer support
 │   │   └── layer_manager.cpp        # New: Layer implementation
+│   ├── selection/                   # New: Selection implementation
+│   │   ├── selection_result.cpp     # Statistics computation
+│   │   └── selection_tools.cpp      # Selection algorithms
 │   └── pcl_bridge/
 │       ├── pcl_conversions.cpp      # New: Conversion implementations
 │       └── pcl_visualization.cpp    # New: Visualization helpers
 └── test/
     ├── test_pcl_bridge.cpp          # New: PCL integration tests
-    └── test_layer_system.cpp        # New: Layer system tests
+    ├── test_layer_system.cpp        # New: Layer system tests
+    └── test_selection_simple.cpp    # New: Selection unit tests
 ```
 
 *Last Updated: December 2024*

@@ -55,6 +55,10 @@ class Panel : public SceneObject {
   void SetWindowNoTabBar();
   void SetWindowHiddenTabBar();
   void SetWindowNoCloseButton();
+  
+  // Window position and size access
+  ImVec2 GetWindowPos() const { return ImGui::GetWindowPos(); }
+  ImVec2 GetWindowSize() const { return ImGui::GetWindowSize(); }
 
   virtual void Draw() = 0;
 

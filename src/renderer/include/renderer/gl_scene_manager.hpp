@@ -87,6 +87,12 @@ class GlSceneManager : public Panel {
 
   void Draw() override;
   void RenderInsideWindow();
+  
+  // Camera access for selection tools
+  Camera* GetCamera() const { return camera_.get(); }
+  const glm::mat4& GetProjectionMatrix() const { return projection_; }
+  const glm::mat4& GetViewMatrix() const { return view_; }
+  const glm::mat4& GetCoordinateTransform() const { return coord_transform_; }
 
  protected:
   void UpdateView(const glm::mat4& projection, const glm::mat4& view);
