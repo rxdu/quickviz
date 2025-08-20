@@ -194,4 +194,46 @@ void GlSceneManager::Draw() {
 
   End();
 }
+
+GlSceneManager::MouseRay GlSceneManager::GetMouseRayInWorldSpace(
+    float mouse_x, float mouse_y, float window_width, float window_height) const {
+  MouseRay ray;
+  
+  // Check if we have valid dimensions
+  if (window_width <= 0 || window_height <= 0 || !camera_) {
+    return ray;
+  }
+  
+  // Convert mouse coordinates to normalized device coordinates (NDC)
+  // NDC ranges from -1 to 1 in both x and y
+  float x_ndc = (2.0f * mouse_x) / window_width - 1.0f;
+  float y_ndc = 1.0f - (2.0f * mouse_y) / window_height; // Flip Y axis
+  
+  // Create ray in clip space
+  glm::vec4 ray_clip(x_ndc, y_ndc, -1.0f, 1.0f);
+  
+  // Convert to eye space
+  glm::mat4 proj_inverse = glm::inverse(projection_);
+  glm::vec4 ray_eye = proj_inverse * ray_clip;
+  ray_eye = glm::vec4(ray_eye.x, ray_eye.y, -1.0f, 0.0f);
+  
+  // Convert to world space
+  glm::mat4 view_inverse = glm::inverse(view_);
+  glm::vec4 ray_world = view_inverse * ray_eye;
+  glm::vec3 ray_direction = glm::normalize(glm::vec3(ray_world));
+  
+  // If using coordinate transformation, we need to transform the ray
+  if (use_coord_transform_) {
+    glm::mat4 transform_inverse = glm::inverse(coord_transform_);
+    ray_direction = glm::vec3(transform_inverse * glm::vec4(ray_direction, 0.0f));
+    ray_direction = glm::normalize(ray_direction);
+  }
+  
+  ray.origin = camera_->GetPosition();
+  ray.direction = ray_direction;
+  ray.valid = true;
+  
+  return ray;
+}
+
 }  // namespace quickviz

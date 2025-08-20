@@ -15,6 +15,9 @@
 #include <unordered_map>
 #include <functional>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_inverse.hpp>
+
 #include "imview/panel.hpp"
 #include "imview/input/mouse.hpp"
 
@@ -29,6 +32,13 @@ namespace quickviz {
 class GlSceneManager : public Panel {
  public:
   enum class Mode { k2D, k3D };
+
+  // Mouse ray casting
+  struct MouseRay {
+    glm::vec3 origin;
+    glm::vec3 direction;
+    bool valid = false;
+  };
 
   using PreDrawCallback = std::function<void()>;
 
@@ -93,6 +103,9 @@ class GlSceneManager : public Panel {
   const glm::mat4& GetProjectionMatrix() const { return projection_; }
   const glm::mat4& GetViewMatrix() const { return view_; }
   const glm::mat4& GetCoordinateTransform() const { return coord_transform_; }
+
+  MouseRay GetMouseRayInWorldSpace(float mouse_x, float mouse_y, 
+                                   float window_width, float window_height) const;
 
  protected:
   void UpdateView(const glm::mat4& projection, const glm::mat4& view);

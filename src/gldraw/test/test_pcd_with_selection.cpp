@@ -15,7 +15,9 @@
 #include <limits>
 #include <memory>
 #include <iomanip>
-#include <pcl/io/pcd_io.h>
+#include <filesystem>
+
+#include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
 #include "imview/box.hpp"
@@ -25,13 +27,15 @@
 #include "gldraw/renderable/grid.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 #include "gldraw/selection/selection_tools.hpp"
+#include "gldraw/pcl_bridge/pcl_loader.hpp"
 
 using namespace quickviz;
 
 // Selection control panel for PCD viewer
 class PCDSelectionPanel : public Panel {
  public:
-  PCDSelectionPanel() : Panel("Selection Tools") {
+  PCDSelectionPanel(const pcl_bridge::PointCloudMetadata& metadata) 
+      : Panel("Selection Tools"), metadata_(metadata) {
     SetAutoLayout(true);
   }
   
@@ -40,11 +44,11 @@ class PCDSelectionPanel : public Panel {
     ImGui::Separator();
     
     // File info
-    if (!filename_.empty()) {
-      ImGui::Text("File: %s", filename_.c_str());
-      ImGui::Text("Points: %zu", total_points_);
-      ImGui::Separator();
-    }
+    ImGui::Text("File: %s", std::filesystem::path(metadata_.filename).filename().c_str());
+    ImGui::Text("Points: %zu", metadata_.point_count);
+    ImGui::Text("Format: %s", metadata_.format.c_str());
+    ImGui::Text("PCL Type: %s", metadata_.detected_pcl_type.c_str());
+    ImGui::Separator();
     
     // Tool selection
     ImGui::Text("Selection Tool:");
@@ -169,10 +173,6 @@ class PCDSelectionPanel : public Panel {
   // Setters
   void SetSelectionTools(SelectionTools* tools) { selection_tools_ = tools; }
   void SetPointCloud(PointCloud* pc) { point_cloud_ = pc; }
-  void SetFileInfo(const std::string& filename, size_t points) {
-    filename_ = filename;
-    total_points_ = points;
-  }
   
   // Getters
   int GetCurrentTool() const { return current_tool_; }
@@ -202,8 +202,7 @@ class PCDSelectionPanel : public Panel {
   SelectionTools* selection_tools_ = nullptr;
   PointCloud* point_cloud_ = nullptr;
   
-  std::string filename_;
-  size_t total_points_ = 0;
+  pcl_bridge::PointCloudMetadata metadata_;
   
   int current_tool_ = 0;     // 0=None, 1=Point, 2=Rectangle, 3=Lasso, 4=Radius
   int selection_mode_ = 0;   // 0=Replace, 1=Add, 2=Remove, 3=Toggle
@@ -420,105 +419,105 @@ class PCDSelectionSceneManager : public GlSceneManager {
 int main(int argc, char* argv[]) {
   // Check command line arguments
   if (argc != 2) {
-    std::cerr << "Usage: " << argv[0] << " <path_to_pcd_file>" << std::endl;
-    std::cerr << "Example: " << argv[0] << " /path/to/pointcloud.pcd" << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <path_to_point_cloud_file>" << std::endl;
+    std::cerr << "Supported formats: .pcd, .ply" << std::endl;
     return 1;
   }
 
-  std::string pcd_file = argv[1];
+  std::string point_cloud_file = argv[1];
 
-  // Load PCD file - determine point type from fields
-  std::cout << "\n=== Loading PCD File ===" << std::endl;
-  std::cout << "File path: " << pcd_file << std::endl;
-  
-  // First, try to get file info using PCLPointCloud2 for detailed metadata
-  pcl::PCLPointCloud2 cloud_blob;
-  if (pcl::io::loadPCDFile(pcd_file, cloud_blob) != 0) {
-    std::cerr << "Error: Could not load PCD file: " << pcd_file << std::endl;
-    return 1;
-  }
-  
-  std::cout << "\n=== PCD File Metadata ===" << std::endl;
-  std::cout << "Fields: ";
-  for (size_t i = 0; i < cloud_blob.fields.size(); ++i) {
-    std::cout << cloud_blob.fields[i].name;
-    if (i < cloud_blob.fields.size() - 1) std::cout << ", ";
-  }
-  std::cout << std::endl;
-  std::cout << "Width: " << cloud_blob.width << std::endl;
-  std::cout << "Height: " << cloud_blob.height << std::endl;
-  std::cout << "Total points: " << cloud_blob.width * cloud_blob.height << std::endl;
-  std::cout << "Is organized: " << (cloud_blob.height > 1 ? "true" : "false") << std::endl;
-  
-  // Check which fields exist
-  bool has_rgb_field = false;
-  bool has_intensity_field = false;
-  
-  for (const auto& field : cloud_blob.fields) {
-    if (field.name == "rgb" || field.name == "rgba") {
-      has_rgb_field = true;
-    }
-    if (field.name == "intensity" || field.name == "Intensity" || field.name == "i") {
-      has_intensity_field = true;
-    }
-  }
-  
-  std::cout << "RGB: " << (has_rgb_field ? "yes" : "no") << std::endl;
-  std::cout << "Intensity: " << (has_intensity_field ? "yes" : "no") << std::endl;
-  
-  // Variables to store point cloud data
-  std::vector<glm::vec3> points_3d;
-  std::vector<glm::vec3> colors_rgb;
-  std::vector<glm::vec4> points_4d;
-  bool has_colors = false;
-  bool has_intensity = false;
-  
-  // Try loading with different point types based on available fields
-  if (has_rgb_field) {
-    // Load as PointXYZRGB
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_rgb(new pcl::PointCloud<pcl::PointXYZRGB>);
+  std::cout << "\n=== QuickViz PCD Selection Tool ===" << std::endl;
+  std::cout << "File: " << point_cloud_file << std::endl;
+
+  try {
+    // First, analyze the file to understand its structure
+    std::cout << "\n=== Analyzing Point Cloud File ===" << std::endl;
+    auto analysis_metadata = pcl_bridge::PointCloudLoader::AnalyzeFields(point_cloud_file);
     
-    if (pcl::io::loadPCDFile<pcl::PointXYZRGB>(pcd_file, *cloud_rgb) == 0) {
-      std::cout << "\n=== Loaded Point Cloud Info ===" << std::endl;
-      std::cout << "Successfully loaded " << cloud_rgb->points.size() << " points" << std::endl;
-      std::cout << "Point format: XYZRGB" << std::endl;
+    std::cout << "Format: " << analysis_metadata.format << std::endl;
+    std::cout << "File size: " << analysis_metadata.file_size_mb << " MB" << std::endl;
+    std::cout << "Recommended PCL type: " << analysis_metadata.GetRecommendedPCLType() << std::endl;
+    
+    std::cout << "\nDetected fields:" << std::endl;
+    std::cout << "  XYZ: " << (analysis_metadata.fields.HasXYZ() ? "yes" : "no") << std::endl;
+    std::cout << "  RGB: " << (analysis_metadata.fields.HasRGBColor() ? "yes" : "no") << std::endl;
+    std::cout << "  RGBA: " << (analysis_metadata.fields.HasRGBAColor() ? "yes" : "no") << std::endl;
+    std::cout << "  Intensity: " << (analysis_metadata.fields.has_intensity ? "yes" : "no") << std::endl;
+    std::cout << "  Normals: " << (analysis_metadata.fields.HasNormals() ? "yes" : "no") << std::endl;
+    // Load point cloud using the PCL loader
+    std::cout << "\n=== Loading Point Cloud ===" << std::endl;
+    
+    // Load based on detected type
+    pcl_bridge::PointCloudMetadata metadata;
+    std::string optimal_type = analysis_metadata.GetRecommendedPCLType();
+    
+    // Variables to store the converted point data
+    std::vector<glm::vec3> points_3d;
+    std::vector<glm::vec3> colors_rgb;
+    std::vector<glm::vec4> points_4d;
+    bool use_rgb_colors = false;
+    bool use_intensity = false;
+    
+    std::cout << "Loading as " << optimal_type << "..." << std::endl;
+    
+    if (optimal_type == "PointXYZRGB") {
+      // Load with RGB colors
+      auto [pcl_cloud, load_meta] = pcl_bridge::PointCloudLoader::LoadToPCL<pcl::PointXYZRGB>(
+          point_cloud_file, pcl_bridge::PointCloudLoader::Format::kAutoDetect);
+      metadata = load_meta;
       
-      points_3d.reserve(cloud_rgb->points.size());
-      colors_rgb.reserve(cloud_rgb->points.size());
-      has_colors = true;
+      std::cout << "Converting " << pcl_cloud->points.size() << " RGB points to renderer format..." << std::endl;
       
-      // Extract RGB points with true color support
-      for (const auto& pt : cloud_rgb->points) {
+      // Convert to renderer format
+      points_3d.reserve(pcl_cloud->points.size());
+      colors_rgb.reserve(pcl_cloud->points.size());
+      
+      for (const auto& pt : pcl_cloud->points) {
         if (!std::isnan(pt.x) && !std::isnan(pt.y) && !std::isnan(pt.z)) {
           points_3d.push_back(glm::vec3(pt.x, pt.y, pt.z));
-          colors_rgb.push_back(glm::vec3(
-            static_cast<float>(pt.r) / 255.0f,
-            static_cast<float>(pt.g) / 255.0f,
-            static_cast<float>(pt.b) / 255.0f
-          ));
+          colors_rgb.push_back(glm::vec3(pt.r / 255.0f, pt.g / 255.0f, pt.b / 255.0f));
         }
       }
-    }
-  }
-  
-  // If RGB loading failed or not available, try XYZI
-  if (points_3d.empty() && has_intensity_field) {
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_xyzi(new pcl::PointCloud<pcl::PointXYZI>);
-    
-    if (pcl::io::loadPCDFile<pcl::PointXYZI>(pcd_file, *cloud_xyzi) == 0) {
-      std::cout << "\n=== Loaded Point Cloud Info ===" << std::endl;
-      std::cout << "Successfully loaded " << cloud_xyzi->points.size() << " points" << std::endl;
-      std::cout << "Point format: XYZI" << std::endl;
+      use_rgb_colors = true;
+      std::cout << "Converted " << points_3d.size() << " RGB points" << std::endl;
       
-      points_4d.reserve(cloud_xyzi->points.size());
-      has_intensity = true;
+    } else if (optimal_type == "PointXYZRGBA") {
+      // Load with RGBA colors (treat as RGB)
+      auto [pcl_cloud, load_meta] = pcl_bridge::PointCloudLoader::LoadToPCL<pcl::PointXYZRGBA>(
+          point_cloud_file, pcl_bridge::PointCloudLoader::Format::kAutoDetect);
+      metadata = load_meta;
       
-      // Find intensity range for normalization
+      std::cout << "Converting " << pcl_cloud->points.size() << " RGBA points to renderer format..." << std::endl;
+      
+      points_3d.reserve(pcl_cloud->points.size());
+      colors_rgb.reserve(pcl_cloud->points.size());
+      
+      for (const auto& pt : pcl_cloud->points) {
+        if (!std::isnan(pt.x) && !std::isnan(pt.y) && !std::isnan(pt.z)) {
+          points_3d.push_back(glm::vec3(pt.x, pt.y, pt.z));
+          colors_rgb.push_back(glm::vec3(pt.r / 255.0f, pt.g / 255.0f, pt.b / 255.0f));
+        }
+      }
+      use_rgb_colors = true;
+      std::cout << "Converted " << points_3d.size() << " RGBA points" << std::endl;
+      
+    } else if (optimal_type == "PointXYZI") {
+      // Load with intensity
+      auto [pcl_cloud, load_meta] = pcl_bridge::PointCloudLoader::LoadToPCL<pcl::PointXYZI>(
+          point_cloud_file, pcl_bridge::PointCloudLoader::Format::kAutoDetect);
+      metadata = load_meta;
+      
+      std::cout << "Converting " << pcl_cloud->points.size() << " intensity points to renderer format..." << std::endl;
+      
+      // Convert to renderer format with intensity normalization
+      points_4d.reserve(pcl_cloud->points.size());
+      
       float min_intensity = std::numeric_limits<float>::max();
       float max_intensity = std::numeric_limits<float>::lowest();
       
-      for (const auto& pt : cloud_xyzi->points) {
-        if (!std::isnan(pt.x) && !std::isnan(pt.y) && !std::isnan(pt.z)) {
+      // Find intensity range
+      for (const auto& pt : pcl_cloud->points) {
+        if (!std::isnan(pt.x) && !std::isnan(pt.y) && !std::isnan(pt.z) && !std::isnan(pt.intensity)) {
           min_intensity = std::min(min_intensity, pt.intensity);
           max_intensity = std::max(max_intensity, pt.intensity);
         }
@@ -530,147 +529,183 @@ int main(int argc, char* argv[]) {
         min_intensity = 0.0f;
       }
       
-      // Convert to internal format with normalized intensity in w component
-      for (const auto& pt : cloud_xyzi->points) {
+      std::cout << "Intensity range: [" << min_intensity << ", " << max_intensity << "]" << std::endl;
+      
+      for (const auto& pt : pcl_cloud->points) {
         if (!std::isnan(pt.x) && !std::isnan(pt.y) && !std::isnan(pt.z)) {
-          float normalized_intensity = (pt.intensity - min_intensity) / intensity_range;
+          float normalized_intensity = std::isnan(pt.intensity) ? 0.0f : 
+                                     (pt.intensity - min_intensity) / intensity_range;
           points_4d.push_back(glm::vec4(pt.x, pt.y, pt.z, normalized_intensity));
         }
       }
-    }
-  }
-  
-  // If both failed, try basic XYZ
-  if (points_3d.empty() && points_4d.empty()) {
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_xyz(new pcl::PointCloud<pcl::PointXYZ>);
-    
-    if (pcl::io::loadPCDFile<pcl::PointXYZ>(pcd_file, *cloud_xyz) == 0) {
-      std::cout << "\n=== Loaded Point Cloud Info ===" << std::endl;
-      std::cout << "Successfully loaded " << cloud_xyz->points.size() << " points" << std::endl;
-      std::cout << "Point format: XYZ" << std::endl;
+      use_intensity = true;
+      std::cout << "Converted " << points_4d.size() << " intensity points" << std::endl;
       
-      points_4d.reserve(cloud_xyz->points.size());
+    } else {
+      // Load as XYZ (default)
+      auto [pcl_cloud, load_meta] = pcl_bridge::PointCloudLoader::LoadToPCL<pcl::PointXYZ>(
+          point_cloud_file, pcl_bridge::PointCloudLoader::Format::kAutoDetect);
+      metadata = load_meta;
       
-      // Convert to internal format
-      for (const auto& pt : cloud_xyz->points) {
+      std::cout << "Converting " << pcl_cloud->points.size() << " XYZ points to renderer format..." << std::endl;
+      
+      // Convert to renderer format (use Z for height-based coloring)
+      points_4d.reserve(pcl_cloud->points.size());
+      
+      for (const auto& pt : pcl_cloud->points) {
         if (!std::isnan(pt.x) && !std::isnan(pt.y) && !std::isnan(pt.z)) {
-          points_4d.push_back(glm::vec4(pt.x, pt.y, pt.z, 0.0f));
+          points_4d.push_back(glm::vec4(pt.x, pt.y, pt.z, pt.z));  // Use Z as scalar for height coloring
         }
       }
-    } else {
-      std::cerr << "Error: Could not load PCD file with any supported format" << std::endl;
-      return 1;
+      
+      std::cout << "Converted " << points_4d.size() << " XYZ points" << std::endl;
     }
-  }
-  
-  if (points_3d.empty() && points_4d.empty()) {
-    std::cerr << "Error: No valid points found in PCD file" << std::endl;
+    
+    std::cout << "\n=== Load Results ===" << std::endl;
+    std::cout << "Successfully loaded " << metadata.point_count << " points" << std::endl;
+    std::cout << "Detected PCL type: " << metadata.detected_pcl_type << std::endl;
+    std::cout << "Bounding box: [" << metadata.min_bounds.x << ", " << metadata.min_bounds.y << ", " << metadata.min_bounds.z 
+              << "] to [" << metadata.max_bounds.x << ", " << metadata.max_bounds.y << ", " << metadata.max_bounds.z << "]" << std::endl;
+
+    // Calculate some statistics
+    glm::vec3 size = metadata.max_bounds - metadata.min_bounds;
+    glm::vec3 center = (metadata.min_bounds + metadata.max_bounds) * 0.5f;
+    
+    std::cout << "Point cloud size: " << size.x << " x " << size.y << " x " << size.z << std::endl;
+    std::cout << "Point cloud center: (" << center.x << ", " << center.y << ", " << center.z << ")" << std::endl;
+    
+    // Create viewer for visualization (this initializes OpenGL context)
+    std::cout << "\n=== Creating Visualization ===" << std::endl;
+    Viewer viewer("PCD Viewer with Selection", 1400, 900);
+    viewer.SetBackgroundColor(0.1f, 0.1f, 0.15f, 1.0f);
+    viewer.EnableKeyboardNav(true);
+    viewer.EnableDocking(true);
+
+    // Create main container box
+    auto main_box = std::make_shared<Box>("main_container");
+    main_box->SetFlexDirection(Styling::FlexDirection::kRow);
+    main_box->SetJustifyContent(Styling::JustifyContent::kFlexStart);
+    main_box->SetAlignItems(Styling::AlignItems::kStretch);
+
+    // Create enhanced scene manager with selection
+    auto gl_sm = std::make_shared<PCDSelectionSceneManager>();
+    gl_sm->SetAutoLayout(true);
+    gl_sm->SetFlexGrow(0.85f);      // Allow growth for 3D view
+    gl_sm->SetFlexShrink(1.0f);     // Allow shrinking if needed
+    
+    // NOW create the PointCloud object (OpenGL context exists)
+    std::cout << "Creating PointCloud object with OpenGL context available..." << std::endl;
+    auto point_cloud = std::make_unique<PointCloud>();
+    point_cloud->SetPointSize(2.0f);
+    point_cloud->SetOpacity(1.0f);
+    point_cloud->SetRenderMode(PointMode::kPoint);
+    
+    // Set points based on what we loaded
+    if (use_rgb_colors) {
+      std::cout << "Setting " << points_3d.size() << " points with RGB colors..." << std::endl;
+      point_cloud->SetPoints(points_3d, colors_rgb);
+      std::cout << "Using RGB coloring" << std::endl;
+    } else if (use_intensity) {
+      std::cout << "Setting " << points_4d.size() << " points with intensity coloring..." << std::endl;
+      point_cloud->SetScalarRange(0.0f, 1.0f);  // Intensity is normalized
+      point_cloud->SetPoints(points_4d, PointCloud::ColorMode::kScalarField);
+      std::cout << "Using intensity-based coloring" << std::endl;
+    } else {
+      std::cout << "Setting " << points_4d.size() << " points with height-based coloring..." << std::endl;
+      point_cloud->SetScalarRange(metadata.min_bounds.z, metadata.max_bounds.z);  // Height-based
+      point_cloud->SetPoints(points_4d, PointCloud::ColorMode::kHeightField);
+      std::cout << "Using height-based coloring" << std::endl;
+    }
+
+    // Get raw pointer before moving for selection tools
+    PointCloud* pc_ptr = point_cloud.get();
+    gl_sm->AddOpenGLObject("loaded_point_cloud", std::move(point_cloud));
+    
+    // Add a reference grid
+    glm::vec3 bounds_size = metadata.max_bounds - metadata.min_bounds;
+    auto grid = std::make_unique<Grid>(
+        std::max(bounds_size.x, bounds_size.y) * 0.1f,  // Grid spacing based on point cloud size
+        std::max(bounds_size.x, bounds_size.y),         // Grid size
+        glm::vec3(0.7f, 0.7f, 0.7f)      // Grid color
+    );
+    gl_sm->AddOpenGLObject("reference_grid", std::move(grid));
+
+    // Create selection tools
+    auto selection_tools = std::make_unique<SelectionTools>();
+    selection_tools->SetPointCloud(pc_ptr);
+    
+    // Set up callbacks
+    selection_tools->SetSelectionCallback([](const SelectionResult& result) {
+      std::cout << "[Selection Changed] " << result.count << " points selected";
+      if (!result.IsEmpty()) {
+        std::cout << " | Centroid: (" 
+                  << std::fixed << std::setprecision(2)
+                  << result.centroid.x << ", " 
+                  << result.centroid.y << ", " 
+                  << result.centroid.z << ")";
+      }
+      std::cout << std::endl;
+    });
+    
+    selection_tools->SetHoverCallback([pc_ptr](int point_index) {
+      if (point_index >= 0) {
+        pc_ptr->HighlightPoint(
+          static_cast<size_t>(point_index),
+          glm::vec3(1.0f, 1.0f, 0.0f), // Yellow for hover
+          "hover",
+          1.5f
+        );
+      } else {
+        pc_ptr->ClearHighlights("hover");
+      }
+    });
+
+    // Create selection control panel
+    auto selection_panel = std::make_shared<PCDSelectionPanel>(metadata);
+    selection_panel->SetSelectionTools(selection_tools.get());
+    selection_panel->SetPointCloud(pc_ptr);
+    selection_panel->SetAutoLayout(true);
+    selection_panel->SetFlexGrow(0.15f);     // Panel takes less space
+    selection_panel->SetFlexShrink(0.0f);   // Don't shrink below basis
+
+    // Connect components
+    gl_sm->SetSelectionTools(selection_tools.get());
+    gl_sm->SetControlPanel(selection_panel.get());
+    gl_sm->SetPointCloud(pc_ptr);
+
+    // Add components to main container
+    main_box->AddChild(selection_panel);
+    main_box->AddChild(gl_sm);
+    
+    // Add to viewer
+    viewer.AddSceneObject(main_box);
+
+    std::cout << "\n=== Starting Interactive Viewer ===" << std::endl;
+    std::cout << "Use the left panel to select tools and interact with the point cloud" << std::endl;
+    std::cout << "Camera controls: Right-click to rotate, scroll to zoom, middle-click to pan" << std::endl;
+
+    viewer.Show();
+
+  } catch (const pcl_bridge::FileNotFoundException& e) {
+    std::cerr << "Error: File not found - " << e.what() << std::endl;
+    return 1;
+  } catch (const pcl_bridge::UnsupportedFormatException& e) {
+    std::cerr << "Error: Unsupported format - " << e.what() << std::endl;
+    std::cerr << "Supported formats: ";
+    auto extensions = pcl_bridge::PointCloudLoader::GetSupportedExtensions();
+    for (size_t i = 0; i < extensions.size(); ++i) {
+      std::cerr << extensions[i];
+      if (i < extensions.size() - 1) std::cerr << ", ";
+    }
+    std::cerr << std::endl;
+    return 1;
+  } catch (const pcl_bridge::CorruptedFileException& e) {
+    std::cerr << "Error: Corrupted file - " << e.what() << std::endl;
+    return 1;
+  } catch (const std::exception& e) {
+    std::cerr << "Error: " << e.what() << std::endl;
     return 1;
   }
-
-  size_t total_points = has_colors ? points_3d.size() : points_4d.size();
-  std::cout << "\nPoints to render: " << total_points << std::endl;
-  
-  // Create viewer
-  Viewer viewer("PCD Viewer with Selection", 1400, 900);
-  viewer.SetBackgroundColor(0.1f, 0.1f, 0.15f, 1.0f);
-  viewer.EnableKeyboardNav(true);
-  viewer.EnableDocking(true);
-
-  // Create box layout
-  auto box = std::make_shared<Box>("main_box");
-  box->SetFlexDirection(Styling::FlexDirection::kRow);
-  box->SetJustifyContent(Styling::JustifyContent::kFlexStart);
-  box->SetAlignItems(Styling::AlignItems::kStretch);
-
-  // Create enhanced scene manager with selection
-  auto gl_sm = std::make_shared<PCDSelectionSceneManager>();
-  gl_sm->SetAutoLayout(true);
-  gl_sm->SetFlexGrow(1.0f);
-  gl_sm->SetFlexShrink(0.0f);
-  
-  // Create point cloud with appropriate color mode
-  auto point_cloud = std::make_unique<PointCloud>();
-  point_cloud->SetPointSize(2.0f);
-  point_cloud->SetOpacity(1.0f);
-  point_cloud->SetRenderMode(PointMode::kPoint);
-  
-  if (has_colors) {
-    // Use true RGB colors
-    point_cloud->SetPoints(points_3d, colors_rgb);
-    std::cout << "Using true RGB color visualization" << std::endl;
-  } else if (has_intensity) {
-    // Use intensity/scalar field
-    point_cloud->SetScalarRange(0.0f, 1.0f);
-    point_cloud->SetPoints(points_4d, PointCloud::ColorMode::kScalarField);
-    std::cout << "Using intensity field visualization" << std::endl;
-  } else {
-    // Use height field
-    point_cloud->SetPoints(points_4d, PointCloud::ColorMode::kHeightField);
-    std::cout << "Using height field visualization" << std::endl;
-  }
-
-  // Get raw pointer before moving for selection tools
-  PointCloud* pc_ptr = point_cloud.get();
-  gl_sm->AddOpenGLObject("point_cloud", std::move(point_cloud));
-  
-  // Add a grid for reference
-  auto grid = std::make_unique<Grid>(10.0f, 1.0f, glm::vec3(0.7f, 0.7f, 0.7f));
-  gl_sm->AddOpenGLObject("grid", std::move(grid));
-
-  // Create selection tools
-  auto selection_tools = std::make_unique<SelectionTools>();
-  selection_tools->SetPointCloud(pc_ptr);
-  
-  // Set up callbacks
-  selection_tools->SetSelectionCallback([](const SelectionResult& result) {
-    std::cout << "[Selection Changed] " << result.count << " points selected";
-    if (!result.IsEmpty()) {
-      std::cout << " | Centroid: (" 
-                << std::fixed << std::setprecision(2)
-                << result.centroid.x << ", " 
-                << result.centroid.y << ", " 
-                << result.centroid.z << ")";
-    }
-    std::cout << std::endl;
-  });
-  
-  selection_tools->SetHoverCallback([pc_ptr](int point_index) {
-    if (point_index >= 0) {
-      pc_ptr->HighlightPoint(
-        static_cast<size_t>(point_index),
-        glm::vec3(1.0f, 1.0f, 0.0f), // Yellow for hover
-        "hover",
-        1.5f
-      );
-    } else {
-      pc_ptr->ClearHighlights("hover");
-    }
-  });
-
-  // Create selection control panel
-  auto selection_panel = std::make_shared<PCDSelectionPanel>();
-  selection_panel->SetSelectionTools(selection_tools.get());
-  selection_panel->SetPointCloud(pc_ptr);
-  selection_panel->SetFileInfo(pcd_file, total_points);
-  selection_panel->SetWidth(280);
-  selection_panel->SetFlexShrink(0.0f);
-
-  // Connect components
-  gl_sm->SetSelectionTools(selection_tools.get());
-  gl_sm->SetControlPanel(selection_panel.get());
-  gl_sm->SetPointCloud(pc_ptr);
-
-  // Add to layout
-  box->AddChild(selection_panel);
-  box->AddChild(gl_sm);
-  viewer.AddSceneObject(box);
-
-  std::cout << "\n=== Starting Interactive Viewer ===" << std::endl;
-  std::cout << "Use the left panel to select tools and interact with the point cloud" << std::endl;
-  std::cout << "Camera controls: Right-click to rotate, scroll to zoom, middle-click to pan" << std::endl;
-
-  viewer.Show();
 
   return 0;
 }

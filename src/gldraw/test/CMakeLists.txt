@@ -72,5 +72,10 @@ if(PCL_FOUND)
   target_link_libraries(test_pcl_loader_render PRIVATE gldraw ${PCL_LIBRARIES})
   target_compile_definitions(test_pcl_loader_render PRIVATE ${PCL_DEFINITIONS})
 
+  add_executable(test_pcl_selector test_pcl_selector.cpp)
+  target_include_directories(test_pcl_selector PRIVATE ${PCL_INCLUDE_DIRS})
+  target_link_libraries(test_pcl_selector PRIVATE gldraw ${PCL_LIBRARIES})
+  target_compile_definitions(test_pcl_selector PRIVATE ${PCL_DEFINITIONS})
+
   add_subdirectory(unit_test)
 endif()
