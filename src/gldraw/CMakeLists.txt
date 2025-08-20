@@ -39,6 +39,7 @@ if(PCL_FOUND)
     target_sources(gldraw PRIVATE
         src/pcl_bridge/pcl_conversions.cpp
         src/pcl_bridge/pcl_visualization.cpp
+        src/pcl_bridge/pcl_loader.cpp
     )
     target_include_directories(gldraw PRIVATE ${PCL_INCLUDE_DIRS})
     target_link_libraries(gldraw PRIVATE ${PCL_LIBRARIES})
