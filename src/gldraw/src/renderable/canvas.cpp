@@ -1754,17 +1754,17 @@ void Canvas::GeneratePolygonVertices(const std::vector<glm::vec2>& points,
     // Simple triangulation (works for convex polygons)
     for (size_t i = 1; i < points.size() - 1; ++i) {
       indices.insert(indices.end(), {
-        base_index,         // First vertex
-        base_index + i,     // Current vertex
-        base_index + i + 1  // Next vertex
+        static_cast<unsigned int>(base_index),         // First vertex
+        static_cast<unsigned int>(base_index + i),     // Current vertex
+        static_cast<unsigned int>(base_index + i + 1)  // Next vertex
       });
     }
   } else {
     // Line loop for outline
     for (size_t i = 0; i < points.size(); ++i) {
       indices.insert(indices.end(), {
-        base_index + i,
-        base_index + ((i + 1) % points.size())
+        static_cast<unsigned int>(base_index + i),
+        static_cast<unsigned int>(base_index + ((i + 1) % points.size()))
       });
     }
   }
