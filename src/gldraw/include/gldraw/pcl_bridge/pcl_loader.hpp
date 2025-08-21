@@ -311,6 +311,119 @@ PointCloudFields GetRequiredFields(const std::string& pcl_type);
 
 } // namespace field_detector
 
+/**
+ * @brief Factory pattern for creating different point cloud representations
+ */
+namespace factory {
+
+/**
+ * @brief Renderer-optimized point cloud data structure
+ */
+struct RendererData {
+  std::vector<glm::vec3> points_3d;      // XYZ coordinates
+  std::vector<glm::vec3> colors_rgb;     // RGB colors (if available)
+  std::vector<glm::vec4> points_4d;      // XYZI coordinates (if intensity/scalar available)
+  
+  enum class ColorMode {
+    kRGB,           // Use RGB colors
+    kIntensity,     // Use intensity field
+    kHeight,        // Use Z coordinate for height coloring
+    kScalar         // Use W component as scalar
+  } color_mode = ColorMode::kHeight;
+  
+  glm::vec2 scalar_range{0.0f, 1.0f};    // Min/max range for scalar coloring
+  
+  bool HasRGBColors() const { return !colors_rgb.empty(); }
+  bool HasScalarData() const { return !points_4d.empty(); }
+  size_t GetPointCount() const { 
+    return HasRGBColors() ? points_3d.size() : points_4d.size(); 
+  }
+};
+
+/**
+ * @brief Base factory interface for point cloud conversion
+ */
+template<typename OutputType>
+class PointCloudFactory {
+public:
+  virtual ~PointCloudFactory() = default;
+  
+  /**
+   * @brief Load and convert point cloud to target format
+   * @param filename Path to point cloud file
+   * @param format File format (auto-detect if not specified)
+   * @param progress_callback Optional progress reporting
+   * @return Converted data and metadata
+   */
+  virtual std::pair<OutputType, PointCloudMetadata> 
+  Load(const std::string& filename,
+       PointCloudLoader::Format format = PointCloudLoader::Format::kAutoDetect,
+       ProgressCallback progress_callback = nullptr) = 0;
+};
+
+/**
+ * @brief Factory for creating renderer-optimized point clouds
+ */
+class RendererFactory : public PointCloudFactory<RendererData> {
+public:
+  /**
+   * @brief Create renderer-optimized point cloud data
+   * @param filename Path to point cloud file
+   * @param format File format (auto-detect if not specified)  
+   * @param progress_callback Optional progress reporting
+   * @return RendererData with optimized format and metadata
+   */
+  std::pair<RendererData, PointCloudMetadata> 
+  Load(const std::string& filename,
+       PointCloudLoader::Format format = PointCloudLoader::Format::kAutoDetect,
+       ProgressCallback progress_callback = nullptr) override;
+
+private:
+  /**
+   * @brief Convert PCL RGB point cloud to renderer format
+   */
+  template<typename PCLPointT>
+  RendererData ConvertRGBCloud(const pcl::PointCloud<PCLPointT>& cloud);
+  
+  /**
+   * @brief Convert PCL intensity point cloud to renderer format  
+   */
+  template<typename PCLPointT>
+  RendererData ConvertIntensityCloud(const pcl::PointCloud<PCLPointT>& cloud);
+  
+  /**
+   * @brief Convert PCL XYZ point cloud to renderer format
+   */
+  template<typename PCLPointT>
+  RendererData ConvertXYZCloud(const pcl::PointCloud<PCLPointT>& cloud,
+                                const PointCloudMetadata& metadata);
+};
+
+/**
+ * @brief Factory registry for different output formats
+ */
+class FactoryRegistry {
+public:
+  /**
+   * @brief Get renderer factory instance
+   */
+  static std::unique_ptr<RendererFactory> CreateRendererFactory();
+  
+  /**
+   * @brief Convenience method for direct renderer loading
+   * @param filename Path to point cloud file
+   * @param format File format (auto-detect if not specified)
+   * @param progress_callback Optional progress reporting
+   * @return RendererData and metadata
+   */
+  static std::pair<RendererData, PointCloudMetadata>
+  LoadForRenderer(const std::string& filename,
+                  PointCloudLoader::Format format = PointCloudLoader::Format::kAutoDetect,
+                  ProgressCallback progress_callback = nullptr);
+};
+
+} // namespace factory
+
 } // namespace pcl_bridge
 } // namespace quickviz
 
