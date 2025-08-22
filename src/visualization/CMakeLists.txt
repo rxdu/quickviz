@@ -1,6 +1,3 @@
-# Visualization Module - High-level data mapping
-cmake_minimum_required(VERSION 3.12)
-
 # Create visualization library
 add_library(visualization
     # Renderable classes (data to OpenGL object conversion)
