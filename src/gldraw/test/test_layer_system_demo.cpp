@@ -110,13 +110,21 @@ private:
     }
     
     void SetupLayers() {
-        // Create point cloud
+        // Create point cloud with explicit colors
+        // Convert vec4 points to vec3 and create base colors
+        std::vector<glm::vec3> points_3d;
+        std::vector<glm::vec3> base_colors;
+        
+        for (const auto& point : base_points_) {
+            points_3d.push_back(glm::vec3(point.x, point.y, point.z));
+            base_colors.push_back(glm::vec3(0.7f, 0.7f, 0.7f)); // Light gray base color
+        }
+        
         point_cloud_ = std::make_unique<PointCloud>();
-        point_cloud_->SetPoints(base_points_, PointCloud::ColorMode::kScalarField);
-        point_cloud_->SetScalarRange(0.0f, 1.0f);
+        point_cloud_->SetPoints(points_3d, base_colors);
         point_cloud_->SetPointSize(8.0f);
         point_cloud_->SetRenderMode(PointMode::kPoint);
-        
+
         // Create layers with different priorities
         // Higher priority layers render on top
         
@@ -174,13 +182,15 @@ private:
         // Add to scene
         scene_manager_->AddOpenGLObject("point_cloud", std::move(point_cloud_));
         scene_manager_->AddOpenGLObject("grid", std::move(grid));
+
+      point_cloud_ptr_ = static_cast<PointCloud*>(scene_manager_->GetOpenGLObject("point_cloud"));
         
         std::cout << "\n=== Layer Configuration ===" << std::endl;
         std::cout << "Created 4 layers (all initially disabled):" << std::endl;
         std::cout << "1. Circle 1 (RED) - Priority 50" << std::endl;
         std::cout << "2. Circle 2 (GREEN) - Priority 60" << std::endl;
         std::cout << "3. Circle 3 (BLUE) - Priority 70" << std::endl;
-        std::cout << "4. Selection (YELLOW) - Priority 100 (highest)" << std::endl;
+        std::cout << "4. Selection (YELLOW) - Priority 100 (highest) - Point indices 40-60 from each circle" << std::endl;
         
         layer1_enabled_ = false;
         layer2_enabled_ = false;
@@ -193,34 +203,34 @@ private:
         std::cout << "\n=== Enabling Demo Layers ===" << std::endl;
         
         // Enable circle 1 (red)
-        auto layer1 = point_cloud_->GetLayer("circle1_highlight");
+        auto layer1 = point_cloud_ptr_->GetLayer("circle1_highlight");
         if (layer1) {
             layer1->SetVisible(true);
             std::cout << "✓ Enabled Circle 1 (Red) layer" << std::endl;
         }
         
         // Enable circle 2 (green)  
-        auto layer2 = point_cloud_->GetLayer("circle2_highlight");
+        auto layer2 = point_cloud_ptr_->GetLayer("circle2_highlight");
         if (layer2) {
             layer2->SetVisible(true);
             std::cout << "✓ Enabled Circle 2 (Green) layer" << std::endl;
         }
         
         // Enable circle 3 (blue)
-        auto layer3 = point_cloud_->GetLayer("circle3_highlight");
+        auto layer3 = point_cloud_ptr_->GetLayer("circle3_highlight");
         if (layer3) {
             layer3->SetVisible(true);
             std::cout << "✓ Enabled Circle 3 (Blue) layer" << std::endl;
         }
         
         // Enable selection (yellow)
-        auto selection = point_cloud_->GetLayer("selection");
+        auto selection = point_cloud_ptr_->GetLayer("selection");
         if (selection) {
             selection->SetVisible(true);
             std::cout << "✓ Enabled Selection (Yellow) layer" << std::endl;
         }
         
-        std::cout << "\nNote: Yellow has highest priority, so overlapping points appear yellow" << std::endl;
+        std::cout << "\nNote: Yellow has highest priority and highlights specific point ranges from each circle" << std::endl;
     }
 
 public:
@@ -232,9 +242,10 @@ public:
         std::cout << "- LEFT circle: RED (Priority 50)" << std::endl;
         std::cout << "- RIGHT circle: GREEN (Priority 60)" << std::endl;
         std::cout << "- FRONT circle: BLUE (Priority 70)" << std::endl;
-        std::cout << "- Overlapping areas: YELLOW (Priority 100 - highest)" << std::endl;
-        std::cout << "\nThe priority system ensures higher priority colors" << std::endl;
-        std::cout << "are visible when points overlap." << std::endl;
+        std::cout << "- Selected points: YELLOW (Priority 100 - highest)" << std::endl;
+        std::cout << "\nThe yellow points demonstrate the priority system by highlighting" << std::endl;
+        std::cout << "specific point ranges (indices 40-60) from each circle with the" << std::endl;
+        std::cout << "highest priority color that overrides lower priority layers." << std::endl;
         std::cout << "\nCamera controls:" << std::endl;
         std::cout << "- Left mouse: Rotate" << std::endl;
         std::cout << "- Middle mouse: Pan" << std::endl;
@@ -247,6 +258,7 @@ private:
     Viewer viewer_;
     std::shared_ptr<GlSceneManager> scene_manager_;
     std::unique_ptr<PointCloud> point_cloud_;
+    PointCloud* point_cloud_ptr_ = nullptr;  // Raw pointer for access after move
     
     std::vector<glm::vec4> base_points_;
     std::vector<size_t> circle1_indices_;

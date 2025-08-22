@@ -46,9 +46,14 @@ const char* fragment_shader_source = R"(
     out vec4 FragColor;
     
     uniform float opacity;
+    uniform vec3 layerColor;
+    uniform float layerOpacity;
+    uniform bool useLayerColor;
     
     void main() {
-        FragColor = vec4(vColor, opacity);
+        vec3 finalColor = useLayerColor ? layerColor : vColor;
+        float finalOpacity = useLayerColor ? layerOpacity : opacity;
+        FragColor = vec4(finalColor, finalOpacity);
     }
 )";
 }  // namespace
@@ -358,6 +363,7 @@ void PointCloud::OnDraw(const glm::mat4& projection, const glm::mat4& view,
     shader_.TrySetUniform("coord_transform", coord_transform);
     shader_.TrySetUniform("pointSize", point_size_);
     shader_.TrySetUniform("opacity", opacity_);
+    shader_.TrySetUniform("useLayerColor", false);
 
     glEnable(GL_PROGRAM_POINT_SIZE);
     glEnable(GL_DEPTH_TEST);
@@ -477,6 +483,7 @@ void PointCloud::ApplyLayerEffects(const glm::mat4& projection, const glm::mat4&
     // TODO: Implement proper per-point layer rendering with index buffers
     shader_.TrySetUniform("layerColor", layer_data.color);
     shader_.TrySetUniform("layerOpacity", layer_data.opacity);
+    shader_.TrySetUniform("useLayerColor", true);
     
     // This is a simplified version - ideally we'd use index buffers
     // to render only the points in this layer
