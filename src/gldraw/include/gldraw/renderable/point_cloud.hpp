@@ -12,6 +12,7 @@
 
 #include <vector>
 #include <memory>
+#include <unordered_map>
 
 #include <glm/glm.hpp>
 
@@ -145,6 +146,17 @@ class PointCloud : public OpenGlObject {
   void UpdateLayerRendering();
   void ApplyLayerEffects(const glm::mat4& projection, const glm::mat4& view, 
                         const glm::mat4& coord_transform);
+  
+  // Layer index buffer management
+  struct LayerIndexBuffer {
+    uint32_t ebo = 0;  // Element Buffer Object (index buffer)
+    size_t count = 0;   // Number of indices
+    bool needs_update = true;
+  };
+  std::unordered_map<std::string, LayerIndexBuffer> layer_index_buffers_;
+  void UpdateLayerIndexBuffer(const std::string& layer_name, 
+                              const std::vector<size_t>& indices);
+  void CleanupLayerIndexBuffers();
 };
 }  // namespace quickviz
 

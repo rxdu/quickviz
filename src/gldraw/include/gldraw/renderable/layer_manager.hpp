@@ -36,7 +36,8 @@ public:
         kSizeIncrease,     // Increase point size
         kOutline,          // Add outline effect
         kGlow,             // Add glow effect
-        kColorAndSize      // Change both color and size
+        kColorAndSize,     // Change both color and size
+        kSphereSurface     // Color visible sphere surface (for 3D sphere mode)
     };
 
     PointLayer(const std::string& name, int priority = 0);

@@ -50,6 +50,8 @@ const char* fragment_shader_source = R"(
     uniform float layerOpacity;
     uniform bool useLayerColor;
     uniform bool useSphereMode;
+    uniform bool useSphereSurfaceHighlight;
+    uniform bool useOutlineMode;
     
     void main() {
         // Create circular points by discarding pixels outside circle radius
@@ -59,8 +61,21 @@ const char* fragment_shader_source = R"(
             discard;
         }
         
-        vec3 finalColor = useLayerColor ? layerColor : vColor;
-        float finalOpacity = useLayerColor ? layerOpacity : opacity;
+        vec3 finalColor = vColor;
+        float finalOpacity = opacity;
+        
+        // Handle outline mode - only color pixels near the edge
+        if (useOutlineMode && useLayerColor) {
+            float outlineThickness = 0.15; // Width of the outline ring
+            if (distance > (0.5 - outlineThickness)) {
+                finalColor = layerColor;
+                finalOpacity = layerOpacity;
+            }
+        } else if (useLayerColor) {
+            // Surface fill mode - color entire surface
+            finalColor = layerColor;
+            finalOpacity = layerOpacity;
+        }
         
         if (useSphereMode) {
             // Calculate 3D sphere normal and lighting for sphere mode
@@ -79,6 +94,8 @@ const char* fragment_shader_source = R"(
             
             // Combine lighting
             float lighting = ambient + diffuse * 0.7 + specular * 0.3;
+            
+            // Apply lighting to create 3D appearance
             finalColor *= lighting;
             
             // Add depth-based darkening for more 3D effect
@@ -152,6 +169,9 @@ void PointCloud::ReleaseGpuResources() noexcept {
   if (vao_) glDeleteVertexArrays(1, &vao_);
   if (position_vbo_) glDeleteBuffers(1, &position_vbo_);
   if (color_vbo_) glDeleteBuffers(1, &color_vbo_);
+  
+  // Clean up layer index buffers
+  CleanupLayerIndexBuffers();
 
   vao_ = 0;
   position_vbo_ = 0;
@@ -398,6 +418,7 @@ void PointCloud::OnDraw(const glm::mat4& projection, const glm::mat4& view,
     shader_.TrySetUniform("opacity", opacity_);
     shader_.TrySetUniform("useLayerColor", false);
     shader_.TrySetUniform("useSphereMode", render_mode_ == PointMode::kSphere);
+    shader_.TrySetUniform("useSphereSurfaceHighlight", false);
 
     glEnable(GL_PROGRAM_POINT_SIZE);
     glEnable(GL_DEPTH_TEST);
@@ -435,10 +456,20 @@ std::shared_ptr<PointLayer> PointCloud::GetLayer(const std::string& name) {
 }
 
 bool PointCloud::RemoveLayer(const std::string& name) {
+  // Remove the index buffer for this layer
+  auto it = layer_index_buffers_.find(name);
+  if (it != layer_index_buffers_.end()) {
+    if (it->second.ebo != 0) {
+      glDeleteBuffers(1, &it->second.ebo);
+    }
+    layer_index_buffers_.erase(it);
+  }
+  
   return layer_manager_.RemoveLayer(name);
 }
 
 void PointCloud::ClearAllLayers() {
+  CleanupLayerIndexBuffers();
   layer_manager_.ClearAllLayers();
 }
 
@@ -488,14 +519,14 @@ void PointCloud::ApplyLayerEffects(const glm::mat4& projection, const glm::mat4&
                                   const glm::mat4& coord_transform) {
   if (!IsGpuResourcesAllocated()) return;
   
-  auto render_data = layer_manager_.GenerateRenderData();
-  if (render_data.empty()) return;
+  auto layers = layer_manager_.GetLayersByPriority();
+  if (layers.empty()) return;
   
   // Enable blending for layer effects
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glEnable(GL_PROGRAM_POINT_SIZE);
-  glEnable(GL_DEPTH_TEST);
+  glDisable(GL_DEPTH_TEST);  // Disable depth test so layers always render on top
   
   shader_.Use();
   shader_.SetUniform("projection", projection);
@@ -506,34 +537,108 @@ void PointCloud::ApplyLayerEffects(const glm::mat4& projection, const glm::mat4&
   
   glBindVertexArray(vao_);
   
-  // Render each layer
-  for (const auto& layer_data : render_data) {
-    if (layer_data.point_indices.empty()) continue;
+  // Render each layer using index buffers for efficient batch rendering
+  for (const auto& layer : layers) {
+    if (!layer || !layer->IsVisible() || layer->GetPointCount() == 0) continue;
+    
+    const std::string& layer_name = layer->GetName();
+    
+    // Update index buffer if needed
+    std::vector<size_t> indices_vec(layer->GetPointIndices().begin(), 
+                                    layer->GetPointIndices().end());
+    UpdateLayerIndexBuffer(layer_name, indices_vec);
+    
+    // Get the index buffer for this layer
+    auto& buffer_info = layer_index_buffers_[layer_name];
+    if (buffer_info.ebo == 0 || buffer_info.count == 0) continue;
     
     // Set layer-specific uniforms
-    float layer_point_size = point_size_ * layer_data.point_size_multiplier;
+    // Only apply size multiplier for highlight modes that affect size
+    float layer_point_size = point_size_;
+    if (layer->GetHighlightMode() == PointLayer::HighlightMode::kColorAndSize ||
+        layer->GetHighlightMode() == PointLayer::HighlightMode::kSizeIncrease) {
+      layer_point_size = point_size_ * layer->GetPointSizeMultiplier();
+    }
     shader_.SetUniform("pointSize", layer_point_size);
-    
-    // For now, render all points with layer color
-    // TODO: Implement proper per-point layer rendering with index buffers
-    shader_.TrySetUniform("layerColor", layer_data.color);
-    shader_.TrySetUniform("layerOpacity", layer_data.opacity);
+    shader_.TrySetUniform("layerColor", layer->GetColor());
+    shader_.TrySetUniform("layerOpacity", layer->GetOpacity());
     shader_.TrySetUniform("useLayerColor", true);
     
-    // This is a simplified version - ideally we'd use index buffers
-    // to render only the points in this layer
-    for (size_t idx : layer_data.point_indices) {
-      if (idx < active_points_) {
-        glDrawArrays(GL_POINTS, idx, 1);
-      }
+    // Enable sphere surface highlighting if using sphere mode and appropriate highlight mode
+    bool useSphereSurface = (render_mode_ == PointMode::kSphere) && 
+                            (layer->GetHighlightMode() == PointLayer::HighlightMode::kSphereSurface);
+    shader_.TrySetUniform("useSphereSurfaceHighlight", useSphereSurface);
+    
+    // Enable outline mode for kColorAndSize and kSizeIncrease modes
+    bool useOutlineMode = (layer->GetHighlightMode() == PointLayer::HighlightMode::kColorAndSize) ||
+                          (layer->GetHighlightMode() == PointLayer::HighlightMode::kSizeIncrease);
+    shader_.TrySetUniform("useOutlineMode", useOutlineMode);
+    
+    // Set blending mode based on highlight mode
+    // Surface modes completely replace underlying colors
+    // Outline modes blend with underlying colors
+    if (layer->GetHighlightMode() == PointLayer::HighlightMode::kSphereSurface) {
+      glBlendFunc(GL_ONE, GL_ZERO); // Replace mode - completely overwrites
+    } else {
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // Standard alpha blending
     }
+    
+    // Bind the index buffer and draw all points in one call
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer_info.ebo);
+    glDrawElements(GL_POINTS, buffer_info.count, GL_UNSIGNED_INT, nullptr);
   }
   
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
   glDisable(GL_BLEND);
   glDisable(GL_PROGRAM_POINT_SIZE);
-  glDisable(GL_DEPTH_TEST);
   glUseProgram(0);
+}
+
+void PointCloud::UpdateLayerIndexBuffer(const std::string& layer_name, 
+                                       const std::vector<size_t>& indices) {
+  // Find or create buffer info for this layer
+  auto& buffer_info = layer_index_buffers_[layer_name];
+  
+  // Check if we need to update
+  if (!buffer_info.needs_update && buffer_info.count == indices.size()) {
+    return;
+  }
+  
+  // Create buffer if it doesn't exist
+  if (buffer_info.ebo == 0) {
+    glGenBuffers(1, &buffer_info.ebo);
+  }
+  
+  // Convert size_t indices to GLuint (OpenGL expects unsigned int)
+  std::vector<GLuint> gl_indices;
+  gl_indices.reserve(indices.size());
+  for (size_t idx : indices) {
+    if (idx < active_points_) {
+      gl_indices.push_back(static_cast<GLuint>(idx));
+    }
+  }
+  
+  // Update the buffer data
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer_info.ebo);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, 
+               gl_indices.size() * sizeof(GLuint),
+               gl_indices.data(), 
+               GL_DYNAMIC_DRAW);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+  
+  buffer_info.count = gl_indices.size();
+  buffer_info.needs_update = false;
+}
+
+void PointCloud::CleanupLayerIndexBuffers() {
+  for (auto& [name, buffer_info] : layer_index_buffers_) {
+    if (buffer_info.ebo != 0) {
+      glDeleteBuffers(1, &buffer_info.ebo);
+      buffer_info.ebo = 0;
+    }
+  }
+  layer_index_buffers_.clear();
 }
 
 }  // namespace quickviz
