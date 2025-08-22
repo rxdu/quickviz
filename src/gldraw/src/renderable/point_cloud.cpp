@@ -49,10 +49,43 @@ const char* fragment_shader_source = R"(
     uniform vec3 layerColor;
     uniform float layerOpacity;
     uniform bool useLayerColor;
+    uniform bool useSphereMode;
     
     void main() {
+        // Create circular points by discarding pixels outside circle radius
+        vec2 coord = gl_PointCoord - vec2(0.5);
+        float distance = length(coord);
+        if (distance > 0.5) {
+            discard;
+        }
+        
         vec3 finalColor = useLayerColor ? layerColor : vColor;
         float finalOpacity = useLayerColor ? layerOpacity : opacity;
+        
+        if (useSphereMode) {
+            // Calculate 3D sphere normal and lighting for sphere mode
+            float z = sqrt(1.0 - 4.0 * distance * distance);
+            vec3 normal = normalize(vec3(coord * 2.0, z));
+            
+            // Simple directional lighting
+            vec3 lightDir = normalize(vec3(0.5, 0.5, 1.0));
+            float diffuse = max(dot(normal, lightDir), 0.0);
+            
+            // Add ambient lighting and specular highlight
+            float ambient = 0.3;
+            vec3 viewDir = vec3(0.0, 0.0, 1.0);
+            vec3 reflectDir = reflect(-lightDir, normal);
+            float specular = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+            
+            // Combine lighting
+            float lighting = ambient + diffuse * 0.7 + specular * 0.3;
+            finalColor *= lighting;
+            
+            // Add depth-based darkening for more 3D effect
+            float depthFactor = z * 0.2 + 0.8;
+            finalColor *= depthFactor;
+        }
+        
         FragColor = vec4(finalColor, finalOpacity);
     }
 )";
@@ -364,6 +397,7 @@ void PointCloud::OnDraw(const glm::mat4& projection, const glm::mat4& view,
     shader_.TrySetUniform("pointSize", point_size_);
     shader_.TrySetUniform("opacity", opacity_);
     shader_.TrySetUniform("useLayerColor", false);
+    shader_.TrySetUniform("useSphereMode", render_mode_ == PointMode::kSphere);
 
     glEnable(GL_PROGRAM_POINT_SIZE);
     glEnable(GL_DEPTH_TEST);
@@ -468,6 +502,7 @@ void PointCloud::ApplyLayerEffects(const glm::mat4& projection, const glm::mat4&
   shader_.SetUniform("view", view);
   shader_.SetUniform("coord_transform", coord_transform);
   shader_.SetUniform("opacity", 1.0f); // Layer opacity handled separately
+  shader_.TrySetUniform("useSphereMode", render_mode_ == PointMode::kSphere);
   
   glBindVertexArray(vao_);
   
