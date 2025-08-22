@@ -1,6 +1,6 @@
 if (BUILD_QUICKVIZ_APP)
   message(STATUS "Build quickviz application")
-  add_executable(quickviz main.cpp
+  add_executable(quickviz_demo_app main.cpp
       quickviz_application.cpp
       # panels
       panels/menu_bar.cpp
@@ -8,10 +8,10 @@ if (BUILD_QUICKVIZ_APP)
       panels/scene_panel.cpp
       panels/config_panel.cpp
       panels/console_panel.cpp)
-  target_link_libraries(quickviz PRIVATE imview renderer)
-  target_include_directories(quickviz PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  target_link_libraries(quickviz_demo_app PRIVATE imview renderer)
+  target_include_directories(quickviz_demo_app PRIVATE .)
 
-  install(TARGETS quickviz
+  install(TARGETS quickviz_demo_app
       EXPORT quickvizTargets
       LIBRARY DESTINATION lib
       ARCHIVE DESTINATION lib

@@ -218,4 +218,9 @@ Active development on point cloud visualization enhancements:
 - Measurement and annotation overlays
 - Level-of-detail system for large datasets
 
-See `TODO.md` for detailed roadmap and implementation status.
+See `TODO.md` for detailed roadmap and implementation status. 
+
+## Development Rules
+
+* Remember to update TODO.md after getting approval for a new task.
+* Always update TODO.md after you finish a task.

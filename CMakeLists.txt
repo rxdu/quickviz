@@ -114,6 +114,7 @@ endif ()
 
 ## Add source directory
 add_subdirectory(src)
+add_subdirectory(sample)
 add_subdirectory(third_party)
 
 ## Add comprehensive test directory
@@ -144,7 +145,7 @@ endforeach ()
 
 # targets to install defined in each module
 add_library(quickviz INTERFACE)
-target_link_libraries(quickviz INTERFACE core imview widget renderer) 
+target_link_libraries(quickviz INTERFACE core imview widget gldraw visualization) 
 
 # export target configuration 
 include(CMakePackageConfigHelpers)

@@ -432,51 +432,6 @@ void PointCloud::ClearHighlights(const std::string& layer_name) {
   }
 }
 
-void PointCloud::SetSelectedPoints(const std::vector<size_t>& point_indices, 
-                                  const glm::vec3& selection_color) {
-  selected_points_ = point_indices;
-  
-  // Create or update selection layer
-  auto selection_layer = layer_manager_.GetLayer("selection");
-  if (!selection_layer) {
-    selection_layer = layer_manager_.CreateLayer("selection", 200); // Very high priority
-  }
-  
-  selection_layer->SetPoints(point_indices);
-  selection_layer->SetColor(selection_color);
-  selection_layer->SetHighlightMode(PointLayer::HighlightMode::kColorAndSize);
-  selection_layer->SetPointSizeMultiplier(1.8f);
-  selection_layer->SetVisible(true);
-}
-
-void PointCloud::AddToSelection(const std::vector<size_t>& point_indices) {
-  // Add to internal selection list
-  selected_points_.insert(selected_points_.end(), point_indices.begin(), point_indices.end());
-  
-  // Remove duplicates
-  std::sort(selected_points_.begin(), selected_points_.end());
-  selected_points_.erase(std::unique(selected_points_.begin(), selected_points_.end()), 
-                        selected_points_.end());
-  
-  SetSelectedPoints(selected_points_);
-}
-
-void PointCloud::RemoveFromSelection(const std::vector<size_t>& point_indices) {
-  for (size_t idx : point_indices) {
-    selected_points_.erase(std::remove(selected_points_.begin(), selected_points_.end(), idx),
-                          selected_points_.end());
-  }
-  
-  SetSelectedPoints(selected_points_);
-}
-
-void PointCloud::ClearSelection() {
-  selected_points_.clear();
-  auto selection_layer = layer_manager_.GetLayer("selection");
-  if (selection_layer) {
-    selection_layer->ClearPoints();
-  }
-}
 
 std::vector<glm::vec4> PointCloud::GetPointsAs4D() const {
   std::vector<glm::vec4> points_4d;

@@ -6,8 +6,8 @@
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
-#ifndef QUICKVIZ_PCL_LOADER_HPP
-#define QUICKVIZ_PCL_LOADER_HPP
+#ifndef VISUALIZATION_PCL_LOADER_HPP
+#define VISUALIZATION_PCL_LOADER_HPP
 
 #include <cstdint>
 #include <functional>
@@ -427,4 +427,4 @@ public:
 } // namespace pcl_bridge
 } // namespace quickviz
 
-#endif // QUICKVIZ_PCL_LOADER_HPP
+#endif // VISUALIZATION_PCL_LOADER_HPP

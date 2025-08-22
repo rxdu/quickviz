@@ -74,13 +74,18 @@ void TestBasicLayering() {
     point_cloud->HighlightPoints(highlight_indices, glm::vec3(1.0f, 0.0f, 0.0f), "highlights", 2.0f);
     std::cout << "✓ Highlighted " << highlight_indices.size() << " points in red" << std::endl;
     
-    // Select some points (yellow)
+    // Configure selection layer (yellow)
     std::vector<size_t> selection_indices;
     for (int i = 0; i < 30; ++i) {
         selection_indices.push_back(idx_dist(gen));
     }
-    point_cloud->SetSelectedPoints(selection_indices, glm::vec3(1.0f, 1.0f, 0.0f));
-    std::cout << "✓ Selected " << selection_indices.size() << " points in yellow" << std::endl;
+    if (selection_layer) {
+        selection_layer->SetPoints(selection_indices);
+        selection_layer->SetColor(glm::vec3(1.0f, 1.0f, 0.0f));
+        selection_layer->SetPointSizeMultiplier(1.8f);
+        selection_layer->SetHighlightMode(PointLayer::HighlightMode::kColorAndSize);
+    }
+    std::cout << "✓ Configured selection layer with " << selection_indices.size() << " points in yellow" << std::endl;
     
     // Create cluster visualization (green)
     std::vector<size_t> cluster_indices;

@@ -26,7 +26,7 @@
 #include "gldraw/gl_scene_manager.hpp"
 #include "gldraw/renderable/grid.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
-#include "gldraw/pcl_bridge/pcl_loader.hpp"
+#include "visualization/pcl_bridge/pcl_loader.hpp"
 
 #include "point_cloud_info_panel.hpp"
 #include "point_cloud_tool_panel.hpp"

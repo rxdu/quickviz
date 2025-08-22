@@ -26,21 +26,23 @@
 #include "gldraw/gl_scene_manager.hpp"
 #include "gldraw/renderable/grid.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
-#include "gldraw/selection/selection_tools.hpp"
-#include "gldraw/pcl_bridge/pcl_loader.hpp"
+#include "visualization/contracts/selection_data.hpp"
+#include "visualization/renderables/selection_renderable.hpp"
+#include "visualization/testing/mock_data_generator.hpp"
+#include "visualization/pcl_bridge/pcl_loader.hpp"
 
 using namespace quickviz;
 
-// Selection control panel for PCD viewer
-class PCDSelectionPanel : public Panel {
+// Demo panel showing external selection processing
+class ExternalSelectionDemoPanel : public Panel {
  public:
-  PCDSelectionPanel(const pcl_bridge::PointCloudMetadata& metadata) 
-      : Panel("Selection Tools"), metadata_(metadata) {
+  ExternalSelectionDemoPanel(const pcl_bridge::PointCloudMetadata& metadata) 
+      : Panel("External Selection Demo"), metadata_(metadata) {
     SetAutoLayout(true);
   }
   
   void Draw() override {
-    ImGui::Text("PCD Selection Tools");
+    ImGui::Text("External Selection Demo");
     ImGui::Separator();
     
     // File info
@@ -50,93 +52,46 @@ class PCDSelectionPanel : public Panel {
     ImGui::Text("PCL Type: %s", metadata_.detected_pcl_type.c_str());
     ImGui::Separator();
     
-    // Tool selection
-    ImGui::Text("Selection Tool:");
-    ImGui::RadioButton("None", &current_tool_, 0);
-    ImGui::RadioButton("Point Pick", &current_tool_, 1);
-    ImGui::RadioButton("Rectangle", &current_tool_, 2);
-    ImGui::RadioButton("Lasso", &current_tool_, 3);
-    ImGui::RadioButton("Radius", &current_tool_, 4);
-    
-    ImGui::Separator();
-    
-    // Selection mode
-    ImGui::Text("Selection Mode:");
-    ImGui::RadioButton("Replace", &selection_mode_, 0);
-    ImGui::RadioButton("Add (Shift)", &selection_mode_, 1);
-    ImGui::RadioButton("Remove (Ctrl)", &selection_mode_, 2);
-    ImGui::RadioButton("Toggle (Alt)", &selection_mode_, 3);
-    
-    ImGui::Separator();
-    
-    // Operations
-    ImGui::Text("Operations:");
-    if (ImGui::Button("Clear Selection", ImVec2(120, 0))) {
-      if (selection_tools_) {
-        selection_tools_->ClearSelection();
-      }
+    // Demo selections
+    ImGui::Text("Demo Selection Types:");
+    if (ImGui::Button("Random Selection (100 pts)", ImVec2(200, 0))) {
+      CreateRandomSelection();
     }
-    ImGui::SameLine();
-    if (ImGui::Button("Invert Selection", ImVec2(120, 0))) {
-      if (selection_tools_) {
-        selection_tools_->InvertSelection();
-      }
+    if (ImGui::Button("Rectangle Selection", ImVec2(200, 0))) {
+      CreateRectangleSelection();
     }
-    
-    ImGui::SliderFloat("Grow/Shrink Dist", &grow_distance_, 0.1f, 5.0f);
-    if (ImGui::Button("Grow Selection", ImVec2(120, 0))) {
-      if (selection_tools_) {
-        selection_tools_->GrowSelection(grow_distance_);
-      }
+    if (ImGui::Button("Multiple Clusters", ImVec2(200, 0))) {
+      CreateMultipleSelections();
     }
-    ImGui::SameLine();
-    if (ImGui::Button("Shrink Selection", ImVec2(120, 0))) {
-      if (selection_tools_) {
-        selection_tools_->ShrinkSelection(grow_distance_);
-      }
+    if (ImGui::Button("Clear All Selections", ImVec2(200, 0))) {
+      ClearAllSelections();
     }
     
     ImGui::Separator();
     
-    // Selection info
-    if (selection_tools_) {
-      const auto& selection = selection_tools_->GetCurrentSelection();
-      ImGui::Text("Selected Points: %zu", selection.count);
-      
-      if (!selection.IsEmpty()) {
-        ImGui::Text("Centroid:");
-        ImGui::Text("  X: %.3f", selection.centroid.x);
-        ImGui::Text("  Y: %.3f", selection.centroid.y);
-        ImGui::Text("  Z: %.3f", selection.centroid.z);
-        
-        ImGui::Text("Bounds:");
-        ImGui::Text("  Min: (%.2f, %.2f, %.2f)", 
-                    selection.min_bounds.x, selection.min_bounds.y, selection.min_bounds.z);
-        ImGui::Text("  Max: (%.2f, %.2f, %.2f)", 
-                    selection.max_bounds.x, selection.max_bounds.y, selection.max_bounds.z);
-      }
-      
-      int hovered = selection_tools_->GetHoveredPoint();
-      if (hovered >= 0) {
-        ImGui::Text("Hovered Point: %d", hovered);
-      } else {
-        ImGui::Text("Hovered Point: None");
-      }
+    // Algorithm simulation
+    ImGui::Text("Simulated Processing:");
+    ImGui::SliderFloat("Confidence", &confidence_, 0.0f, 1.0f);
+    if (ImGui::Button("Simulate Segmentation", ImVec2(200, 0))) {
+      SimulateSegmentation();
+    }
+    if (ImGui::Button("Simulate Feature Detection", ImVec2(200, 0))) {
+      SimulateFeatureDetection();
     }
     
     ImGui::Separator();
     
-    // Highlight controls
-    ImGui::Text("Highlight Options:");
-    ImGui::ColorEdit3("Selection Color", &highlight_color_[0]);
-    ImGui::SliderFloat("Point Size Mult", &highlight_size_, 1.0f, 4.0f);
-    
-    if (ImGui::Button("Apply Highlight", ImVec2(120, 0))) {
-      ApplyHighlight();
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Clear Highlights", ImVec2(120, 0))) {
-      ClearHighlights();
+    // Selection statistics
+    ImGui::Text("Current Selections: %zu", active_selections_.size());
+    if (!active_selections_.empty()) {
+      ImGui::Text("Recent Selection Info:");
+      const auto& last_selection = active_selections_.back();
+      ImGui::Text("  Name: %s", last_selection.selection_name.c_str());
+      ImGui::Text("  Points: %zu", last_selection.point_indices.size());
+      ImGui::Text("  Color: (%.2f, %.2f, %.2f)", 
+                  last_selection.highlight_color.r,
+                  last_selection.highlight_color.g,
+                  last_selection.highlight_color.b);
     }
     
     ImGui::Separator();
@@ -158,262 +113,116 @@ class PCDSelectionPanel : public Panel {
     ImGui::Separator();
     
     // Instructions
-    ImGui::TextWrapped("Instructions:");
-    ImGui::TextWrapped("• Select tool above");
-    ImGui::TextWrapped("• Left click/drag in 3D view");
-    ImGui::TextWrapped("• Right click: rotate camera");
+    ImGui::TextWrapped("This demo shows how external processing");
+    ImGui::TextWrapped("algorithms would provide selection results");
+    ImGui::TextWrapped("to gldraw for visualization.");
+    ImGui::Separator();
+    ImGui::TextWrapped("Camera controls:");
+    ImGui::TextWrapped("• Right click: rotate");
     ImGui::TextWrapped("• Scroll: zoom");
     ImGui::TextWrapped("• Middle click: pan");
-    
-    if (current_tool_ == 3) { // Lasso
-      ImGui::TextWrapped("• Lasso: click and drag to draw");
-    }
   }
   
-  // Setters
-  void SetSelectionTools(SelectionTools* tools) { selection_tools_ = tools; }
+  // Remove visualizer setter since we'll use static methods
   void SetPointCloud(PointCloud* pc) { point_cloud_ = pc; }
   
-  // Getters
-  int GetCurrentTool() const { return current_tool_; }
-  SelectionMode GetSelectionMode() const { return static_cast<SelectionMode>(selection_mode_); }
-  
-  void ApplyHighlight() {
-    if (!selection_tools_ || !point_cloud_) return;
-    
-    const auto& selection = selection_tools_->GetCurrentSelection();
-    if (!selection.IsEmpty()) {
-      point_cloud_->HighlightPoints(
-        selection.indices,
-        highlight_color_,
-        "manual_highlight",
-        highlight_size_
-      );
-    }
-  }
-  
-  void ClearHighlights() {
-    if (point_cloud_) {
-      point_cloud_->ClearHighlights("manual_highlight");
-    }
-  }
-  
  private:
-  SelectionTools* selection_tools_ = nullptr;
+  void CreateRandomSelection() {
+    auto selection = visualization::testing::MockDataGenerator::GenerateRandomSelection(
+        metadata_.point_count, 0.05f); // 5% of points
+    selection.selection_name = "random_demo";
+    selection.highlight_color = glm::vec3(1.0f, 0.8f, 0.2f); // Orange
+    VisualizeSelection(selection);
+  }
+  
+  void CreateRectangleSelection() {
+    auto selection = visualization::testing::MockDataGenerator::GenerateRectangularSelection(
+        metadata_.point_count, 0, 100); // First 100 points
+    selection.selection_name = "rectangle_demo";
+    selection.highlight_color = glm::vec3(0.2f, 0.8f, 1.0f); // Cyan
+    VisualizeSelection(selection);
+  }
+  
+  void CreateMultipleSelections() {
+    auto selections = visualization::testing::MockDataGenerator::GenerateMultipleSelections(
+        metadata_.point_count, 3);
+    glm::vec3 colors[] = {
+        glm::vec3(1.0f, 0.2f, 0.2f), // Red
+        glm::vec3(0.2f, 1.0f, 0.2f), // Green
+        glm::vec3(0.2f, 0.2f, 1.0f)  // Blue
+    };
+    
+    for (size_t i = 0; i < selections.size(); ++i) {
+      selections[i].selection_name = "cluster_" + std::to_string(i);
+      selections[i].highlight_color = colors[i % 3];
+      VisualizeSelection(selections[i]);
+    }
+  }
+  
+  void SimulateSegmentation() {
+    auto selection = visualization::testing::MockDataGenerator::GenerateRandomSelection(
+        metadata_.point_count, 0.1f); // 10% of points
+    selection.selection_name = "segmentation_result";
+    // Confidence affects color intensity
+    selection.highlight_color = glm::vec3(confidence_, 1.0f, 0.3f);
+    selection.size_multiplier = 1.0f + confidence_ * 0.5f;
+    VisualizeSelection(selection);
+  }
+  
+  void SimulateFeatureDetection() {
+    auto selection = visualization::testing::MockDataGenerator::GenerateRandomSelection(
+        metadata_.point_count, 0.03f); // 3% of points
+    selection.selection_name = "feature_detection";
+    // High confidence features get brighter, larger points
+    selection.highlight_color = glm::vec3(1.0f, 0.3f, confidence_);
+    selection.size_multiplier = 1.5f + confidence_;
+    VisualizeSelection(selection);
+  }
+  
+  void VisualizeSelection(const visualization::SelectionData& selection) {
+    if (point_cloud_) {
+      // Create a SelectionRenderable using the new API
+      auto renderable = visualization::SelectionRenderable::FromData(selection, *point_cloud_);
+      if (renderable) {
+        renderable->AllocateGpuResources();
+        active_renderables_.push_back(std::move(renderable));
+        active_selections_.push_back(selection);
+        
+        // Limit to last 5 selections to avoid clutter
+        if (active_selections_.size() > 5) {
+          // Remove the oldest selection
+          active_renderables_.erase(active_renderables_.begin());
+          active_selections_.erase(active_selections_.begin());
+        }
+      }
+    }
+  }
+  
+  void ClearAllSelections() {
+    // Clear all active renderable objects (they will clean up automatically)
+    active_renderables_.clear();
+    active_selections_.clear();
+  }
+  
   PointCloud* point_cloud_ = nullptr;
   
   pcl_bridge::PointCloudMetadata metadata_;
+  std::vector<visualization::SelectionData> active_selections_;
+  std::vector<std::unique_ptr<visualization::SelectionRenderable>> active_renderables_;
   
-  int current_tool_ = 0;     // 0=None, 1=Point, 2=Rectangle, 3=Lasso, 4=Radius
-  int selection_mode_ = 0;   // 0=Replace, 1=Add, 2=Remove, 3=Toggle
-  float grow_distance_ = 0.5f;
-  glm::vec3 highlight_color_ = glm::vec3(1.0f, 1.0f, 0.0f);
-  float highlight_size_ = 2.0f;
-  
+  float confidence_ = 0.8f;
   float point_size_ = 2.0f;
   float opacity_ = 1.0f;
 };
 
-// Enhanced scene manager with selection handling
-class PCDSelectionSceneManager : public GlSceneManager {
+// Simple scene manager for external selection demo
+class ExternalSelectionSceneManager : public GlSceneManager {
  public:
-  PCDSelectionSceneManager() : GlSceneManager("PCD Viewer with Selection") {
+  ExternalSelectionSceneManager() : GlSceneManager("External Selection Demo") {
     SetShowRenderingInfo(true);
     SetBackgroundColor(0.05f, 0.05f, 0.08f, 1.0f);
     SetNoTitleBar(true);
   }
-  
-  void SetSelectionTools(SelectionTools* tools) { selection_tools_ = tools; }
-  void SetControlPanel(PCDSelectionPanel* panel) { control_panel_ = panel; }
-  void SetPointCloud(PointCloud* pc) { point_cloud_ = pc; }
-  
-  void Draw() override {
-    // Handle mouse input for selection before drawing
-    if (selection_tools_ && control_panel_) {
-      HandleSelectionInput();
-    }
-    
-    // Draw the scene
-    GlSceneManager::Draw();
-    
-    // Draw selection overlays after scene
-    DrawSelectionOverlay();
-  }
-  
- private:
-  void HandleSelectionInput() {
-    ImGuiIO& io = ImGui::GetIO();
-    
-    // Don't interfere with camera controls
-    if (ImGui::IsMouseDown(1) || ImGui::IsMouseDown(2)) return; // Right or middle mouse
-    
-    // The 3D scene is rendered as an ImGui::Image() in the scene manager
-    // We need to get the image bounds, not the general content region
-    ImVec2 mouse_pos = io.MousePos;
-    
-    // Get the last drawn ImGui item (which should be our 3D scene image)
-    ImVec2 image_min = ImGui::GetItemRectMin();
-    ImVec2 image_max = ImGui::GetItemRectMax();
-    ImVec2 image_size = ImVec2(image_max.x - image_min.x, image_max.y - image_min.y);
-    
-    // Convert to image-relative coordinates
-    float local_x = mouse_pos.x - image_min.x;
-    float local_y = mouse_pos.y - image_min.y;
-    
-    // Always update selection tools with current matrices
-    auto camera = GetCamera();
-    if (camera) {
-      selection_tools_->SetCamera(camera);
-      selection_tools_->SetViewport(0, 0, image_size.x, image_size.y);
-      selection_tools_->SetProjectionMatrix(GetProjectionMatrix());
-      selection_tools_->SetViewMatrix(GetViewMatrix());
-      selection_tools_->SetCoordinateTransform(GetCoordinateTransform());
-      
-      // Check if mouse is within image bounds
-      bool mouse_in_content = (local_x >= 0 && local_x < image_size.x && 
-                              local_y >= 0 && local_y < image_size.y);
-      
-      // Always update hover (clear when outside bounds)
-      if (!is_selecting_ && !ImGui::IsMouseDragging(0) && !ImGui::IsMouseDragging(1) && !ImGui::IsMouseDragging(2)) {
-        if (mouse_in_content) {
-          selection_tools_->UpdateHover(local_x, local_y);
-        } else {
-          selection_tools_->UpdateHover(-1, -1); // Clear hover when outside
-        }
-      }
-      
-      // Only handle selection when mouse is in content area
-      if (!mouse_in_content) {
-        return;
-      }
-      
-      int current_tool = control_panel_->GetCurrentTool();
-      
-      // Handle mouse clicks for selection
-      if (ImGui::IsMouseClicked(0) && current_tool != 0) {
-        selection_start_ = glm::vec2(local_x, local_y);
-        is_selecting_ = true;
-        
-        if (current_tool == 3) { // Lasso
-          lasso_points_.clear();
-          lasso_points_.push_back(selection_start_);
-        } else if (current_tool == 1) { // Point pick
-          // Immediate selection for point picking
-          SelectionMode mode = control_panel_->GetSelectionMode();
-          int selected = selection_tools_->PickPoint(local_x, local_y, 10.0f);
-          if (selected >= 0) {
-            // For point pick, we can process immediately
-            std::cout << "[Point Pick] Selected point " << selected << std::endl;
-          }
-          is_selecting_ = false;
-        }
-      }
-      
-      // Handle drag for lasso
-      if (is_selecting_ && ImGui::IsMouseDragging(0) && current_tool == 3) {
-        // Add points to lasso path (limit frequency for performance)
-        static int lasso_counter = 0;
-        if (++lasso_counter % 2 == 0) { // Add every 2nd frame
-          lasso_points_.push_back(glm::vec2(local_x, local_y));
-        }
-      }
-      
-      // Handle mouse release for area selections
-      if (ImGui::IsMouseReleased(0) && is_selecting_) {
-        SelectionMode mode = control_panel_->GetSelectionMode();
-        
-        switch (current_tool) {
-          case 2: // Rectangle
-            {
-              auto result = selection_tools_->SelectRectangle(
-                selection_start_.x, selection_start_.y,
-                local_x, local_y, mode);
-              std::cout << "[Rectangle] Selected " << result.count << " points" << std::endl;
-            }
-            break;
-            
-          case 3: // Lasso
-            if (lasso_points_.size() >= 3) {
-              lasso_points_.push_back(glm::vec2(local_x, local_y)); // Close the polygon
-              auto result = selection_tools_->SelectLasso(lasso_points_, mode);
-              std::cout << "[Lasso] Selected " << result.count << " points" << std::endl;
-            }
-            break;
-            
-          case 4: // Radius
-            {
-              float radius = glm::length(glm::vec2(local_x, local_y) - selection_start_);
-              auto result = selection_tools_->SelectRadius(
-                selection_start_.x, selection_start_.y,
-                radius, mode);
-              std::cout << "[Radius] Selected " << result.count << " points" << std::endl;
-            }
-            break;
-        }
-        
-        is_selecting_ = false;
-        lasso_points_.clear();
-      }
-    }
-  }
-  
-  void DrawSelectionOverlay() {
-    if (!is_selecting_) return;
-    
-    int current_tool = control_panel_->GetCurrentTool();
-    if (current_tool <= 1) return; // No overlay for None or Point Pick
-    
-    ImDrawList* draw_list = ImGui::GetWindowDrawList();
-    ImVec2 window_pos = ImGui::GetWindowPos();
-    ImVec2 mouse_pos = ImGui::GetIO().MousePos;
-    
-    switch (current_tool) {
-      case 2: // Rectangle
-        draw_list->AddRect(
-          ImVec2(window_pos.x + selection_start_.x, window_pos.y + selection_start_.y),
-          mouse_pos,
-          IM_COL32(255, 255, 0, 150), 0.0f, 0, 2.0f);
-        break;
-        
-      case 3: // Lasso
-        if (lasso_points_.size() > 1) {
-          for (size_t i = 1; i < lasso_points_.size(); ++i) {
-            draw_list->AddLine(
-              ImVec2(window_pos.x + lasso_points_[i-1].x, 
-                     window_pos.y + lasso_points_[i-1].y),
-              ImVec2(window_pos.x + lasso_points_[i].x, 
-                     window_pos.y + lasso_points_[i].y),
-              IM_COL32(255, 255, 0, 200), 2.0f);
-          }
-          // Draw line to current mouse position
-          if (!lasso_points_.empty()) {
-            draw_list->AddLine(
-              ImVec2(window_pos.x + lasso_points_.back().x, 
-                     window_pos.y + lasso_points_.back().y),
-              mouse_pos,
-              IM_COL32(255, 255, 0, 100), 2.0f);
-          }
-        }
-        break;
-        
-      case 4: // Radius
-        {
-          float radius = glm::length(glm::vec2(
-            mouse_pos.x - window_pos.x, mouse_pos.y - window_pos.y) - selection_start_);
-          draw_list->AddCircle(
-            ImVec2(window_pos.x + selection_start_.x, window_pos.y + selection_start_.y),
-            radius, IM_COL32(255, 255, 0, 150), 64, 2.0f);
-        }
-        break;
-    }
-  }
-  
-  SelectionTools* selection_tools_ = nullptr;
-  PCDSelectionPanel* control_panel_ = nullptr;
-  PointCloud* point_cloud_ = nullptr;
-  bool is_selecting_ = false;
-  glm::vec2 selection_start_;
-  std::vector<glm::vec2> lasso_points_;
 };
 
 int main(int argc, char* argv[]) {
@@ -587,8 +396,8 @@ int main(int argc, char* argv[]) {
     main_box->SetJustifyContent(Styling::JustifyContent::kFlexStart);
     main_box->SetAlignItems(Styling::AlignItems::kStretch);
 
-    // Create enhanced scene manager with selection
-    auto gl_sm = std::make_shared<PCDSelectionSceneManager>();
+    // Create scene manager for external selection demo
+    auto gl_sm = std::make_shared<ExternalSelectionSceneManager>();
     gl_sm->SetAutoLayout(true);
     gl_sm->SetFlexGrow(0.85f);      // Allow growth for 3D view
     gl_sm->SetFlexShrink(1.0f);     // Allow shrinking if needed
@@ -630,48 +439,12 @@ int main(int argc, char* argv[]) {
     );
     gl_sm->AddOpenGLObject("reference_grid", std::move(grid));
 
-    // Create selection tools
-    auto selection_tools = std::make_unique<SelectionTools>();
-    selection_tools->SetPointCloud(pc_ptr);
-    
-    // Set up callbacks
-    selection_tools->SetSelectionCallback([](const SelectionResult& result) {
-      std::cout << "[Selection Changed] " << result.count << " points selected";
-      if (!result.IsEmpty()) {
-        std::cout << " | Centroid: (" 
-                  << std::fixed << std::setprecision(2)
-                  << result.centroid.x << ", " 
-                  << result.centroid.y << ", " 
-                  << result.centroid.z << ")";
-      }
-      std::cout << std::endl;
-    });
-    
-    selection_tools->SetHoverCallback([pc_ptr](int point_index) {
-      if (point_index >= 0) {
-        pc_ptr->HighlightPoint(
-          static_cast<size_t>(point_index),
-          glm::vec3(1.0f, 1.0f, 0.0f), // Yellow for hover
-          "hover",
-          1.5f
-        );
-      } else {
-        pc_ptr->ClearHighlights("hover");
-      }
-    });
-
-    // Create selection control panel
-    auto selection_panel = std::make_shared<PCDSelectionPanel>(metadata);
-    selection_panel->SetSelectionTools(selection_tools.get());
+    // Create demo control panel
+    auto selection_panel = std::make_shared<ExternalSelectionDemoPanel>(metadata);
     selection_panel->SetPointCloud(pc_ptr);
     selection_panel->SetAutoLayout(true);
     selection_panel->SetFlexGrow(0.15f);     // Panel takes less space
     selection_panel->SetFlexShrink(0.0f);   // Don't shrink below basis
-
-    // Connect components
-    gl_sm->SetSelectionTools(selection_tools.get());
-    gl_sm->SetControlPanel(selection_panel.get());
-    gl_sm->SetPointCloud(pc_ptr);
 
     // Add components to main container
     main_box->AddChild(selection_panel);
@@ -680,8 +453,9 @@ int main(int argc, char* argv[]) {
     // Add to viewer
     viewer.AddSceneObject(main_box);
 
-    std::cout << "\n=== Starting Interactive Viewer ===" << std::endl;
-    std::cout << "Use the left panel to select tools and interact with the point cloud" << std::endl;
+    std::cout << "\n=== Starting External Selection Demo ===" << std::endl;
+    std::cout << "Use the left panel to generate demo selections from external processing" << std::endl;
+    std::cout << "This demonstrates how external algorithms would provide results to gldraw" << std::endl;
     std::cout << "Camera controls: Right-click to rotate, scroll to zoom, middle-click to pan" << std::endl;
 
     viewer.Show();

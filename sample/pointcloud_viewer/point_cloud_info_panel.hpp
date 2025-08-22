@@ -10,7 +10,7 @@
 #define QUICKVIZ_POINT_CLOUD_INFO_PANEL_HPP
 
 #include "imview/panel.hpp"
-#include "gldraw/pcl_bridge/pcl_loader.hpp"
+#include "visualization/pcl_bridge/pcl_loader.hpp"
 
 namespace quickviz {
 class PointCloudInfoPanel : public quickviz::Panel {

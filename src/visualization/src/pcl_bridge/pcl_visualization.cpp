@@ -6,7 +6,7 @@
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
-#include "gldraw/pcl_bridge/pcl_visualization.hpp"
+#include "visualization/pcl_bridge/pcl_visualization.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 
 #include <pcl/point_cloud.h>

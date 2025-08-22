@@ -18,6 +18,13 @@ target_link_libraries(test_point_cloud_realtime PRIVATE gldraw)
 add_executable(test_point_cloud_buffer_strategies test_point_cloud_buffer_strategies.cpp)
 target_link_libraries(test_point_cloud_buffer_strategies PRIVATE gldraw)
 
+# Test new visualization contracts (now requires visualization module)
+add_executable(test_visualization_contracts test_visualization_contracts.cpp)
+target_link_libraries(test_visualization_contracts PRIVATE gldraw visualization)
+
+# Test external selection demo (replaces old selection integration)
+# test_pcd_with_selection.cpp now demonstrates external selection visualization
+
 add_executable(test_coordinate_system test_coordinate_system.cpp)
 target_link_libraries(test_coordinate_system PRIVATE gldraw)
 
@@ -54,12 +61,12 @@ if(PCL_FOUND)
   
   add_executable(test_pcl_bridge test_pcl_bridge.cpp)
   target_include_directories(test_pcl_bridge PRIVATE ${PCL_INCLUDE_DIRS})
-  target_link_libraries(test_pcl_bridge PRIVATE gldraw ${PCL_LIBRARIES})
+  target_link_libraries(test_pcl_bridge PRIVATE gldraw visualization ${PCL_LIBRARIES})
   target_compile_definitions(test_pcl_bridge PRIVATE ${PCL_DEFINITIONS})
   
   add_executable(test_pcd_with_selection test_pcd_with_selection.cpp)
   target_include_directories(test_pcd_with_selection PRIVATE ${PCL_INCLUDE_DIRS})
-  target_link_libraries(test_pcd_with_selection PRIVATE gldraw ${PCL_LIBRARIES})
+  target_link_libraries(test_pcd_with_selection PRIVATE gldraw visualization ${PCL_LIBRARIES})
   target_compile_definitions(test_pcd_with_selection PRIVATE ${PCL_DEFINITIONS})
   
 #  add_executable(test_pcl_loader unit_test/test_pcl_loader.cpp)
@@ -69,9 +76,8 @@ if(PCL_FOUND)
   
   add_executable(test_pcl_loader_render test_pcl_loader_render.cpp)
   target_include_directories(test_pcl_loader_render PRIVATE ${PCL_INCLUDE_DIRS})
-  target_link_libraries(test_pcl_loader_render PRIVATE gldraw ${PCL_LIBRARIES})
+  target_link_libraries(test_pcl_loader_render PRIVATE gldraw visualization ${PCL_LIBRARIES})
   target_compile_definitions(test_pcl_loader_render PRIVATE ${PCL_DEFINITIONS})
 
-  add_subdirectory(point_selection)
   add_subdirectory(unit_test)
 endif()

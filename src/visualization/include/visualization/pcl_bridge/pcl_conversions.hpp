@@ -6,8 +6,8 @@
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
-#ifndef QUICKVIZ_PCL_CONVERSIONS_HPP
-#define QUICKVIZ_PCL_CONVERSIONS_HPP
+#ifndef VISUALIZATION_PCL_CONVERSIONS_HPP
+#define VISUALIZATION_PCL_CONVERSIONS_HPP
 
 #include <vector>
 #include <functional>
@@ -184,4 +184,4 @@ std::pair<glm::vec3, glm::vec3> CalculateBoundingBox(
 } // namespace pcl_bridge
 } // namespace quickviz
 
-#endif // QUICKVIZ_PCL_CONVERSIONS_HPP
+#endif // VISUALIZATION_PCL_CONVERSIONS_HPP

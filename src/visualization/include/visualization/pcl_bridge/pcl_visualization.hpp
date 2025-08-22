@@ -6,8 +6,8 @@
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
-#ifndef QUICKVIZ_PCL_VISUALIZATION_HPP
-#define QUICKVIZ_PCL_VISUALIZATION_HPP
+#ifndef VISUALIZATION_PCL_VISUALIZATION_HPP
+#define VISUALIZATION_PCL_VISUALIZATION_HPP
 
 #include <vector>
 #include <string>
@@ -144,4 +144,4 @@ VisualizationQuality AssessVisualizationQuality(const PointCloud& renderer_cloud
 } // namespace pcl_bridge
 } // namespace quickviz
 
-#endif // QUICKVIZ_PCL_VISUALIZATION_HPP
+#endif // VISUALIZATION_PCL_VISUALIZATION_HPP

@@ -26,27 +26,8 @@ add_library(gldraw
     src/renderable/coordinate_frame.cpp
     src/renderable/texture.cpp
     src/renderable/layer_manager.cpp
-    ## Selection tools
-    src/selection/selection_result.cpp
-    src/selection/selection_tools.cpp
-    ## PCL bridge utilities (optional, depends on PCL)
+    src/renderable/mesh.cpp
     )
-
-# Check for PCL and conditionally compile PCL bridge
-find_package(PCL QUIET COMPONENTS common io)
-if(PCL_FOUND)
-    message(STATUS "Found PCL: ${PCL_VERSION} - enabling PCL bridge utilities")
-    target_sources(gldraw PRIVATE
-        src/pcl_bridge/pcl_conversions.cpp
-        src/pcl_bridge/pcl_visualization.cpp
-        src/pcl_bridge/pcl_loader.cpp
-    )
-    target_include_directories(gldraw PRIVATE ${PCL_INCLUDE_DIRS})
-    target_link_libraries(gldraw PRIVATE ${PCL_LIBRARIES})
-    target_compile_definitions(gldraw PUBLIC QUICKVIZ_WITH_PCL PRIVATE ${PCL_DEFINITIONS})
-else()
-    message(STATUS "PCL not found - PCL bridge utilities will not be available")
-endif()
 target_link_libraries(gldraw PUBLIC core imcore imview stb
     Threads::Threads
     OpenGL::GL)

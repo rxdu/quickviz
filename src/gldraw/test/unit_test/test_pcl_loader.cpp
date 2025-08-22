@@ -11,7 +11,7 @@
 #include <fstream>
 #include <memory>
 
-#include "gldraw/pcl_bridge/pcl_loader.hpp"
+#include "visualization/pcl_bridge/pcl_loader.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 
 #ifdef QUICKVIZ_WITH_PCL

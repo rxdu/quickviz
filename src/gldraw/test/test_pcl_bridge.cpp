@@ -18,8 +18,8 @@
 #include "gldraw/renderable/point_cloud.hpp"
 
 #ifdef QUICKVIZ_WITH_PCL
-#include "gldraw/pcl_bridge/pcl_conversions.hpp"
-#include "gldraw/pcl_bridge/pcl_visualization.hpp"
+#include "visualization/pcl_bridge/pcl_conversions.hpp"
+#include "visualization/pcl_bridge/pcl_visualization.hpp"
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>

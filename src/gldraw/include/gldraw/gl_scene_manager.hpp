@@ -28,6 +28,16 @@
 #include "gldraw/camera_controller.hpp"
 #include "gldraw/coordinate_system_transformer.hpp"
 
+// Forward declarations for visualization contracts
+namespace quickviz {
+namespace gldraw {
+namespace visualization {
+struct SelectionData;
+struct SurfaceData;
+}
+}
+}
+
 namespace quickviz {
 class GlSceneManager : public Panel {
  public:

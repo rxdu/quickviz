@@ -88,13 +88,6 @@ class PointCloud : public OpenGlObject {
                      float size_multiplier = 1.5f);
   void ClearHighlights(const std::string& layer_name = "highlight");
   
-  // Point selection support  
-  void SetSelectedPoints(const std::vector<size_t>& point_indices, 
-                        const glm::vec3& selection_color = glm::vec3(1.0f, 1.0f, 0.0f));
-  void AddToSelection(const std::vector<size_t>& point_indices);
-  void RemoveFromSelection(const std::vector<size_t>& point_indices);
-  void ClearSelection();
-  const std::vector<size_t>& GetSelectedPoints() const { return selected_points_; }
   
   // Data access for selection and PCL bridge
   size_t GetPointCount() const { return points_.size(); }
@@ -147,7 +140,6 @@ class PointCloud : public OpenGlObject {
   
   // Layer management
   LayerManager layer_manager_;
-  std::vector<size_t> selected_points_;
   
   // Layer rendering support
   void UpdateLayerRendering();

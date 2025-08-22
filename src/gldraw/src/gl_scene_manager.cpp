@@ -14,6 +14,7 @@
 
 #include "imview/fonts.hpp"
 #include "gldraw/coordinate_system_transformer.hpp"
+#include "gldraw/renderable/point_cloud.hpp"
 
 namespace quickviz {
 GlSceneManager::GlSceneManager(const std::string& name, Mode mode)
@@ -235,5 +236,6 @@ GlSceneManager::MouseRay GlSceneManager::GetMouseRayInWorldSpace(
   
   return ray;
 }
+
 
 }  // namespace quickviz
