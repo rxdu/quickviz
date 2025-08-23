@@ -113,7 +113,7 @@ int main(int argc, char* argv[]) {
             "- Various colors for visual distinction", 
             "- Enhanced wireframe rendering with thick edges",
             "- Corner point visualization for better structure",
-            "- Transparency for overlapping regions",
+            "- True transparency with alpha blending (see-through effect)",
             "- Combined rotation transformations (multi-axis)"
         });
         
@@ -122,7 +122,7 @@ int main(int argc, char* argv[]) {
             "- Green solid box: Far right position (4,-1,2) to (5.5,1,3.5) - now clearly visible",
             "- Orange solid box: Small center box (-0.5,-0.5,0) to (0.5,0.5,1)",
             "- Yellow wireframe: Thick edges at left back (-3,-1,-3.5) to (-1.5,1,-2)",
-            "- Magenta transparent: Independent position (1.5,-1,-1) to (3,1,0.5)",
+            "- Magenta transparent: True alpha blending transparency at (1.5,-1,-1) to (3,1,0.5)",
             "- Cyan wireframe: Elevated with corner points (-0.75,2,-0.75) to (0.75,3,0.75)",
             "- Blue rotated solid: 45° Y-axis rotation at (4.5,0,0)",
             "- White rotated wireframe: 30° X + 30° Z rotation at (-4.5,0,0)"

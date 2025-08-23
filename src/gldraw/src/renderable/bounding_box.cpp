@@ -361,6 +361,7 @@ void BoundingBox::OnDraw(const glm::mat4& projection, const glm::mat4& view,
     if (opacity_ < 1.0f) {
       glEnable(GL_BLEND);
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+      glDepthMask(GL_FALSE);  // Disable depth writes for transparent objects
     }
     
     glBindVertexArray(vao_faces_);
@@ -368,6 +369,7 @@ void BoundingBox::OnDraw(const glm::mat4& projection, const glm::mat4& view,
     glBindVertexArray(0);
     
     if (opacity_ < 1.0f) {
+      glDepthMask(GL_TRUE);   // Re-enable depth writes
       glDisable(GL_BLEND);
     }
   }
