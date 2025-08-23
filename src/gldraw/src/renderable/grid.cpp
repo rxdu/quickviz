@@ -13,6 +13,7 @@
 
 #include "glad/glad.h"
 #include <glm/gtc/type_ptr.hpp>
+#include "gldraw/shader.hpp"
 
 namespace quickviz {
 namespace {
@@ -93,20 +94,23 @@ void Grid::SetSpacing(float spacing) {
 void Grid::SetColor(const glm::vec3& color) { color_ = color; }
 
 void Grid::AllocateGpuResources() {
+  // Don't allocate if already allocated
+  if (IsGpuResourcesAllocated()) {
+    return;
+  }
+
   // Compile and link shaders
   Shader vertex_shader(vertex_shader_source.c_str(), Shader::Type::kVertex);
-  Shader fragment_shader(fragment_shader_source.c_str(),
-                         Shader::Type::kFragment);
+  Shader fragment_shader(fragment_shader_source.c_str(), Shader::Type::kFragment);
   
-  // IMPORTANT: Compile shaders before linking
   if (!vertex_shader.Compile()) {
     std::cerr << "ERROR::GRID::VERTEX_SHADER_COMPILATION_FAILED" << std::endl;
-    throw std::runtime_error("Vertex shader compilation failed");
+    throw std::runtime_error("Grid vertex shader compilation failed");
   }
   
   if (!fragment_shader.Compile()) {
     std::cerr << "ERROR::GRID::FRAGMENT_SHADER_COMPILATION_FAILED" << std::endl;
-    throw std::runtime_error("Fragment shader compilation failed");
+    throw std::runtime_error("Grid fragment shader compilation failed");
   }
   
   shader_.AttachShader(vertex_shader);
@@ -114,7 +118,7 @@ void Grid::AllocateGpuResources() {
 
   if (!shader_.LinkProgram()) {
     std::cerr << "ERROR::GRID::SHADER_PROGRAM_LINKING_FAILED" << std::endl;
-    throw std::runtime_error("Shader program linking failed");
+    throw std::runtime_error("Grid shader program linking failed");
   }
 
   // Generate the grid

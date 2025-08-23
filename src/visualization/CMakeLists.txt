@@ -6,6 +6,7 @@ add_library(visualization
     
     # Helper utilities
     src/helpers/visualization_helpers.cpp
+    src/helpers/selection_visualizer.cpp
     
     # Testing utilities  
     src/testing/mock_data_generator.cpp

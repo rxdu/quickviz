@@ -31,6 +31,9 @@ add_library(gldraw
     src/renderable/arrow.cpp
     src/renderable/bounding_box.cpp
     src/renderable/sphere.cpp
+    src/renderable/cylinder.cpp
+    src/renderable/text3d.cpp
+    src/renderable/frustum.cpp
     )
 target_link_libraries(gldraw PUBLIC core imcore imview stb
     Threads::Threads

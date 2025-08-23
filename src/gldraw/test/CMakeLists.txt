@@ -49,6 +49,18 @@ target_link_libraries(test_bounding_box PRIVATE gldraw)
 add_executable(test_sphere test_sphere.cpp)
 target_link_libraries(test_sphere PRIVATE gldraw)
 
+add_executable(test_cylinder test_cylinder.cpp)
+target_link_libraries(test_cylinder PRIVATE gldraw)
+
+add_executable(test_text3d test_text3d.cpp)
+target_link_libraries(test_text3d PRIVATE gldraw)
+
+add_executable(test_text3d_minimal test_text3d_minimal.cpp)
+target_link_libraries(test_text3d_minimal PRIVATE gldraw)
+
+add_executable(test_frustum test_frustum.cpp)
+target_link_libraries(test_frustum PRIVATE gldraw)
+
 add_executable(test_canvas_st test_canvas_st.cpp)
 target_link_libraries(test_canvas_st PRIVATE gldraw)
 
