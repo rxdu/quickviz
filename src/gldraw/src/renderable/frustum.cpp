@@ -311,9 +311,14 @@ void Frustum::AllocateGpuResources() {
       throw std::runtime_error("Frustum line shader linking failed");
     }
     
-    // Wireframe shader is same as line shader
-    wireframe_shader_.AttachShader(line_vs);
-    wireframe_shader_.AttachShader(line_fs);
+    // Wireframe shader needs separate shader objects (can't reuse line_vs/line_fs)
+    Shader wireframe_vs(kLineVertexShader, Shader::Type::kVertex);
+    Shader wireframe_fs(kLineFragmentShader, Shader::Type::kFragment);
+    if (!wireframe_vs.Compile() || !wireframe_fs.Compile()) {
+      throw std::runtime_error("Frustum wireframe shader compilation failed");
+    }
+    wireframe_shader_.AttachShader(wireframe_vs);
+    wireframe_shader_.AttachShader(wireframe_fs);
     if (!wireframe_shader_.LinkProgram()) {
       throw std::runtime_error("Frustum wireframe shader linking failed");
     }
@@ -511,102 +516,80 @@ void Frustum::GenerateFrustumGeometry() {
   wireframe_indices_.clear();
   line_vertices_.clear();
   
-  // Add corner vertices
+  // Store vertices in clear layout: near corners first, then far corners
+  // Near corners: 0,1,2,3 (top-left, top-right, bottom-right, bottom-left)
+  // Far corners: 4,5,6,7 (same order)
   for (int i = 0; i < 4; ++i) {
     vertices_.push_back(near_corners_[i]);
+  }
+  for (int i = 0; i < 4; ++i) {
     vertices_.push_back(far_corners_[i]);
   }
   
-  // Add wireframe vertices (same as main vertices)
-  wireframe_vertices_ = vertices_;
-  
-  uint32_t vertex_count = 0;
+  // Initialize normals array to match vertices size
+  normals_.resize(8, glm::vec3(0, 1, 0));  // Default upward normal
   
   // Generate faces based on visibility settings
   if (show_near_face_) {
-    // Near face (0,1,2,3 - counterclockwise when viewed from outside)
-    uint32_t base = vertex_count;
-    indices_.push_back(base + 0); indices_.push_back(base + 2); indices_.push_back(base + 1);
-    indices_.push_back(base + 0); indices_.push_back(base + 3); indices_.push_back(base + 2);
+    // Near face triangle 1: 0,1,2 (CCW when viewed from inside frustum)
+    indices_.push_back(0); indices_.push_back(1); indices_.push_back(2);
+    // Near face triangle 2: 0,2,3
+    indices_.push_back(0); indices_.push_back(2); indices_.push_back(3);
     
-    // Normal pointing towards origin
+    // Set normals for near face (pointing toward origin)
     glm::vec3 normal = -direction_;
-    normals_.push_back(normal);
-    normals_.push_back(normal);
-    normals_.push_back(normal);
-    normals_.push_back(normal);
+    for (int i = 0; i < 4; ++i) {
+      normals_[i] = normal;
+    }
   }
   
   if (show_far_face_) {
-    // Far face (4,5,6,7 - clockwise when viewed from outside)  
-    uint32_t base = vertex_count;
-    indices_.push_back(base + 4); indices_.push_back(base + 5); indices_.push_back(base + 6);
-    indices_.push_back(base + 4); indices_.push_back(base + 6); indices_.push_back(base + 7);
+    // Far face triangle 1: 4,6,5 (CCW when viewed from outside frustum)
+    indices_.push_back(4); indices_.push_back(6); indices_.push_back(5);
+    // Far face triangle 2: 4,7,6
+    indices_.push_back(4); indices_.push_back(7); indices_.push_back(6);
     
-    // Normal pointing away from origin
+    // Set normals for far face (pointing away from origin)
     glm::vec3 normal = direction_;
-    normals_.push_back(normal);
-    normals_.push_back(normal); 
-    normals_.push_back(normal);
-    normals_.push_back(normal);
+    for (int i = 4; i < 8; ++i) {
+      normals_[i] = normal;
+    }
   }
   
   if (show_side_faces_) {
-    // Add normals for all vertices if not already added
-    if (normals_.empty()) {
-      for (size_t i = 0; i < vertices_.size(); ++i) {
-        normals_.push_back(glm::vec3(0, 1, 0)); // Placeholder, calculated below
-      }
-    }
-    
-    // Side faces
+    // Generate 4 side faces
     for (int i = 0; i < 4; ++i) {
       int next = (i + 1) % 4;
-      uint32_t base = vertex_count;
       
-      // Each side face uses two triangles
-      indices_.push_back(base + i * 2);       // near corner i
-      indices_.push_back(base + next * 2);    // near corner next
-      indices_.push_back(base + i * 2 + 1);   // far corner i
+      // Side face: two triangles connecting near and far corners
+      // Triangle 1: near[i], far[i], near[next]
+      indices_.push_back(i); indices_.push_back(i + 4); indices_.push_back(next);
+      // Triangle 2: near[next], far[i], far[next]  
+      indices_.push_back(next); indices_.push_back(i + 4); indices_.push_back(next + 4);
       
-      indices_.push_back(base + next * 2);    // near corner next
-      indices_.push_back(base + next * 2 + 1); // far corner next
-      indices_.push_back(base + i * 2 + 1);   // far corner i
-      
-      // Calculate face normal
+      // Calculate side face normal
       glm::vec3 v1 = near_corners_[next] - near_corners_[i];
       glm::vec3 v2 = far_corners_[i] - near_corners_[i];
       glm::vec3 normal = glm::normalize(glm::cross(v1, v2));
       
-      // Update normals for these vertices
-      normals_[i * 2] = normal;
-      normals_[i * 2 + 1] = normal;
+      // Apply normal to near and far vertices of this face
+      if (normals_[i] == glm::vec3(0, 1, 0)) normals_[i] = normal;
+      if (normals_[i + 4] == glm::vec3(0, 1, 0)) normals_[i + 4] = normal;
+      if (normals_[next] == glm::vec3(0, 1, 0)) normals_[next] = normal;
+      if (normals_[next + 4] == glm::vec3(0, 1, 0)) normals_[next + 4] = normal;
     }
   }
   
-  // Fill normals if they weren't set above
-  while (normals_.size() < vertices_.size()) {
-    normals_.push_back(glm::vec3(0, 1, 0));
-  }
+  // Copy vertices for wireframe (same layout)
+  wireframe_vertices_ = vertices_;
   
-  // Generate wireframe indices
-  // Near face edges
-  wireframe_indices_.push_back(0); wireframe_indices_.push_back(2);
-  wireframe_indices_.push_back(2); wireframe_indices_.push_back(4);
-  wireframe_indices_.push_back(4); wireframe_indices_.push_back(6);
-  wireframe_indices_.push_back(6); wireframe_indices_.push_back(0);
-  
-  // Far face edges
-  wireframe_indices_.push_back(1); wireframe_indices_.push_back(3);
-  wireframe_indices_.push_back(3); wireframe_indices_.push_back(5);
-  wireframe_indices_.push_back(5); wireframe_indices_.push_back(7);
-  wireframe_indices_.push_back(7); wireframe_indices_.push_back(1);
-  
-  // Connecting edges
-  wireframe_indices_.push_back(0); wireframe_indices_.push_back(1);
-  wireframe_indices_.push_back(2); wireframe_indices_.push_back(3);
-  wireframe_indices_.push_back(4); wireframe_indices_.push_back(5);
-  wireframe_indices_.push_back(6); wireframe_indices_.push_back(7);
+  // Generate wireframe indices - edges of frustum
+  // Near face edges (0->1->2->3->0)
+  wireframe_indices_.insert(wireframe_indices_.end(), {0,1, 1,2, 2,3, 3,0});
+  // Far face edges (4->5->6->7->4)  
+  wireframe_indices_.insert(wireframe_indices_.end(), {4,5, 5,6, 6,7, 7,4});
+  // Connecting edges (near to far)
+  wireframe_indices_.insert(wireframe_indices_.end(), {0,4, 1,5, 2,6, 3,7});
   
   // Generate line geometry for center line and corner markers
   if (show_center_line_) {
@@ -616,21 +599,27 @@ void Frustum::GenerateFrustumGeometry() {
   }
   
   if (show_corner_markers_) {
-    // Add small crosses at each corner
-    for (int i = 0; i < 8; ++i) {
-      glm::vec3 corner = (i < 4) ? near_corners_[i % 4] : far_corners_[i % 4];
-      glm::vec3 offset = glm::vec3(corner_marker_size_, 0, 0);
+    // Add small crosses at each corner (8 corners total)
+    for (int i = 0; i < 4; ++i) {
+      // Near corners
+      glm::vec3 corner = near_corners_[i];
+      glm::vec3 offset_x(corner_marker_size_, 0, 0);
+      glm::vec3 offset_y(0, corner_marker_size_, 0);
+      glm::vec3 offset_z(0, 0, corner_marker_size_);
       
-      line_vertices_.push_back(corner - offset);
-      line_vertices_.push_back(corner + offset);
+      line_vertices_.insert(line_vertices_.end(), {
+        corner - offset_x, corner + offset_x,
+        corner - offset_y, corner + offset_y,  
+        corner - offset_z, corner + offset_z
+      });
       
-      offset = glm::vec3(0, corner_marker_size_, 0);
-      line_vertices_.push_back(corner - offset);
-      line_vertices_.push_back(corner + offset);
-      
-      offset = glm::vec3(0, 0, corner_marker_size_);
-      line_vertices_.push_back(corner - offset);
-      line_vertices_.push_back(corner + offset);
+      // Far corners
+      corner = far_corners_[i];
+      line_vertices_.insert(line_vertices_.end(), {
+        corner - offset_x, corner + offset_x,
+        corner - offset_y, corner + offset_y,
+        corner - offset_z, corner + offset_z  
+      });
     }
   }
 }
