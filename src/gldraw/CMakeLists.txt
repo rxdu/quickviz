@@ -27,6 +27,10 @@ add_library(gldraw
     src/renderable/texture.cpp
     src/renderable/layer_manager.cpp
     src/renderable/mesh.cpp
+    src/renderable/line_strip.cpp
+    src/renderable/arrow.cpp
+    src/renderable/bounding_box.cpp
+    src/renderable/sphere.cpp
     )
 target_link_libraries(gldraw PUBLIC core imcore imview stb
     Threads::Threads
