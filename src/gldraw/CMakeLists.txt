@@ -10,6 +10,7 @@ add_library(gldraw
     src/camera.cpp
     src/camera_controller.cpp
     src/gl_scene_manager.cpp
+    src/gl_view.cpp
     ## renderable objects
     src/renderable/grid.cpp
     src/renderable/triangle.cpp

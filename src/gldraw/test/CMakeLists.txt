@@ -1,13 +1,11 @@
 add_subdirectory(feature)
+add_subdirectory(renderable)
 
 add_executable(test_framebuffer test_framebuffer.cpp)
 target_link_libraries(test_framebuffer PRIVATE gldraw)
 
 add_executable(test_shader test_shader.cpp)
 target_link_libraries(test_shader PRIVATE gldraw)
-
-add_executable(test_grid test_grid.cpp)
-target_link_libraries(test_grid PRIVATE gldraw)
 
 add_executable(test_camera_raw test_camera_raw.cpp)
 target_link_libraries(test_camera_raw PRIVATE gldraw)
@@ -31,35 +29,8 @@ target_link_libraries(test_coordinate_system PRIVATE gldraw)
 add_executable(test_primitive_drawing test_primitive_drawing.cpp)
 target_link_libraries(test_primitive_drawing PRIVATE gldraw)
 
-add_executable(test_texture test_texture.cpp)
-target_link_libraries(test_texture PRIVATE gldraw)
-
-add_executable(test_mesh test_mesh.cpp)
-target_link_libraries(test_mesh PRIVATE gldraw)
-
-add_executable(test_line_strip test_line_strip.cpp)
-target_link_libraries(test_line_strip PRIVATE gldraw)
-
-add_executable(test_arrow test_arrow.cpp)
-target_link_libraries(test_arrow PRIVATE gldraw)
-
-add_executable(test_bounding_box test_bounding_box.cpp)
-target_link_libraries(test_bounding_box PRIVATE gldraw)
-
-add_executable(test_sphere test_sphere.cpp)
-target_link_libraries(test_sphere PRIVATE gldraw)
-
-add_executable(test_cylinder test_cylinder.cpp)
-target_link_libraries(test_cylinder PRIVATE gldraw)
-
-add_executable(test_text3d test_text3d.cpp)
-target_link_libraries(test_text3d PRIVATE gldraw)
-
 add_executable(test_text3d_minimal test_text3d_minimal.cpp)
 target_link_libraries(test_text3d_minimal PRIVATE gldraw)
-
-add_executable(test_frustum test_frustum.cpp)
-target_link_libraries(test_frustum PRIVATE gldraw)
 
 add_executable(test_canvas_st test_canvas_st.cpp)
 target_link_libraries(test_canvas_st PRIVATE gldraw)
@@ -67,8 +38,5 @@ target_link_libraries(test_canvas_st PRIVATE gldraw)
 add_executable(test_nav_map_rendering test_nav_map_rendering.cpp)
 target_link_libraries(test_nav_map_rendering PRIVATE gldraw)
 
-add_executable(test_layer_system test_layer_system.cpp)
-target_link_libraries(test_layer_system PRIVATE gldraw)
-
-add_executable(test_layer_system_demo test_layer_system_demo.cpp)
-target_link_libraries(test_layer_system_demo PRIVATE gldraw)
+add_executable(test_layer_system_box test_layer_system_box.cpp)
+target_link_libraries(test_layer_system_box PRIVATE gldraw)
