@@ -35,6 +35,11 @@ add_library(gldraw
     src/renderable/cylinder.cpp
     src/renderable/text3d.cpp
     src/renderable/frustum.cpp
+    src/renderable/plane.cpp
+    src/renderable/pose.cpp
+    src/renderable/path.cpp
+    src/renderable/vector_field.cpp
+    src/renderable/occupancy_grid.cpp
     )
 target_link_libraries(gldraw PUBLIC core imcore imview stb
     Threads::Threads

@@ -28,6 +28,15 @@ target_link_libraries(test_mesh PRIVATE gldraw)
 add_executable(test_point_cloud test_point_cloud.cpp)
 target_link_libraries(test_point_cloud PRIVATE gldraw)
 
+add_executable(test_path test_path.cpp)
+target_link_libraries(test_path PRIVATE gldraw)
+
+add_executable(test_plane test_plane.cpp)
+target_link_libraries(test_plane PRIVATE gldraw)
+
+add_executable(test_pose test_pose.cpp)
+target_link_libraries(test_pose PRIVATE gldraw)
+
 add_executable(test_sphere test_sphere.cpp)
 target_link_libraries(test_sphere PRIVATE gldraw)
 
@@ -39,4 +48,10 @@ target_link_libraries(test_texture PRIVATE gldraw)
 
 add_executable(test_triangle test_triangle.cpp)
 target_link_libraries(test_triangle PRIVATE gldraw)
+
+add_executable(test_vector_field test_vector_field.cpp)
+target_link_libraries(test_vector_field PRIVATE gldraw)
+
+add_executable(test_occupancy_grid test_occupancy_grid.cpp)
+target_link_libraries(test_occupancy_grid PRIVATE gldraw)
 
