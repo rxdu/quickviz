@@ -194,71 +194,104 @@ void SetupOccupancyGridScene(GlSceneManager* scene_manager) {
     scene_manager->AddOpenGLObject("grid_semantic", std::move(grid5));
     
     // 6. Large sparse grid with subsampling
-    auto grid6 = std::make_unique<OccupancyGrid>(40, 30, 0.1f);
-    grid6->SetOrigin(glm::vec3(8.0f, -8.0f, 0.01f));
-    std::vector<float> sparse_data(1200, 0.0f);  // Mostly free
+    auto grid6 = std::make_unique<OccupancyGrid>(20, 15, 0.2f);  // Smaller grid for debugging
+    grid6->SetOrigin(glm::vec3(8.0f, -6.0f, 0.01f));
+    std::vector<float> sparse_data(300);  // 20x15 = 300
     
-    // Add sparse occupied cells
-    for (size_t i = 0; i < 50; ++i) {
-        size_t x = (i * 7) % 40;
-        size_t y = (i * 11) % 30;
-        sparse_data[y * 40 + x] = 1.0f;
-        
-        // Add some clusters
-        for (int dx = -1; dx <= 1; ++dx) {
-            for (int dy = -1; dy <= 1; ++dy) {
-                size_t nx = x + dx;
-                size_t ny = y + dy;
-                if (nx < 40 && ny < 30 && dis(gen) < 0.3f) {
-                    sparse_data[ny * 40 + nx] = 0.7f;
-                }
+    // Create clear checkerboard pattern for debugging
+    for (size_t y = 0; y < 15; ++y) {
+        for (size_t x = 0; x < 20; ++x) {
+            if ((x + y) % 3 == 0) {
+                sparse_data[y * 20 + x] = 1.0f;  // Occupied (black)
+            } else if ((x + y) % 3 == 1) {
+                sparse_data[y * 20 + x] = 0.0f;  // Free (white)
+            } else {
+                sparse_data[y * 20 + x] = 0.5f;  // Uncertain (gray)
             }
         }
     }
+    
     grid6->SetData(sparse_data);
     grid6->SetRenderMode(OccupancyGrid::RenderMode::kFlat2D);
     grid6->SetColorMode(OccupancyGrid::ColorMode::kOccupancy);
-    grid6->SetSubsampling(2);  // Show every 2nd cell
-    grid6->SetValueThreshold(0.1f);  // Hide low-probability cells
-    grid6->SetOccupiedColor(glm::vec3(0.8f, 0.3f, 0.3f));
-    grid6->SetFreeColor(glm::vec3(0.9f, 0.9f, 0.9f));
+    grid6->SetSubsampling(1);  // Show all cells
+    grid6->SetValueThreshold(-1.0f);  // Show all cells (disable threshold)
+    grid6->SetOccupiedColor(glm::vec3(0.0f, 0.0f, 0.0f));  // Black
+    grid6->SetFreeColor(glm::vec3(1.0f, 1.0f, 1.0f));      // White
     scene_manager->AddOpenGLObject("grid_sparse", std::move(grid6));
     
-    // 7. Multi-layer voxel grid
+    // 7. Multi-layer voxel grid - representing a 3-floor building
     auto grid7 = std::make_unique<OccupancyGrid>(10, 10, 0.4f);
     grid7->SetOrigin(glm::vec3(-4.0f, 6.0f, 0.0f));
     grid7->SetLayerCount(3);
     
-    // Layer 0: Ground floor
+    // Layer 0: Ground floor - walls and lobby area
     std::vector<float> layer0(100, 0.0f);
     for (size_t i = 0; i < 100; ++i) {
         size_t x = i % 10;
         size_t y = i / 10;
-        if (x < 2 || x > 7 || y < 2 || y > 7) layer0[i] = 1.0f;
+        // Outer walls
+        if (x == 0 || x == 9 || y == 0 || y == 9) {
+            layer0[i] = 1.0f;
+        }
+        // Internal walls creating rooms
+        else if ((x == 3 || x == 6) && y > 0 && y < 9) {
+            layer0[i] = 0.9f;
+        }
+        // Reception desk area
+        else if (x >= 4 && x <= 5 && y == 2) {
+            layer0[i] = 0.8f;
+        }
     }
     grid7->SetLayerData(0, layer0);
     grid7->SetLayerHeight(0, 0.0f);
     
-    // Layer 1: Mid level
+    // Layer 1: Second floor - office layout
     std::vector<float> layer1(100, 0.0f);
     for (size_t i = 0; i < 100; ++i) {
         size_t x = i % 10;
         size_t y = i / 10;
-        if ((x >= 4 && x <= 5) && (y >= 4 && y <= 5)) layer1[i] = 0.8f;
+        // Outer walls
+        if (x == 0 || x == 9 || y == 0 || y == 9) {
+            layer1[i] = 1.0f;
+        }
+        // Corridor in the middle
+        else if (y == 5 && x > 0 && x < 9) {
+            layer1[i] = 0.0f;  // Keep corridor free
+        }
+        // Office cubicles
+        else if ((x == 2 || x == 4 || x == 6) && (y == 2 || y == 7)) {
+            layer1[i] = 0.7f;
+        }
+        // Meeting room walls
+        else if (x == 7 && y >= 2 && y <= 4) {
+            layer1[i] = 0.85f;
+        }
     }
     grid7->SetLayerData(1, layer1);
     grid7->SetLayerHeight(1, 1.0f);
     
-    // Layer 2: Top level
+    // Layer 2: Top floor - open plan with pillars
     std::vector<float> layer2(100, 0.0f);
     for (size_t i = 0; i < 100; ++i) {
         size_t x = i % 10;
         size_t y = i / 10;
-        if (x == 5 && y == 5) layer2[i] = 0.6f;
+        // Outer walls only
+        if (x == 0 || x == 9 || y == 0 || y == 9) {
+            layer2[i] = 1.0f;
+        }
+        // Support pillars
+        else if ((x == 3 || x == 6) && (y == 3 || y == 6)) {
+            layer2[i] = 0.95f;
+        }
+        // Central elevator/stairs
+        else if (x >= 4 && x <= 5 && y >= 4 && y <= 5) {
+            layer2[i] = 0.9f;
+        }
     }
     grid7->SetLayerData(2, layer2);
     grid7->SetLayerHeight(2, 2.0f);
-    grid7->SetLayerOpacity(2, 0.7f);
+    grid7->SetLayerOpacity(2, 0.8f);
     
     grid7->SetRenderMode(OccupancyGrid::RenderMode::kVoxels);
     grid7->SetColorMode(OccupancyGrid::ColorMode::kSemantic);
@@ -268,27 +301,34 @@ void SetupOccupancyGridScene(GlSceneManager* scene_manager) {
     scene_manager->AddOpenGLObject("grid_voxel", std::move(grid7));
     
     // 8. Transparent grid with animation effect
-    auto grid8 = std::make_unique<OccupancyGrid>(14, 14, 0.25f);
+    auto grid8 = std::make_unique<OccupancyGrid>(10, 10, 0.3f);  // Smaller for debugging
     grid8->SetOrigin(glm::vec3(6.0f, 4.0f, 2.0f));
-    std::vector<float> animated_data(196);
+    std::vector<float> animated_data(100);
     
-    // Create animated wave pattern
-    for (size_t y = 0; y < 14; ++y) {
-        for (size_t x = 0; x < 14; ++x) {
-            float cx = x - 7.0f, cy = y - 7.0f;
+    // Create clear radial pattern for debugging
+    for (size_t y = 0; y < 10; ++y) {
+        for (size_t x = 0; x < 10; ++x) {
+            float cx = static_cast<float>(x) - 4.5f;
+            float cy = static_cast<float>(y) - 4.5f; 
             float dist = std::sqrt(cx*cx + cy*cy);
-            float wave = 0.5f + 0.5f * std::sin(dist * 0.8f);
-            animated_data[y * 14 + x] = wave;
+            
+            if (dist < 2.0f) {
+                animated_data[y * 10 + x] = 0.0f;  // Blue center
+            } else if (dist < 3.5f) {
+                animated_data[y * 10 + x] = 0.5f;  // Green middle
+            } else {
+                animated_data[y * 10 + x] = 1.0f;  // Red outer
+            }
         }
     }
     grid8->SetData(animated_data);
     grid8->SetRenderMode(OccupancyGrid::RenderMode::kFlat2D);
     grid8->SetColorMode(OccupancyGrid::ColorMode::kCostmap);
-    grid8->SetCellShape(OccupancyGrid::CellShape::kCircle);
-    grid8->SetTransparency(0.7f);
+    grid8->SetCellShape(OccupancyGrid::CellShape::kSquare);  // Use squares for clarity
+    grid8->SetTransparency(1.0f);  // Fully opaque
     grid8->SetShowGrid(true);
-    grid8->SetGridColor(glm::vec3(1.0f, 1.0f, 1.0f));
-    grid8->SetGridLineWidth(0.5f);
+    grid8->SetGridColor(glm::vec3(0.0f, 0.0f, 0.0f));  // Black grid lines
+    grid8->SetGridLineWidth(2.0f);
     scene_manager->AddOpenGLObject("grid_animated", std::move(grid8));
 }
 

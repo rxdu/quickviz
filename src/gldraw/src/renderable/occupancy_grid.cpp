@@ -612,30 +612,27 @@ void OccupancyGrid::GenerateHeightmapGeometry() {
 
 void OccupancyGrid::GenerateVoxelGeometry() {
   // For multi-layer voxel representation
-  GenerateHeightmapGeometry(); // Start with heightmap as base
+  cell_vertices_.clear();
+  cell_colors_.clear();
+  cell_texcoords_.clear();
+  cell_indices_.clear();
   
-  // Add additional layers if present
-  for (size_t layer = 1; layer < layer_count_; ++layer) {
-    if (layer_data_[layer].empty()) continue;
+  // Process all layers
+  for (size_t layer = 0; layer < layer_count_; ++layer) {
+    // For voxel mode, all layer data should be in layer_data_ array
+    if (layer >= layer_data_.size() || layer_data_[layer].empty()) continue;
+    const auto& current_layer_data = layer_data_[layer];
+    
+    float layer_height = layer_heights_[layer];
+    float layer_opacity = layer_opacities_[layer];
     
     for (size_t y = 0; y < height_; y += subsampling_factor_) {
       for (size_t x = 0; x < width_; x += subsampling_factor_) {
-        float value = layer_data_[layer][y * width_ + x];
+        float value = current_layer_data[y * width_ + x];
         if (!ShouldRenderCell(value)) continue;
         
-        glm::vec3 color = ComputeCellColor(value, layer);
-        color *= layer_opacities_[layer]; // Apply layer opacity
-        
-        float layer_height = layer_heights_[layer];
-        glm::vec3 base = origin_ + glm::vec3(x * resolution_, y * resolution_, layer_height);
-        
-        GenerateQuadCell(x, y, value, cell_vertices_, cell_colors_, cell_indices_);
-        
-        // Offset the vertices to the layer height
-        size_t start_idx = cell_vertices_.size() - 4;
-        for (size_t i = start_idx; i < cell_vertices_.size(); ++i) {
-          cell_vertices_[i].z = layer_height;
-        }
+        // Generate 3D voxel box for this cell
+        GenerateVoxelCell(x, y, value, layer, layer_height, layer_opacity);
       }
     }
   }
@@ -764,6 +761,73 @@ void OccupancyGrid::GenerateHexagonCell(size_t x, size_t y, float value,
   }
 }
 
+void OccupancyGrid::GenerateVoxelCell(size_t x, size_t y, float value, size_t layer, 
+                                     float layer_height, float layer_opacity) {
+  glm::vec3 color = ComputeCellColor(value, layer);
+  color *= layer_opacity; // Apply layer opacity
+  
+  glm::vec3 base = origin_ + glm::vec3(x * resolution_, y * resolution_, layer_height);
+  float voxel_height = 0.3f; // Fixed height for voxel layers
+  
+  size_t base_idx = cell_vertices_.size();
+  
+  // Generate a 3D box (8 vertices)
+  // Bottom face
+  cell_vertices_.push_back(base);
+  cell_vertices_.push_back(base + glm::vec3(resolution_, 0.0f, 0.0f));
+  cell_vertices_.push_back(base + glm::vec3(resolution_, resolution_, 0.0f));
+  cell_vertices_.push_back(base + glm::vec3(0.0f, resolution_, 0.0f));
+  
+  // Top face
+  cell_vertices_.push_back(base + glm::vec3(0.0f, 0.0f, voxel_height));
+  cell_vertices_.push_back(base + glm::vec3(resolution_, 0.0f, voxel_height));
+  cell_vertices_.push_back(base + glm::vec3(resolution_, resolution_, voxel_height));
+  cell_vertices_.push_back(base + glm::vec3(0.0f, resolution_, voxel_height));
+  
+  // Colors for all 8 vertices
+  for (int i = 0; i < 8; ++i) {
+    cell_colors_.push_back(color);
+    cell_texcoords_.push_back(glm::vec2(i % 2, (i / 2) % 2)); // Basic UV mapping
+  }
+  
+  // Generate indices for the 6 faces of the box (12 triangles)
+  // Bottom face (facing down)
+  cell_indices_.insert(cell_indices_.end(), {
+    base_idx + 0, base_idx + 2, base_idx + 1,
+    base_idx + 0, base_idx + 3, base_idx + 2
+  });
+  
+  // Top face (facing up)
+  cell_indices_.insert(cell_indices_.end(), {
+    base_idx + 4, base_idx + 5, base_idx + 6,
+    base_idx + 4, base_idx + 6, base_idx + 7
+  });
+  
+  // Front face
+  cell_indices_.insert(cell_indices_.end(), {
+    base_idx + 0, base_idx + 1, base_idx + 5,
+    base_idx + 0, base_idx + 5, base_idx + 4
+  });
+  
+  // Back face
+  cell_indices_.insert(cell_indices_.end(), {
+    base_idx + 2, base_idx + 7, base_idx + 6,
+    base_idx + 2, base_idx + 3, base_idx + 7
+  });
+  
+  // Left face
+  cell_indices_.insert(cell_indices_.end(), {
+    base_idx + 0, base_idx + 4, base_idx + 7,
+    base_idx + 0, base_idx + 7, base_idx + 3
+  });
+  
+  // Right face
+  cell_indices_.insert(cell_indices_.end(), {
+    base_idx + 1, base_idx + 2, base_idx + 6,
+    base_idx + 1, base_idx + 6, base_idx + 5
+  });
+}
+
 glm::vec3 OccupancyGrid::ComputeCellColor(float value, size_t layer) const {
   if (value < 0.0f) {
     return unknown_color_;
@@ -818,10 +882,24 @@ float OccupancyGrid::ComputeCellHeight(float value) const {
 }
 
 bool OccupancyGrid::ShouldRenderCell(float value) const {
-  if (value_threshold_ >= 0.0f && value < value_threshold_) {
+  // Don't render unknown cells (negative values)
+  if (value < 0.0f) {
     return false;
   }
-  return value >= 0.0f; // Don't render unknown cells by default
+  
+  // For voxel mode, only render occupied cells (not free space)
+  if (render_mode_ == RenderMode::kVoxels) {
+    // Default threshold for voxel mode is 0.5 (occupied)
+    float threshold = (value_threshold_ > 0.0f) ? value_threshold_ : 0.5f;
+    return value >= threshold;
+  }
+  
+  // Apply value threshold if set (but always render 0.0f as free space for 2D modes)
+  if (value_threshold_ > 0.0f && value > 0.0f && value < value_threshold_) {
+    return false;
+  }
+  
+  return true;
 }
 
 void OccupancyGrid::UpdateGpuBuffers() {

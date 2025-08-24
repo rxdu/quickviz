@@ -142,6 +142,7 @@ class OccupancyGrid : public OpenGlObject {
                          std::vector<glm::vec3>& colors, std::vector<uint32_t>& indices);
   void GenerateHexagonCell(size_t x, size_t y, float value, std::vector<glm::vec3>& vertices,
                           std::vector<glm::vec3>& colors, std::vector<uint32_t>& indices);
+  void GenerateVoxelCell(size_t x, size_t y, float value, size_t layer, float layer_height, float layer_opacity);
   
   glm::vec3 ComputeCellColor(float value, size_t layer = 0) const;
   float ComputeCellHeight(float value) const;
