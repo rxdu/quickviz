@@ -410,10 +410,10 @@ void Text3D::LoadBitmapFont() {
   if (font_loaded_) return;
   
   
-  // Create a simple 512x512 atlas for basic characters
-  constexpr int atlas_size = 512;
+  // Create a high-resolution 2048x2048 atlas for smooth text rendering
+  constexpr int atlas_size = 2048;  // Increased from 512 for higher resolution
   constexpr int chars_per_row = 16;
-  constexpr int char_size = atlas_size / chars_per_row;
+  constexpr int char_size = atlas_size / chars_per_row;  // 128 pixels per character
   
   std::vector<unsigned char> atlas_data(atlas_size * atlas_size, 0);
   characters_.clear();
@@ -434,8 +434,8 @@ void Text3D::LoadBitmapFont() {
     
     // Create character data - scale down for reasonable 3D size
     Character ch;
-    float scale_factor = 0.03f; // Scale from 32-pixel char_size to ~1 unit
-    ch.advance = char_size * 0.8f * scale_factor;
+    float scale_factor = 0.0075f; // Scale from 128-pixel char_size to ~1 unit (was 0.03f for 32px)
+    ch.advance = char_size * 0.15f * scale_factor;  // Reduced by half from 0.3f for very tight letter spacing
     ch.bearing_x = char_size * 0.1f * scale_factor;
     ch.bearing_y = char_size * 0.8f * scale_factor;
     ch.width = char_size * 0.8f * scale_factor;
@@ -842,7 +842,7 @@ Text3D::Character Text3D::GetCharacter(char c) const {
   
   // Fallback character
   Character fallback;
-  fallback.advance = 20.0f;
+  fallback.advance = 0.145f;  // Reduced by half from 0.29f for very tight spacing
   fallback.bearing_x = 0.0f;
   fallback.bearing_y = 0.0f;
   fallback.width = 20.0f;

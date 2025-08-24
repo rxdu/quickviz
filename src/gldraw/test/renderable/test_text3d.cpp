@@ -51,7 +51,7 @@ void CreateAxisLabels(GlSceneManager* scene_manager) {
     x_label->SetText("X");
     x_label->SetPosition(glm::vec3(3.0f, 0.0f, 0.0f));
     x_label->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));
-    x_label->SetScale(1.5f);
+    x_label->SetScale(1.8f);  // Reduced by 1/4 from 2.4f (75% of original)
     x_label->SetBillboardMode(Text3D::BillboardMode::kNone);
     scene_manager->AddOpenGLObject("x_label", std::move(x_label));
     
@@ -60,7 +60,7 @@ void CreateAxisLabels(GlSceneManager* scene_manager) {
     y_label->SetText("Y");
     y_label->SetPosition(glm::vec3(0.0f, 3.0f, 0.0f));
     y_label->SetColor(glm::vec3(0.0f, 1.0f, 0.0f));
-    y_label->SetScale(1.5f);
+    y_label->SetScale(1.8f);  // Reduced by 1/4 from 2.4f (75% of original)
     y_label->SetBillboardMode(Text3D::BillboardMode::kNone);
     scene_manager->AddOpenGLObject("y_label", std::move(y_label));
     
@@ -69,7 +69,7 @@ void CreateAxisLabels(GlSceneManager* scene_manager) {
     z_label->SetText("Z");
     z_label->SetPosition(glm::vec3(0.0f, 0.0f, 3.0f));
     z_label->SetColor(glm::vec3(0.0f, 0.0f, 1.0f));
-    z_label->SetScale(1.5f);
+    z_label->SetScale(1.8f);  // Reduced by 1/4 from 2.4f (75% of original)
     z_label->SetBillboardMode(Text3D::BillboardMode::kNone);
     scene_manager->AddOpenGLObject("z_label", std::move(z_label));
         
@@ -122,7 +122,7 @@ void CreateWaypointLabels(GlSceneManager* scene_manager) {
             label->SetText(wp.name);
             label->SetPosition(wp.position + glm::vec3(0.0f, 0.5f, 0.0f));
             label->SetColor(wp.color);
-            label->SetScale(1.0f);
+            label->SetScale(1.2f);  // Reduced by 1/4 from 1.6f (75% of original)
             label->SetBillboardMode(Text3D::BillboardMode::kNone);
             label->SetAlignment(Text3D::Alignment::kCenter, Text3D::VerticalAlignment::kMiddle);
             scene_manager->AddOpenGLObject("label_" + wp.name, std::move(label));
@@ -135,7 +135,7 @@ void CreateZoneAnnotations(GlSceneManager* scene_manager) {
         safe_zone->SetText("SAFE ZONE");
         safe_zone->SetPosition(glm::vec3(-6.0f, 2.0f, 0.0f));
         safe_zone->SetColor(glm::vec3(0.0f, 1.0f, 0.0f));
-        safe_zone->SetScale(1.2f);
+        safe_zone->SetScale(1.5f);  // Reduced by 1/4 from 2.0f (75% of original)
         safe_zone->SetBillboardMode(Text3D::BillboardMode::kNone);
         scene_manager->AddOpenGLObject("safe_zone", std::move(safe_zone));
         
@@ -144,7 +144,7 @@ void CreateZoneAnnotations(GlSceneManager* scene_manager) {
         danger_zone->SetText("DANGER");
         danger_zone->SetPosition(glm::vec3(6.0f, 2.0f, 0.0f));
         danger_zone->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));
-        danger_zone->SetScale(1.5f);
+        danger_zone->SetScale(1.8f);  // Reduced by 1/4 from 2.4f (75% of original)
         danger_zone->SetBillboardMode(Text3D::BillboardMode::kNone);
         scene_manager->AddOpenGLObject("danger_zone", std::move(danger_zone));
         
@@ -153,7 +153,7 @@ void CreateZoneAnnotations(GlSceneManager* scene_manager) {
         restricted->SetText("RESTRICTED");
         restricted->SetPosition(glm::vec3(0.0f, 2.0f, 7.0f));
         restricted->SetColor(glm::vec3(1.0f, 1.0f, 0.0f));
-        restricted->SetScale(1.3f);
+        restricted->SetScale(1.5f);  // Reduced by 1/4 from 2.0f (75% of original)
         restricted->SetBillboardMode(Text3D::BillboardMode::kNone);
         scene_manager->AddOpenGLObject("restricted", std::move(restricted));
 }
@@ -164,7 +164,7 @@ void CreateMeasurementLabels(GlSceneManager* scene_manager) {
         dist_label->SetText("5.2m");
         dist_label->SetPosition(glm::vec3(2.5f, 0.2f, -2.5f));
         dist_label->SetColor(glm::vec3(1.0f, 1.0f, 1.0f));
-        dist_label->SetScale(0.8f);
+        dist_label->SetScale(0.9f);  // Reduced by 1/4 from 1.2f (75% of original)
         dist_label->SetBillboardMode(Text3D::BillboardMode::kNone);
         scene_manager->AddOpenGLObject("distance", std::move(dist_label));
         
@@ -173,7 +173,7 @@ void CreateMeasurementLabels(GlSceneManager* scene_manager) {
         angle_label->SetText("45 deg");
         angle_label->SetPosition(glm::vec3(-2.5f, 0.2f, 2.5f));
         angle_label->SetColor(glm::vec3(0.8f, 0.8f, 0.8f));
-        angle_label->SetScale(0.8f);
+        angle_label->SetScale(0.9f);  // Reduced by 1/4 from 1.2f (75% of original)
         angle_label->SetBillboardMode(Text3D::BillboardMode::kNone);
         scene_manager->AddOpenGLObject("angle", std::move(angle_label));
         
@@ -182,7 +182,7 @@ void CreateMeasurementLabels(GlSceneManager* scene_manager) {
         speed_label->SetText("2.5 m/s");
         speed_label->SetPosition(glm::vec3(0.0f, 3.5f, -4.0f));
         speed_label->SetColor(glm::vec3(0.0f, 1.0f, 1.0f));
-        speed_label->SetScale(1.0f);
+        speed_label->SetScale(1.2f);  // Reduced by 1/4 from 1.6f (75% of original)
         speed_label->SetBillboardMode(Text3D::BillboardMode::kNone);
         scene_manager->AddOpenGLObject("speed", std::move(speed_label));
 }
@@ -217,7 +217,7 @@ void CreateBillboardDemos(GlSceneManager* scene_manager) {
         multi_line->SetText("MULTI\nLINE\nTEXT");
         multi_line->SetPosition(glm::vec3(0.0f, 5.0f, 0.0f));
         multi_line->SetColor(glm::vec3(0.8f, 0.8f, 0.0f));
-        multi_line->SetScale(0.8f);
+        multi_line->SetScale(0.9f);  // Reduced by 1/4 from 1.2f (75% of original)
         multi_line->SetBillboardMode(Text3D::BillboardMode::kNone);
         scene_manager->AddOpenGLObject("multiline", std::move(multi_line));
 }
