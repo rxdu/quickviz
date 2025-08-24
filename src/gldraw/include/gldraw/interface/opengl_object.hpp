@@ -20,7 +20,7 @@ class OpenGlObject {
   // Disable copy construction and assignment
   OpenGlObject(const OpenGlObject&) = delete;
   OpenGlObject& operator=(const OpenGlObject&) = delete;
-  
+
   // Enable move construction and assignment
   OpenGlObject(OpenGlObject&&) = default;
   OpenGlObject& operator=(OpenGlObject&&) = default;

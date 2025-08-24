@@ -55,3 +55,11 @@ target_link_libraries(test_vector_field PRIVATE gldraw)
 add_executable(test_occupancy_grid test_occupancy_grid.cpp)
 target_link_libraries(test_occupancy_grid PRIVATE gldraw)
 
+add_executable(test_measurement test_measurement.cpp)
+target_link_libraries(test_measurement PRIVATE gldraw)
+
+add_executable(test_sensor_coverage test_sensor_coverage.cpp)
+target_link_libraries(test_sensor_coverage PRIVATE gldraw)
+
+add_executable(test_uncertainty_ellipse test_uncertainty_ellipse.cpp)
+target_link_libraries(test_uncertainty_ellipse PRIVATE gldraw)

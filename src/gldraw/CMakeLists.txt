@@ -40,6 +40,9 @@ add_library(gldraw
     src/renderable/path.cpp
     src/renderable/vector_field.cpp
     src/renderable/occupancy_grid.cpp
+    src/renderable/measurement.cpp
+    src/renderable/uncertainty_ellipse.cpp
+    src/renderable/sensor_coverage.cpp
     )
 target_link_libraries(gldraw PUBLIC core imcore imview stb
     Threads::Threads
