@@ -4,6 +4,9 @@ add_library(visualization
     src/renderables/selection_renderable.cpp
     src/renderables/surface_renderable.cpp
     
+    # Selection utilities
+    src/selection/point_cloud_selector.cpp
+    
     # Helper utilities
     src/helpers/visualization_helpers.cpp
     src/helpers/selection_visualizer.cpp
@@ -40,10 +43,10 @@ target_include_directories(visualization PUBLIC
     PRIVATE src
 )
 
-# Tests for visualization module - will be added later
-# if (BUILD_TESTING)
-#   add_subdirectory(test)
-# endif ()
+# Tests for visualization module
+if (BUILD_TESTING)
+  add_subdirectory(test)
+endif ()
 
 # Installation
 install(TARGETS visualization

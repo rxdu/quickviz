@@ -356,22 +356,115 @@ scene.AddOpenGLObject("grid", std::move(reference));
 
 ---
 
+## Point Cloud Enhancement Roadmap
+**Focus**: Get point cloud selection and editing workflow right first, keep it simple
+
+### 🎯 **Phase 1: Core Selection Infrastructure** (Current Priority)
+**Goal**: Working point cloud selection workflow with interactive demo
+
+#### Completed Infrastructure:
+- ✅ **PointCloudSelector class** - Ray-casting and region selection with PCL KdTree
+- ✅ **Selection state management** - Multiple selection modes (single, additive, subtractive, toggle)
+- ✅ **SelectionData contract** - Clean data structure for selections
+- ✅ **SelectionRenderable** - Visualization using point cloud layer system
+
+#### Current Tasks:
+- [ ] **Fix test_point_picking app** - Get working interactive demo with GlView integration
+- [ ] **Validate complete workflow** - Point picking → selection → visualization → editing
+- [ ] **Add basic editing** - Delete selected points functionality
+- [ ] **Add undo/redo** - Simple command pattern for operations
+
+#### Test Applications:
+- [ ] `test_point_picking` - Interactive selection demo (IN PROGRESS - needs GlView fix)
+
+### 📦 **Phase 2: Additional Selection Tools** 
+**Goal**: More selection methods (after Phase 1 workflow is solid)
+
+#### Selection Methods (PointCloudSelector already supports these):
+- [ ] **Interactive Box Selection** - UI for 3D bounding box selection
+- [ ] **Interactive Sphere Selection** - UI with radius adjustment
+- [ ] **Visual Selection Preview** - Show selection region before confirming
+- [ ] **Keyboard Shortcuts** - Quick access to selection tools
+
+#### Simple UI Components:
+- [ ] Selection info panel (count, centroid, bounds)
+- [ ] Tool selection buttons
+- [ ] Clear selection button
+
+### ✂️ **Phase 3: Point Cloud Editing** 
+**Goal**: Simple editing operations with undo/redo
+
+#### Basic Operations (keep it simple):
+- [ ] **Delete Selected Points** - Remove points from cloud
+- [ ] **Crop to Selection** - Keep only selected points
+- [ ] **Transform Selection** - Move selected points
+- [ ] **Copy/Paste Selection** - Duplicate to new location
+
+#### Simple Infrastructure:
+- [ ] **Command Pattern** - Basic undo/redo for operations
+- [ ] **Dirty State Tracking** - Know when cloud needs saving
+- [ ] **Save/Load** - Export modified point clouds
+
+### 📊 **Phase 4: Basic Analysis** (Future)
+**Goal**: Simple analysis tools for selected points
+
+#### Basic Measurements:
+- [ ] **Distance Measurement** - Point-to-point distance
+- [ ] **Bounding Box Info** - Selection bounds and volume
+- [ ] **Centroid Display** - Center of selected points
+- [ ] **Point Count Statistics** - Selection size info
+
+#### Simple Visualizations:
+- [ ] **Normal Vectors** - Show point normals (if available)
+- [ ] **Color by Height** - Z-coordinate coloring
+- [ ] **Color by Density** - Local point density
+
+*Note: Focus on getting core workflow right first. Advanced analysis can come later.*
+
+### 🚀 **Phase 5: Performance & Polish** (Future)
+**Goal**: Handle larger datasets and polish the workflow
+
+#### Performance:
+- [ ] **Large Point Cloud Support** - Efficient handling of 1M+ points
+- [ ] **Level-of-Detail** - Adaptive rendering for performance
+- [ ] **Better Spatial Indexing** - Optimize selection performance
+
+#### Minimal Data Abstraction:
+- [ ] **PointCloudData** - Simple data contract for loading/saving
+- [ ] **PointCloudRenderable** - Converter from data to gldraw::PointCloud
+
+#### Polish:
+- [ ] **File Loading** - Support common formats (.pcd, .ply, .xyz)
+- [ ] **Better UI** - Polished selection and editing interface
+- [ ] **Documentation** - Usage examples and API docs
+
+*Note: Keep it simple. No complex pipeline architectures or multiple inheritance hierarchies.*
+
+---
+
 ## Immediate Next Actions
 
+**Right Now**:
+1. ✅ Update TODO.md with simplified, focused approach
+2. Fix `test_point_picking` application to work with GlView framework
+3. Validate end-to-end workflow: pick → select → visualize
+
 **This Week**:
-1. Implement Pose renderable (gldraw::Pose) - 6-DOF pose with coordinate frame
-2. Add PoseData contract and PoseRenderable converter (visualization module)  
-3. Create test_pose application with interactive pose manipulation
+1. Add basic editing: delete selected points
+2. Add undo/redo for selection operations
+3. Polish the interactive demo
 
 **This Month**:  
-1. Implement Path renderable for trajectory visualization  
-2. Add VectorField renderable for velocity/force field display
-3. Create OccupancyGrid renderable for SLAM map visualization
+1. Add more selection tools with UI (box, sphere selection)
+2. Simple point cloud editor with load/save
+3. Basic measurements and statistics
 
 **This Quarter**:
-1. Implement level-of-detail system for large datasets
-2. Add plugin architecture for external algorithms
-3. Create ROS integration package
+1. Performance improvements for large point clouds
+2. File format support (.pcd, .ply)
+3. Documentation and examples
+
+**Focus**: Keep it simple, get the core workflow right, then build upon it.
 
 ---
 

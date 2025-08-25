@@ -34,5 +34,10 @@ if(PCL_FOUND)
   target_link_libraries(test_pcl_loader_render PRIVATE gldraw visualization ${PCL_LIBRARIES})
   target_compile_definitions(test_pcl_loader_render PRIVATE ${PCL_DEFINITIONS})
 
+  add_executable(test_point_selection_demo test_point_selection_demo.cpp)
+  target_include_directories(test_point_selection_demo PRIVATE ${PCL_INCLUDE_DIRS})
+  target_link_libraries(test_point_selection_demo PRIVATE gldraw visualization imview ${PCL_LIBRARIES})
+  target_compile_definitions(test_point_selection_demo PRIVATE ${PCL_DEFINITIONS})
+
   add_subdirectory(unit_test)
 endif()
