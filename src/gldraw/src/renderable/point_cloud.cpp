@@ -811,10 +811,6 @@ size_t PointCloud::DecodePointId(uint8_t r, uint8_t g, uint8_t b) {
   } else {
     // We used base_id = 1, actual vertex index = id - 1
     uint32_t vertex_index = id - 1u;
-    if (vertex_index >= 75) { // Safety clamp for our 75-point grid
-      std::cout << "WARNING: Decoded vertex index " << vertex_index << " out of range!" << std::endl;
-      return SIZE_MAX;
-    }
     return static_cast<size_t>(vertex_index);
   }
 }
