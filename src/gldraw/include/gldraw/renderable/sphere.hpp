@@ -13,21 +13,24 @@
 #include <glm/glm.hpp>
 #include <vector>
 
-#include "gldraw/interface/opengl_object.hpp"
+#include "gldraw/renderable/geometric_primitive.hpp"
 #include "gldraw/shader_program.hpp"
 
 namespace quickviz {
 
 /**
  * @brief Renderable 3D sphere for waypoints and detection zones
+ * Now inherits unified GeometricPrimitive interface
  */
-class Sphere : public OpenGlObject {
+class Sphere : public GeometricPrimitive {
  public:
+  // Legacy RenderMode enum for backward compatibility
+  // New code should use GeometricPrimitive::RenderMode
   enum class RenderMode {
-    kWireframe,    // Only latitude/longitude lines
-    kSolid,        // Solid filled sphere
-    kTransparent,  // Transparent filled sphere
-    kPoints        // Point cloud representation
+    kWireframe = static_cast<int>(GeometricPrimitive::RenderMode::kWireframe),
+    kSolid = static_cast<int>(GeometricPrimitive::RenderMode::kSolid),
+    kTransparent = static_cast<int>(GeometricPrimitive::RenderMode::kTransparent),
+    kPoints = static_cast<int>(GeometricPrimitive::RenderMode::kPoints)
   };
 
   Sphere();
@@ -37,42 +40,58 @@ class Sphere : public OpenGlObject {
   // Sphere configuration
   void SetCenter(const glm::vec3& center);
   void SetRadius(float radius);
-  void SetTransform(const glm::mat4& transform);
+  // SetTransform is now handled by GeometricPrimitive base class
   
-  // Appearance settings
-  void SetColor(const glm::vec3& color);
-  void SetWireframeColor(const glm::vec3& color);
-  void SetOpacity(float opacity);
-  void SetRenderMode(RenderMode mode);
+  // Appearance settings (forward to base class)
+  void SetColor(const glm::vec3& color) override { GeometricPrimitive::SetColor(color); }
+  void SetWireframeColor(const glm::vec3& color) override { GeometricPrimitive::SetWireframeColor(color); }
+  void SetOpacity(float opacity) override { GeometricPrimitive::SetOpacity(opacity); }
+  void SetRenderMode(RenderMode mode);  // Legacy overload
+  void SetRenderMode(GeometricPrimitive::RenderMode mode) override { GeometricPrimitive::SetRenderMode(mode); }
   
   // Quality settings
   void SetResolution(int latitude_segments, int longitude_segments);
-  void SetWireframeWidth(float width);
+  void SetWireframeWidth(float width) override { GeometricPrimitive::SetWireframeWidth(width); }
   
   // Special features
   void SetShowPoles(bool show, float pole_size = 5.0f);
   void SetShowEquator(bool show, const glm::vec3& color = glm::vec3(1.0f, 1.0f, 0.0f));
   
-  // OpenGlObject interface
+  // =================================================================
+  // GeometricPrimitive Interface Implementation
+  // =================================================================
+  
+  // Transform interface
+  void SetTransform(const glm::mat4& transform) override;
+  glm::mat4 GetTransform() const override;
+  
+  // Geometry calculations
+  float GetVolume() const override;
+  float GetSurfaceArea() const override;
+  glm::vec3 GetCentroid() const override;
+  std::pair<glm::vec3, glm::vec3> GetBoundingBox() const override;
+  
+  // OpenGL resource management
   void AllocateGpuResources() override;
   void ReleaseGpuResources() noexcept override;
-  void OnDraw(const glm::mat4& projection, const glm::mat4& view,
-              const glm::mat4& coord_transform = glm::mat4(1.0f)) override;
   bool IsGpuResourcesAllocated() const noexcept override { return vao_solid_ != 0; }
 
-  // Utility methods
+  // Sphere-specific utility methods
   glm::vec3 GetCenter() const { return center_; }
   float GetRadius() const { return radius_; }
-  float GetSurfaceArea() const;
-  float GetVolume() const;
+
+protected:
+  // =================================================================
+  // Template Method Implementation
+  // =================================================================
   
-  // Selection support
-  bool SupportsSelection() const override { return true; }
-  std::pair<glm::vec3, glm::vec3> GetBoundingBox() const override {
-    glm::vec3 half_extents(radius_, radius_, radius_);
-    return {center_ - half_extents, center_ + half_extents};
-  }
-  void SetHighlighted(bool highlighted) override;
+  void PrepareShaders(const glm::mat4& mvp_matrix, const glm::mat4& model_matrix) override;
+  void RenderSolid() override;
+  void RenderWireframe() override;
+  void RenderPoints() override;
+  
+  // Private special rendering methods for sphere-specific features
+  void RenderSpecialFeatures(const glm::mat4& mvp_matrix, const glm::mat4& model_matrix);
   
  private:
   void GenerateSphereGeometry();
@@ -83,16 +102,14 @@ class Sphere : public OpenGlObject {
   float radius_ = 1.0f;
   glm::mat4 transform_ = glm::mat4(1.0f);
   
-  // Appearance
-  glm::vec3 color_ = glm::vec3(0.7f, 0.7f, 0.9f);
-  glm::vec3 wireframe_color_ = glm::vec3(0.0f, 0.0f, 0.0f);
-  float opacity_ = 1.0f;
-  RenderMode render_mode_ = RenderMode::kSolid;
+  // Legacy appearance support (now uses base class material system)
+  glm::vec3 legacy_color_ = glm::vec3(0.7f, 0.7f, 0.9f);
+  glm::vec3 legacy_wireframe_color_ = glm::vec3(0.0f, 0.0f, 0.0f);
+  float legacy_opacity_ = 1.0f;
   
-  // Quality
+  // Quality settings
   int latitude_segments_ = 20;
   int longitude_segments_ = 20;
-  float wireframe_width_ = 1.0f;
   
   // Special features
   bool show_poles_ = false;
@@ -121,15 +138,16 @@ class Sphere : public OpenGlObject {
   uint32_t vao_equator_ = 0;
   uint32_t vbo_equator_ = 0;
   
-  // Shaders
+  // Specialized shaders optimized for parametric sphere rendering
   ShaderProgram solid_shader_;
   ShaderProgram wireframe_shader_;
   
-  bool needs_update_ = true;
+  // Internal update methods
+  void UpdateTransformFromCenterRadius();
   
-  // Selection state
-  bool is_highlighted_ = false;
-  glm::vec3 original_color_ = glm::vec3(0.7f, 0.7f, 0.9f);
+  // Matrices for special features rendering (stored during PrepareShaders)
+  mutable glm::mat4 stored_mvp_matrix_ = glm::mat4(1.0f);
+  mutable glm::mat4 stored_model_matrix_ = glm::mat4(1.0f);
 };
 
 }  // namespace quickviz

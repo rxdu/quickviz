@@ -13,21 +13,24 @@
 #include <glm/glm.hpp>
 #include <vector>
 
-#include "gldraw/interface/opengl_object.hpp"
+#include "gldraw/renderable/geometric_primitive.hpp"
 #include "gldraw/shader_program.hpp"
 
 namespace quickviz {
 
 /**
  * @brief Renderable 3D cylinder for obstacles and structures
+ * Now inherits unified GeometricPrimitive interface
  */
-class Cylinder : public OpenGlObject {
+class Cylinder : public GeometricPrimitive {
  public:
+  // Legacy RenderMode enum for backward compatibility
+  // New code should use GeometricPrimitive::RenderMode
   enum class RenderMode {
-    kWireframe,    // Only circular edges and vertical lines
-    kSolid,        // Solid filled cylinder
-    kTransparent,  // Transparent filled cylinder
-    kOutline       // Only top and bottom circles
+    kWireframe = static_cast<int>(GeometricPrimitive::RenderMode::kWireframe),
+    kSolid = static_cast<int>(GeometricPrimitive::RenderMode::kSolid),
+    kTransparent = static_cast<int>(GeometricPrimitive::RenderMode::kTransparent),
+    kOutline = static_cast<int>(GeometricPrimitive::RenderMode::kOutline)
   };
 
   Cylinder();
@@ -40,38 +43,64 @@ class Cylinder : public OpenGlObject {
   void SetTopCenter(const glm::vec3& center);
   void SetCenterAndHeight(const glm::vec3& center, float height);
   void SetRadius(float radius);
-  void SetTransform(const glm::mat4& transform);
+  // SetTransform is now handled by GeometricPrimitive base class
   
-  // Appearance settings
-  void SetColor(const glm::vec3& color);
-  void SetWireframeColor(const glm::vec3& color);
-  void SetOpacity(float opacity);
-  void SetRenderMode(RenderMode mode);
+  // Appearance settings (forward to base class)
+  void SetColor(const glm::vec3& color) override { GeometricPrimitive::SetColor(color); }
+  void SetWireframeColor(const glm::vec3& color) override { GeometricPrimitive::SetWireframeColor(color); }
+  void SetOpacity(float opacity) override { GeometricPrimitive::SetOpacity(opacity); }
+  void SetRenderMode(RenderMode mode);  // Legacy overload
+  void SetRenderMode(GeometricPrimitive::RenderMode mode) override { GeometricPrimitive::SetRenderMode(mode); }
   
   // Quality settings
   void SetResolution(int radial_segments);
-  void SetWireframeWidth(float width);
+  void SetWireframeWidth(float width) override { GeometricPrimitive::SetWireframeWidth(width); }
   
   // Cap settings
   void SetShowTopCap(bool show);
   void SetShowBottomCap(bool show);
   void SetShowCaps(bool show) { SetShowTopCap(show); SetShowBottomCap(show); }
   
-  // OpenGlObject interface
+  // =================================================================
+  // GeometricPrimitive Interface Implementation
+  // =================================================================
+  
+  // Transform interface
+  void SetTransform(const glm::mat4& transform) override;
+  glm::mat4 GetTransform() const override;
+  
+  // Geometry calculations
+  float GetVolume() const override;
+  float GetSurfaceArea() const override;
+  glm::vec3 GetCentroid() const override;
+  std::pair<glm::vec3, glm::vec3> GetBoundingBox() const override;
+  
+  // OpenGL resource management
   void AllocateGpuResources() override;
   void ReleaseGpuResources() noexcept override;
-  void OnDraw(const glm::mat4& projection, const glm::mat4& view,
-              const glm::mat4& coord_transform = glm::mat4(1.0f)) override;
   bool IsGpuResourcesAllocated() const noexcept override { return vao_sides_ != 0; }
 
-  // Utility methods
+  // Cylinder-specific utility methods
   glm::vec3 GetBaseCenter() const { return base_center_; }
   glm::vec3 GetTopCenter() const { return top_center_; }
   float GetRadius() const { return radius_; }
   float GetHeight() const;
   glm::vec3 GetAxis() const;
+
+protected:
+  // =================================================================
+  // Template Method Implementation
+  // =================================================================
   
- private:
+  void PrepareShaders(const glm::mat4& mvp_matrix, const glm::mat4& model_matrix) override;
+  void RenderSolid() override;
+  void RenderWireframe() override;
+  void RenderPoints() override;
+  
+  // Cylinder-specific rendering methods
+  void RenderSpecialFeatures(const glm::mat4& mvp_matrix, const glm::mat4& model_matrix);
+  
+private:
   void GenerateCylinderGeometry();
   void UpdateGpuBuffers();
 
@@ -81,15 +110,13 @@ class Cylinder : public OpenGlObject {
   float radius_ = 0.5f;
   glm::mat4 transform_ = glm::mat4(1.0f);
   
-  // Appearance
-  glm::vec3 color_ = glm::vec3(0.7f, 0.7f, 0.9f);
-  glm::vec3 wireframe_color_ = glm::vec3(0.0f, 0.0f, 0.0f);
-  float opacity_ = 1.0f;
-  RenderMode render_mode_ = RenderMode::kSolid;
+  // Legacy appearance support (now uses base class material system)
+  glm::vec3 legacy_color_ = glm::vec3(0.7f, 0.7f, 0.9f);
+  glm::vec3 legacy_wireframe_color_ = glm::vec3(0.0f, 0.0f, 0.0f);
+  float legacy_opacity_ = 1.0f;
   
-  // Quality
+  // Quality settings
   int radial_segments_ = 20;
-  float wireframe_width_ = 1.0f;
   
   // Cap settings
   bool show_top_cap_ = true;
@@ -118,11 +145,16 @@ class Cylinder : public OpenGlObject {
   uint32_t vao_wireframe_ = 0;
   uint32_t ebo_wireframe_ = 0;
   
-  // Shaders
+  // Specialized shaders optimized for cylinder rendering with caps
   ShaderProgram solid_shader_;
   ShaderProgram wireframe_shader_;
   
-  bool needs_update_ = true;
+  // Internal update methods
+  void UpdateTransformFromCenters();
+  
+  // Matrices for special features rendering (stored during PrepareShaders)
+  mutable glm::mat4 stored_mvp_matrix_ = glm::mat4(1.0f);
+  mutable glm::mat4 stored_model_matrix_ = glm::mat4(1.0f);
 };
 
 }  // namespace quickviz

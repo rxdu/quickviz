@@ -39,10 +39,12 @@ void SetupCylinderScene(GlSceneManager* scene_manager) {
     cylinder4->SetOpacity(0.6f);
     scene_manager->AddOpenGLObject("cylinder4", std::move(cylinder4));
     
-    // 5. Wireframe cylinder - Purple
+    // 5. Wireframe cylinder - White (for maximum contrast)
     auto cylinder5 = std::make_unique<Cylinder>(glm::vec3(0.0f, 0.0f, -3.0f), 1.8f, 1.2f);
-    cylinder5->SetColor(glm::vec3(0.8f, 0.2f, 0.8f));
+    cylinder5->SetColor(glm::vec3(1.0f, 1.0f, 1.0f));  // White for maximum contrast
+    cylinder5->SetWireframeColor(glm::vec3(1.0f, 1.0f, 1.0f));  // White wireframe
     cylinder5->SetRenderMode(Cylinder::RenderMode::kWireframe);
+    cylinder5->SetWireframeWidth(2.0f);  // Make lines thicker for visibility
     scene_manager->AddOpenGLObject("cylinder5", std::move(cylinder5));
 }
 
@@ -73,7 +75,7 @@ int main(int argc, char* argv[]) {
             "- Green cylinder: Wide 1.5 radius, 1.0 height at (-3,0,0)",
             "- Blue cylinder: Thin 0.5 radius, 3.0 height at (3,0,0)",
             "- Yellow cylinder: Transparent at (0,0,3)",
-            "- Purple cylinder: Wireframe at (0,0,-3)"
+            "- White cylinder: Wireframe at (0,0,-3)"
         });
         
         view.AddHelpSection("Applications", {

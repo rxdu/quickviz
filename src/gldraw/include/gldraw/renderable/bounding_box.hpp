@@ -13,20 +13,23 @@
 #include <glm/glm.hpp>
 #include <vector>
 
-#include "gldraw/interface/opengl_object.hpp"
+#include "gldraw/renderable/geometric_primitive.hpp"
 #include "gldraw/shader_program.hpp"
 
 namespace quickviz {
 
 /**
  * @brief Renderable 3D bounding box for zones and regions
+ * Now inherits unified GeometricPrimitive interface
  */
-class BoundingBox : public OpenGlObject {
+class BoundingBox : public GeometricPrimitive {
  public:
+  // Legacy RenderMode enum for backward compatibility
+  // New code should use GeometricPrimitive::RenderMode
   enum class RenderMode {
-    kWireframe,    // Only edges
-    kSolid,        // Solid faces
-    kTransparent,  // Transparent faces with edges
+    kWireframe = static_cast<int>(GeometricPrimitive::RenderMode::kWireframe),
+    kSolid = static_cast<int>(GeometricPrimitive::RenderMode::kSolid),
+    kTransparent = static_cast<int>(GeometricPrimitive::RenderMode::kTransparent),
   };
 
   BoundingBox();
@@ -36,34 +39,60 @@ class BoundingBox : public OpenGlObject {
   // Box configuration
   void SetBounds(const glm::vec3& min_point, const glm::vec3& max_point);
   void SetCenter(const glm::vec3& center, const glm::vec3& size);
-  void SetTransform(const glm::mat4& transform);
+  // SetTransform is now handled by GeometricPrimitive base class
   
-  // Appearance settings
-  void SetColor(const glm::vec3& color);
-  void SetEdgeColor(const glm::vec3& color);
-  void SetOpacity(float opacity);
-  void SetEdgeWidth(float width);
-  void SetRenderMode(RenderMode mode);
+  // Appearance settings (forward to base class)
+  void SetColor(const glm::vec3& color) override { GeometricPrimitive::SetColor(color); }
+  void SetEdgeColor(const glm::vec3& color);  // BoundingBox-specific
+  void SetOpacity(float opacity) override { GeometricPrimitive::SetOpacity(opacity); }
+  void SetEdgeWidth(float width);  // BoundingBox-specific
+  void SetRenderMode(RenderMode mode);  // Legacy overload
+  void SetRenderMode(GeometricPrimitive::RenderMode mode) override { GeometricPrimitive::SetRenderMode(mode); }
   
   // Visibility options
   void SetShowEdges(bool show);
   void SetShowFaces(bool show);
   void SetShowCornerPoints(bool show, float point_size = 5.0f);
   
-  // OpenGlObject interface
+  // =================================================================
+  // GeometricPrimitive Interface Implementation
+  // =================================================================
+  
+  // Transform interface
+  void SetTransform(const glm::mat4& transform) override;
+  glm::mat4 GetTransform() const override;
+  
+  // Geometry calculations
+  float GetVolume() const override;
+  float GetSurfaceArea() const override;
+  glm::vec3 GetCentroid() const override;
+  std::pair<glm::vec3, glm::vec3> GetBoundingBox() const override;
+  
+  // OpenGL resource management
   void AllocateGpuResources() override;
   void ReleaseGpuResources() noexcept override;
-  void OnDraw(const glm::mat4& projection, const glm::mat4& view,
-              const glm::mat4& coord_transform = glm::mat4(1.0f)) override;
   bool IsGpuResourcesAllocated() const noexcept override { return vao_edges_ != 0; }
 
-  // Utility methods
+  // BoundingBox-specific utility methods
   glm::vec3 GetCenter() const;
   glm::vec3 GetSize() const;
   glm::vec3 GetMinPoint() const { return min_point_; }
   glm::vec3 GetMaxPoint() const { return max_point_; }
+
+protected:
+  // =================================================================
+  // Template Method Implementation
+  // =================================================================
   
- private:
+  void PrepareShaders(const glm::mat4& mvp_matrix, const glm::mat4& model_matrix) override;
+  void RenderSolid() override;
+  void RenderWireframe() override;
+  void RenderPoints() override;
+  
+  // BoundingBox-specific rendering methods
+  void RenderSpecialFeatures(const glm::mat4& mvp_matrix, const glm::mat4& model_matrix);
+  
+private:
   void GenerateBoxGeometry();
   void UpdateGpuBuffers();
 
@@ -72,12 +101,11 @@ class BoundingBox : public OpenGlObject {
   glm::vec3 max_point_ = glm::vec3(1.0f, 1.0f, 1.0f);
   glm::mat4 transform_ = glm::mat4(1.0f);
   
-  // Appearance
-  glm::vec3 face_color_ = glm::vec3(0.5f, 0.5f, 0.8f);
-  glm::vec3 edge_color_ = glm::vec3(0.0f, 0.0f, 0.0f);
-  float opacity_ = 0.3f;
+  // Legacy appearance support (now uses base class material system)
+  glm::vec3 legacy_face_color_ = glm::vec3(0.5f, 0.5f, 0.8f);
+  glm::vec3 edge_color_ = glm::vec3(0.0f, 0.0f, 0.0f);  // BoundingBox-specific
+  float legacy_opacity_ = 0.3f;
   float edge_width_ = 2.0f;
-  RenderMode render_mode_ = RenderMode::kWireframe;
   
   // Visibility
   bool show_edges_ = true;
@@ -99,11 +127,16 @@ class BoundingBox : public OpenGlObject {
   uint32_t vao_faces_ = 0;
   uint32_t ebo_faces_ = 0;
   
-  // Shaders
+  // Specialized shaders optimized for bounding box rendering
   ShaderProgram edge_shader_;
   ShaderProgram face_shader_;
   
-  bool needs_update_ = true;
+  // Internal update methods
+  void UpdateTransformFromBounds();
+  
+  // Matrices for special features rendering (stored during PrepareShaders)
+  mutable glm::mat4 stored_mvp_matrix_ = glm::mat4(1.0f);
+  mutable glm::mat4 stored_model_matrix_ = glm::mat4(1.0f);
 };
 
 }  // namespace quickviz

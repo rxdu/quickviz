@@ -30,15 +30,14 @@ out vec3 FragPos;
 out vec3 Normal;
 
 uniform mat4 mvp;
-uniform mat4 model;
 uniform vec3 center;
 uniform float radius;
 
 void main() {
     vec3 worldPos = center + aPos * radius;
-    FragPos = vec3(model * vec4(worldPos, 1.0));
-    Normal = mat3(transpose(inverse(model))) * aNormal;
-    gl_Position = mvp * model * vec4(worldPos, 1.0);
+    FragPos = worldPos;
+    Normal = aNormal;
+    gl_Position = mvp * vec4(worldPos, 1.0);
 }
 )";
 
@@ -56,7 +55,7 @@ uniform vec3 viewPos;
 
 void main() {
     // Ambient
-    float ambientStrength = 0.3;
+    float ambientStrength = 0.5;
     vec3 ambient = ambientStrength * color;
     
     // Diffuse
@@ -82,13 +81,12 @@ const char* kWireframeVertexShader = R"(
 layout (location = 0) in vec3 aPos;
 
 uniform mat4 mvp;
-uniform mat4 model;
 uniform vec3 center;
 uniform float radius;
 
 void main() {
     vec3 worldPos = center + aPos * radius;
-    gl_Position = mvp * model * vec4(worldPos, 1.0);
+    gl_Position = mvp * vec4(worldPos, 1.0);
 }
 )";
 
@@ -104,12 +102,22 @@ void main() {
 
 }  // namespace
 
-Sphere::Sphere() {
+Sphere::Sphere() : GeometricPrimitive() {
+  // Initialize material with legacy colors
+  material_.diffuse_color = legacy_color_;
+  material_.wireframe_color = legacy_wireframe_color_;
+  material_.opacity = legacy_opacity_;
+  original_material_ = material_;
   GenerateSphereGeometry();
 }
 
 Sphere::Sphere(const glm::vec3& center, float radius)
-    : center_(center), radius_(radius) {
+    : GeometricPrimitive(), center_(center), radius_(radius) {
+  // Initialize material with legacy colors
+  material_.diffuse_color = legacy_color_;
+  material_.wireframe_color = legacy_wireframe_color_;
+  material_.opacity = legacy_opacity_;
+  original_material_ = material_;
   GenerateSphereGeometry();
 }
 
@@ -129,33 +137,67 @@ void Sphere::SetRadius(float radius) {
 
 void Sphere::SetTransform(const glm::mat4& transform) {
   transform_ = transform;
+  MarkForUpdate();
 }
 
-void Sphere::SetColor(const glm::vec3& color) {
-  color_ = color;
+glm::mat4 Sphere::GetTransform() const {
+  // Create transform matrix from center and radius
+  glm::mat4 transform = glm::mat4(1.0f);
+  transform = glm::translate(transform, center_);
+  transform = glm::scale(transform, glm::vec3(radius_));
+  return transform_ * transform;
 }
 
-void Sphere::SetWireframeColor(const glm::vec3& color) {
-  wireframe_color_ = color;
+float Sphere::GetVolume() const {
+  return (4.0f / 3.0f) * M_PI * radius_ * radius_ * radius_;
 }
 
-void Sphere::SetOpacity(float opacity) {
-  opacity_ = opacity;
+float Sphere::GetSurfaceArea() const {
+  return 4.0f * M_PI * radius_ * radius_;
 }
+
+glm::vec3 Sphere::GetCentroid() const {
+  return center_;
+}
+
+std::pair<glm::vec3, glm::vec3> Sphere::GetBoundingBox() const {
+  glm::vec3 half_extents(radius_, radius_, radius_);
+  return {center_ - half_extents, center_ + half_extents};
+}
+
+// Legacy color methods now update both legacy values and base class material
+// These are kept for backward compatibility but deprecated
 
 void Sphere::SetRenderMode(RenderMode mode) {
-  render_mode_ = mode;
+  // Convert legacy enum to base class enum
+  GeometricPrimitive::RenderMode base_mode;
+  switch (mode) {
+    case RenderMode::kWireframe:
+      base_mode = GeometricPrimitive::RenderMode::kWireframe;
+      break;
+    case RenderMode::kSolid:
+      base_mode = GeometricPrimitive::RenderMode::kSolid;
+      break;
+    case RenderMode::kTransparent:
+      base_mode = GeometricPrimitive::RenderMode::kTransparent;
+      break;
+    case RenderMode::kPoints:
+      base_mode = GeometricPrimitive::RenderMode::kPoints;
+      break;
+    default:
+      base_mode = GeometricPrimitive::RenderMode::kSolid;
+      break;
+  }
+  GeometricPrimitive::SetRenderMode(base_mode);
 }
 
 void Sphere::SetResolution(int latitude_segments, int longitude_segments) {
   latitude_segments_ = latitude_segments;
   longitude_segments_ = longitude_segments;
-  needs_update_ = true;
+  MarkForUpdate();
 }
 
-void Sphere::SetWireframeWidth(float width) {
-  wireframe_width_ = width;
-}
+// SetWireframeWidth now handled by base class
 
 void Sphere::SetShowPoles(bool show, float pole_size) {
   show_poles_ = show;
@@ -166,17 +208,11 @@ void Sphere::SetShowEquator(bool show, const glm::vec3& color) {
   show_equator_ = show;
   equator_color_ = color;
   if (show) {
-    needs_update_ = true;  // Need to regenerate equator geometry
+    MarkForUpdate();  // Need to regenerate equator geometry
   }
 }
 
-float Sphere::GetSurfaceArea() const {
-  return 4.0f * M_PI * radius_ * radius_;
-}
-
-float Sphere::GetVolume() const {
-  return (4.0f / 3.0f) * M_PI * radius_ * radius_ * radius_;
-}
+// Volume and surface area methods now implemented above as virtual overrides
 
 void Sphere::GenerateSphereGeometry() {
   vertices_.clear();
@@ -252,35 +288,35 @@ void Sphere::GenerateSphereGeometry() {
     }
   }
   
-  needs_update_ = true;
+  MarkForUpdate();
 }
 
 void Sphere::AllocateGpuResources() {
   if (IsGpuResourcesAllocated()) return;
   
   try {
-    // Compile solid shader
+    // Initialize specialized shaders for parametric sphere rendering
+    // Main rendering uses these specialized shaders for optimal performance
     Shader solid_vs(kSolidVertexShader, Shader::Type::kVertex);
     Shader solid_fs(kSolidFragmentShader, Shader::Type::kFragment);
     if (!solid_vs.Compile() || !solid_fs.Compile()) {
-      throw std::runtime_error("Solid sphere shader compilation failed");
+      throw std::runtime_error("Sphere shader compilation failed");
     }
     solid_shader_.AttachShader(solid_vs);
     solid_shader_.AttachShader(solid_fs);
     if (!solid_shader_.LinkProgram()) {
-      throw std::runtime_error("Solid sphere shader linking failed");
+      throw std::runtime_error("Sphere shader linking failed");
     }
     
-    // Compile wireframe shader
     Shader wireframe_vs(kWireframeVertexShader, Shader::Type::kVertex);
     Shader wireframe_fs(kWireframeFragmentShader, Shader::Type::kFragment);
     if (!wireframe_vs.Compile() || !wireframe_fs.Compile()) {
-      throw std::runtime_error("Wireframe sphere shader compilation failed");
+      throw std::runtime_error("Sphere wireframe shader compilation failed");
     }
     wireframe_shader_.AttachShader(wireframe_vs);
     wireframe_shader_.AttachShader(wireframe_fs);
     if (!wireframe_shader_.LinkProgram()) {
-      throw std::runtime_error("Wireframe sphere shader linking failed");
+      throw std::runtime_error("Sphere wireframe shader linking failed");
     }
     
     // Create VAOs and VBOs for solid rendering
@@ -391,88 +427,92 @@ void Sphere::UpdateGpuBuffers() {
   }
   
   glBindVertexArray(0);
-  needs_update_ = false;
+  ClearUpdateFlag();
 }
 
-void Sphere::OnDraw(const glm::mat4& projection, const glm::mat4& view,
-                    const glm::mat4& coord_transform) {
+// Template Method Implementation
+void Sphere::PrepareShaders(const glm::mat4& mvp_matrix, const glm::mat4& model_matrix) {
+  // Make sure GPU resources are allocated and updated
   if (!IsGpuResourcesAllocated()) {
     AllocateGpuResources();
   }
   
-  if (needs_update_) {
+  if (NeedsUpdate()) {
     GenerateSphereGeometry();
     UpdateGpuBuffers();
   }
   
-  glm::mat4 mvp = projection * view * coord_transform;
-  glm::mat4 final_transform = coord_transform * transform_;
+  // Store matrices for rendering methods (using specialized shaders)
+  stored_mvp_matrix_ = mvp_matrix;
+  stored_model_matrix_ = model_matrix;
+}
+
+void Sphere::RenderSolid() {
+  if (vao_solid_ == 0) return;
   
-  // Draw solid sphere or transparent sphere
-  if (render_mode_ == RenderMode::kSolid || render_mode_ == RenderMode::kTransparent) {
-    solid_shader_.Use();
-    solid_shader_.SetUniform("mvp", mvp);
-    solid_shader_.SetUniform("model", transform_);
-    solid_shader_.SetUniform("center", center_);
-    solid_shader_.SetUniform("radius", radius_);
-    solid_shader_.SetUniform("color", color_);
-    solid_shader_.SetUniform("opacity", opacity_);
-    solid_shader_.TrySetUniform("lightPos", glm::vec3(10, 10, 10));
-    solid_shader_.TrySetUniform("viewPos", glm::vec3(0, 0, 5));
-    
-    if (render_mode_ == RenderMode::kTransparent || opacity_ < 1.0f) {
-      glEnable(GL_BLEND);
-      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    }
-    
-    glBindVertexArray(vao_solid_);
-    glDrawElements(GL_TRIANGLES, solid_indices_.size(), GL_UNSIGNED_INT, nullptr);
-    glBindVertexArray(0);
-    
-    if (render_mode_ == RenderMode::kTransparent || opacity_ < 1.0f) {
-      glDisable(GL_BLEND);
-    }
-  }
+  // Use specialized solid shader for sphere rendering
+  solid_shader_.Use();
+  solid_shader_.SetUniform("mvp", stored_mvp_matrix_);
+  solid_shader_.SetUniform("center", center_);
+  solid_shader_.SetUniform("radius", radius_);
+  solid_shader_.SetUniform("color", material_.diffuse_color);
+  solid_shader_.SetUniform("opacity", material_.opacity);
+  solid_shader_.TrySetUniform("lightPos", glm::vec3(10, 10, 10));
+  solid_shader_.TrySetUniform("viewPos", glm::vec3(0, 0, 5));
   
-  // Draw wireframe
-  if (render_mode_ == RenderMode::kWireframe) {
-    wireframe_shader_.Use();
-    wireframe_shader_.SetUniform("mvp", mvp);
-    wireframe_shader_.SetUniform("model", transform_);
-    wireframe_shader_.SetUniform("center", center_);
-    wireframe_shader_.SetUniform("radius", radius_);
-    wireframe_shader_.SetUniform("color", wireframe_color_);
-    
-    glLineWidth(wireframe_width_);
-    glBindVertexArray(vao_wireframe_);
-    glDrawElements(GL_LINES, wireframe_indices_.size(), GL_UNSIGNED_INT, nullptr);
-    glBindVertexArray(0);
-  }
+  glBindVertexArray(vao_solid_);
+  glDrawElements(GL_TRIANGLES, solid_indices_.size(), GL_UNSIGNED_INT, nullptr);
+  glBindVertexArray(0);
   
-  // Draw points
-  if (render_mode_ == RenderMode::kPoints) {
-    wireframe_shader_.Use();  // Reuse wireframe shader for points
-    wireframe_shader_.SetUniform("mvp", mvp);
-    wireframe_shader_.SetUniform("model", transform_);
-    wireframe_shader_.SetUniform("center", center_);
-    wireframe_shader_.SetUniform("radius", radius_);
-    wireframe_shader_.SetUniform("color", color_);
-    
-    glEnable(GL_PROGRAM_POINT_SIZE);
-    glBindVertexArray(vao_wireframe_);
-    glDrawArrays(GL_POINTS, 0, vertices_.size());
-    glBindVertexArray(0);
-    glDisable(GL_PROGRAM_POINT_SIZE);
-  }
+  // Render sphere-specific features
+  RenderSpecialFeatures(stored_mvp_matrix_, stored_model_matrix_);
+}
+
+void Sphere::RenderWireframe() {
+  if (vao_wireframe_ == 0) return;
   
-  // Draw poles
+  // Use specialized wireframe shader for sphere rendering
+  wireframe_shader_.Use();
+  wireframe_shader_.SetUniform("mvp", stored_mvp_matrix_);
+  wireframe_shader_.SetUniform("center", center_);
+  wireframe_shader_.SetUniform("radius", radius_);
+  wireframe_shader_.SetUniform("color", material_.wireframe_color);
+  
+  glBindVertexArray(vao_wireframe_);
+  glDrawElements(GL_LINES, wireframe_indices_.size(), GL_UNSIGNED_INT, nullptr);
+  glBindVertexArray(0);
+  
+  // Render sphere-specific features
+  RenderSpecialFeatures(stored_mvp_matrix_, stored_model_matrix_);
+}
+
+void Sphere::RenderPoints() {
+  if (vao_wireframe_ == 0) return;
+  
+  // Use specialized wireframe shader for point rendering
+  wireframe_shader_.Use();
+  wireframe_shader_.SetUniform("mvp", stored_mvp_matrix_);
+  wireframe_shader_.SetUniform("center", center_);
+  wireframe_shader_.SetUniform("radius", radius_);
+  wireframe_shader_.SetUniform("color", material_.diffuse_color);
+  
+  glBindVertexArray(vao_wireframe_);
+  glDrawArrays(GL_POINTS, 0, vertices_.size());
+  glBindVertexArray(0);
+  
+  // Render sphere-specific features
+  RenderSpecialFeatures(stored_mvp_matrix_, stored_model_matrix_);
+}
+
+void Sphere::RenderSpecialFeatures(const glm::mat4& mvp_matrix, const glm::mat4& model_matrix) {
+  // Draw poles using specialized shader
   if (show_poles_) {
     wireframe_shader_.Use();
-    wireframe_shader_.SetUniform("mvp", mvp);
-    wireframe_shader_.SetUniform("model", transform_);
+    wireframe_shader_.SetUniform("mvp", mvp_matrix);
+    wireframe_shader_.SetUniform("model", model_matrix);
     wireframe_shader_.SetUniform("center", center_);
     wireframe_shader_.SetUniform("radius", radius_);
-    wireframe_shader_.SetUniform("color", wireframe_color_);
+    wireframe_shader_.SetUniform("color", material_.wireframe_color);
     
     glEnable(GL_PROGRAM_POINT_SIZE);
     glBindVertexArray(vao_wireframe_);
@@ -484,11 +524,11 @@ void Sphere::OnDraw(const glm::mat4& projection, const glm::mat4& view,
     glDisable(GL_PROGRAM_POINT_SIZE);
   }
   
-  // Draw equator
+  // Draw equator using specialized shader
   if (show_equator_ && !equator_vertices_.empty()) {
     wireframe_shader_.Use();
-    wireframe_shader_.SetUniform("mvp", mvp);
-    wireframe_shader_.SetUniform("model", transform_);
+    wireframe_shader_.SetUniform("mvp", mvp_matrix);
+    wireframe_shader_.SetUniform("model", model_matrix);
     wireframe_shader_.SetUniform("center", center_);
     wireframe_shader_.SetUniform("radius", radius_);
     wireframe_shader_.SetUniform("color", equator_color_);
@@ -500,16 +540,14 @@ void Sphere::OnDraw(const glm::mat4& projection, const glm::mat4& view,
   }
 }
 
-void Sphere::SetHighlighted(bool highlighted) {
-  is_highlighted_ = highlighted;
-  if (highlighted) {
-    // Save original color and set highlight color
-    original_color_ = color_;
-    color_ = glm::vec3(1.0f, 1.0f, 0.0f);  // Yellow highlight
-  } else {
-    // Restore original color
-    color_ = original_color_;
-  }
+// Highlighting now handled by base class GeometricPrimitive::SetHighlighted
+
+void Sphere::UpdateTransformFromCenterRadius() {
+  // Helper method to update transform matrix from center and radius
+  glm::mat4 transform = glm::mat4(1.0f);
+  transform = glm::translate(transform, center_);
+  transform = glm::scale(transform, glm::vec3(radius_));
+  transform_ = transform;
 }
 
 }  // namespace quickviz

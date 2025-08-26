@@ -53,6 +53,20 @@ gtest_discover_tests(test_buffer_registry
     PROPERTIES LABELS "unit"
 )
 
+# Geometric primitive types tests (OpenGL-free)
+add_executable(test_geometric_primitive_types
+    unit/test_geometric_primitive_types.cpp
+)
+target_link_libraries(test_geometric_primitive_types
+    PRIVATE
+    gtest_main
+    gldraw
+    test_utils
+)
+gtest_discover_tests(test_geometric_primitive_types
+    PROPERTIES LABELS "unit"
+)
+
 # ==============================================================================
 # Integration Tests
 # ==============================================================================
@@ -193,6 +207,9 @@ if(ENABLE_COVERAGE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
         
         target_compile_options(test_buffer_registry PRIVATE --coverage)
         target_link_options(test_buffer_registry PRIVATE --coverage)
+        
+        target_compile_options(test_geometric_primitive_types PRIVATE --coverage)
+        target_link_options(test_geometric_primitive_types PRIVATE --coverage)
         
         target_compile_options(test_renderer_pipeline PRIVATE --coverage)
         target_link_options(test_renderer_pipeline PRIVATE --coverage)

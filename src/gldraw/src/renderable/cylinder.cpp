@@ -98,19 +98,34 @@ void main() {
 
 }  // namespace
 
-Cylinder::Cylinder() {
+Cylinder::Cylinder() : GeometricPrimitive() {
+  // Initialize material with legacy colors
+  material_.diffuse_color = legacy_color_;
+  material_.wireframe_color = legacy_wireframe_color_;
+  material_.opacity = legacy_opacity_;
+  original_material_ = material_;
   GenerateCylinderGeometry();
 }
 
 Cylinder::Cylinder(const glm::vec3& base_center, const glm::vec3& top_center, float radius)
-    : base_center_(base_center), top_center_(top_center), radius_(radius) {
+    : GeometricPrimitive(), base_center_(base_center), top_center_(top_center), radius_(radius) {
+  // Initialize material with legacy colors
+  material_.diffuse_color = legacy_color_;
+  material_.wireframe_color = legacy_wireframe_color_;
+  material_.opacity = legacy_opacity_;
+  original_material_ = material_;
   GenerateCylinderGeometry();
 }
 
 Cylinder::Cylinder(const glm::vec3& center, float height, float radius)
-    : radius_(radius) {
+    : GeometricPrimitive(), radius_(radius) {
   base_center_ = center - glm::vec3(0, height * 0.5f, 0);
   top_center_ = center + glm::vec3(0, height * 0.5f, 0);
+  // Initialize material with legacy colors
+  material_.diffuse_color = legacy_color_;
+  material_.wireframe_color = legacy_wireframe_color_;
+  material_.opacity = legacy_opacity_;
+  original_material_ = material_;
   GenerateCylinderGeometry();
 }
 
@@ -122,53 +137,95 @@ Cylinder::~Cylinder() {
 
 void Cylinder::SetBaseCenter(const glm::vec3& center) {
   base_center_ = center;
-  needs_update_ = true;
+  MarkForUpdate();
 }
 
 void Cylinder::SetTopCenter(const glm::vec3& center) {
   top_center_ = center;
-  needs_update_ = true;
+  MarkForUpdate();
 }
 
 void Cylinder::SetCenterAndHeight(const glm::vec3& center, float height) {
   base_center_ = center - glm::vec3(0, height * 0.5f, 0);
   top_center_ = center + glm::vec3(0, height * 0.5f, 0);
-  needs_update_ = true;
+  MarkForUpdate();
 }
 
 void Cylinder::SetRadius(float radius) {
   radius_ = radius;
-  needs_update_ = true;
+  MarkForUpdate();
 }
 
 void Cylinder::SetTransform(const glm::mat4& transform) {
   transform_ = transform;
+  MarkForUpdate();
 }
 
-void Cylinder::SetColor(const glm::vec3& color) {
-  color_ = color;
+glm::mat4 Cylinder::GetTransform() const {
+  // Create transform matrix from cylinder geometry
+  glm::vec3 center = (base_center_ + top_center_) * 0.5f;
+  glm::mat4 transform = glm::mat4(1.0f);
+  transform = glm::translate(transform, center);
+  // Additional scaling/rotation could be applied here based on cylinder orientation
+  return transform_ * transform;
 }
 
-void Cylinder::SetWireframeColor(const glm::vec3& color) {
-  wireframe_color_ = color;
+float Cylinder::GetVolume() const {
+  float height = GetHeight();
+  return M_PI * radius_ * radius_ * height;
 }
 
-void Cylinder::SetOpacity(float opacity) {
-  opacity_ = opacity;
+float Cylinder::GetSurfaceArea() const {
+  float height = GetHeight();
+  float side_area = 2.0f * M_PI * radius_ * height;
+  float cap_area = 2.0f * M_PI * radius_ * radius_;
+  return side_area + cap_area;
 }
+
+glm::vec3 Cylinder::GetCentroid() const {
+  return (base_center_ + top_center_) * 0.5f;
+}
+
+std::pair<glm::vec3, glm::vec3> Cylinder::GetBoundingBox() const {
+  glm::vec3 center = GetCentroid();
+  float height = GetHeight();
+  
+  // Simple AABB approximation - could be improved for rotated cylinders
+  glm::vec3 half_extents(radius_, height * 0.5f, radius_);
+  return {center - half_extents, center + half_extents};
+}
+
+// Legacy color methods now handled by base class
 
 void Cylinder::SetRenderMode(RenderMode mode) {
-  render_mode_ = mode;
+  // Convert legacy enum to base class enum
+  GeometricPrimitive::RenderMode base_mode;
+  switch (mode) {
+    case RenderMode::kWireframe:
+      base_mode = GeometricPrimitive::RenderMode::kWireframe;
+      break;
+    case RenderMode::kSolid:
+      base_mode = GeometricPrimitive::RenderMode::kSolid;
+      break;
+    case RenderMode::kTransparent:
+      base_mode = GeometricPrimitive::RenderMode::kTransparent;
+      break;
+    case RenderMode::kOutline:
+      base_mode = GeometricPrimitive::RenderMode::kOutline;
+      break;
+    default:
+      base_mode = GeometricPrimitive::RenderMode::kSolid;
+      break;
+  }
+  GeometricPrimitive::SetRenderMode(base_mode);
 }
 
 void Cylinder::SetResolution(int radial_segments) {
   radial_segments_ = radial_segments;
-  needs_update_ = true;
+  MarkForUpdate();
 }
 
-void Cylinder::SetWireframeWidth(float width) {
-  wireframe_width_ = width;
-}
+// SetWireframeWidth now handled by base class
 
 void Cylinder::SetShowTopCap(bool show) {
   show_top_cap_ = show;
@@ -323,35 +380,35 @@ void Cylinder::GenerateCylinderGeometry() {
     wireframe_indices_.push_back(i * 2 + 1);
   }
   
-  needs_update_ = true;
+  MarkForUpdate();
 }
 
 void Cylinder::AllocateGpuResources() {
   if (IsGpuResourcesAllocated()) return;
   
   try {
-    // Compile solid shader
+    // Initialize specialized shaders for cylinder-specific features
+    // Main rendering uses these specialized shaders for caps and sides
     Shader solid_vs(kSolidVertexShader, Shader::Type::kVertex);
     Shader solid_fs(kSolidFragmentShader, Shader::Type::kFragment);
     if (!solid_vs.Compile() || !solid_fs.Compile()) {
-      throw std::runtime_error("Solid cylinder shader compilation failed");
+      throw std::runtime_error("Cylinder shader compilation failed");
     }
     solid_shader_.AttachShader(solid_vs);
     solid_shader_.AttachShader(solid_fs);
     if (!solid_shader_.LinkProgram()) {
-      throw std::runtime_error("Solid cylinder shader linking failed");
+      throw std::runtime_error("Cylinder shader linking failed");
     }
     
-    // Compile wireframe shader
     Shader wireframe_vs(kWireframeVertexShader, Shader::Type::kVertex);
     Shader wireframe_fs(kWireframeFragmentShader, Shader::Type::kFragment);
     if (!wireframe_vs.Compile() || !wireframe_fs.Compile()) {
-      throw std::runtime_error("Wireframe cylinder shader compilation failed");
+      throw std::runtime_error("Legacy cylinder wireframe shader compilation failed");
     }
     wireframe_shader_.AttachShader(wireframe_vs);
     wireframe_shader_.AttachShader(wireframe_fs);
     if (!wireframe_shader_.LinkProgram()) {
-      throw std::runtime_error("Wireframe cylinder shader linking failed");
+      throw std::runtime_error("Legacy cylinder wireframe shader linking failed");
     }
     
     // Create VAOs and VBOs for sides
@@ -476,44 +533,95 @@ void Cylinder::UpdateGpuBuffers() {
                wireframe_indices_.data(), GL_DYNAMIC_DRAW);
   
   glBindVertexArray(0);
-  needs_update_ = false;
+  ClearUpdateFlag();
 }
 
-void Cylinder::OnDraw(const glm::mat4& projection, const glm::mat4& view,
-                      const glm::mat4& coord_transform) {
+// Template Method Implementation
+void Cylinder::PrepareShaders(const glm::mat4& mvp_matrix, const glm::mat4& model_matrix) {
+  // Make sure GPU resources are allocated and updated
   if (!IsGpuResourcesAllocated()) {
     AllocateGpuResources();
   }
   
-  if (needs_update_) {
+  if (NeedsUpdate()) {
     GenerateCylinderGeometry();
     UpdateGpuBuffers();
   }
   
-  glm::mat4 mvp = projection * view * coord_transform;
-  glm::mat4 final_transform = coord_transform * transform_;
+  // Store matrices for rendering methods (using specialized shaders)
+  stored_mvp_matrix_ = mvp_matrix;
+  stored_model_matrix_ = model_matrix;
+}
+
+void Cylinder::RenderSolid() {
+  if (vao_sides_ == 0) return;
   
-  // Draw solid or transparent cylinder
-  if (render_mode_ == RenderMode::kSolid || render_mode_ == RenderMode::kTransparent) {
+  // Use specialized solid shader for cylinder rendering
+  solid_shader_.Use();
+  solid_shader_.SetUniform("mvp", stored_mvp_matrix_);
+  solid_shader_.SetUniform("model", stored_model_matrix_);
+  solid_shader_.SetUniform("color", material_.diffuse_color);
+  solid_shader_.SetUniform("opacity", material_.opacity);
+  solid_shader_.TrySetUniform("lightPos", glm::vec3(10, 10, 10));
+  solid_shader_.TrySetUniform("viewPos", glm::vec3(0, 0, 5));
+  
+  // Draw sides
+  glBindVertexArray(vao_sides_);
+  glDrawElements(GL_TRIANGLES, side_indices_.size(), GL_UNSIGNED_INT, nullptr);
+  glBindVertexArray(0);
+  
+  // Draw caps using special features
+  RenderSpecialFeatures(stored_mvp_matrix_, stored_model_matrix_);
+}
+
+void Cylinder::RenderWireframe() {
+  if (vao_wireframe_ == 0) return;
+  
+  // Use specialized wireframe shader for cylinder rendering
+  wireframe_shader_.Use();
+  wireframe_shader_.SetUniform("mvp", stored_mvp_matrix_);
+  wireframe_shader_.SetUniform("model", stored_model_matrix_);
+  wireframe_shader_.SetUniform("color", material_.wireframe_color);
+  
+  glBindVertexArray(vao_wireframe_);
+  glDrawElements(GL_LINES, wireframe_indices_.size(), GL_UNSIGNED_INT, nullptr);
+  glBindVertexArray(0);
+  
+  // Note: Skip solid caps in wireframe mode - wireframe should only show structural lines
+  // If caps wireframe is needed in future, implement separate wireframe cap rendering
+}
+
+void Cylinder::RenderPoints() {
+  if (vao_sides_ == 0) return;
+  
+  // Use specialized wireframe shader for point rendering
+  wireframe_shader_.Use();
+  wireframe_shader_.SetUniform("mvp", stored_mvp_matrix_);
+  wireframe_shader_.SetUniform("model", stored_model_matrix_);
+  wireframe_shader_.SetUniform("color", material_.diffuse_color);
+  
+  glBindVertexArray(vao_sides_);
+  glDrawArrays(GL_POINTS, 0, vertices_.size());
+  glBindVertexArray(0);
+  
+  // Render cylinder-specific features
+  RenderSpecialFeatures(stored_mvp_matrix_, stored_model_matrix_);
+}
+
+void Cylinder::RenderSpecialFeatures(const glm::mat4& mvp_matrix, const glm::mat4& model_matrix) {
+  // Draw caps using specialized shader (cylinder-specific feature)
+  if ((show_bottom_cap_ && !bottom_cap_indices_.empty()) || 
+      (show_top_cap_ && !top_cap_indices_.empty())) {
+    
     solid_shader_.Use();
-    solid_shader_.SetUniform("mvp", mvp);
-    solid_shader_.SetUniform("model", transform_);
-    solid_shader_.SetUniform("color", color_);
-    solid_shader_.SetUniform("opacity", opacity_);
+    solid_shader_.SetUniform("mvp", mvp_matrix);
+    solid_shader_.SetUniform("model", model_matrix);
+    solid_shader_.SetUniform("color", material_.diffuse_color);
+    solid_shader_.SetUniform("opacity", material_.opacity);
     solid_shader_.TrySetUniform("lightPos", glm::vec3(10, 10, 10));
     solid_shader_.TrySetUniform("viewPos", glm::vec3(0, 0, 5));
     
-    if (render_mode_ == RenderMode::kTransparent || opacity_ < 1.0f) {
-      glEnable(GL_BLEND);
-      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    }
-    
-    // Draw sides
-    glBindVertexArray(vao_sides_);
-    glDrawElements(GL_TRIANGLES, side_indices_.size(), GL_UNSIGNED_INT, nullptr);
-    glBindVertexArray(0);
-    
-    // Draw caps
+    // Draw bottom cap
     if (show_bottom_cap_ && !bottom_cap_indices_.empty()) {
       glBindVertexArray(vao_caps_);
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_bottom_cap_);
@@ -521,30 +629,22 @@ void Cylinder::OnDraw(const glm::mat4& projection, const glm::mat4& view,
       glBindVertexArray(0);
     }
     
+    // Draw top cap
     if (show_top_cap_ && !top_cap_indices_.empty()) {
       glBindVertexArray(vao_caps_);
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_top_cap_);
       glDrawElements(GL_TRIANGLES, top_cap_indices_.size(), GL_UNSIGNED_INT, nullptr);
       glBindVertexArray(0);
     }
-    
-    if (render_mode_ == RenderMode::kTransparent || opacity_ < 1.0f) {
-      glDisable(GL_BLEND);
-    }
   }
-  
-  // Draw wireframe
-  if (render_mode_ == RenderMode::kWireframe || render_mode_ == RenderMode::kOutline) {
-    wireframe_shader_.Use();
-    wireframe_shader_.SetUniform("mvp", mvp);
-    wireframe_shader_.SetUniform("model", transform_);
-    wireframe_shader_.SetUniform("color", wireframe_color_);
-    
-    glLineWidth(wireframe_width_);
-    glBindVertexArray(vao_wireframe_);
-    glDrawElements(GL_LINES, wireframe_indices_.size(), GL_UNSIGNED_INT, nullptr);
-    glBindVertexArray(0);
-  }
+}
+
+void Cylinder::UpdateTransformFromCenters() {
+  // Helper method to update transform matrix from cylinder geometry
+  glm::vec3 center = (base_center_ + top_center_) * 0.5f;
+  glm::mat4 transform = glm::mat4(1.0f);
+  transform = glm::translate(transform, center);
+  transform_ = transform;
 }
 
 }  // namespace quickviz

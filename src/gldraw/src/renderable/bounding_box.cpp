@@ -90,12 +90,22 @@ void main() {
 
 }  // namespace
 
-BoundingBox::BoundingBox() {
+BoundingBox::BoundingBox() : GeometricPrimitive() {
+  // Initialize material with legacy colors
+  material_.diffuse_color = legacy_face_color_;
+  material_.wireframe_color = edge_color_;
+  material_.opacity = legacy_opacity_;
+  original_material_ = material_;
   GenerateBoxGeometry();
 }
 
 BoundingBox::BoundingBox(const glm::vec3& min_point, const glm::vec3& max_point)
-    : min_point_(min_point), max_point_(max_point) {
+    : GeometricPrimitive(), min_point_(min_point), max_point_(max_point) {
+  // Initialize material with legacy colors
+  material_.diffuse_color = legacy_face_color_;
+  material_.wireframe_color = edge_color_;
+  material_.opacity = legacy_opacity_;
+  original_material_ = material_;
   GenerateBoxGeometry();
 }
 
@@ -108,56 +118,88 @@ BoundingBox::~BoundingBox() {
 void BoundingBox::SetBounds(const glm::vec3& min_point, const glm::vec3& max_point) {
   min_point_ = min_point;
   max_point_ = max_point;
-  needs_update_ = true;
+  MarkForUpdate();
 }
 
 void BoundingBox::SetCenter(const glm::vec3& center, const glm::vec3& size) {
   glm::vec3 half_size = size * 0.5f;
   min_point_ = center - half_size;
   max_point_ = center + half_size;
-  needs_update_ = true;
+  MarkForUpdate();
 }
 
 void BoundingBox::SetTransform(const glm::mat4& transform) {
   transform_ = transform;
+  MarkForUpdate();
 }
 
-void BoundingBox::SetColor(const glm::vec3& color) {
-  face_color_ = color;
+glm::mat4 BoundingBox::GetTransform() const {
+  // Create transform matrix from bounding box center
+  glm::vec3 center = GetCenter();
+  glm::mat4 transform = glm::mat4(1.0f);
+  transform = glm::translate(transform, center);
+  return transform_ * transform;
 }
+
+float BoundingBox::GetVolume() const {
+  glm::vec3 size = GetSize();
+  return size.x * size.y * size.z;
+}
+
+float BoundingBox::GetSurfaceArea() const {
+  glm::vec3 size = GetSize();
+  return 2.0f * (size.x * size.y + size.y * size.z + size.z * size.x);
+}
+
+glm::vec3 BoundingBox::GetCentroid() const {
+  return GetCenter();
+}
+
+std::pair<glm::vec3, glm::vec3> BoundingBox::GetBoundingBox() const {
+  return {min_point_, max_point_};
+}
+
+// Legacy SetColor handled by base class
 
 void BoundingBox::SetEdgeColor(const glm::vec3& color) {
   edge_color_ = color;
+  // Also update the material wireframe color
+  material_.wireframe_color = color;
+  if (!is_highlighted_) {
+    original_material_.wireframe_color = color;
+  }
 }
 
-void BoundingBox::SetOpacity(float opacity) {
-  opacity_ = opacity;
-}
+// Legacy SetOpacity handled by base class
 
 void BoundingBox::SetEdgeWidth(float width) {
   edge_width_ = width;
 }
 
 void BoundingBox::SetRenderMode(RenderMode mode) {
-  render_mode_ = mode;
-  
-  // Auto-configure visibility based on mode
+  // Convert legacy enum to base class enum
+  GeometricPrimitive::RenderMode base_mode;
   switch (mode) {
     case RenderMode::kWireframe:
+      base_mode = GeometricPrimitive::RenderMode::kWireframe;
       show_edges_ = true;
       show_faces_ = false;
       break;
     case RenderMode::kSolid:
+      base_mode = GeometricPrimitive::RenderMode::kSolid;
       show_edges_ = false;
       show_faces_ = true;
-      opacity_ = 1.0f;
       break;
     case RenderMode::kTransparent:
+      base_mode = GeometricPrimitive::RenderMode::kTransparent;
       show_edges_ = true;
       show_faces_ = true;
-      if (opacity_ > 0.8f) opacity_ = 0.3f;  // Ensure transparency
+      break;
+    default:
+      base_mode = GeometricPrimitive::RenderMode::kWireframe;
       break;
   }
+  GeometricPrimitive::SetRenderMode(base_mode);
 }
 
 void BoundingBox::SetShowEdges(bool show) {
@@ -186,7 +228,7 @@ void BoundingBox::GenerateBoxGeometry() {
   edge_indices_.clear();
   face_indices_.clear();
   
-  // Generate 8 vertices of the box
+  // Generate 8 vertices of the box (in world coordinates for now)
   vertices_ = {
     // Bottom face (z = min)
     {min_point_.x, min_point_.y, min_point_.z},  // 0: min, min, min
@@ -227,35 +269,34 @@ void BoundingBox::GenerateBoxGeometry() {
     1, 5, 6,  6, 2, 1
   };
   
-  needs_update_ = true;
+  MarkForUpdate();
 }
 
 void BoundingBox::AllocateGpuResources() {
   if (IsGpuResourcesAllocated()) return;
   
   try {
-    // Compile edge shader
+    // Initialize specialized shaders optimized for bounding box rendering
     Shader edge_vs(kEdgeVertexShader, Shader::Type::kVertex);
     Shader edge_fs(kEdgeFragmentShader, Shader::Type::kFragment);
     if (!edge_vs.Compile() || !edge_fs.Compile()) {
-      throw std::runtime_error("Edge shader compilation failed");
+      throw std::runtime_error("BoundingBox edge shader compilation failed");
     }
     edge_shader_.AttachShader(edge_vs);
     edge_shader_.AttachShader(edge_fs);
     if (!edge_shader_.LinkProgram()) {
-      throw std::runtime_error("Edge shader linking failed");
+      throw std::runtime_error("BoundingBox edge shader linking failed");
     }
     
-    // Compile face shader
     Shader face_vs(kFaceVertexShader, Shader::Type::kVertex);
     Shader face_fs(kFaceFragmentShader, Shader::Type::kFragment);
     if (!face_vs.Compile() || !face_fs.Compile()) {
-      throw std::runtime_error("Face shader compilation failed");
+      throw std::runtime_error("BoundingBox face shader compilation failed");
     }
     face_shader_.AttachShader(face_vs);
     face_shader_.AttachShader(face_fs);
     if (!face_shader_.LinkProgram()) {
-      throw std::runtime_error("Face shader linking failed");
+      throw std::runtime_error("BoundingBox face shader linking failed");
     }
     
     // Create VAOs and VBOs for edges
@@ -331,73 +372,135 @@ void BoundingBox::UpdateGpuBuffers() {
                face_indices_.data(), GL_DYNAMIC_DRAW);
   
   glBindVertexArray(0);
-  needs_update_ = false;
+  ClearUpdateFlag();
 }
 
-void BoundingBox::OnDraw(const glm::mat4& projection, const glm::mat4& view,
-                         const glm::mat4& coord_transform) {
+// Template Method Implementation
+void BoundingBox::PrepareShaders(const glm::mat4& mvp_matrix, const glm::mat4& model_matrix) {
+  // Make sure GPU resources are allocated and updated
   if (!IsGpuResourcesAllocated()) {
     AllocateGpuResources();
   }
   
-  if (needs_update_) {
+  if (NeedsUpdate()) {
     GenerateBoxGeometry();
     UpdateGpuBuffers();
   }
   
-  glm::mat4 mvp = projection * view * coord_transform;
-  glm::mat4 final_transform = coord_transform * transform_;
+  // BoundingBox uses its own legacy shaders for all modes since it has a different
+  // vertex structure than the shared shaders expect
+  // Store matrices for rendering methods
+  stored_mvp_matrix_ = mvp_matrix;
+  stored_model_matrix_ = model_matrix;
+}
+
+void BoundingBox::RenderSolid() {
+  if (vao_faces_ == 0) return;
   
-  // Draw faces first (if transparent, they need to be drawn before edges)
-  if (show_faces_) {
-    face_shader_.Use();
-    face_shader_.SetUniform("mvp", mvp);
-    face_shader_.SetUniform("transform", transform_);
-    face_shader_.SetUniform("color", face_color_);
-    face_shader_.SetUniform("opacity", opacity_);
-    face_shader_.TrySetUniform("lightPos", glm::vec3(10, 10, 10));
-    face_shader_.TrySetUniform("viewPos", glm::vec3(0, 0, 5));
+  // Use specialized face shader for solid rendering
+  face_shader_.Use();
+  face_shader_.SetUniform("mvp", stored_mvp_matrix_);
+  face_shader_.SetUniform("transform", stored_model_matrix_);
+  face_shader_.SetUniform("color", material_.diffuse_color);
+  face_shader_.SetUniform("opacity", material_.opacity);
+  face_shader_.TrySetUniform("lightPos", glm::vec3(10, 10, 10));
+  face_shader_.TrySetUniform("viewPos", glm::vec3(0, 0, 5));
+  
+  // Draw faces
+  glBindVertexArray(vao_faces_);
+  glDrawElements(GL_TRIANGLES, face_indices_.size(), GL_UNSIGNED_INT, nullptr);
+  glBindVertexArray(0);
+  
+  // Render bounding box-specific features
+  RenderSpecialFeatures(stored_mvp_matrix_, stored_model_matrix_);
+}
+
+void BoundingBox::RenderWireframe() {
+  if (vao_edges_ == 0) return;
+  
+  // Use specialized edge shader for wireframe rendering
+  edge_shader_.Use();
+  edge_shader_.SetUniform("mvp", stored_mvp_matrix_);
+  edge_shader_.SetUniform("transform", stored_model_matrix_);
+  edge_shader_.SetUniform("color", material_.wireframe_color);
+  
+  // Draw wireframe edges
+  glBindVertexArray(vao_edges_);
+  glDrawElements(GL_LINES, edge_indices_.size(), GL_UNSIGNED_INT, nullptr);
+  glBindVertexArray(0);
+  
+  // Render bounding box-specific features
+  RenderSpecialFeatures(stored_mvp_matrix_, stored_model_matrix_);
+}
+
+void BoundingBox::RenderPoints() {
+  if (vao_edges_ == 0) return;
+  
+  // Use specialized edge shader for point rendering
+  edge_shader_.Use();
+  edge_shader_.SetUniform("mvp", stored_mvp_matrix_);
+  edge_shader_.SetUniform("transform", stored_model_matrix_);
+  edge_shader_.SetUniform("color", material_.diffuse_color);
+  
+  // Draw all 8 corner points
+  glBindVertexArray(vao_edges_);
+  glDrawArrays(GL_POINTS, 0, 8);
+  glBindVertexArray(0);
+  
+  // Render bounding box-specific features
+  RenderSpecialFeatures(stored_mvp_matrix_, stored_model_matrix_);
+}
+
+void BoundingBox::RenderSpecialFeatures(const glm::mat4& mvp_matrix, const glm::mat4& model_matrix) {
+  // Handle special edge rendering for transparent mode or when explicitly requested
+  if ((render_mode_ == GeometricPrimitive::RenderMode::kTransparent && show_edges_) ||
+      (render_mode_ != GeometricPrimitive::RenderMode::kWireframe && show_edges_)) {
     
-    if (opacity_ < 1.0f) {
-      glEnable(GL_BLEND);
-      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    // For edges on transparent objects, temporarily enable depth writing
+    // so edges can properly occlude objects behind them
+    bool was_transparent = (render_mode_ == GeometricPrimitive::RenderMode::kTransparent);
+    if (was_transparent) {
+      glDepthMask(GL_TRUE);  // Enable depth writing for edges
     }
     
-    glBindVertexArray(vao_faces_);
-    glDrawElements(GL_TRIANGLES, face_indices_.size(), GL_UNSIGNED_INT, nullptr);
-    glBindVertexArray(0);
-    
-    if (opacity_ < 1.0f) {
-      glDisable(GL_BLEND);
-    }
-  }
-  
-  // Draw edges
-  if (show_edges_) {
     edge_shader_.Use();
-    edge_shader_.SetUniform("mvp", mvp);
-    edge_shader_.SetUniform("transform", transform_);
+    edge_shader_.SetUniform("mvp", mvp_matrix);
+    edge_shader_.SetUniform("transform", model_matrix);
     edge_shader_.SetUniform("color", edge_color_);
     
     glLineWidth(edge_width_);
     glBindVertexArray(vao_edges_);
     glDrawElements(GL_LINES, edge_indices_.size(), GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
+    
+    // Restore depth writing state for transparent objects
+    if (was_transparent) {
+      glDepthMask(GL_FALSE);  // Restore no depth writing for subsequent transparent rendering
+    }
   }
   
-  // Draw corner points
+  // Draw corner points if requested
   if (show_corner_points_) {
-    edge_shader_.Use();  // Reuse edge shader for points
-    edge_shader_.SetUniform("mvp", mvp);
-    edge_shader_.SetUniform("transform", transform_);
+    edge_shader_.Use();
+    edge_shader_.SetUniform("mvp", mvp_matrix);
+    edge_shader_.SetUniform("transform", model_matrix);
     edge_shader_.SetUniform("color", edge_color_);
     
     glEnable(GL_PROGRAM_POINT_SIZE);
+    glPointSize(corner_point_size_);
     glBindVertexArray(vao_edges_);
     glDrawArrays(GL_POINTS, 0, 8);  // Draw all 8 vertices as points
     glBindVertexArray(0);
     glDisable(GL_PROGRAM_POINT_SIZE);
   }
+}
+
+void BoundingBox::UpdateTransformFromBounds() {
+  // Helper method to update transform matrix from bounding box
+  glm::vec3 center = GetCenter();
+  glm::mat4 transform = glm::mat4(1.0f);
+  transform = glm::translate(transform, center);
+  transform_ = transform;
 }
 
 }  // namespace quickviz

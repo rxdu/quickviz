@@ -21,6 +21,7 @@
 #include "imview/fonts.hpp"
 #include "gldraw/coordinate_system_transformer.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
+#include "gldraw/renderable/geometric_primitive.hpp"
 
 namespace quickviz {
 GlSceneManager::GlSceneManager(const std::string& name, Mode mode)
@@ -48,6 +49,11 @@ GlSceneManager::GlSceneManager(const std::string& name, Mode mode)
 
 GlSceneManager::~GlSceneManager() {
   ClearOpenGLObjects();
+  
+  // Clean up static shaders from GeometricPrimitive before OpenGL context is destroyed
+  // This prevents segfault on exit when static shaders try to clean up after context is gone
+  GeometricPrimitive::CleanupShaders();
+  
   frame_buffer_.reset();
 }
 

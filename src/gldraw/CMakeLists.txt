@@ -26,6 +26,7 @@ add_library(gldraw
     src/renderable/coordinate_frame.cpp
     src/renderable/texture.cpp
     src/renderable/layer_manager.cpp
+    src/renderable/geometric_primitive.cpp
     src/renderable/mesh.cpp
     src/renderable/line_strip.cpp
     src/renderable/arrow.cpp

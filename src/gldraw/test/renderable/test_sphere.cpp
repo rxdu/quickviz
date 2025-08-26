@@ -27,9 +27,9 @@ void SetupSphereScene(GlSceneManager* scene_manager) {
     sphere2->SetColor(glm::vec3(0.0f, 1.0f, 0.0f));
     scene_manager->AddOpenGLObject("sphere2", std::move(sphere2));
     
-    // 3. Small sphere - Blue
+    // 3. Small sphere - Cyan (brighter blue)
     auto sphere3 = std::make_unique<Sphere>(glm::vec3(3.0f, 0.0f, 0.0f), 0.5f);
-    sphere3->SetColor(glm::vec3(0.0f, 0.0f, 1.0f));
+    sphere3->SetColor(glm::vec3(0.0f, 0.8f, 1.0f));
     scene_manager->AddOpenGLObject("sphere3", std::move(sphere3));
     
     // 4. Transparent sphere - Yellow
@@ -39,10 +39,13 @@ void SetupSphereScene(GlSceneManager* scene_manager) {
     sphere4->SetOpacity(0.6f);
     scene_manager->AddOpenGLObject("sphere4", std::move(sphere4));
     
-    // 5. Wireframe sphere - Purple
+    // 5. Wireframe sphere - White (for maximum contrast)
     auto sphere5 = std::make_unique<Sphere>(glm::vec3(0.0f, -3.0f, 0.0f), 1.2f);
-    sphere5->SetColor(glm::vec3(0.8f, 0.2f, 0.8f));
+    sphere5->SetResolution(10, 10);  // Reduce segments for clearer wireframe
+    sphere5->SetColor(glm::vec3(1.0f, 1.0f, 1.0f));  // White for maximum contrast
+    sphere5->SetWireframeColor(glm::vec3(1.0f, 1.0f, 1.0f));  // White wireframe
     sphere5->SetRenderMode(Sphere::RenderMode::kWireframe);
+    sphere5->SetWireframeWidth(2.0f);  // Make lines thicker for visibility
     scene_manager->AddOpenGLObject("sphere5", std::move(sphere5));
 }
 
@@ -71,9 +74,9 @@ int main(int argc, char* argv[]) {
         view.AddHelpSection("Scene Contents", {
             "- Red sphere: Basic 1.0 radius at origin",
             "- Green sphere: Large 2.0 radius at (-4,0,0)",
-            "- Blue sphere: Small 0.5 radius at (3,0,0)",
+            "- Cyan sphere: Small 0.5 radius at (3,0,0)",
             "- Yellow sphere: Transparent 1.5 radius at (0,3,0)",
-            "- Purple sphere: Wireframe 1.2 radius at (0,-3,0)"
+            "- White sphere: Wireframe 1.2 radius at (0,-3,0)"
         });
         
         view.AddHelpSection("Applications", {
