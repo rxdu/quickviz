@@ -99,16 +99,6 @@ void InteractiveSceneManager::SetPointCloud(std::shared_ptr<PointCloud> point_cl
     selector_ = std::make_unique<PointCloudSelector>();
     selector_->SetPointCloud(point_cloud_);
     
-    // Debug: Print some sample point coordinates
-    std::cout << "DEBUG: Sample points from the point cloud:" << std::endl;
-    auto points = point_cloud_->GetPoints();
-    if (!points.empty()) {
-      for (int i = 0; i < std::min(5, (int)points.size()); ++i) {
-        const auto& pt = points[i];
-        std::cout << "  Point " << i << ": (" << pt.x << ", " 
-                  << pt.y << ", " << pt.z << ")" << std::endl;
-      }
-    }
     
     // Set selection callback
     selector_->SetSelectionCallback([this](const std::vector<size_t>& indices) {
@@ -161,22 +151,13 @@ void InteractiveSceneManager::HandleMouseInput() {
   
   // Handle Ctrl+left click for point picking (to avoid interfering with camera controls)
   if (mouse_in_viewport && window_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && io.KeyCtrl) {
-    std::cout << "Ctrl+Click detected at viewport position (" << local_x << ", " << local_y << ")" << std::endl;
-    
     // Use GPU ID-buffer picking for pixel-perfect point selection
-    std::cout << "Attempting GPU picking at pixel (" << static_cast<int>(local_x) << ", " << static_cast<int>(local_y) << ")" << std::endl;
     size_t point_index = PickPointAtPixelWithRadius(static_cast<int>(local_x), static_cast<int>(local_y), 3);
-    std::cout << "GPU picking returned point index: " << point_index << std::endl;
     
     if (point_index != SIZE_MAX) {
       // Get the point coordinates for display
       auto points = point_cloud_->GetPoints();
       if (point_index < points.size()) {
-        const auto& point = points[point_index];
-        
-        std::cout << "SUCCESS: Point " << point_index << " selected!" << std::endl;
-        std::cout << "Point coordinates: (" << point.x << ", " 
-                  << point.y << ", " << point.z << ")" << std::endl;
         
         // Determine selection mode based on additional modifiers (Ctrl is already required for picking)
         SelectionMode mode = SelectionMode::kSingle;
@@ -193,7 +174,7 @@ void InteractiveSceneManager::HandleMouseInput() {
                                               glm::vec3(0.0f, 1.0f, 0.0f), 3.0f);
       }
     } else {
-      std::cout << "NO POINT SELECTED: No point found at mouse position" << std::endl;
+      // Point selection failed - no action needed
     }
   }
   

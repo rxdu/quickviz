@@ -91,8 +91,6 @@ class ShaderProgram {
     }
   }
 
-  // Getter for program ID (for debugging purposes)
-  uint32_t GetProgramId() const { return program_id_; }
 
  private:
   uint32_t GetUniformLocation(const std::string& name);
