@@ -1,18 +1,7 @@
 # Create visualization library
 add_library(visualization
-    # Renderable classes (data to OpenGL object conversion)
-    src/renderables/selection_renderable.cpp
-    src/renderables/surface_renderable.cpp
-    
-    # Selection utilities
-    src/selection/point_cloud_selector.cpp
-    
-    # Helper utilities
-    src/helpers/visualization_helpers.cpp
-    src/helpers/selection_visualizer.cpp
-    
-    # Testing utilities  
-    src/testing/mock_data_generator.cpp
+    # Core point selection utilities
+    src/point_selection.cpp
     
     # PCL bridge utilities (optional, depends on PCL)
 )

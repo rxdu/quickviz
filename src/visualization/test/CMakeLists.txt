@@ -19,10 +19,6 @@ if(PCL_FOUND)
   target_link_libraries(test_pcl_bridge PRIVATE gldraw visualization ${PCL_LIBRARIES})
   target_compile_definitions(test_pcl_bridge PRIVATE ${PCL_DEFINITIONS})
   
-  add_executable(test_pcd_with_selection test_pcd_with_selection.cpp)
-  target_include_directories(test_pcd_with_selection PRIVATE ${PCL_INCLUDE_DIRS})
-  target_link_libraries(test_pcd_with_selection PRIVATE gldraw visualization ${PCL_LIBRARIES})
-  target_compile_definitions(test_pcd_with_selection PRIVATE ${PCL_DEFINITIONS})
   
 #  add_executable(test_pcl_loader unit_test/test_pcl_loader.cpp)
 #  target_include_directories(test_pcl_loader PRIVATE ${PCL_INCLUDE_DIRS})
@@ -34,10 +30,6 @@ if(PCL_FOUND)
   target_link_libraries(test_pcl_loader_render PRIVATE gldraw visualization ${PCL_LIBRARIES})
   target_compile_definitions(test_pcl_loader_render PRIVATE ${PCL_DEFINITIONS})
 
-  add_executable(test_point_selection_demo test_point_selection_demo.cpp)
-  target_include_directories(test_point_selection_demo PRIVATE ${PCL_INCLUDE_DIRS})
-  target_link_libraries(test_point_selection_demo PRIVATE gldraw visualization imview ${PCL_LIBRARIES})
-  target_compile_definitions(test_point_selection_demo PRIVATE ${PCL_DEFINITIONS})
 
   add_subdirectory(unit_test)
 endif()

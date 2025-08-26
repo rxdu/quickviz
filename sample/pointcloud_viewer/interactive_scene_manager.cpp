@@ -9,7 +9,7 @@
 #include "interactive_scene_manager.hpp"
 
 #include "point_cloud_tool_panel.hpp"
-#include "visualization/selection/point_cloud_selector.hpp"
+#include "visualization/point_selection.hpp"
 #include <iostream>
 #include <glad/glad.h>
 
@@ -75,8 +75,8 @@ void InteractiveSceneManager::Draw() {
                                IM_COL32(255, 255, 0, 255));
   }
 
-  // Handle input if we have a selector
-  if (selector_) {
+  // Handle input if we have a selection system
+  if (selection_enabled_ && selection_) {
     HandleMouseInput();
     HandleKeyboardInput();
   }
@@ -95,18 +95,16 @@ void InteractiveSceneManager::SetPointCloud(std::shared_ptr<PointCloud> point_cl
   point_cloud_ = point_cloud;
   
   if (point_cloud_) {
-    // Create selector for the point cloud
-    selector_ = std::make_unique<PointCloudSelector>();
-    selector_->SetPointCloud(point_cloud_);
-    
+    // Create selection system for the point cloud
+    selection_ = std::make_unique<PointSelection>(point_cloud_, this);
     
     // Set selection callback
-    selector_->SetSelectionCallback([this](const std::vector<size_t>& indices) {
+    selection_->SetSelectionCallback([this](const std::vector<size_t>& indices) {
       std::cout << "Selection changed: " << indices.size() << " points selected" << std::endl;
       
       if (!indices.empty()) {
-        glm::vec3 centroid = selector_->GetSelectionCentroid();
-        auto [min_pt, max_pt] = selector_->GetSelectionBounds();
+        glm::vec3 centroid = selection_->GetSelectionCentroid();
+        auto [min_pt, max_pt] = selection_->GetSelectionBounds();
         
         std::cout << "  Centroid: (" << centroid.x << ", " << centroid.y << ", " << centroid.z << ")" << std::endl;
         std::cout << "  Bounds: (" << min_pt.x << ", " << min_pt.y << ", " << min_pt.z << ") to ("
@@ -114,8 +112,7 @@ void InteractiveSceneManager::SetPointCloud(std::shared_ptr<PointCloud> point_cl
       }
     });
     
-    std::cout << "Point cloud selector initialized for " << point_cloud_->GetPointCount() << " points" << std::endl;
-    
+    std::cout << "Point selection system initialized for " << point_cloud_->GetPointCount() << " points" << std::endl;
     
     std::cout << "\n=== Point Selection Controls ===" << std::endl;
     std::cout << "  Ctrl + Left Click: Select point (single selection)" << std::endl;
@@ -131,7 +128,7 @@ void InteractiveSceneManager::SetPointCloud(std::shared_ptr<PointCloud> point_cl
 
 void InteractiveSceneManager::HandleMouseInput() {
   if (!selection_enabled_) return;
-  if (!selector_) return;
+  if (!selection_) return;
   
   ImGuiIO& io = ImGui::GetIO();
   
@@ -151,37 +148,22 @@ void InteractiveSceneManager::HandleMouseInput() {
   
   // Handle Ctrl+left click for point picking (to avoid interfering with camera controls)
   if (mouse_in_viewport && window_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && io.KeyCtrl) {
-    // Use GPU ID-buffer picking for pixel-perfect point selection
-    size_t point_index = PickPointAtPixelWithRadius(static_cast<int>(local_x), static_cast<int>(local_y), 3);
-    
-    if (point_index != SIZE_MAX) {
-      // Get the point coordinates for display
-      auto points = point_cloud_->GetPoints();
-      if (point_index < points.size()) {
-        
-        // Determine selection mode based on additional modifiers (Ctrl is already required for picking)
-        SelectionMode mode = SelectionMode::kSingle;
-        if (io.KeyShift) {
-          mode = SelectionMode::kAdditive;  // Ctrl+Shift = add to selection
-        } else if (io.KeyAlt) {
-          mode = SelectionMode::kToggle;    // Ctrl+Alt = toggle selection
-        }
-        // Note: Ctrl alone = single selection (replace)
-        
-        // Update selection using the existing selector system
-        selector_->UpdateSelection({point_index}, mode);
-        selector_->ApplySelectionVisualization("selection", 
-                                              glm::vec3(0.0f, 1.0f, 0.0f), 3.0f);
-      }
+    // Use the new PointSelection API which handles GPU picking internally
+    if (io.KeyShift) {
+      // Ctrl+Shift = add to selection
+      selection_->AddPoint(local_x, local_y, 3);
+    } else if (io.KeyAlt) {
+      // Ctrl+Alt = toggle selection
+      selection_->TogglePoint(local_x, local_y, 3);
     } else {
-      // Point selection failed - no action needed
+      // Ctrl alone = single selection (replace)
+      selection_->SelectPoint(local_x, local_y, 3);
     }
   }
   
   // Handle Ctrl+right click to clear selection
   if (mouse_in_viewport && window_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right) && io.KeyCtrl) {
-    selector_->ClearSelection();
-    selector_->ApplySelectionVisualization();
+    selection_->ClearSelection();
   }
 }
 
@@ -189,16 +171,17 @@ void InteractiveSceneManager::HandleKeyboardInput() {
   // Handle keyboard shortcuts
   if (ImGui::IsKeyPressed(ImGuiKey_C)) {
     // Clear selection
-    selector_->ClearSelection();
-    selector_->ApplySelectionVisualization();
+    if (selection_) {
+      selection_->ClearSelection();
+    }
   }
   
   if (ImGui::IsKeyPressed(ImGuiKey_Space)) {
     // Print selection statistics
-    if (selector_->GetSelectionCount() > 0) {
-      size_t count = selector_->GetSelectionCount();
-      auto [min_pt, max_pt] = selector_->GetSelectionBounds();
-      glm::vec3 centroid = selector_->GetSelectionCentroid();
+    if (selection_ && selection_->GetSelectionCount() > 0) {
+      size_t count = selection_->GetSelectionCount();
+      auto [min_pt, max_pt] = selection_->GetSelectionBounds();
+      glm::vec3 centroid = selection_->GetSelectionCentroid();
       
       std::cout << "\n=== Selection Statistics ===" << std::endl;
       std::cout << "Count: " << count << " points" << std::endl;
@@ -214,6 +197,7 @@ void InteractiveSceneManager::HandleKeyboardInput() {
   if (ImGui::IsKeyPressed(ImGuiKey_T)) {
     // Toggle selection mode
     selection_enabled_ = !selection_enabled_;
+    std::cout << "Selection " << (selection_enabled_ ? "enabled" : "disabled") << std::endl;
   }
 }
 
