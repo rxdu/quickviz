@@ -16,10 +16,6 @@ target_link_libraries(test_point_cloud_realtime PRIVATE gldraw)
 add_executable(test_point_cloud_buffer_strategies test_point_cloud_buffer_strategies.cpp)
 target_link_libraries(test_point_cloud_buffer_strategies PRIVATE gldraw)
 
-# Test new visualization contracts (now requires visualization module)
-add_executable(test_visualization_contracts test_visualization_contracts.cpp)
-target_link_libraries(test_visualization_contracts PRIVATE gldraw visualization)
-
 # Test external selection demo (replaces old selection integration)
 # test_pcd_with_selection.cpp now demonstrates external selection visualization
 

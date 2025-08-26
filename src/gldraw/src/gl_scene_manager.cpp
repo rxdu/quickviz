@@ -12,6 +12,8 @@
 #include <iostream>
 #include <stdexcept>
 #include <cmath>
+#include <algorithm>
+#include <limits>
 
 #include <glad/glad.h>
 
@@ -353,6 +355,247 @@ size_t GlSceneManager::PickPointAtPixelWithRadius(int x, int y, int radius, cons
   }
   
   return closest_point;
+}
+
+// === Point Selection Implementation ===
+
+void GlSceneManager::SetActivePointCloud(PointCloud* point_cloud) {
+  active_point_cloud_ = point_cloud;
+  // Clear existing selection when switching point clouds
+  ClearPointSelection();
+}
+
+bool GlSceneManager::SelectPointAt(float screen_x, float screen_y, int radius) {
+  if (!active_point_cloud_) {
+    return false;
+  }
+  
+  size_t point_index = PickPointAtPixelWithRadius(
+      static_cast<int>(screen_x), static_cast<int>(screen_y), radius);
+  
+  if (point_index == SIZE_MAX || point_index >= active_point_cloud_->GetPointCount()) {
+    return false;
+  }
+  
+  // Replace current selection
+  selected_point_indices_.clear();
+  selected_point_indices_.push_back(point_index);
+  
+  UpdateSelectionVisualization();
+  NotifySelectionChanged();
+  return true;
+}
+
+bool GlSceneManager::AddPointAt(float screen_x, float screen_y, int radius) {
+  if (!active_point_cloud_) {
+    return false;
+  }
+  
+  size_t point_index = PickPointAtPixelWithRadius(
+      static_cast<int>(screen_x), static_cast<int>(screen_y), radius);
+  
+  if (point_index == SIZE_MAX || point_index >= active_point_cloud_->GetPointCount()) {
+    return false;
+  }
+  
+  // Add to selection if not already selected
+  if (!IsPointSelected(point_index)) {
+    AddToSelection(point_index);
+    UpdateSelectionVisualization();
+    NotifySelectionChanged();
+  }
+  
+  return true;
+}
+
+bool GlSceneManager::TogglePointAt(float screen_x, float screen_y, int radius) {
+  if (!active_point_cloud_) {
+    return false;
+  }
+  
+  size_t point_index = PickPointAtPixelWithRadius(
+      static_cast<int>(screen_x), static_cast<int>(screen_y), radius);
+  
+  if (point_index == SIZE_MAX || point_index >= active_point_cloud_->GetPointCount()) {
+    return false;
+  }
+  
+  // Toggle selection state
+  if (IsPointSelected(point_index)) {
+    RemoveFromSelection(point_index);
+  } else {
+    AddToSelection(point_index);
+  }
+  
+  UpdateSelectionVisualization();
+  NotifySelectionChanged();
+  return true;
+}
+
+void GlSceneManager::ClearPointSelection() {
+  if (selected_point_indices_.empty()) {
+    return;
+  }
+  
+  selected_point_indices_.clear();
+  UpdateSelectionVisualization();
+  NotifySelectionChanged();
+}
+
+std::vector<glm::vec3> GlSceneManager::GetSelectedPoints() const {
+  std::vector<glm::vec3> selected_points;
+  
+  if (!active_point_cloud_) {
+    return selected_points;
+  }
+  
+  const auto& all_points = active_point_cloud_->GetPoints();
+  selected_points.reserve(selected_point_indices_.size());
+  
+  for (size_t idx : selected_point_indices_) {
+    if (idx < all_points.size()) {
+      selected_points.push_back(all_points[idx]);
+    }
+  }
+  
+  return selected_points;
+}
+
+std::vector<glm::vec3> GlSceneManager::GetSelectedPointColors() const {
+  std::vector<glm::vec3> selected_colors;
+  
+  if (!active_point_cloud_) {
+    return selected_colors;
+  }
+  
+  const auto& all_colors = active_point_cloud_->GetColors();
+  if (all_colors.empty()) {
+    return selected_colors;  // No color data available
+  }
+  
+  selected_colors.reserve(selected_point_indices_.size());
+  for (size_t idx : selected_point_indices_) {
+    if (idx < all_colors.size()) {
+      selected_colors.push_back(all_colors[idx]);
+    }
+  }
+  
+  return selected_colors;
+}
+
+glm::vec3 GlSceneManager::GetSelectionCentroid() const {
+  if (selected_point_indices_.empty() || !active_point_cloud_) {
+    return glm::vec3(0.0f);
+  }
+  
+  const auto& all_points = active_point_cloud_->GetPoints();
+  glm::vec3 sum(0.0f);
+  size_t valid_count = 0;
+  
+  for (size_t idx : selected_point_indices_) {
+    if (idx < all_points.size()) {
+      sum += all_points[idx];
+      ++valid_count;
+    }
+  }
+  
+  return valid_count > 0 ? sum / static_cast<float>(valid_count) : glm::vec3(0.0f);
+}
+
+std::pair<glm::vec3, glm::vec3> GlSceneManager::GetSelectionBounds() const {
+  if (selected_point_indices_.empty() || !active_point_cloud_) {
+    return {glm::vec3(0.0f), glm::vec3(0.0f)};
+  }
+  
+  const auto& all_points = active_point_cloud_->GetPoints();
+  
+  // Initialize with first valid point
+  glm::vec3 min_bounds(std::numeric_limits<float>::max());
+  glm::vec3 max_bounds(std::numeric_limits<float>::lowest());
+  
+  bool found_valid = false;
+  for (size_t idx : selected_point_indices_) {
+    if (idx < all_points.size()) {
+      const auto& point = all_points[idx];
+      if (!found_valid) {
+        min_bounds = max_bounds = point;
+        found_valid = true;
+      } else {
+        min_bounds = glm::min(min_bounds, point);
+        max_bounds = glm::max(max_bounds, point);
+      }
+    }
+  }
+  
+  if (!found_valid) {
+    return {glm::vec3(0.0f), glm::vec3(0.0f)};
+  }
+  
+  return {min_bounds, max_bounds};
+}
+
+void GlSceneManager::SetSelectionVisualization(const glm::vec3& color,
+                                               float size_multiplier,
+                                               const std::string& layer_name) {
+  selection_color_ = color;
+  selection_size_multiplier_ = size_multiplier;
+  selection_layer_name_ = layer_name;
+  
+  if (selection_visualization_enabled_) {
+    UpdateSelectionVisualization();
+  }
+}
+
+void GlSceneManager::SetSelectionVisualizationEnabled(bool enabled) {
+  selection_visualization_enabled_ = enabled;
+  UpdateSelectionVisualization();
+}
+
+// === Private Helper Methods ===
+
+void GlSceneManager::UpdateSelectionVisualization() {
+  if (!active_point_cloud_) {
+    return;
+  }
+  
+  if (!selection_visualization_enabled_) {
+    // Clear visualization
+    active_point_cloud_->ClearHighlights(selection_layer_name_);
+    return;
+  }
+  
+  if (selected_point_indices_.empty()) {
+    // Clear highlights if no selection
+    active_point_cloud_->ClearHighlights(selection_layer_name_);
+  } else {
+    // Apply highlights to selected points
+    active_point_cloud_->HighlightPoints(selected_point_indices_, selection_color_, 
+                                         selection_layer_name_, selection_size_multiplier_);
+  }
+}
+
+void GlSceneManager::NotifySelectionChanged() {
+  if (point_selection_callback_) {
+    point_selection_callback_(selected_point_indices_);
+  }
+}
+
+bool GlSceneManager::IsPointSelected(size_t point_index) const {
+  return std::find(selected_point_indices_.begin(), selected_point_indices_.end(), point_index) 
+         != selected_point_indices_.end();
+}
+
+void GlSceneManager::RemoveFromSelection(size_t point_index) {
+  auto it = std::find(selected_point_indices_.begin(), selected_point_indices_.end(), point_index);
+  if (it != selected_point_indices_.end()) {
+    selected_point_indices_.erase(it);
+  }
+}
+
+void GlSceneManager::AddToSelection(size_t point_index) {
+  if (!IsPointSelected(point_index)) {
+    selected_point_indices_.push_back(point_index);
+  }
 }
 
 }  // namespace quickviz

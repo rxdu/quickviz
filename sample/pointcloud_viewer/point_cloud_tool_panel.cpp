@@ -8,10 +8,7 @@
 
 #include "point_cloud_tool_panel.hpp"
 #include "interactive_scene_manager.hpp"
-#include "visualization/point_selection.hpp"
 #include <iostream>
-
-using namespace quickviz::visualization;
 
 namespace quickviz {
 
@@ -23,8 +20,7 @@ void PointCloudToolPanel::Draw() {
   ImGui::Begin("Point Cloud Tools");
   
   auto* interactive_sm = GetInteractiveSceneManager();
-  auto* selection = interactive_sm ? interactive_sm->GetSelection() : nullptr;
-  auto point_cloud = interactive_sm ? interactive_sm->GetPointCloud() : nullptr;
+  auto point_cloud = interactive_sm ? interactive_sm->GetActivePointCloud() : nullptr;
 
   // === APPEARANCE CONTROLS SECTION ===
   ImGui::Text("Appearance Controls");
@@ -47,20 +43,20 @@ void PointCloudToolPanel::Draw() {
   ImGui::Text("Selection Tools");
   ImGui::Separator();
   
-  if (selection) {
-    size_t selected_count = selection->GetSelectionCount();
+  if (interactive_sm && point_cloud) {
+    size_t selected_count = interactive_sm->GetSelectedPointCount();
     ImGui::Text("Selected Points: %zu", selected_count);
     
     if (selected_count > 0) {
-      glm::vec3 centroid = selection->GetSelectionCentroid();
-      auto [min_pt, max_pt] = selection->GetSelectionBounds();
+      glm::vec3 centroid = interactive_sm->GetSelectionCentroid();
+      auto [min_pt, max_pt] = interactive_sm->GetSelectionBounds();
       
       ImGui::Text("Centroid: (%.3f, %.3f, %.3f)", centroid.x, centroid.y, centroid.z);
       ImGui::Text("Bounds: (%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f)", 
                   min_pt.x, min_pt.y, min_pt.z, max_pt.x, max_pt.y, max_pt.z);
       
       if (ImGui::Button("Clear Selection")) {
-        selection->ClearSelection();
+        interactive_sm->ClearPointSelection();
       }
     }
     

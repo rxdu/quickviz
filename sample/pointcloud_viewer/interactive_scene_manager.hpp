@@ -11,7 +11,6 @@
 
 #include "gldraw/gl_scene_manager.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
-#include "visualization/point_selection.hpp"
 #include <memory>
 
 namespace quickviz {
@@ -24,19 +23,15 @@ class InteractiveSceneManager : public GlSceneManager {
 
   void SetToolPanel(PointCloudToolPanel* panel) { tool_panel_ = panel; }
 
-  // Point cloud selection integration
-  void SetPointCloud(std::shared_ptr<PointCloud> point_cloud);
-  visualization::PointSelection* GetSelection() const { return selection_.get(); }
-  std::shared_ptr<PointCloud> GetPointCloud() const { return point_cloud_; }
+  // Point cloud setup  
+  void SetPointCloud(std::unique_ptr<PointCloud> point_cloud);
   
   void Draw() override;
 
  private:
   PointCloudToolPanel* tool_panel_ = nullptr;
   
-  // Point cloud selection
-  std::shared_ptr<PointCloud> point_cloud_;
-  std::unique_ptr<visualization::PointSelection> selection_;
+  // UI components
   bool selection_enabled_ = true;
   
   // Internal methods for handling input

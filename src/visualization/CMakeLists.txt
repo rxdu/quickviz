@@ -1,8 +1,5 @@
 # Create visualization library
 add_library(visualization
-    # Core point selection utilities
-    src/point_selection.cpp
-    
     # PCL bridge utilities (optional, depends on PCL)
 )
 

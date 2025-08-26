@@ -190,14 +190,8 @@ int main(int argc, char* argv[]) {
         break;
     }
 
-    // Keep a shared pointer to the point cloud for selection
-    auto point_cloud_shared = std::shared_ptr<PointCloud>(point_cloud.get(), [](PointCloud*){});
-    
-    // Add the point cloud to the scene
-    gl_sm->AddOpenGLObject("loaded_point_cloud", std::move(point_cloud));
-    
-    // Setup point cloud selection
-    gl_sm->SetPointCloud(point_cloud_shared);
+    // Setup point cloud (transfers ownership and sets up selection)
+    gl_sm->SetPointCloud(std::move(point_cloud));
 
     // Add a reference grid
     glm::vec3 bounds_size = metadata.max_bounds - metadata.min_bounds;

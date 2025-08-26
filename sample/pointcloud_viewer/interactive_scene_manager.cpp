@@ -9,11 +9,8 @@
 #include "interactive_scene_manager.hpp"
 
 #include "point_cloud_tool_panel.hpp"
-#include "visualization/point_selection.hpp"
 #include <iostream>
 #include <glad/glad.h>
-
-using namespace quickviz::visualization;
 
 namespace quickviz {
 // Implementation of InteractiveSceneManager::Draw
@@ -75,8 +72,8 @@ void InteractiveSceneManager::Draw() {
                                IM_COL32(255, 255, 0, 255));
   }
 
-  // Handle input if we have a selection system
-  if (selection_enabled_ && selection_) {
+  // Handle input if selection is enabled
+  if (selection_enabled_) {
     HandleMouseInput();
     HandleKeyboardInput();
   }
@@ -91,20 +88,34 @@ void InteractiveSceneManager::Draw() {
   End();
 }
 
-void InteractiveSceneManager::SetPointCloud(std::shared_ptr<PointCloud> point_cloud) {
-  point_cloud_ = point_cloud;
-  
-  if (point_cloud_) {
-    // Create selection system for the point cloud
-    selection_ = std::make_unique<PointSelection>(point_cloud_, this);
+void InteractiveSceneManager::SetPointCloud(std::unique_ptr<PointCloud> point_cloud) {
+  if (point_cloud) {
+    std::cout << "Setting point cloud with " << point_cloud->GetPointCount() << " points" << std::endl;
+    
+    // Add to scene (transfer ownership)
+    AddOpenGLObject("point_cloud", std::move(point_cloud));
+    
+    // Get back as pointer and cast to PointCloud for selection
+    auto* gl_object = GetOpenGLObject("point_cloud");
+    std::cout << "Retrieved OpenGL object: " << gl_object << std::endl;
+    
+    auto* point_cloud_ptr = dynamic_cast<PointCloud*>(gl_object);
+    std::cout << "Cast to PointCloud: " << point_cloud_ptr << std::endl;
+    
+    if (point_cloud_ptr) {
+      SetActivePointCloud(point_cloud_ptr);
+      std::cout << "Active point cloud set successfully" << std::endl;
+    } else {
+      std::cout << "Failed to cast to PointCloud!" << std::endl;
+    }
     
     // Set selection callback
-    selection_->SetSelectionCallback([this](const std::vector<size_t>& indices) {
+    SetPointSelectionCallback([this](const std::vector<size_t>& indices) {
       std::cout << "Selection changed: " << indices.size() << " points selected" << std::endl;
       
       if (!indices.empty()) {
-        glm::vec3 centroid = selection_->GetSelectionCentroid();
-        auto [min_pt, max_pt] = selection_->GetSelectionBounds();
+        glm::vec3 centroid = GetSelectionCentroid();
+        auto [min_pt, max_pt] = GetSelectionBounds();
         
         std::cout << "  Centroid: (" << centroid.x << ", " << centroid.y << ", " << centroid.z << ")" << std::endl;
         std::cout << "  Bounds: (" << min_pt.x << ", " << min_pt.y << ", " << min_pt.z << ") to ("
@@ -112,7 +123,7 @@ void InteractiveSceneManager::SetPointCloud(std::shared_ptr<PointCloud> point_cl
       }
     });
     
-    std::cout << "Point selection system initialized for " << point_cloud_->GetPointCount() << " points" << std::endl;
+    std::cout << "Point selection system initialized for " << point_cloud_ptr->GetPointCount() << " points" << std::endl;
     
     std::cout << "\n=== Point Selection Controls ===" << std::endl;
     std::cout << "  Ctrl + Left Click: Select point (single selection)" << std::endl;
@@ -128,7 +139,7 @@ void InteractiveSceneManager::SetPointCloud(std::shared_ptr<PointCloud> point_cl
 
 void InteractiveSceneManager::HandleMouseInput() {
   if (!selection_enabled_) return;
-  if (!selection_) return;
+  if (!GetActivePointCloud()) return;
   
   ImGuiIO& io = ImGui::GetIO();
   
@@ -148,22 +159,22 @@ void InteractiveSceneManager::HandleMouseInput() {
   
   // Handle Ctrl+left click for point picking (to avoid interfering with camera controls)
   if (mouse_in_viewport && window_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && io.KeyCtrl) {
-    // Use the new PointSelection API which handles GPU picking internally
+    // Use the integrated GlSceneManager selection API
     if (io.KeyShift) {
       // Ctrl+Shift = add to selection
-      selection_->AddPoint(local_x, local_y, 3);
+      AddPointAt(local_x, local_y, 3);
     } else if (io.KeyAlt) {
       // Ctrl+Alt = toggle selection
-      selection_->TogglePoint(local_x, local_y, 3);
+      TogglePointAt(local_x, local_y, 3);
     } else {
       // Ctrl alone = single selection (replace)
-      selection_->SelectPoint(local_x, local_y, 3);
+      SelectPointAt(local_x, local_y, 3);
     }
   }
   
   // Handle Ctrl+right click to clear selection
   if (mouse_in_viewport && window_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right) && io.KeyCtrl) {
-    selection_->ClearSelection();
+    ClearPointSelection();
   }
 }
 
@@ -171,17 +182,15 @@ void InteractiveSceneManager::HandleKeyboardInput() {
   // Handle keyboard shortcuts
   if (ImGui::IsKeyPressed(ImGuiKey_C)) {
     // Clear selection
-    if (selection_) {
-      selection_->ClearSelection();
-    }
+    ClearPointSelection();
   }
   
   if (ImGui::IsKeyPressed(ImGuiKey_Space)) {
     // Print selection statistics
-    if (selection_ && selection_->GetSelectionCount() > 0) {
-      size_t count = selection_->GetSelectionCount();
-      auto [min_pt, max_pt] = selection_->GetSelectionBounds();
-      glm::vec3 centroid = selection_->GetSelectionCentroid();
+    if (GetSelectedPointCount() > 0) {
+      size_t count = GetSelectedPointCount();
+      auto [min_pt, max_pt] = GetSelectionBounds();
+      glm::vec3 centroid = GetSelectionCentroid();
       
       std::cout << "\n=== Selection Statistics ===" << std::endl;
       std::cout << "Count: " << count << " points" << std::endl;

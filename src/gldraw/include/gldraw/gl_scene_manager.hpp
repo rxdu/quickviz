@@ -28,14 +28,9 @@
 #include "gldraw/camera_controller.hpp"
 #include "gldraw/coordinate_system_transformer.hpp"
 
-// Forward declarations for visualization contracts
+// Forward declarations
 namespace quickviz {
-namespace gldraw {
-namespace visualization {
-struct SelectionData;
-struct SurfaceData;
-}
-}
+class PointCloud;
 }
 
 namespace quickviz {
@@ -120,10 +115,134 @@ class GlSceneManager : public Panel {
   // GPU ID-buffer picking support
   size_t PickPointAtPixel(int x, int y, const std::string& point_cloud_name = "");
   size_t PickPointAtPixelWithRadius(int x, int y, int radius = 2, const std::string& point_cloud_name = "");
+
+  // === Point Selection API ===
+  
+  /**
+   * @brief Set the active point cloud for selection operations
+   * @param point_cloud Point cloud to enable selection on (must be already added to scene)
+   */
+  void SetActivePointCloud(PointCloud* point_cloud);
+  
+  /**
+   * @brief Get the currently active point cloud
+   * @return Pointer to active point cloud, or nullptr if none
+   */
+  PointCloud* GetActivePointCloud() const { return active_point_cloud_; }
+  
+  /**
+   * @brief Select a single point (replace current selection)
+   * @param screen_x Screen X coordinate
+   * @param screen_y Screen Y coordinate  
+   * @param radius Picking radius in pixels
+   * @return true if a point was selected
+   */
+  bool SelectPointAt(float screen_x, float screen_y, int radius = 3);
+  
+  /**
+   * @brief Add a point to current selection
+   * @param screen_x Screen X coordinate
+   * @param screen_y Screen Y coordinate
+   * @param radius Picking radius in pixels
+   * @return true if a point was selected and added
+   */
+  bool AddPointAt(float screen_x, float screen_y, int radius = 3);
+  
+  /**
+   * @brief Toggle point selection state
+   * @param screen_x Screen X coordinate
+   * @param screen_y Screen Y coordinate
+   * @param radius Picking radius in pixels
+   * @return true if a point was found and toggled
+   */
+  bool TogglePointAt(float screen_x, float screen_y, int radius = 3);
+  
+  /**
+   * @brief Clear all selected points
+   */
+  void ClearPointSelection();
+
+  // === Selection Data Access ===
+  
+  /**
+   * @brief Get indices of selected points
+   * @return Vector of point indices in the active point cloud
+   */
+  const std::vector<size_t>& GetSelectedPointIndices() const { return selected_point_indices_; }
+  
+  /**
+   * @brief Get number of selected points
+   */
+  size_t GetSelectedPointCount() const { return selected_point_indices_.size(); }
+
+  /**
+   * @brief Get 3D positions of selected points
+   * @return Vector of 3D positions suitable for external processing
+   */
+  std::vector<glm::vec3> GetSelectedPoints() const;
+  
+  /**
+   * @brief Get colors of selected points (if available)
+   * @return Vector of colors, or empty if point cloud has no color data
+   */
+  std::vector<glm::vec3> GetSelectedPointColors() const;
+  
+  /**
+   * @brief Get centroid of selected points
+   * @return Centroid position, or zero vector if no selection
+   */
+  glm::vec3 GetSelectionCentroid() const;
+  
+  /**
+   * @brief Get bounding box of selected points  
+   * @return {min_bounds, max_bounds} or {{0,0,0}, {0,0,0}} if no selection
+   */
+  std::pair<glm::vec3, glm::vec3> GetSelectionBounds() const;
+
+  // === Selection Visualization ===
+  
+  /**
+   * @brief Configure selection visualization
+   * @param color Highlight color (default: yellow)
+   * @param size_multiplier Point size multiplier (default: 1.5x)
+   * @param layer_name Layer name for highlights (default: "selection")
+   */
+  void SetSelectionVisualization(const glm::vec3& color = glm::vec3(1.0f, 1.0f, 0.0f),
+                                float size_multiplier = 1.5f,
+                                const std::string& layer_name = "selection");
+  
+  /**
+   * @brief Enable/disable selection visualization
+   * @param enabled Whether to show selection highlights
+   */
+  void SetSelectionVisualizationEnabled(bool enabled);
+
+  // === Selection Callbacks ===
+  
+  /**
+   * @brief Callback type for selection changes
+   * @param indices Currently selected point indices
+   */
+  using PointSelectionCallback = std::function<void(const std::vector<size_t>&)>;
+  
+  /**
+   * @brief Set callback for selection changes
+   * @param callback Function to call when selection changes
+   */
+  void SetPointSelectionCallback(PointSelectionCallback callback) {
+    point_selection_callback_ = callback;
+  }
   
  private:
   void RenderIdBuffer();
   size_t ReadPixelId(int x, int y);
+  
+  // Point selection helper methods
+  void UpdateSelectionVisualization();
+  void NotifySelectionChanged();
+  bool IsPointSelected(size_t point_index) const;
+  void RemoveFromSelection(size_t point_index);
+  void AddToSelection(size_t point_index);
 
  protected:
   void UpdateView(const glm::mat4& projection, const glm::mat4& view);
@@ -151,6 +270,17 @@ class GlSceneManager : public Panel {
 
   // Pre-draw callback
   PreDrawCallback pre_draw_callback_;
+  
+  // Point selection state
+  PointCloud* active_point_cloud_ = nullptr;
+  std::vector<size_t> selected_point_indices_;
+  PointSelectionCallback point_selection_callback_;
+  
+  // Selection visualization settings
+  glm::vec3 selection_color_ = glm::vec3(1.0f, 1.0f, 0.0f);  // Yellow
+  float selection_size_multiplier_ = 1.5f;
+  std::string selection_layer_name_ = "selection";
+  bool selection_visualization_enabled_ = true;
 };
 }  // namespace quickviz
 
