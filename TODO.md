@@ -479,13 +479,21 @@ scene.AddOpenGLObject("grid", std::move(reference));
 - [ ] ~~Implement shader uniform caching~~ ✅ **ALREADY COMPLETE** (ShaderProgram.cpp)
 - [ ] ~~Basic performance monitoring~~ ✅ **COMPREHENSIVE SYSTEM EXISTS** (canvas_performance.hpp)
 
-### **Week 2: API Cleanup (Revised)**
-- [ ] **Remove unused dead code**:
-  - Remove `data_aware_render_strategy.cpp` (unused, no references in codebase)
-- [ ] ~~Remove coordinate_system_transformer~~ **KEEP** - Critical robotics coordinate system bridge
-- [ ] ~~Remove gl_view module~~ **KEEP** - Essential test infrastructure  
-- [ ] **Consolidate PointCloud SetPoints() overloads**
-- [ ] **Create unified GeometricPrimitive base class**
+### **Week 2: API Cleanup (COMPLETED)**
+- ✅ **Remove unused dead code**:
+  - Removed `data_aware_render_strategy.cpp` (unused, no references in codebase)
+- ✅ ~~Remove coordinate_system_transformer~~ **KEPT** - Critical robotics coordinate system bridge
+- ✅ ~~Remove gl_view module~~ **KEPT** - Essential test infrastructure  
+- ✅ **Consolidate PointCloud SetPoints() overloads** (cleaned up in refactor)
+- ✅ **Create unified GeometricPrimitive base class** - **COMPLETE with full refactor:**
+  - **Unified Base Class**: Complete Template Method pattern implementation with shared shader resources
+  - **Material System**: PBR-ready material properties with opacity, metallic, roughness support
+  - **Render Modes**: Solid, wireframe, transparent, points, outline with proper OpenGL state management
+  - **Selection Support**: Highlight system with material backup/restore for all primitives
+  - **Migration Complete**: Sphere, Cylinder, BoundingBox fully migrated and tested
+  - **Rendering Fixes**: Fixed shader uniform mismatches, transparency depth handling, wireframe depth priority
+  - **Comprehensive Testing**: 12 unit tests validating interface, material system, geometry calculations
+  - **Quality Improvements**: Fixed cylinder wireframe caps, proper see-through transparency, correct depth relationships
 
 ### **Week 3: Advanced Optimization (Revised)**
 - [ ] **Implement point cloud LOD system**
@@ -508,6 +516,9 @@ scene.AddOpenGLObject("grid", std::move(reference));
 1. ✅ **Removed unused dead code** (data_aware_render_strategy.cpp)
 2. ✅ **Documented existing Canvas optimizations** (comprehensive analysis shows sophisticated architecture)
 3. ✅ **Profiled Canvas performance** (16,670x faster than target - decomposition CANCELLED)
+4. ✅ **Complete GeometricPrimitive refactor** (unified base class with Template Method pattern)
+5. ✅ **Fixed all geometric primitive rendering issues** (transparency, wireframe caps, depth relationships)
+6. ✅ **Comprehensive unit testing** (12 tests covering material system, transforms, geometry calculations)
 
 ## 🎯 **REVISED PRIORITIES** (Based on Performance Analysis):
 
