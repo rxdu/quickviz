@@ -40,7 +40,6 @@ namespace internal {
 class OpenGLResourcePool;
 class EfficientShapeRenderer;
 class CanvasDataManager;
-class AdaptiveStrategySelector;
 }
 }
 

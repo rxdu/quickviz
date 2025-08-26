@@ -1,6 +1,6 @@
 # QuickViz Development Roadmap
 
-*Last Updated: August 23, 2025 - Current Status Review*
+*Last Updated: August 26, 2025 - GlDraw Refactor Plan Integration*
 
 ## Project Overview
 
@@ -466,20 +466,65 @@ scene.AddOpenGLObject("grid", std::move(reference));
 2. Fix `test_point_picking` application to work with GlView framework
 3. Validate end-to-end workflow: pick → select → visualize
 
+## GlDraw Refactor Tasks (Based on Revised Plan)
+
+### **Week 1: Critical Performance (Revised)**
+- [ ] **Split canvas.cpp into focused modules** (maintainability only - performance already good)
+  - Current: 2069-line file with comprehensive 2D primitives
+  - Goal: Better organization without losing existing optimizations
+  - Keep existing: BatchedRenderStrategy, CanvasDataManager, performance monitoring
+- [ ] **Add buffer pre-allocation system** (investigate if actually needed)
+  - Check current memory allocation patterns
+  - Profile to identify actual bottlenecks
+- [ ] ~~Implement shader uniform caching~~ ✅ **ALREADY COMPLETE** (ShaderProgram.cpp)
+- [ ] ~~Basic performance monitoring~~ ✅ **COMPREHENSIVE SYSTEM EXISTS** (canvas_performance.hpp)
+
+### **Week 2: API Cleanup (Revised)**
+- [ ] **Remove unused dead code**:
+  - Remove `data_aware_render_strategy.cpp` (unused, no references in codebase)
+- [ ] ~~Remove coordinate_system_transformer~~ **KEEP** - Critical robotics coordinate system bridge
+- [ ] ~~Remove gl_view module~~ **KEEP** - Essential test infrastructure  
+- [ ] **Consolidate PointCloud SetPoints() overloads**
+- [ ] **Create unified GeometricPrimitive base class**
+
+### **Week 3: Advanced Optimization (Revised)**
+- [ ] **Implement point cloud LOD system**
+- [ ] **Add 3D primitive batching** (focus on spheres, cylinders, boxes only - 2D batching exists)
+- [ ] **Integrate pre-compiled shaders**
+- [ ] **Add frustum culling for point clouds**
+
+### **Week 4: Quality & Testing (Revised)**
+- [ ] **RAII resource wrappers**
+- [ ] **Error code system for critical paths**
+- [ ] ~~Comprehensive performance testing~~ **Use existing Canvas performance system**
+- [ ] **Documentation updates** (especially for existing Canvas features)
+
+### **Additional Priority Tasks**
+- [ ] **Document existing optimizations** that were missed in initial assessment
+- [ ] **Profile Canvas performance** to understand if decomposition is actually needed
+- [ ] **Benchmark current vs proposed changes** to avoid performance regressions
+
+## ✅ **COMPLETED ANALYSIS TASKS**:
+1. ✅ **Removed unused dead code** (data_aware_render_strategy.cpp)
+2. ✅ **Documented existing Canvas optimizations** (comprehensive analysis shows sophisticated architecture)
+3. ✅ **Profiled Canvas performance** (16,670x faster than target - decomposition CANCELLED)
+
+## 🎯 **REVISED PRIORITIES** (Based on Performance Analysis):
+
 **This Week**:
-1. Add basic editing: delete selected points
-2. Add undo/redo for selection operations
-3. Polish the interactive demo
+1. ✅ **Update refactor plan** with performance findings (COMPLETED)
+2. **Begin 3D primitive batching analysis** (spheres, cylinders, boxes need optimization)
+3. **Document Canvas optimization features** for developers
 
 **This Month**:  
-1. Add more selection tools with UI (box, sphere selection)
-2. Simple point cloud editor with load/save
-3. Basic measurements and statistics
+1. **Implement 3D primitive GPU instancing** (main performance opportunity identified)
+2. **Add point cloud LOD system** for 10M+ point datasets
+3. **Create Canvas optimization examples** (leverage existing performance features)
 
 **This Quarter**:
-1. Performance improvements for large point clouds
-2. File format support (.pcd, .ply)
-3. Documentation and examples
+1. **Extend Canvas's monitoring system** to 3D primitives
+2. **Implement frustum culling** for massive point clouds
+3. **Performance documentation and guides** (make existing sophistication visible)
 
 **Focus**: Keep it simple, get the core workflow right, then build upon it.
 
