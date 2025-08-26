@@ -117,6 +117,14 @@ class GlSceneManager : public Panel {
   MouseRay GetMouseRayInWorldSpace(float mouse_x, float mouse_y, 
                                    float window_width, float window_height) const;
 
+  // GPU ID-buffer picking support
+  size_t PickPointAtPixel(int x, int y, const std::string& point_cloud_name = "");
+  size_t PickPointAtPixelWithRadius(int x, int y, int radius = 2, const std::string& point_cloud_name = "");
+  
+ private:
+  void RenderIdBuffer();
+  size_t ReadPixelId(int x, int y);
+
  protected:
   void UpdateView(const glm::mat4& projection, const glm::mat4& view);
   void DrawOpenGLObject();
@@ -125,6 +133,7 @@ class GlSceneManager : public Panel {
 
   Mode mode_ = Mode::k3D;
   std::unique_ptr<FrameBuffer> frame_buffer_;
+  std::unique_ptr<FrameBuffer> id_frame_buffer_;  // Off-screen buffer for ID picking
   glm::mat4 projection_ = glm::mat4(1.0f);
   glm::mat4 view_ = glm::mat4(1.0f);
   std::unordered_map<std::string, std::unique_ptr<OpenGlObject>>

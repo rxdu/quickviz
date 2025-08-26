@@ -60,19 +60,26 @@ void PointCloudSelector::UpdateSpatialIndex() {
   }
 }
 
-float PointCloudSelector::PointToRayDistance(const glm::vec3& point, 
-                                             const Ray& ray) const {
+std::pair<float, float> PointCloudSelector::PointToRayDistanceAndDepth(const glm::vec3& point, 
+                                                                    const Ray& ray) const {
   // Vector from ray origin to point
   glm::vec3 op = point - ray.origin;
   
-  // Project onto ray direction
+  // Project onto ray direction (this is the depth along ray)
   float t = glm::dot(op, ray.direction);
   
   // Point on ray closest to the point
   glm::vec3 closest_on_ray = ray.origin + t * ray.direction;
   
   // Distance from point to closest point on ray
-  return glm::length(point - closest_on_ray);
+  float distance = glm::length(point - closest_on_ray);
+  
+  return {distance, t}; // Return both distance to ray and depth along ray
+}
+
+float PointCloudSelector::PointToRayDistance(const glm::vec3& point, 
+                                             const Ray& ray) const {
+  return PointToRayDistanceAndDepth(point, ray).first;
 }
 
 std::optional<PickResult> PointCloudSelector::PickPoint(const Ray& ray, 
@@ -88,19 +95,24 @@ std::optional<PickResult> PointCloudSelector::PickPoint(const Ray& ray,
 
   // Check all points (could be optimized with spatial partitioning)
   for (size_t i = 0; i < points.size(); ++i) {
-    float dist_to_ray = PointToRayDistance(points[i], ray);
+    auto [dist_to_ray, depth] = PointToRayDistanceAndDepth(points[i], ray);
+    
+    // Skip points that are behind the camera (negative depth)
+    if (depth < 0.0f) {
+      continue;
+    }
     
     if (dist_to_ray <= max_distance) {
-      // Use combination of ray distance and distance from origin as score
-      float dist_from_origin = glm::length(points[i] - ray.origin);
-      float score = dist_to_ray + dist_from_origin * 0.01f; // Prefer closer points
+      // Robust scoring: prioritize points closer to ray, then closer to camera
+      // Use small multiplier for depth to break ties between points at same ray distance
+      float score = dist_to_ray + depth * 0.001f; // Prefer closer points along ray
       
       if (score < best_score) {
         best_score = score;
         best_result = PickResult{
           i,
           points[i],
-          dist_from_origin,
+          depth, // Store actual depth along ray, not distance from origin
           glm::vec3(0) // Screen point not computed here
         };
       }

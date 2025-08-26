@@ -362,6 +362,8 @@ scene.AddOpenGLObject("grid", std::move(reference));
 ### 🎯 **Phase 1: Core Selection Infrastructure** (Current Priority)
 **Goal**: Working point cloud selection workflow with interactive demo
 
+*See `docs/notes/gpu-id-buffer-picking.md` for technical design rationale*
+
 #### Completed Infrastructure:
 - ✅ **PointCloudSelector class** - Ray-casting and region selection with PCL KdTree
 - ✅ **Selection state management** - Multiple selection modes (single, additive, subtractive, toggle)
@@ -369,6 +371,21 @@ scene.AddOpenGLObject("grid", std::move(reference));
 - ✅ **SelectionRenderable** - Visualization using point cloud layer system
 
 #### Current Tasks:
+- 🔄 **Implement GPU ID-Buffer Point Picking** - Replace ray-casting with industry-standard GPU picking
+  - [ ] **Phase 1**: Core GPU picking infrastructure
+    - [ ] Extend `PointCloud` renderable to support ID-buffer rendering mode
+    - [ ] Add off-screen framebuffer to `GlSceneManager` for ID rendering
+    - [ ] Implement ID encoding/decoding (24-bit → point index mapping)
+    - [ ] Mouse click → framebuffer read → point selection pipeline
+    - [ ] Integration with existing `InteractiveSceneManager`
+  - [ ] **Phase 2**: Enhanced picking features
+    - [ ] Small radius picking (3×3 or 5×5 pixel block for tolerance)
+    - [ ] Maintain CPU k-d tree for region/brush selection
+    - [ ] Hybrid approach: GPU for single-click, CPU for area selection
+  - [ ] **Phase 3**: Fallback and optimization
+    - [ ] CPU ray-casting as backup for edge cases
+    - [ ] Performance benchmarking vs current implementation
+    - [ ] Memory optimization for ID buffer management
 - [ ] **Fix test_point_picking app** - Get working interactive demo with GlView integration
 - [ ] **Validate complete workflow** - Point picking → selection → visualization → editing
 - [ ] **Add basic editing** - Delete selected points functionality

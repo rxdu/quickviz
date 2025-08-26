@@ -14,6 +14,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <algorithm>
+#include <numeric>
 
 #include "gldraw/shader.hpp"
 
@@ -106,6 +107,40 @@ const char* fragment_shader_source = R"(
         FragColor = vec4(finalColor, finalOpacity);
     }
 )";
+
+// ID buffer picking shaders
+const char* id_vertex_shader_source = R"(
+    #version 330 core
+    layout(location = 0) in vec3 a_position;
+    uniform mat4 u_mvp;
+    uniform float u_point_size_px;
+    uniform int u_base_id;
+    flat out int v_id;
+    void main() {
+      gl_Position = u_mvp * vec4(a_position, 1.0);
+      gl_PointSize = u_point_size_px;
+      v_id = u_base_id + gl_VertexID;
+    }
+)";
+
+const char* id_fragment_shader_source = R"(
+    #version 330 core
+    layout(location = 0) out vec4 o_color;
+    flat in int v_id;
+
+    vec3 encode24(int id) {
+      int r =  id        & 255;
+      int g = (id >> 8 ) & 255;
+      int b = (id >> 16) & 255;
+      return vec3(float(r), float(g), float(b)) / 255.0;
+    }
+
+    void main() {
+      vec2 p = gl_PointCoord * 2.0 - 1.0;
+      if (dot(p, p) > 1.0) discard;
+      o_color = vec4(encode24(v_id), 1.0);
+    }
+)";
 }  // namespace
 
 PointCloud::PointCloud() { AllocateGpuResources(); }
@@ -137,26 +172,61 @@ void PointCloud::AllocateGpuResources() {
       throw std::runtime_error("Failed to link point cloud shader program");
     }
 
+    // Create and compile ID buffer shaders
+    Shader idVertexShader(id_vertex_shader_source, Shader::Type::kVertex);
+    Shader idFragmentShader(id_fragment_shader_source, Shader::Type::kFragment);
+
+    if (!idVertexShader.Compile()) {
+      std::cerr << "ERROR::POINT_CLOUD::ID_VERTEX_SHADER_COMPILATION_FAILED" << std::endl;
+      throw std::runtime_error("ID vertex shader compilation failed");
+    }
+
+    if (!idFragmentShader.Compile()) {
+      std::cerr << "ERROR::POINT_CLOUD::ID_FRAGMENT_SHADER_COMPILATION_FAILED" << std::endl;
+      throw std::runtime_error("ID fragment shader compilation failed");
+    }
+
+    // Create ID shader program
+    id_shader_.AttachShader(idVertexShader);
+    id_shader_.AttachShader(idFragmentShader);
+
+    if (!id_shader_.LinkProgram()) {
+      throw std::runtime_error("Failed to link point cloud ID shader program");
+    }
+
     // Create VAO and VBOs
     glGenVertexArrays(1, &vao_);
+    glGenVertexArrays(1, &id_vao_);  // Dedicated VAO for ID rendering
     glGenBuffers(1, &position_vbo_);
     glGenBuffers(1, &color_vbo_);
+    glGenBuffers(1, &id_vbo_);
 
+    // Setup main VAO for normal rendering
     glBindVertexArray(vao_);
-
     // Setup position VBO
     glBindBuffer(GL_ARRAY_BUFFER, position_vbo_);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(0);
-
     // Setup color VBO
     glBindBuffer(GL_ARRAY_BUFFER, color_vbo_);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(1);
+    // Setup ID VBO for point indices
+    glBindBuffer(GL_ARRAY_BUFFER, id_vbo_);
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(2);
+    glBindVertexArray(0);
+
+    // Setup dedicated ID VAO - exactly like reference implementation
+    glBindVertexArray(id_vao_);
+    glBindBuffer(GL_ARRAY_BUFFER, position_vbo_);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), 
+                         reinterpret_cast<void*>(0));
+    glBindVertexArray(0);
 
     // Unbind buffers
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
 
   } catch (const std::exception& e) {
     std::cerr << "Error initializing point cloud resources: " << e.what() << std::endl;
@@ -167,15 +237,19 @@ void PointCloud::AllocateGpuResources() {
 
 void PointCloud::ReleaseGpuResources() noexcept {
   if (vao_) glDeleteVertexArrays(1, &vao_);
+  if (id_vao_) glDeleteVertexArrays(1, &id_vao_);
   if (position_vbo_) glDeleteBuffers(1, &position_vbo_);
   if (color_vbo_) glDeleteBuffers(1, &color_vbo_);
+  if (id_vbo_) glDeleteBuffers(1, &id_vbo_);
   
   // Clean up layer index buffers
   CleanupLayerIndexBuffers();
 
   vao_ = 0;
+  id_vao_ = 0;
   position_vbo_ = 0;
   color_vbo_ = 0;
+  id_vbo_ = 0;
 }
 
 void PointCloud::SetPoints(const std::vector<glm::vec4>& points, ColorMode color_mode) {
@@ -308,6 +382,8 @@ void PointCloud::PreallocateBuffers(size_t max_points) {
     glBufferData(GL_ARRAY_BUFFER, max_points * sizeof(glm::vec3), nullptr, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, color_vbo_);
     glBufferData(GL_ARRAY_BUFFER, max_points * sizeof(glm::vec3), nullptr, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, id_vbo_);
+    glBufferData(GL_ARRAY_BUFFER, max_points * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     buffer_capacity_ = max_points;
@@ -400,50 +476,98 @@ void PointCloud::OnDraw(const glm::mat4& projection, const glm::mat4& view,
           UpdateBufferWithSubData(position_vbo_, points_.data(), data_size);
           UpdateBufferWithSubData(color_vbo_, colors_.data(), data_size);
         }
+        
+        // Update ID buffer with point indices (0, 1, 2, ...)
+        std::vector<float> point_ids(active_points_);
+        std::iota(point_ids.begin(), point_ids.end(), 0.0f);
+        
+        
+        if (use_mapping) {
+          UpdateBufferWithMapping(id_vbo_, point_ids.data(), active_points_ * sizeof(float));
+        } else {
+          UpdateBufferWithSubData(id_vbo_, point_ids.data(), active_points_ * sizeof(float));
+        }
       } else {
         glBindBuffer(GL_ARRAY_BUFFER, position_vbo_);
         glBufferData(GL_ARRAY_BUFFER, data_size, points_.data(), GL_STATIC_DRAW);
         glBindBuffer(GL_ARRAY_BUFFER, color_vbo_);
         glBufferData(GL_ARRAY_BUFFER, data_size, colors_.data(), GL_STATIC_DRAW);
+        
+        // Update ID buffer with point indices (0, 1, 2, ...)
+        std::vector<float> point_ids(active_points_);
+        std::iota(point_ids.begin(), point_ids.end(), 0.0f);
+        
+        
+        glBindBuffer(GL_ARRAY_BUFFER, id_vbo_);
+        glBufferData(GL_ARRAY_BUFFER, active_points_ * sizeof(float), point_ids.data(), GL_STATIC_DRAW);
+        
         glBindBuffer(GL_ARRAY_BUFFER, 0);
       }
       needs_update_ = false;
     }
 
-    shader_.Use();
-    shader_.TrySetUniform("projection", projection);
-    shader_.TrySetUniform("view", view);
-    shader_.TrySetUniform("coord_transform", coord_transform);
-    shader_.TrySetUniform("pointSize", point_size_);
-    shader_.TrySetUniform("opacity", opacity_);
-    shader_.TrySetUniform("useLayerColor", false);
-    shader_.TrySetUniform("useSphereMode", render_mode_ == PointMode::kSphere);
-    shader_.TrySetUniform("useSphereSurfaceHighlight", false);
+    // Choose shader and rendering mode based on render mode
+    if (render_mode_ == PointMode::kIdBuffer) {
+      // ID buffer rendering mode for GPU picking
+      id_shader_.Use();
+      
+      // Compute MVP matrix exactly like reference
+      glm::mat4 mvp = projection * view * coord_transform;
+      id_shader_.TrySetUniform("u_mvp", mvp);
+      id_shader_.TrySetUniform("u_point_size_px", point_size_);
+      id_shader_.TrySetUniform("u_base_id", 1);  // Reserve 0 for background
+      
+      
+      glEnable(GL_PROGRAM_POINT_SIZE);
+      glEnable(GL_DEPTH_TEST);
+      
+      // Use main VAO for ID buffer rendering
+      glBindVertexArray(vao_);
+      glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(active_points_));
+      
+      glBindVertexArray(0);
+      glDisable(GL_PROGRAM_POINT_SIZE);
+      glDisable(GL_DEPTH_TEST);
+      glUseProgram(0);
+    } else {
+      // Normal rendering mode
+      shader_.Use();
+      shader_.TrySetUniform("projection", projection);
+      shader_.TrySetUniform("view", view);
+      shader_.TrySetUniform("coord_transform", coord_transform);
+      shader_.TrySetUniform("pointSize", point_size_);
+      shader_.TrySetUniform("opacity", opacity_);
+      shader_.TrySetUniform("useLayerColor", false);
+      shader_.TrySetUniform("useSphereMode", render_mode_ == PointMode::kSphere);
+      shader_.TrySetUniform("useSphereSurfaceHighlight", false);
 
-    glEnable(GL_PROGRAM_POINT_SIZE);
-    glEnable(GL_DEPTH_TEST);
-    if (opacity_ < 1.0f) {
-      glEnable(GL_BLEND);
-      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+      glEnable(GL_PROGRAM_POINT_SIZE);
+      glEnable(GL_DEPTH_TEST);
+      if (opacity_ < 1.0f) {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+      }
+
+      glBindVertexArray(vao_);
+      glDrawArrays(GL_POINTS, 0, active_points_);
+      glBindVertexArray(0);
+
+      if (opacity_ < 1.0f) {
+        glDisable(GL_BLEND);
+      }
+      glDisable(GL_PROGRAM_POINT_SIZE);
+      glDisable(GL_DEPTH_TEST);
+      glUseProgram(0);
     }
-
-    glBindVertexArray(vao_);
-    glDrawArrays(GL_POINTS, 0, active_points_);
-    glBindVertexArray(0);
-
-    if (opacity_ < 1.0f) {
-      glDisable(GL_BLEND);
-    }
-    glDisable(GL_PROGRAM_POINT_SIZE);
-    glDisable(GL_DEPTH_TEST);
-    glUseProgram(0);
 
   } catch (const std::exception& e) {
     std::cerr << "Error in OnDraw: " << e.what() << std::endl;
   }
   
-  // Apply layer effects after base rendering
-  ApplyLayerEffects(projection, view, coord_transform);
+  // Apply layer effects only during normal rendering (not ID buffer mode)
+  if (render_mode_ != PointMode::kIdBuffer) {
+    ApplyLayerEffects(projection, view, coord_transform);
+  }
 }
 
 // Layer management implementations
@@ -487,6 +611,9 @@ void PointCloud::HighlightPoints(const std::vector<size_t>& point_indices,
   layer->SetPointSizeMultiplier(size_multiplier);
   layer->SetHighlightMode(PointLayer::HighlightMode::kColorAndSize);
   layer->SetVisible(true);
+  
+  // Invalidate the layer's rendering cache
+  InvalidateLayerBuffer(layer_name);
 }
 
 void PointCloud::HighlightPoint(size_t point_index, 
@@ -500,6 +627,9 @@ void PointCloud::ClearHighlights(const std::string& layer_name) {
   auto layer = layer_manager_.GetLayer(layer_name);
   if (layer) {
     layer->ClearPoints();
+    
+    // Invalidate the layer's rendering cache
+    InvalidateLayerBuffer(layer_name);
   }
 }
 
@@ -631,6 +761,14 @@ void PointCloud::UpdateLayerIndexBuffer(const std::string& layer_name,
   buffer_info.needs_update = false;
 }
 
+void PointCloud::InvalidateLayerBuffer(const std::string& layer_name) {
+  auto it = layer_index_buffers_.find(layer_name);
+  if (it != layer_index_buffers_.end()) {
+    it->second.needs_update = true;
+  }
+  // If buffer doesn't exist yet, it will be created on next render with correct data
+}
+
 void PointCloud::CleanupLayerIndexBuffers() {
   for (auto& [name, buffer_info] : layer_index_buffers_) {
     if (buffer_info.ebo != 0) {
@@ -639,6 +777,46 @@ void PointCloud::CleanupLayerIndexBuffers() {
     }
   }
   layer_index_buffers_.clear();
+}
+
+// ID buffer encoding/decoding methods
+glm::vec3 PointCloud::EncodePointId(size_t point_index) {
+  // Encode point index + 1 (reserve 0 for background)
+  uint32_t id = static_cast<uint32_t>(point_index + 1);
+  
+  // Extract RGB components (24-bit encoding)
+  uint8_t r = (id >> 16) & 0xFF;
+  uint8_t g = (id >> 8) & 0xFF;
+  uint8_t b = id & 0xFF;
+  
+  // Convert to normalized float values
+  return glm::vec3(r / 255.0f, g / 255.0f, b / 255.0f);
+}
+
+size_t PointCloud::DecodePointId(const glm::vec3& color) {
+  // Convert normalized float to 8-bit values
+  uint8_t r = static_cast<uint8_t>(color.r * 255.0f + 0.5f);
+  uint8_t g = static_cast<uint8_t>(color.g * 255.0f + 0.5f);
+  uint8_t b = static_cast<uint8_t>(color.b * 255.0f + 0.5f);
+  
+  return DecodePointId(r, g, b);
+}
+
+size_t PointCloud::DecodePointId(uint8_t r, uint8_t g, uint8_t b) {
+  // Decode using reference implementation approach (little-endian packing)
+  uint32_t id = (uint32_t(r) << 0) | (uint32_t(g) << 8) | (uint32_t(b) << 16);
+  
+  if (id == 0u) {
+    return SIZE_MAX; // No hit (background)
+  } else {
+    // We used base_id = 1, actual vertex index = id - 1
+    uint32_t vertex_index = id - 1u;
+    if (vertex_index >= 75) { // Safety clamp for our 75-point grid
+      std::cout << "WARNING: Decoded vertex index " << vertex_index << " out of range!" << std::endl;
+      return SIZE_MAX;
+    }
+    return static_cast<size_t>(vertex_index);
+  }
 }
 
 }  // namespace quickviz

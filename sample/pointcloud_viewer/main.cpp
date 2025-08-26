@@ -150,7 +150,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Creating PointCloud object with OpenGL context available..."
               << std::endl;
     auto point_cloud = std::make_unique<PointCloud>();
-    point_cloud->SetPointSize(2.0f);
+    point_cloud->SetPointSize(5.0f);
     point_cloud->SetOpacity(1.0f);
     point_cloud->SetRenderMode(PointMode::kPoint);
 
@@ -190,8 +190,14 @@ int main(int argc, char* argv[]) {
         break;
     }
 
+    // Keep a shared pointer to the point cloud for selection
+    auto point_cloud_shared = std::shared_ptr<PointCloud>(point_cloud.get(), [](PointCloud*){});
+    
     // Add the point cloud to the scene
     gl_sm->AddOpenGLObject("loaded_point_cloud", std::move(point_cloud));
+    
+    // Setup point cloud selection
+    gl_sm->SetPointCloud(point_cloud_shared);
 
     // Add a reference grid
     glm::vec3 bounds_size = metadata.max_bounds - metadata.min_bounds;

@@ -68,6 +68,7 @@ class PointCloud : public OpenGlObject {
     max_scalar_ = max_val;
   }
   void SetRenderMode(PointMode mode) { render_mode_ = mode; }
+  PointMode GetRenderMode() const { return render_mode_; }
 
   // Layer management
   LayerManager& GetLayerManager() { return layer_manager_; }
@@ -97,6 +98,11 @@ class PointCloud : public OpenGlObject {
   
   // Convert 3D points to 4D for PCL bridge compatibility
   std::vector<glm::vec4> GetPointsAs4D() const;
+  
+  // ID buffer support for GPU picking
+  static glm::vec3 EncodePointId(size_t point_index);
+  static size_t DecodePointId(const glm::vec3& color);
+  static size_t DecodePointId(uint8_t r, uint8_t g, uint8_t b);
 
   void AllocateGpuResources() override;
   void ReleaseGpuResources() noexcept override;
@@ -117,7 +123,10 @@ class PointCloud : public OpenGlObject {
   uint32_t vao_ = 0;
   uint32_t position_vbo_ = 0;
   uint32_t color_vbo_ = 0;
+  uint32_t id_vbo_ = 0;  // VBO for point indices in ID mode
+  uint32_t id_vao_ = 0;  // Dedicated VAO for ID buffer rendering
   ShaderProgram shader_;
+  ShaderProgram id_shader_;  // Shader for ID buffer rendering
 
   // Rendering data
   std::vector<glm::vec3> points_;
@@ -156,6 +165,7 @@ class PointCloud : public OpenGlObject {
   std::unordered_map<std::string, LayerIndexBuffer> layer_index_buffers_;
   void UpdateLayerIndexBuffer(const std::string& layer_name, 
                               const std::vector<size_t>& indices);
+  void InvalidateLayerBuffer(const std::string& layer_name);
   void CleanupLayerIndexBuffers();
 };
 }  // namespace quickviz

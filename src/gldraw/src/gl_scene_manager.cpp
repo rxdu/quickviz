@@ -11,6 +11,9 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <cmath>
+
+#include <glad/glad.h>
 
 #include "imview/fonts.hpp"
 #include "gldraw/coordinate_system_transformer.hpp"
@@ -237,5 +240,119 @@ GlSceneManager::MouseRay GlSceneManager::GetMouseRayInWorldSpace(
   return ray;
 }
 
+// GPU ID-buffer picking implementation
+void GlSceneManager::RenderIdBuffer() {
+  ImVec2 content_size = ImGui::GetContentRegionAvail();
+  float width = content_size.x;
+  float height = content_size.y;
+  
+  // Create or resize ID framebuffer to match main framebuffer size
+  // IMPORTANT: Use 0 samples (no multisampling) for ID buffer to ensure exact pixel values
+  if (id_frame_buffer_ == nullptr) {
+    id_frame_buffer_ = std::make_unique<FrameBuffer>(width, height, 0);  // No multisampling for ID picking
+  } else if (id_frame_buffer_->GetWidth() != width || 
+             id_frame_buffer_->GetHeight() != height) {
+    id_frame_buffer_->Resize(width, height);
+  }
+  
+  // Render to ID framebuffer
+  id_frame_buffer_->Bind();
+  id_frame_buffer_->Clear(0.0f, 0.0f, 0.0f, 0.0f);  // Black background = no point (ID 0)
+  
+  // Apply coordinate system transformation if enabled
+  glm::mat4 transform = use_coord_transform_ ? coord_transform_ : glm::mat4(1.0f);
+  
+  // Render only point clouds in ID mode
+  int point_cloud_count = 0;
+  for (auto& obj : drawable_objects_) {
+    PointCloud* point_cloud = dynamic_cast<PointCloud*>(obj.second.get());
+    if (point_cloud) {
+      point_cloud_count++;
+      
+      // Temporarily switch to ID buffer rendering mode
+      PointMode original_mode = point_cloud->GetRenderMode();
+      point_cloud->SetRenderMode(PointMode::kIdBuffer);
+      
+      // Render the point cloud with ID encoding
+      point_cloud->OnDraw(projection_, view_, transform);
+      
+      // Restore original rendering mode
+      point_cloud->SetRenderMode(original_mode);
+    }
+  }
+  
+  
+  id_frame_buffer_->Unbind();
+}
+
+size_t GlSceneManager::ReadPixelId(int x, int y) {
+  if (!id_frame_buffer_) {
+    return SIZE_MAX; // Invalid
+  }
+  
+  // Flip Y coordinate (OpenGL bottom-left vs screen top-left)
+  int gl_y = static_cast<int>(id_frame_buffer_->GetHeight()) - y - 1;
+  
+  // Bind the ID framebuffer for reading
+  id_frame_buffer_->Bind();
+  
+  // Read pixel RGB values
+  uint8_t pixel[3];
+  glReadPixels(x, gl_y, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, pixel);
+  
+  id_frame_buffer_->Unbind();
+  
+  // Decode point index from RGB values
+  size_t decoded = PointCloud::DecodePointId(pixel[0], pixel[1], pixel[2]);
+  return decoded;
+}
+
+size_t GlSceneManager::PickPointAtPixel(int x, int y, const std::string& point_cloud_name) {
+  // Render the ID buffer
+  RenderIdBuffer();
+  
+  // Read the point ID at the specified pixel
+  return ReadPixelId(x, y);
+}
+
+size_t GlSceneManager::PickPointAtPixelWithRadius(int x, int y, int radius, const std::string& point_cloud_name) {
+  // Render the ID buffer
+  RenderIdBuffer();
+  
+  if (!id_frame_buffer_) {
+    return SIZE_MAX;
+  }
+  
+  // Read pixels in a small radius around the target position
+  size_t closest_point = SIZE_MAX;
+  float min_distance = static_cast<float>(radius * radius + 1); // Start with distance larger than radius
+  
+  for (int dy = -radius; dy <= radius; ++dy) {
+    for (int dx = -radius; dx <= radius; ++dx) {
+      int px = x + dx;
+      int py = y + dy;
+      
+      // Check bounds
+      if (px < 0 || py < 0 || 
+          px >= static_cast<int>(id_frame_buffer_->GetWidth()) || 
+          py >= static_cast<int>(id_frame_buffer_->GetHeight())) {
+        continue;
+      }
+      
+      // Check if pixel is within circular radius
+      float distance = std::sqrt(dx * dx + dy * dy);
+      if (distance > radius) continue;
+      
+      // Read point ID at this pixel
+      size_t point_id = ReadPixelId(px, py);
+      if (point_id != SIZE_MAX && distance < min_distance) {
+        min_distance = distance;
+        closest_point = point_id;
+      }
+    }
+  }
+  
+  return closest_point;
+}
 
 }  // namespace quickviz

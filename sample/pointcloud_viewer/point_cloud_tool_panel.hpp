@@ -13,6 +13,8 @@
 #include "gldraw/gl_scene_manager.hpp"
 
 namespace quickviz {
+class InteractiveSceneManager;
+
 class PointCloudToolPanel : public Panel {
  public:
   PointCloudToolPanel(const std::string& name, GlSceneManager* scene_manager)
@@ -31,6 +33,13 @@ class PointCloudToolPanel : public Panel {
  private:
   GlSceneManager* scene_manager_ = nullptr;
   MouseInfo mouse_info_;
+  
+  // UI state
+  float sphere_radius_ = 1.0f;
+  float box_size_ = 1.0f;
+  
+  // Helper methods
+  InteractiveSceneManager* GetInteractiveSceneManager() const;
 };
 }  // namespace quickviz
 

@@ -11,7 +11,7 @@
 #define OPENGL_RENDERER_TYPES_HPP
 
 namespace quickviz {
-enum class PointMode { kPoint, kSphere };
+enum class PointMode { kPoint, kSphere, kIdBuffer };
 enum class LineType { kSolid, kDashed, kDotted };
 }  // namespace quickviz
 

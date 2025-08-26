@@ -255,6 +255,7 @@ class PointCloudSelector {
   void BuildPCLCloud();
   void NotifySelectionChanged();
   float PointToRayDistance(const glm::vec3& point, const Ray& ray) const;
+  std::pair<float, float> PointToRayDistanceAndDepth(const glm::vec3& point, const Ray& ray) const;
   bool IsPointInBox(const glm::vec3& point, 
                    const glm::vec3& min, 
                    const glm::vec3& max) const;
