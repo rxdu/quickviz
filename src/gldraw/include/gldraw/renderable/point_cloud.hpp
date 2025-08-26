@@ -61,6 +61,7 @@ class PointCloud : public OpenGlObject {
 
   // Appearance settings
   void SetPointSize(float size) { point_size_ = size; }
+  float GetPointSize() const { return point_size_; }
   void SetDefaultColor(const glm::vec3& color) { default_color_ = color; }
   void SetOpacity(float opacity) { opacity_ = opacity; }
   void SetScalarRange(float min_val, float max_val) {

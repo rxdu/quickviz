@@ -24,6 +24,24 @@ void PointCloudToolPanel::Draw() {
   
   auto* interactive_sm = GetInteractiveSceneManager();
   auto* selector = interactive_sm ? interactive_sm->GetSelector() : nullptr;
+  auto point_cloud = interactive_sm ? interactive_sm->GetPointCloud() : nullptr;
+
+  // === APPEARANCE CONTROLS SECTION ===
+  ImGui::Text("Appearance Controls");
+  ImGui::Separator();
+  
+  if (point_cloud) {
+    // Synchronize slider with point cloud's current point size
+    point_size_ = point_cloud->GetPointSize();
+    
+    if (ImGui::SliderFloat("Point Size", &point_size_, 0.5f, 10.0f, "%.1f")) {
+      point_cloud->SetPointSize(point_size_);
+    }
+  } else {
+    ImGui::Text("No point cloud loaded");
+  }
+  
+  ImGui::Separator();
 
   // === SELECTION TOOLS SECTION ===
   ImGui::Text("Selection Tools");
@@ -35,64 +53,16 @@ void PointCloudToolPanel::Draw() {
     
     if (selected_count > 0) {
       glm::vec3 centroid = selector->GetSelectionCentroid();
-      ImGui::Text("Centroid: (%.2f, %.2f, %.2f)", centroid.x, centroid.y, centroid.z);
+      auto [min_pt, max_pt] = selector->GetSelectionBounds();
+      
+      ImGui::Text("Centroid: (%.3f, %.3f, %.3f)", centroid.x, centroid.y, centroid.z);
+      ImGui::Text("Bounds: (%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f)", 
+                  min_pt.x, min_pt.y, min_pt.z, max_pt.x, max_pt.y, max_pt.z);
       
       if (ImGui::Button("Clear Selection")) {
         selector->ClearSelection();
         selector->ApplySelectionVisualization();
-        std::cout << "Selection cleared from UI" << std::endl;
       }
-      
-      ImGui::SameLine();
-      if (ImGui::Button("Print Stats")) {
-        auto [min_pt, max_pt] = selector->GetSelectionBounds();
-        std::cout << "\n=== Selection Statistics ===" << std::endl;
-        std::cout << "Count: " << selected_count << " points" << std::endl;
-        std::cout << "Centroid: (" << centroid.x << ", " << centroid.y << ", " << centroid.z << ")" << std::endl;
-        std::cout << "Min bound: (" << min_pt.x << ", " << min_pt.y << ", " << min_pt.z << ")" << std::endl;
-        std::cout << "Max bound: (" << max_pt.x << ", " << max_pt.y << ", " << max_pt.z << ")" << std::endl;
-        std::cout << "========================\n" << std::endl;
-      }
-    }
-    
-    ImGui::Separator();
-    ImGui::Text("Region Selection Tools:");
-    
-    // Sphere selection
-    ImGui::SliderFloat("Sphere Radius", &sphere_radius_, 0.1f, 10.0f);
-    if (ImGui::Button("Select in Sphere") && mouse_info_.valid && selected_count > 0) {
-      glm::vec3 centroid = selector->GetSelectionCentroid();
-      auto indices = selector->SelectInSphere(centroid, sphere_radius_);
-      selector->UpdateSelection(indices, SelectionMode::kAdditive);
-      selector->ApplySelectionVisualization("sphere_selection", glm::vec3(0.0f, 1.0f, 0.0f), 1.3f);
-      std::cout << "Sphere selection: " << indices.size() << " points around centroid" << std::endl;
-    }
-    
-    // Box selection
-    ImGui::SliderFloat("Box Size", &box_size_, 0.1f, 10.0f);
-    if (ImGui::Button("Select in Box") && mouse_info_.valid && selected_count > 0) {
-      glm::vec3 centroid = selector->GetSelectionCentroid();
-      glm::vec3 half_size(box_size_ * 0.5f);
-      auto indices = selector->SelectInBox(centroid - half_size, centroid + half_size);
-      selector->UpdateSelection(indices, SelectionMode::kAdditive);
-      selector->ApplySelectionVisualization("box_selection", glm::vec3(0.0f, 0.0f, 1.0f), 1.4f);
-      std::cout << "Box selection: " << indices.size() << " points around centroid" << std::endl;
-    }
-    
-    // Plane selection
-    if (ImGui::Button("Select Above Z=0")) {
-      auto indices = selector->SelectByPlane(glm::vec3(0, 0, 0), glm::vec3(0, 0, 1), true);
-      selector->UpdateSelection(indices, SelectionMode::kSingle);
-      selector->ApplySelectionVisualization("plane_selection", glm::vec3(1.0f, 0.0f, 1.0f), 1.2f);
-      std::cout << "Plane selection: " << indices.size() << " points above Z=0" << std::endl;
-    }
-    
-    ImGui::SameLine();
-    if (ImGui::Button("Select Below Z=0")) {
-      auto indices = selector->SelectByPlane(glm::vec3(0, 0, 0), glm::vec3(0, 0, 1), false);
-      selector->UpdateSelection(indices, SelectionMode::kSingle);
-      selector->ApplySelectionVisualization("plane_selection", glm::vec3(1.0f, 0.0f, 1.0f), 1.2f);
-      std::cout << "Plane selection: " << indices.size() << " points below Z=0" << std::endl;
     }
     
   } else {
@@ -100,15 +70,15 @@ void PointCloudToolPanel::Draw() {
   }
   
   ImGui::Separator();
-  ImGui::Text("Mouse Controls:");
-  ImGui::BulletText("Left Click: Pick point");
-  ImGui::BulletText("Shift + Left Click: Add to selection");
-  ImGui::BulletText("Ctrl + Left Click: Remove from selection");  
-  ImGui::BulletText("Right Click: Clear selection");
+  ImGui::Text("Point Selection Controls:");
+  ImGui::BulletText("Ctrl + Left Click: Select point");
+  ImGui::BulletText("Ctrl + Shift + Left Click: Add to selection");
+  ImGui::BulletText("Ctrl + Alt + Left Click: Toggle point selection");
+  ImGui::BulletText("Ctrl + Right Click: Clear selection");
   
-  ImGui::Text("Keyboard Controls:");
+  ImGui::Text("Keyboard Shortcuts:");
   ImGui::BulletText("C: Clear selection");
-  ImGui::BulletText("Space: Print statistics");
+  ImGui::BulletText("Space: Print selection statistics");
   ImGui::BulletText("T: Toggle selection mode");
 
   // === MOUSE TRACKING SECTION (Collapsible) ===

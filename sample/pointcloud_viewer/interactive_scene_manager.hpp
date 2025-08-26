@@ -27,6 +27,7 @@ class InteractiveSceneManager : public GlSceneManager {
   // Point cloud selection integration
   void SetPointCloud(std::shared_ptr<PointCloud> point_cloud);
   visualization::PointCloudSelector* GetSelector() const { return selector_.get(); }
+  std::shared_ptr<PointCloud> GetPointCloud() const { return point_cloud_; }
   
   void Draw() override;
 

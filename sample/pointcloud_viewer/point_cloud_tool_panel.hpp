@@ -33,10 +33,7 @@ class PointCloudToolPanel : public Panel {
  private:
   GlSceneManager* scene_manager_ = nullptr;
   MouseInfo mouse_info_;
-  
-  // UI state
-  float sphere_radius_ = 1.0f;
-  float box_size_ = 1.0f;
+  float point_size_ = 3.0f;  // Default point size
   
   // Helper methods
   InteractiveSceneManager* GetInteractiveSceneManager() const;
