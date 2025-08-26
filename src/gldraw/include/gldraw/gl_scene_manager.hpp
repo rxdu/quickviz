@@ -233,6 +233,48 @@ class GlSceneManager : public Panel {
     point_selection_callback_ = callback;
   }
   
+  // === Object Selection API ===
+  
+  /**
+   * @brief Select an object at screen coordinates
+   * @param screen_x Screen X coordinate
+   * @param screen_y Screen Y coordinate
+   * @return Name of selected object, or empty string if none
+   */
+  std::string SelectObjectAt(float screen_x, float screen_y);
+  
+  /**
+   * @brief Get currently selected object name
+   * @return Name of selected object, or empty string if none
+   */
+  const std::string& GetSelectedObjectName() const { return selected_object_name_; }
+  
+  /**
+   * @brief Clear object selection
+   */
+  void ClearObjectSelection();
+  
+  /**
+   * @brief Highlight an object (visual feedback)
+   * @param name Object name
+   * @param highlighted Whether to highlight
+   */
+  void SetObjectHighlight(const std::string& name, bool highlighted);
+  
+  /**
+   * @brief Callback type for object selection changes
+   * @param name Name of selected object (empty if none)
+   */
+  using ObjectSelectionCallback = std::function<void(const std::string&)>;
+  
+  /**
+   * @brief Set callback for object selection changes
+   * @param callback Function to call when object selection changes
+   */
+  void SetObjectSelectionCallback(ObjectSelectionCallback callback) {
+    object_selection_callback_ = callback;
+  }
+  
  private:
   void RenderIdBuffer();
   size_t ReadPixelId(int x, int y);
@@ -281,6 +323,11 @@ class GlSceneManager : public Panel {
   float selection_size_multiplier_ = 1.5f;
   std::string selection_layer_name_ = "selection";
   bool selection_visualization_enabled_ = true;
+  
+  // Object selection state
+  std::string selected_object_name_;
+  std::unordered_map<std::string, bool> object_highlights_;
+  ObjectSelectionCallback object_selection_callback_;
 };
 }  // namespace quickviz
 

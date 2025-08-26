@@ -500,4 +500,16 @@ void Sphere::OnDraw(const glm::mat4& projection, const glm::mat4& view,
   }
 }
 
+void Sphere::SetHighlighted(bool highlighted) {
+  is_highlighted_ = highlighted;
+  if (highlighted) {
+    // Save original color and set highlight color
+    original_color_ = color_;
+    color_ = glm::vec3(1.0f, 1.0f, 0.0f);  // Yellow highlight
+  } else {
+    // Restore original color
+    color_ = original_color_;
+  }
+}
+
 }  // namespace quickviz

@@ -14,6 +14,7 @@
 #include <cmath>
 #include <algorithm>
 #include <limits>
+#include <cfloat>
 
 #include <glad/glad.h>
 
@@ -228,12 +229,9 @@ GlSceneManager::MouseRay GlSceneManager::GetMouseRayInWorldSpace(
   glm::vec4 ray_world = view_inverse * ray_eye;
   glm::vec3 ray_direction = glm::normalize(glm::vec3(ray_world));
   
-  // If using coordinate transformation, we need to transform the ray
-  if (use_coord_transform_) {
-    glm::mat4 transform_inverse = glm::inverse(coord_transform_);
-    ray_direction = glm::vec3(transform_inverse * glm::vec4(ray_direction, 0.0f));
-    ray_direction = glm::normalize(ray_direction);
-  }
+  // The ray is now in world space, which is what we want
+  // The coordinate transform is applied to objects when rendering,
+  // so we work in the original world space for selection
   
   ray.origin = camera_->GetPosition();
   ray.direction = ray_direction;
@@ -595,6 +593,143 @@ void GlSceneManager::RemoveFromSelection(size_t point_index) {
 void GlSceneManager::AddToSelection(size_t point_index) {
   if (!IsPointSelected(point_index)) {
     selected_point_indices_.push_back(point_index);
+  }
+}
+
+// === Object Selection Implementation ===
+
+std::string GlSceneManager::SelectObjectAt(float screen_x, float screen_y) {
+  // Get mouse ray for ray-casting
+  ImVec2 content_size = ImGui::GetContentRegionAvail();
+  MouseRay ray = GetMouseRayInWorldSpace(screen_x, screen_y, content_size.x, content_size.y);
+  
+  if (!ray.valid) {
+    return "";
+  }
+  
+  // Clear previous selection
+  if (!selected_object_name_.empty()) {
+    auto it = drawable_objects_.find(selected_object_name_);
+    if (it != drawable_objects_.end()) {
+      it->second->SetHighlighted(false);
+    }
+  }
+  
+  // Find closest object that the ray intersects
+  std::string closest_object_name;
+  float closest_distance = std::numeric_limits<float>::max();
+  
+  for (const auto& [name, object] : drawable_objects_) {
+    // Skip objects that don't support selection
+    if (!object->SupportsSelection()) {
+      continue;
+    }
+    
+    // Get object bounding box
+    auto [min_bounds, max_bounds] = object->GetBoundingBox();
+    
+    // Skip if bounding box is invalid (zero size)
+    if (min_bounds == max_bounds) {
+      continue;
+    }
+    
+    // Apply coordinate transformation to bounds if enabled
+    if (use_coord_transform_) {
+      // Transform the 8 corners of the bounding box
+      glm::vec3 corners[8] = {
+        glm::vec3(min_bounds.x, min_bounds.y, min_bounds.z),
+        glm::vec3(max_bounds.x, min_bounds.y, min_bounds.z),
+        glm::vec3(min_bounds.x, max_bounds.y, min_bounds.z),
+        glm::vec3(max_bounds.x, max_bounds.y, min_bounds.z),
+        glm::vec3(min_bounds.x, min_bounds.y, max_bounds.z),
+        glm::vec3(max_bounds.x, min_bounds.y, max_bounds.z),
+        glm::vec3(min_bounds.x, max_bounds.y, max_bounds.z),
+        glm::vec3(max_bounds.x, max_bounds.y, max_bounds.z)
+      };
+      
+      // Transform all corners and find new AABB
+      glm::vec3 new_min(FLT_MAX);
+      glm::vec3 new_max(-FLT_MAX);
+      for (int i = 0; i < 8; ++i) {
+        glm::vec4 transformed = coord_transform_ * glm::vec4(corners[i], 1.0f);
+        glm::vec3 point(transformed.x, transformed.y, transformed.z);
+        new_min = glm::min(new_min, point);
+        new_max = glm::max(new_max, point);
+      }
+      min_bounds = new_min;
+      max_bounds = new_max;
+    }
+    
+    
+    // Simple ray-box intersection test
+    // This is a basic implementation - could be improved with more sophisticated tests
+    glm::vec3 inv_dir = 1.0f / ray.direction;
+    glm::vec3 t_min = (min_bounds - ray.origin) * inv_dir;
+    glm::vec3 t_max = (max_bounds - ray.origin) * inv_dir;
+    
+    glm::vec3 t1 = glm::min(t_min, t_max);
+    glm::vec3 t2 = glm::max(t_min, t_max);
+    
+    float t_near = glm::max(glm::max(t1.x, t1.y), t1.z);
+    float t_far = glm::min(glm::min(t2.x, t2.y), t2.z);
+    
+    // Check if ray intersects the box
+    if (t_near <= t_far && t_far >= 0) {
+      float distance = t_near >= 0 ? t_near : t_far;
+      if (distance < closest_distance) {
+        closest_distance = distance;
+        closest_object_name = name;
+      }
+    }
+  }
+  
+  // Update selection
+  selected_object_name_ = closest_object_name;
+  
+  // Highlight selected object
+  if (!selected_object_name_.empty()) {
+    auto it = drawable_objects_.find(selected_object_name_);
+    if (it != drawable_objects_.end()) {
+      it->second->SetHighlighted(true);
+      object_highlights_[selected_object_name_] = true;
+    }
+  }
+  
+  // Notify callback
+  if (object_selection_callback_) {
+    object_selection_callback_(selected_object_name_);
+  }
+  
+  return selected_object_name_;
+}
+
+void GlSceneManager::ClearObjectSelection() {
+  // Clear highlight on current selection
+  if (!selected_object_name_.empty()) {
+    auto it = drawable_objects_.find(selected_object_name_);
+    if (it != drawable_objects_.end()) {
+      it->second->SetHighlighted(false);
+    }
+    object_highlights_.erase(selected_object_name_);
+  }
+  
+  selected_object_name_.clear();
+  
+  // Notify callback
+  if (object_selection_callback_) {
+    object_selection_callback_("");
+  }
+}
+
+void GlSceneManager::SetObjectHighlight(const std::string& name, bool highlighted) {
+  auto it = drawable_objects_.find(name);
+  if (it != drawable_objects_.end()) {
+    it->second->SetHighlighted(highlighted);
+    if (highlighted) {
+      object_highlights_[name] = true;
+    } else {
+      object_highlights_.erase(name);
+    }
   }
 }
 

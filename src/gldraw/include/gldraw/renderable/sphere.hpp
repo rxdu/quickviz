@@ -66,6 +66,14 @@ class Sphere : public OpenGlObject {
   float GetSurfaceArea() const;
   float GetVolume() const;
   
+  // Selection support
+  bool SupportsSelection() const override { return true; }
+  std::pair<glm::vec3, glm::vec3> GetBoundingBox() const override {
+    glm::vec3 half_extents(radius_, radius_, radius_);
+    return {center_ - half_extents, center_ + half_extents};
+  }
+  void SetHighlighted(bool highlighted) override;
+  
  private:
   void GenerateSphereGeometry();
   void UpdateGpuBuffers();
@@ -118,6 +126,10 @@ class Sphere : public OpenGlObject {
   ShaderProgram wireframe_shader_;
   
   bool needs_update_ = true;
+  
+  // Selection state
+  bool is_highlighted_ = false;
+  glm::vec3 original_color_ = glm::vec3(0.7f, 0.7f, 0.9f);
 };
 
 }  // namespace quickviz

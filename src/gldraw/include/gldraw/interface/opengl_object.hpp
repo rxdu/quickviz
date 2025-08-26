@@ -55,6 +55,29 @@ class OpenGlObject {
    * @return true if resources are allocated, false otherwise
    */
   virtual bool IsGpuResourcesAllocated() const noexcept = 0;
+  
+  /**
+   * @brief Set whether this object is highlighted (selected)
+   * @param highlighted Whether to highlight the object
+   * @note Default implementation does nothing - subclasses can override to provide visual feedback
+   */
+  virtual void SetHighlighted(bool highlighted) { (void)highlighted; }
+  
+  /**
+   * @brief Check if this object supports selection/picking
+   * @return true if object can be selected, false otherwise
+   * @note Default is false - subclasses that support selection should override
+   */
+  virtual bool SupportsSelection() const { return false; }
+  
+  /**
+   * @brief Get bounding box for this object (for ray intersection tests)
+   * @return {min_bounds, max_bounds} in world space, or {{0,0,0}, {0,0,0}} if not available
+   * @note Default returns zero bounds - subclasses can override for selection support
+   */
+  virtual std::pair<glm::vec3, glm::vec3> GetBoundingBox() const { 
+    return {glm::vec3(0.0f), glm::vec3(0.0f)}; 
+  }
 
  protected:
   OpenGlObject() = default;
