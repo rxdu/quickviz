@@ -17,7 +17,7 @@
 #include "imview/box.hpp"
 #include "imview/viewer.hpp"
 
-#include "gldraw/gl_scene_manager.hpp"
+#include "gldraw/scene_view_panel.hpp"
 #include "gldraw/renderable/grid.hpp"
 #include "gldraw/renderable/triangle.hpp"
 #include "gldraw/renderable/coordinate_frame.hpp"
@@ -146,15 +146,15 @@ int main(int argc, char* argv[]) {
   box->SetJustifyContent(Styling::JustifyContent::kFlexStart);
   box->SetAlignItems(Styling::AlignItems::kStretch);
 
-  // create a OpenGL scene manager to manage the OpenGL objects
-  auto gl_sm = std::make_shared<GlSceneManager>("OpenGL Scene (2D)",
+  // create a OpenGL scene panel to manage the OpenGL objects
+  auto gl_sm = std::make_shared<SceneViewPanel>("OpenGL Scene (2D)",
                                                 GlSceneManager::Mode::k2D);
   gl_sm->SetAutoLayout(true);
   gl_sm->SetNoTitleBar(true);
   gl_sm->SetFlexGrow(1.0f);
   gl_sm->SetFlexShrink(1.0f);
 
-  // now add the rendering objects to the OpenGL scene manager
+  // now add the rendering objects to the OpenGL scene panel
   //   auto triangle = std::make_unique<Triangle>(1.0f, glm::vec3(0.0f, 0.5f,
   //   0.5f)); gl_sm->AddOpenGLObject("triangle", std::move(triangle));
 
@@ -197,7 +197,7 @@ int main(int argc, char* argv[]) {
     DrawRobotMarker(3.0, -3.0, -M_PI / 2.0f, canvas, 0.5f);  // Pointing down
   }
 
-  // finally pass the OpenGL scene managers to the box and add it to the viewer
+  // finally pass the OpenGL scene panels to the box and add it to the viewer
   box->AddChild(gl_sm);
   viewer.AddSceneObject(box);
 

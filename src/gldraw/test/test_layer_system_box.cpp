@@ -14,7 +14,7 @@
 
 #include "imview/viewer.hpp"
 #include "imview/box.hpp"
-#include "gldraw/gl_scene_manager.hpp"
+#include "gldraw/scene_view_panel.hpp"
 #include "gldraw/renderable/grid.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 #include "gldraw/renderable/layer_manager.hpp"
@@ -45,7 +45,7 @@ void TestBasicLayering() {
     auto box = std::make_shared<Box>("layer_test_box");
     box->SetFlexDirection(Styling::FlexDirection::kRow);
     
-    auto gl_sm = std::make_shared<GlSceneManager>("Layer System Test");
+    auto gl_sm = std::make_shared<SceneViewPanel>("Layer System Test");
     gl_sm->SetAutoLayout(true);
     gl_sm->SetNoTitleBar(true);
     gl_sm->SetFlexGrow(1.0f);

@@ -20,7 +20,7 @@
 #include "imview/box.hpp"
 #include "imview/viewer.hpp"
 
-#include "gldraw/gl_scene_manager.hpp"
+#include "gldraw/scene_view_panel.hpp"
 #include "gldraw/renderable/grid.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 
@@ -111,8 +111,8 @@ int main(int argc, char* argv[]) {
   box->SetJustifyContent(Styling::JustifyContent::kFlexStart);
   box->SetAlignItems(Styling::AlignItems::kStretch);
 
-  // Create scene manager
-  auto gl_sm = std::make_shared<GlSceneManager>("OpenGL Scene");
+  // Create scene panel
+  auto gl_sm = std::make_shared<SceneViewPanel>("OpenGL Scene");
   gl_sm->SetAutoLayout(true);
   gl_sm->SetNoTitleBar(true);
   gl_sm->SetFlexGrow(1.0f);
@@ -134,7 +134,7 @@ int main(int argc, char* argv[]) {
   // Get pointer to point cloud before moving it
   auto* point_cloud_ptr = point_cloud.get();
   
-  // Add objects to scene manager
+  // Add objects to scene panel
   gl_sm->AddOpenGLObject("point_cloud", std::move(point_cloud));
   gl_sm->AddOpenGLObject("grid", std::move(grid));
 
@@ -149,7 +149,7 @@ int main(int argc, char* argv[]) {
     }
   });
 
-  // Add scene manager to box and add it to the viewer
+  // Add scene panel to box and add it to the viewer
   box->AddChild(gl_sm);
   viewer.AddSceneObject(box);
 

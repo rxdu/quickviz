@@ -10,6 +10,7 @@
 
 #include "point_cloud_tool_panel.hpp"
 #include <iostream>
+#include <imgui.h>
 #include <glad/glad.h>
 
 namespace quickviz {

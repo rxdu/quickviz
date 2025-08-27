@@ -19,7 +19,7 @@
 #include "imview/box.hpp"
 #include "imview/viewer.hpp"
 
-#include "gldraw/gl_scene_manager.hpp"
+#include "gldraw/scene_view_panel.hpp"
 #include "gldraw/renderable/grid.hpp"
 #include "gldraw/renderable/coordinate_frame.hpp"
 
@@ -43,15 +43,15 @@ int main(int argc, char* argv[]) {
   box->SetJustifyContent(Styling::JustifyContent::kFlexStart);
   box->SetAlignItems(Styling::AlignItems::kStretch);
 
-  // Create a 3D OpenGL scene manager
-  auto gl_sm_3d = std::make_shared<GlSceneManager>("3D Robot Frames",
+  // Create a 3D OpenGL scene panel
+  auto gl_sm_3d = std::make_shared<SceneViewPanel>("3D Robot Frames",
                                                 GlSceneManager::Mode::k3D);
   gl_sm_3d->SetAutoLayout(true);
   gl_sm_3d->SetFlexGrow(1.0f);
   gl_sm_3d->SetFlexShrink(0.0f);
 
-  // Create a 2D OpenGL scene manager
-  auto gl_sm_2d = std::make_shared<GlSceneManager>("2D Robot Frames",
+  // Create a 2D OpenGL scene panel
+  auto gl_sm_2d = std::make_shared<SceneViewPanel>("2D Robot Frames",
                                                 GlSceneManager::Mode::k2D);
   gl_sm_2d->SetAutoLayout(true);
   gl_sm_2d->SetFlexGrow(1.0f);
@@ -115,7 +115,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  // Add both scene managers to the box
+  // Add both scene panels to the box
   box->AddChild(gl_sm_3d);
   box->AddChild(gl_sm_2d);
   

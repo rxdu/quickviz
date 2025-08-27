@@ -13,7 +13,7 @@
 
 #include "imview/viewer.hpp"
 #include "imview/box.hpp"
-#include "gldraw/gl_scene_manager.hpp"
+#include "gldraw/scene_view_panel.hpp"
 #include "gldraw/renderable/grid.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 
@@ -42,11 +42,11 @@ int main() {
   box->SetJustifyContent(Styling::JustifyContent::kFlexStart);
   box->SetAlignItems(Styling::AlignItems::kStretch);
 
-  auto gl_sm = std::make_shared<GlSceneManager>("Enhanced Camera Test");
-  gl_sm->SetAutoLayout(true);
-  gl_sm->SetNoTitleBar(true);
-  gl_sm->SetFlexGrow(1.0f);
-  gl_sm->SetFlexShrink(0.0f);
+  auto scene_panel = std::make_shared<SceneViewPanel>("Enhanced Camera Test");
+  scene_panel->SetAutoLayout(true);
+  scene_panel->SetNoTitleBar(true);
+  scene_panel->SetFlexGrow(1.0f);
+  scene_panel->SetFlexShrink(0.0f);
   
   // Create point cloud
   auto point_cloud = std::make_unique<PointCloud>();
@@ -58,10 +58,10 @@ int main() {
   // Add grid for reference
   auto grid = std::make_unique<Grid>(20.0f, 1.0f, glm::vec3(0.7f, 0.7f, 0.7f));
   
-  gl_sm->AddOpenGLObject("point_cloud", std::move(point_cloud));
-  gl_sm->AddOpenGLObject("grid", std::move(grid));
+  scene_panel->AddOpenGLObject("point_cloud", std::move(point_cloud));
+  scene_panel->AddOpenGLObject("grid", std::move(grid));
   
-  box->AddChild(gl_sm);
+  box->AddChild(scene_panel);
   viewer.AddSceneObject(box);
   
   std::cout << "\n=== Camera Controls ===" << std::endl;

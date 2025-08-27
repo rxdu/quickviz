@@ -18,17 +18,13 @@
 
 #include <glad/glad.h>
 
-#include "imview/fonts.hpp"
 #include "gldraw/coordinate_system_transformer.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 #include "gldraw/renderable/geometric_primitive.hpp"
 
 namespace quickviz {
 GlSceneManager::GlSceneManager(const std::string& name, Mode mode)
-    : Panel(name), mode_(mode) {
-  this->SetAutoLayout(false);
-  this->SetWindowNoMenuButton();
-  //   this->SetNoBackground(true);
+    : name_(name), mode_(mode) {
 
   camera_ = std::make_unique<Camera>();
   if (mode_ == Mode::k3D) {
@@ -99,84 +95,10 @@ void GlSceneManager::UpdateView(const glm::mat4& projection,
   view_ = view;
 }
 
-void GlSceneManager::DrawOpenGLObject() {
-  ImVec2 content_size = ImGui::GetContentRegionAvail();
-  float width = content_size.x;
-  float height = content_size.y;
-
-  if (frame_buffer_ != nullptr) {
-    if (frame_buffer_->GetWidth() != width ||
-        frame_buffer_->GetHeight() != height) {
-      frame_buffer_->Resize(width, height);
-    }
-    // render to frame buffer
-    frame_buffer_->Bind();
-    frame_buffer_->Clear(background_color_.r, background_color_.g,
-                         background_color_.b, background_color_.a);
-
-    // Apply coordinate system transformation if enabled
-    glm::mat4 transform =
-        use_coord_transform_ ? coord_transform_ : glm::mat4(1.0f);
-
-    for (auto& obj : drawable_objects_) {
-      obj.second->OnDraw(projection_, view_, transform);
-    }
-    frame_buffer_->Unbind();
-
-    // render frame buffer to ImGui
-    ImVec2 uv0 = ImVec2(0, 1);
-    ImVec2 uv1 = ImVec2(1, 0);
-    ImVec4 tint_col = ImVec4(1, 1, 1, 1);
-    ImVec4 border_col = ImVec4(0, 0, 0, 0);
-    ImGui::Image((void*)(intptr_t)frame_buffer_->GetTextureId(),
-                 ImVec2(width, height), uv0, uv1, tint_col, border_col);
-  } else {
-    frame_buffer_ = std::make_unique<FrameBuffer>(width, height);
-  }
-}
-
-void GlSceneManager::RenderInsideWindow() {
-  // update view according to user input
-  ImGuiIO& io = ImGui::GetIO();
-  ImVec2 content_size = ImGui::GetContentRegionAvail();
-
-  // only process mouse delta when mouse position is within the scene panel
-  if (ImGui::IsMousePosValid() && io.WantCaptureMouse &&
-      ImGui::IsWindowHovered()) {
-    // Check for mouse buttons and update camera controller state accordingly
-    int active_button = MouseButton::kNone;
-
-    if (ImGui::IsMouseDown(MouseButton::kLeft)) {
-      active_button = MouseButton::kLeft;
-    } else if (ImGui::IsMouseDown(MouseButton::kMiddle)) {
-      active_button = MouseButton::kMiddle;
-    } else if (ImGui::IsMouseDown(MouseButton::kRight)) {
-      active_button = MouseButton::kRight;
-    }
-
-    // Set the active mouse button in the camera controller
-    camera_controller_->SetActiveMouseButton(active_button);
-
-    // Process mouse movement if any button is pressed
-    if (active_button != MouseButton::kNone) {
-      camera_controller_->ProcessMouseMovement(io.MouseDelta.x,
-                                               io.MouseDelta.y);
-    }
-
-    // track mouse wheel scroll
-    camera_controller_->ProcessMouseScroll(io.MouseWheel);
-  } else {
-    // Reset mouse button state when mouse is outside the window
-    camera_controller_->SetActiveMouseButton(MouseButton::kNone);
-  }
-
-  // get view matrices from camera
-  float aspect_ratio = (frame_buffer_ == nullptr)
-                           ? static_cast<float>(content_size.x) /
-                                 static_cast<float>(content_size.y)
-                           : frame_buffer_->GetAspectRatio();
-  glm::mat4 projection =
-      camera_->GetProjectionMatrix(aspect_ratio, z_near_, z_far_);
+void GlSceneManager::RenderToFramebuffer(float width, float height) {
+  // Get view matrices from camera
+  float aspect_ratio = width / height;
+  glm::mat4 projection = camera_->GetProjectionMatrix(aspect_ratio, z_near_, z_far_);
   glm::mat4 view = camera_->GetViewMatrix();
   UpdateView(projection, view);
 
@@ -185,28 +107,34 @@ void GlSceneManager::RenderInsideWindow() {
     pre_draw_callback_();
   }
 
-  // finally draw the scene
-  DrawOpenGLObject();
-
-  // draw frame rate at the bottom of the scene
-  if (show_rendering_info_) {
-    ImGui::SetCursorPos(ImVec2(10, content_size.y - 25));
-    ImGui::PushFont(Fonts::GetFont(FontSize::kFont18));
-    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 153, 153, 200));
-    ImGui::Text("FPS: %.1f, %.3f ms/frame", ImGui::GetIO().Framerate,
-                1000.0f / ImGui::GetIO().Framerate);
-    ImGui::PopStyleColor();
-    ImGui::PopFont();
+  // Create or resize framebuffer as needed
+  if (frame_buffer_ == nullptr) {
+    frame_buffer_ = std::make_unique<FrameBuffer>(width, height);
+  } else if (frame_buffer_->GetWidth() != width ||
+             frame_buffer_->GetHeight() != height) {
+    frame_buffer_->Resize(width, height);
   }
+
+  // render to frame buffer
+  frame_buffer_->Bind();
+  frame_buffer_->Clear(background_color_.r, background_color_.g,
+                       background_color_.b, background_color_.a);
+
+  // Apply coordinate system transformation if enabled
+  glm::mat4 transform =
+      use_coord_transform_ ? coord_transform_ : glm::mat4(1.0f);
+
+  for (auto& obj : drawable_objects_) {
+    obj.second->OnDraw(projection_, view_, transform);
+  }
+  frame_buffer_->Unbind();
+
 }
 
-void GlSceneManager::Draw() {
-  Begin();
-
-  RenderInsideWindow();
-
-  End();
+uint32_t GlSceneManager::GetFramebufferTexture() const {
+  return frame_buffer_ ? frame_buffer_->GetTextureId() : 0;
 }
+
 
 GlSceneManager::MouseRay GlSceneManager::GetMouseRayInWorldSpace(
     float mouse_x, float mouse_y, float window_width, float window_height) const {
@@ -248,9 +176,9 @@ GlSceneManager::MouseRay GlSceneManager::GetMouseRayInWorldSpace(
 
 // GPU ID-buffer picking implementation
 void GlSceneManager::RenderIdBuffer() {
-  ImVec2 content_size = ImGui::GetContentRegionAvail();
-  float width = content_size.x;
-  float height = content_size.y;
+  if (!frame_buffer_) return;  // Need main framebuffer to get dimensions
+  float width = frame_buffer_->GetWidth();
+  float height = frame_buffer_->GetHeight();
   
   // Create or resize ID framebuffer to match main framebuffer size
   // IMPORTANT: Use 0 samples (no multisampling) for ID buffer to ensure exact pixel values
@@ -606,8 +534,10 @@ void GlSceneManager::AddToSelection(size_t point_index) {
 
 std::string GlSceneManager::SelectObjectAt(float screen_x, float screen_y) {
   // Get mouse ray for ray-casting
-  ImVec2 content_size = ImGui::GetContentRegionAvail();
-  MouseRay ray = GetMouseRayInWorldSpace(screen_x, screen_y, content_size.x, content_size.y);
+  if (!frame_buffer_) return "";  // Need framebuffer to get dimensions
+  float width = frame_buffer_->GetWidth();
+  float height = frame_buffer_->GetHeight();
+  MouseRay ray = GetMouseRayInWorldSpace(screen_x, screen_y, width, height);
   
   if (!ray.valid) {
     return "";

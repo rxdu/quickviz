@@ -15,7 +15,7 @@
 #include "imview/box.hpp"
 #include "imview/panel.hpp"
 
-#include "gldraw/gl_scene_manager.hpp"
+#include "gldraw/scene_view_panel.hpp"
 #include "gldraw/renderable/sphere.hpp"
 #include "gldraw/renderable/grid.hpp"
 
@@ -56,11 +56,11 @@ class SelectionInfoPanel : public Panel {
   std::string selected_object_;
 };
 
-// Extended scene manager with object selection handling
-class SelectableSceneManager : public GlSceneManager {
+// Extended scene panel with object selection handling
+class SelectableSceneManager : public SceneViewPanel {
  public:
   SelectableSceneManager(const std::string& name, SelectionInfoPanel* info_panel) 
-      : GlSceneManager(name), info_panel_(info_panel) {
+      : SceneViewPanel(name), info_panel_(info_panel) {
     // Set up object selection callback
     SetObjectSelectionCallback([this](const std::string& name) {
       if (info_panel_) {
@@ -131,7 +131,7 @@ int main() {
   info_panel->SetFlexGrow(0.0f);
   info_panel->SetFlexShrink(0.0f);
   
-  // Create scene manager with selection support
+  // Create scene panel with selection support
   auto scene_manager = std::make_shared<SelectableSceneManager>("3D Scene", info_panel.get());
   scene_manager->SetAutoLayout(true);
   scene_manager->SetFlexGrow(1.0f);

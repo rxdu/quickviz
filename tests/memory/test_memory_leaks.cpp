@@ -13,7 +13,7 @@
 #include <cstring>
 
 #include "imview/viewer.hpp"
-#include "gldraw/gl_scene_manager.hpp"
+#include "gldraw/scene_view_panel.hpp"
 #include "gldraw/renderable/triangle.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 #include "gldraw/renderable/grid.hpp"
@@ -59,7 +59,7 @@ private:
 
 // Test OpenGL resource cleanup
 TEST_F(MemoryLeakTest, OpenGLObjectLifecycle) {
-    auto scene_manager = std::make_shared<GlSceneManager>("MemoryTestScene");
+    auto scene_manager = std::make_shared<SceneViewPanel>("MemoryTestScene");
     viewer_->AddSceneObject(scene_manager);
     
     // Create and destroy multiple OpenGL objects
@@ -119,7 +119,7 @@ TEST_F(MemoryLeakTest, FrameBufferLifecycle) {
 TEST_F(MemoryLeakTest, SceneObjectContainerLifecycle) {
     // Test container cleanup with nested objects
     for (int cycle = 0; cycle < 10; ++cycle) {
-        auto scene_manager = std::make_shared<GlSceneManager>("CycleScene" + std::to_string(cycle));
+        auto scene_manager = std::make_shared<SceneViewPanel>("CycleScene" + std::to_string(cycle));
         viewer_->AddSceneObject(scene_manager);
         
         // Create nested structure

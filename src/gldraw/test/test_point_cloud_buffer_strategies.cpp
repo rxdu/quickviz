@@ -25,7 +25,7 @@
 #include "imview/box.hpp"
 #include "imview/viewer.hpp"
 
-#include "gldraw/gl_scene_manager.hpp"
+#include "gldraw/scene_view_panel.hpp"
 #include "gldraw/renderable/grid.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 
@@ -239,8 +239,8 @@ int main(int argc, char* argv[]) {
   box->SetJustifyContent(Styling::JustifyContent::kFlexStart);
   box->SetAlignItems(Styling::AlignItems::kStretch);
 
-  // Create a OpenGL scene manager to manage the OpenGL objects
-  auto gl_sm = std::make_shared<GlSceneManager>("OpenGL Scene");
+  // Create a OpenGL scene panel to manage the OpenGL objects
+  auto gl_sm = std::make_shared<SceneViewPanel>("OpenGL Scene");
   gl_sm->SetAutoLayout(true);
   gl_sm->SetNoTitleBar(true);
   gl_sm->SetFlexGrow(1.0f);

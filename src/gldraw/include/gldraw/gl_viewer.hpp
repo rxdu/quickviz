@@ -22,7 +22,7 @@
 
 #include "imview/viewer.hpp"
 #include "imview/box.hpp"
-#include "gldraw/gl_scene_manager.hpp"
+#include "gldraw/scene_view_panel.hpp"
 #include "gldraw/renderable/grid.hpp"
 #include "gldraw/renderable/coordinate_frame.hpp"
 
@@ -150,7 +150,7 @@ private:
 private:
     Config config_;
     Viewer viewer_;
-    std::shared_ptr<GlSceneManager> scene_manager_;
+    std::shared_ptr<SceneViewPanel> scene_panel_;
     SceneSetupCallback scene_setup_callback_;
     std::string description_;
     std::vector<std::pair<std::string, std::vector<std::string>>> help_sections_;

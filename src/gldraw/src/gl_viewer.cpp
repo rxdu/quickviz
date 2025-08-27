@@ -27,14 +27,13 @@ void GlViewer::SetupViewer() {
   box->SetAlignItems(Styling::AlignItems::kStretch);
 
   // Create scene manager with proper layout settings
-  scene_manager_ = std::make_shared<GlSceneManager>(config_.window_title,
-                                                    config_.scene_mode);
-  scene_manager_->SetAutoLayout(true);
-  scene_manager_->SetNoTitleBar(true);
-  scene_manager_->SetFlexGrow(1.0f);
-  scene_manager_->SetFlexShrink(0.0f);
+  scene_panel_ = std::make_shared<SceneViewPanel>(config_.window_title, config_.scene_mode);
+  scene_panel_->SetAutoLayout(true);
+  scene_panel_->SetNoTitleBar(true);
+  scene_panel_->SetFlexGrow(1.0f);
+  scene_panel_->SetFlexShrink(0.0f);
 
-  box->AddChild(scene_manager_);
+  box->AddChild(scene_panel_);
   viewer_.AddSceneObject(box);
 }
 
@@ -43,7 +42,7 @@ void GlViewer::SetupBasicScene() {
   if (config_.show_grid) {
     auto grid = std::make_unique<Grid>(config_.grid_size, config_.grid_step,
                                        config_.grid_color);
-    scene_manager_->AddOpenGLObject("grid", std::move(grid));
+    scene_panel_->AddOpenGLObject("grid", std::move(grid));
   }
 
   // Add coordinate frame if requested
@@ -51,7 +50,7 @@ void GlViewer::SetupBasicScene() {
     auto frame = std::make_unique<CoordinateFrame>(
         config_.coordinate_frame_size,
         config_.scene_mode == GlSceneManager::Mode::k2D);
-    scene_manager_->AddOpenGLObject("coordinate_frame", std::move(frame));
+    scene_panel_->AddOpenGLObject("coordinate_frame", std::move(frame));
   }
 }
 
@@ -68,7 +67,7 @@ void GlViewer::SetDescription(const std::string& description) {
   description_ = description;
 }
 
-GlSceneManager* GlViewer::GetSceneManager() const { return scene_manager_.get(); }
+GlSceneManager* GlViewer::GetSceneManager() const { return scene_panel_->GetSceneManager(); }
 
 void GlViewer::DisplayHelp() const {
   std::cout << "\n=== " << config_.window_title << " ===" << std::endl;
@@ -102,7 +101,7 @@ void GlViewer::Run() {
 
     // Call user-provided scene setup if available
     if (scene_setup_callback_) {
-      scene_setup_callback_(scene_manager_.get());
+      scene_setup_callback_(scene_panel_->GetSceneManager());
     }
 
     // Display help information

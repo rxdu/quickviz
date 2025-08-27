@@ -9,11 +9,12 @@
 #include "point_cloud_tool_panel.hpp"
 #include "interactive_scene_manager.hpp"
 #include <iostream>
+#include <imgui.h>
 
 namespace quickviz {
 
 InteractiveSceneManager* PointCloudToolPanel::GetInteractiveSceneManager() const {
-  return dynamic_cast<InteractiveSceneManager*>(scene_manager_);
+  return scene_manager_;
 }
 void PointCloudToolPanel::Draw() {
   // Use explicit window begin/end to control the title

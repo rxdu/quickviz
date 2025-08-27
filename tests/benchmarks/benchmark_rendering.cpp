@@ -14,7 +14,7 @@
 #include <cstring>
 #include <iostream>
 
-#include "gldraw/gl_scene_manager.hpp"
+#include "gldraw/scene_view_panel.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 #include "gldraw/renderable/triangle.hpp"
 #include "imview/viewer.hpp"
@@ -32,7 +32,7 @@ public:
         if (display_available_) {
             try {
                 viewer_ = std::make_unique<Viewer>("Benchmark", 1024, 768);
-                scene_manager_ = std::make_shared<GlSceneManager>("BenchmarkScene");
+                scene_manager_ = std::make_shared<SceneViewPanel>("BenchmarkScene");
                 viewer_->AddSceneObject(scene_manager_);
             } catch (const std::runtime_error& e) {
                 display_available_ = false;
@@ -60,7 +60,7 @@ private:
 
 protected:
     std::unique_ptr<Viewer> viewer_;
-    std::shared_ptr<GlSceneManager> scene_manager_;
+    std::shared_ptr<SceneViewPanel> scene_manager_;
 };
 
 // Benchmark point cloud rendering with different sizes
@@ -149,11 +149,11 @@ static void BM_SceneObjectCreation(benchmark::State& state) {
     int object_count = state.range(0);
     
     for (auto _ : state) {
-        std::vector<std::shared_ptr<GlSceneManager>> scenes;
+        std::vector<std::shared_ptr<SceneViewPanel>> scenes;
         scenes.reserve(object_count);
         
         for (int i = 0; i < object_count; ++i) {
-            auto scene = std::make_shared<GlSceneManager>("Scene" + std::to_string(i));
+            auto scene = std::make_shared<SceneViewPanel>("Scene" + std::to_string(i));
             scenes.push_back(scene);
         }
         

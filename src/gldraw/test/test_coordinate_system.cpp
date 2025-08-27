@@ -17,7 +17,7 @@
 #include "imview/box.hpp"
 #include "imview/viewer.hpp"
 
-#include "gldraw/gl_scene_manager.hpp"
+#include "gldraw/scene_view_panel.hpp"
 #include "gldraw/coordinate_system_transformer.hpp"
 #include "gldraw/renderable/grid.hpp"
 #include "gldraw/renderable/coordinate_frame.hpp"
@@ -33,8 +33,8 @@ int main(int argc, char* argv[]) {
   box->SetJustifyContent(Styling::JustifyContent::kFlexStart);
   box->SetAlignItems(Styling::AlignItems::kStretch);
 
-  // Create an OpenGL scene manager with coordinate system transformation enabled
-  auto gl_sm_transformed = std::make_shared<GlSceneManager>("Standard Coordinate System (Z-up)",
+  // Create an OpenGL scene panel with coordinate system transformation enabled
+  auto gl_sm_transformed = std::make_shared<SceneViewPanel>("Standard Coordinate System (Z-up)",
                                                 GlSceneManager::Mode::k3D);
   gl_sm_transformed->SetAutoLayout(true);
   gl_sm_transformed->SetNoTitleBar(true);
@@ -50,8 +50,8 @@ int main(int argc, char* argv[]) {
   auto coord_frame_transformed = std::make_unique<CoordinateFrame>(3.0f, false);
   gl_sm_transformed->AddOpenGLObject("coordinate_frame", std::move(coord_frame_transformed));
 
-  // Create a second OpenGL scene manager with coordinate system transformation disabled
-  auto gl_sm_native = std::make_shared<GlSceneManager>("OpenGL Native (Y-up)",
+  // Create a second OpenGL scene panel with coordinate system transformation disabled
+  auto gl_sm_native = std::make_shared<SceneViewPanel>("OpenGL Native (Y-up)",
                                                 GlSceneManager::Mode::k3D);
   gl_sm_native->SetAutoLayout(true);
   gl_sm_native->SetNoTitleBar(true);
@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
   coord_frame_y_up3->SetPosition(glm::vec3(0.0f, 0.0f, 3.0f)); // Z-axis (forward in OpenGL)
   gl_sm_native->AddOpenGLObject("coord_frame_z", std::move(coord_frame_y_up3));
 
-  // Add the OpenGL scene managers to the box and add it to the viewer
+  // Add the OpenGL scene panels to the box and add it to the viewer
   box->AddChild(gl_sm_transformed);
   box->AddChild(gl_sm_native);
   viewer.AddSceneObject(box);

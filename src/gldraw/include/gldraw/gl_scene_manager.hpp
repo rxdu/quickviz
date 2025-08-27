@@ -18,9 +18,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 
-#include "imview/panel.hpp"
-#include "imview/input/mouse.hpp"
-
 #include "gldraw/interface/opengl_object.hpp"
 
 #include "gldraw/frame_buffer.hpp"
@@ -34,7 +31,7 @@ class PointCloud;
 }
 
 namespace quickviz {
-class GlSceneManager : public Panel {
+class GlSceneManager {
  public:
   enum class Mode { k2D, k3D };
 
@@ -100,8 +97,24 @@ class GlSceneManager : public Panel {
     return use_coord_transform_;
   }
 
-  void Draw() override;
-  void RenderInsideWindow();
+  /**
+   * @brief Render scene to framebuffer at specified dimensions
+   * @param width Framebuffer width
+   * @param height Framebuffer height
+   */
+  void RenderToFramebuffer(float width, float height);
+  
+  /**
+   * @brief Get the framebuffer texture ID for ImGui rendering
+   * @return OpenGL texture ID
+   */
+  uint32_t GetFramebufferTexture() const;
+  
+  /**
+   * @brief Get camera controller for input handling
+   * @return Pointer to camera controller
+   */
+  CameraController* GetCameraController() const { return camera_controller_.get(); }
   
   // Camera access for selection tools
   Camera* GetCamera() const { return camera_.get(); }
@@ -288,10 +301,10 @@ class GlSceneManager : public Panel {
 
  protected:
   void UpdateView(const glm::mat4& projection, const glm::mat4& view);
-  void DrawOpenGLObject();
 
   glm::vec4 background_color_ = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
+  std::string name_;
   Mode mode_ = Mode::k3D;
   std::unique_ptr<FrameBuffer> frame_buffer_;
   std::unique_ptr<FrameBuffer> id_frame_buffer_;  // Off-screen buffer for ID picking

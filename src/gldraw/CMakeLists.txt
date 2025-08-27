@@ -5,6 +5,7 @@ find_package(OpenGL REQUIRED)
 # add library
 add_library(gldraw
     ## gui integration
+    src/scene_view_panel.cpp
     src/gl_viewer.cpp
     ## core rendering components
     src/shader.cpp

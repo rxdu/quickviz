@@ -10,14 +10,14 @@
 #define QUICKVIZ_POINT_CLOUD_TOOL_PANEL_HPP
 
 #include "imview/panel.hpp"
-#include "gldraw/gl_scene_manager.hpp"
+#include "gldraw/scene_view_panel.hpp"
 
 namespace quickviz {
 class InteractiveSceneManager;
 
 class PointCloudToolPanel : public Panel {
  public:
-  PointCloudToolPanel(const std::string& name, GlSceneManager* scene_manager)
+  PointCloudToolPanel(const std::string& name, InteractiveSceneManager* scene_manager)
       : Panel(name), scene_manager_(scene_manager) {}
 
   void Draw() override;
@@ -31,7 +31,7 @@ class PointCloudToolPanel : public Panel {
   void UpdateMouseInfo(const MouseInfo& info) { mouse_info_ = info; }
 
  private:
-  GlSceneManager* scene_manager_ = nullptr;
+  InteractiveSceneManager* scene_manager_ = nullptr;
   MouseInfo mouse_info_;
   float point_size_ = 3.0f;  // Default point size
   
