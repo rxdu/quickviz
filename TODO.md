@@ -5,25 +5,23 @@
 
 ## 🎯 Current Active Work
 
-### **SceneViewPanel Separation** (Architecture Foundation)
-**Status**: Extract UI integration from GlSceneManager for clean separation  
-**Design Doc**: See `docs/notes/virtual-scene-architecture.md` for full architecture
+Based on the completed SceneViewPanel separation, the next priority is **Virtual Scene Layer** implementation.
 
 **🔧 Immediate Tasks** (This Week):
-1. **Create SceneViewPanel in gldraw**
-   - [ ] Create `scene_view_panel.hpp/.cpp` in gldraw module
-   - [ ] Extract ImGui integration code from GlSceneManager::Draw()
-   - [ ] Remove Panel inheritance from GlSceneManager (rename Draw() to RenderToFramebuffer())
+1. **Create vscene module structure**
+   - [ ] Set up basic vscene module in CMake
+   - [ ] Create include/vscene/ directory structure
+   - [ ] Add vscene to main CMakeLists.txt
 
-2. **Test separation with one application**
-   - [ ] Update `test_object_selection` to use SceneViewPanel
-   - [ ] Verify identical functionality (selection, rendering, interaction)
-   - [ ] Validate no regressions
+2. **Implement VirtualObject hierarchy**
+   - [ ] Create base VirtualObject interface
+   - [ ] Implement VirtualSphere, VirtualMesh, VirtualPointCloud
+   - [ ] Add VirtualPath for trajectory visualization
 
-3. **Gradual migration of test apps**
-   - [ ] Migrate remaining test applications one by one
-   - [ ] Test each migration thoroughly before proceeding
-   - [ ] Update sample applications (pointcloud_viewer)
+3. **Build IRenderBackend interface**
+   - [ ] Create abstract rendering backend interface
+   - [ ] Implement GlDrawBackend using existing gldraw components
+   - [ ] Test backend switching capability
 
 ---
 
@@ -55,6 +53,14 @@
 ---
 
 ## ✅ Completed Work
+
+### **SceneViewPanel Separation** ✅ *Just Completed - August 27, 2025*
+- ✅ Created SceneViewPanel as ImGui Panel wrapper for GlSceneManager
+- ✅ Removed Panel inheritance from GlSceneManager (pure rendering focus)
+- ✅ Implemented complete delegation API (45+ methods) for backward compatibility
+- ✅ Updated all 37+ test files and sample applications to use SceneViewPanel
+- ✅ Verified no rendering duplication and clean separation of concerns
+- ✅ All tests compile and run successfully
 
 ### **Core Infrastructure**
 - ✅ CMake build system with comprehensive options
