@@ -4,13 +4,15 @@ find_package(OpenGL REQUIRED)
 
 # add library
 add_library(gldraw
+    ## gui integration
+    src/gl_viewer.cpp
+    ## core rendering components
     src/shader.cpp
     src/shader_program.cpp
     src/frame_buffer.cpp
     src/camera.cpp
     src/camera_controller.cpp
     src/gl_scene_manager.cpp
-    src/gl_view.cpp
     ## renderable objects
     src/renderable/grid.cpp
     src/renderable/triangle.cpp

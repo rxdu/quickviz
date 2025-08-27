@@ -11,7 +11,7 @@
 #include <memory>
 #include <vector>
 
-#include "gldraw/gl_view.hpp"
+#include "gldraw/gl_viewer.hpp"
 #include "gldraw/renderable/frustum.hpp"
 #include "gldraw/renderable/grid.hpp"
 
@@ -93,12 +93,12 @@ void SetupFrustumScene(GlSceneManager* scene_manager) {
 int main(int argc, char* argv[]) {
     try {
         // Configure the view for 3D mode
-        GlView::Config config;
+        GlViewer::Config config;
         config.window_title = "Frustum Rendering Test";
         config.coordinate_frame_size = 2.0f;
         
         // Create the view
-        GlView view(config);
+        GlViewer view(config);
         
         // Set up description and help sections
         view.SetDescription("Testing frustum rendering for sensor field-of-view visualization");

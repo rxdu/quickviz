@@ -11,7 +11,7 @@
 #include <memory>
 #include <vector>
 
-#include "gldraw/gl_view.hpp"
+#include "gldraw/gl_viewer.hpp"
 #include "gldraw/renderable/cylinder.hpp"
 
 using namespace quickviz;
@@ -51,12 +51,12 @@ void SetupCylinderScene(GlSceneManager* scene_manager) {
 int main(int argc, char* argv[]) {
     try {
         // Configure the view for 3D mode
-        GlView::Config config;
+        GlViewer::Config config;
         config.window_title = "Cylinder Rendering Test";
         config.coordinate_frame_size = 2.0f;
         
         // Create the view
-        GlView view(config);
+        GlViewer view(config);
         
         // Set up description and help sections
         view.SetDescription("Testing cylinder rendering with various dimensions and rendering modes");

@@ -14,7 +14,7 @@
 #include <memory>
 #include <vector>
 
-#include "gldraw/gl_view.hpp"
+#include "gldraw/gl_viewer.hpp"
 #include "gldraw/renderable/text3d.hpp"
 #include "gldraw/renderable/sphere.hpp"
 #include "gldraw/renderable/arrow.hpp"
@@ -225,12 +225,12 @@ void CreateBillboardDemos(GlSceneManager* scene_manager) {
 int main(int argc, char* argv[]) {
     try {
         // Configure the view
-        GlView::Config config;
+        GlViewer::Config config;
         config.window_title = "Text3D Rendering Test";
         config.coordinate_frame_size = 2.0f;
         
         // Create the view
-        GlView view(config);
+        GlViewer view(config);
         
         // Set up description and help sections
         view.SetDescription("Testing 3D text rendering for robotics visualization");

@@ -16,7 +16,7 @@
 #include <thread>
 #include <cmath>
 
-#include "gldraw/gl_view.hpp"
+#include "gldraw/gl_viewer.hpp"
 #include "gldraw/renderable/canvas.hpp"
 #include "gldraw/renderable/triangle.hpp"
 
@@ -113,13 +113,13 @@ int main(int argc, char* argv[]) {
         }
         
         // Configure the view for 2D mode (canvas works best in 2D)
-        GlView::Config config;
+        GlViewer::Config config;
         config.window_title = "Canvas Rendering Test - 2D Mode";
         config.scene_mode = GlSceneManager::Mode::k2D;
         config.coordinate_frame_size = 0.5f;
         
         // Create the view
-        GlView view(config);
+        GlViewer view(config);
         
         // Set up description and help sections
         view.SetDescription("Testing canvas 2D drawing functionality with various shapes and styles");

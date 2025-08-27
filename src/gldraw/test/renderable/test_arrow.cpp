@@ -15,7 +15,7 @@
 #include <vector>
 #include <cmath>
 
-#include "gldraw/gl_view.hpp"
+#include "gldraw/gl_viewer.hpp"
 #include "gldraw/renderable/arrow.hpp"
 
 using namespace quickviz;
@@ -128,12 +128,12 @@ void SetupArrowScene(GlSceneManager* scene_manager) {
 int main(int argc, char* argv[]) {
     try {
         // Configure the view
-        GlView::Config config;
+        GlViewer::Config config;
         config.window_title = "Arrow Rendering Test";
         config.coordinate_frame_size = 1.0f;
         
         // Create the view
-        GlView view(config);
+        GlViewer view(config);
         
         // Set up description and help sections
         view.SetDescription("Testing arrow rendering for vectors, directions, and forces");

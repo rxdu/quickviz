@@ -1,5 +1,5 @@
 /*
- * @file gl_view.hpp
+ * @file gl_viewer.hpp
  * @author Ruixiang Du (ruixiang.du@gmail.com)
  * @date 2025-08-23
  * @brief Reusable OpenGL view class for testing renderable objects
@@ -39,7 +39,7 @@ namespace quickviz {
  * - Standard camera controls and help text
  * - Exception handling and error reporting
  */
-class GlView {
+class GlViewer {
 public:
     /**
      * @brief Configuration structure for GlView
@@ -78,20 +78,20 @@ public:
      * 
      * @param config Configuration for the view
      */
-    explicit GlView(const Config& config = Config{});
+    explicit GlViewer(const Config& config = Config{});
 
     /**
      * @brief Destructor
      */
-    ~GlView() = default;
+    ~GlViewer() = default;
 
     // Disable copy construction and assignment
-    GlView(const GlView&) = delete;
-    GlView& operator=(const GlView&) = delete;
+    GlViewer(const GlViewer&) = delete;
+    GlViewer& operator=(const GlViewer&) = delete;
 
     // Enable move construction and assignment
-    GlView(GlView&&) = default;
-    GlView& operator=(GlView&&) = default;
+    GlViewer(GlViewer&&) = default;
+    GlViewer& operator=(GlViewer&&) = default;
 
     /**
      * @brief Set the scene setup callback

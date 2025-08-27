@@ -8,7 +8,7 @@
  * Copyright (c) 2025 Ruixiang Du (rdu)
  */
 
-#include "gldraw/gl_view.hpp"
+#include "gldraw/gl_viewer.hpp"
 
 #include <iostream>
 #include <stdexcept>
@@ -17,9 +17,9 @@
 
 namespace quickviz {
 
-GlView::GlView(const Config& config) : config_(config) { SetupViewer(); }
+GlViewer::GlViewer(const Config& config) : config_(config) { SetupViewer(); }
 
-void GlView::SetupViewer() {
+void GlViewer::SetupViewer() {
   // Create box container for layout
   auto box = std::make_shared<Box>("main_box");
   box->SetFlexDirection(Styling::FlexDirection::kRow);
@@ -38,7 +38,7 @@ void GlView::SetupViewer() {
   viewer_.AddSceneObject(box);
 }
 
-void GlView::SetupBasicScene() {
+void GlViewer::SetupBasicScene() {
   // Add grid if requested
   if (config_.show_grid) {
     auto grid = std::make_unique<Grid>(config_.grid_size, config_.grid_step,
@@ -55,22 +55,22 @@ void GlView::SetupBasicScene() {
   }
 }
 
-void GlView::SetSceneSetup(SceneSetupCallback callback) {
+void GlViewer::SetSceneSetup(SceneSetupCallback callback) {
   scene_setup_callback_ = std::move(callback);
 }
 
-void GlView::AddHelpSection(const std::string& section_title,
+void GlViewer::AddHelpSection(const std::string& section_title,
                             const std::vector<std::string>& help_lines) {
   help_sections_.emplace_back(section_title, help_lines);
 }
 
-void GlView::SetDescription(const std::string& description) {
+void GlViewer::SetDescription(const std::string& description) {
   description_ = description;
 }
 
-GlSceneManager* GlView::GetSceneManager() const { return scene_manager_.get(); }
+GlSceneManager* GlViewer::GetSceneManager() const { return scene_manager_.get(); }
 
-void GlView::DisplayHelp() const {
+void GlViewer::DisplayHelp() const {
   std::cout << "\n=== " << config_.window_title << " ===" << std::endl;
 
   if (!description_.empty()) {
@@ -95,7 +95,7 @@ void GlView::DisplayHelp() const {
   std::cout << std::endl;
 }
 
-void GlView::Run() {
+void GlViewer::Run() {
   try {
     // Set up basic scene elements
     SetupBasicScene();
