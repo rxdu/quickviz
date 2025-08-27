@@ -221,6 +221,20 @@ void SceneViewPanel::HandleInput() {
 
   ImGuiIO& io = ImGui::GetIO();
 
+  // Handle mouse clicks for object selection (regardless of WantCaptureMouse)
+  if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+    ImVec2 mouse_pos = ImGui::GetMousePos();
+    ImVec2 window_pos = ImGui::GetWindowPos();
+    ImVec2 window_content_min = ImGui::GetWindowContentRegionMin();
+    
+    // Convert to relative coordinates within the content area
+    float relative_x = mouse_pos.x - window_pos.x - window_content_min.x;
+    float relative_y = mouse_pos.y - window_pos.y - window_content_min.y;
+    
+    // Delegate to scene manager for object selection
+    scene_manager_->SelectObjectAt(relative_x, relative_y);
+  }
+
   // Only process mouse delta when ImGui wants to capture mouse
   if (ImGui::IsMousePosValid() && io.WantCaptureMouse) {
     // Check for mouse buttons and update camera controller state

@@ -67,6 +67,9 @@ class VirtualSpherePickingDemo {
     // Initial scene update
     scene_->Update(0.0f);
 
+    // All objects registered successfully
+    auto object_ids = scene_->GetObjectIds();
+
     std::cout << "🖱️  Mouse clicking enabled - click on spheres!\n";
     std::cout << "⌨️  Keyboard shortcuts enabled - see help for details\n";
     std::cout << "✨ " << scene_->GetObjectIds().size()
@@ -275,7 +278,7 @@ class VirtualSpherePickingDemo {
 
     // 1. Color-changing sphere (Red -> Rainbow cycle)
     auto colorSphere = std::make_unique<VirtualSphere>("color_sphere", 1.0f);
-    colorSphere->SetPosition(glm::vec3(-3.0f, 0.0f, 0.0f));
+    colorSphere->SetPosition(glm::vec3(-2.0f, 0.0f, 0.0f));  // Left of center
     colorSphere->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));  // Start red
     colorSphere->OnClick = [this](VirtualObject* obj, glm::vec2 screen,
                                   glm::vec3 world) {
@@ -336,7 +339,7 @@ class VirtualSpherePickingDemo {
 
     // 3. Position-jumping sphere (Teleports randomly)
     auto jumpSphere = std::make_unique<VirtualSphere>("jump_sphere", 0.8f);
-    jumpSphere->SetPosition(glm::vec3(3.0f, 0.0f, 0.0f));
+    jumpSphere->SetPosition(glm::vec3(2.0f, 0.0f, 0.0f));  // Right of center
     jumpSphere->SetColor(glm::vec3(0.0f, 0.0f, 1.0f));  // Blue
     jumpSphere->OnClick = [this](VirtualObject* obj, glm::vec2 screen,
                                  glm::vec3 world) {
@@ -344,14 +347,13 @@ class VirtualSpherePickingDemo {
       scene_->ClearSelection();
       scene_->AddToSelection(obj->GetId());
 
-      // Random position within a 6x6 area
-      float x = (rand() % 600 - 300) / 100.0f;  // -3 to 3
-      float y = (rand() % 600 - 300) / 100.0f;  // -3 to 3
+      // Random position within a constrained area to avoid interference with other spheres
+      float x = 1.5f + (rand() % 100) / 100.0f;  // 1.5 to 2.5 (right side)
+      float y = (rand() % 200 - 100) / 100.0f;  // -1 to 1
       float z = (rand() % 200 - 100) / 100.0f;  // -1 to 1
       glm::vec3 new_pos(x, y, z);
       obj->SetPosition(new_pos);
-      std::cout << "🔵 Jump sphere: Teleported to (" << x << ", " << y << ", "
-                << z << ") (HIGHLIGHTED)\n";
+      std::cout << "🔵 Jump sphere: Teleported to (" << x << ", " << y << ", " << z << ") (HIGHLIGHTED)\n";
       LogInteraction("TELEPORT", obj->GetId(), screen, world);
     };
     jumpSphere->OnHover = [this](VirtualObject* obj, bool entering) {
@@ -363,7 +365,7 @@ class VirtualSpherePickingDemo {
 
     // 4. Selection tracking sphere (Shows selection state)
     auto selectSphere = std::make_unique<VirtualSphere>("select_sphere", 1.2f);
-    selectSphere->SetPosition(glm::vec3(-1.5f, 3.0f, 0.0f));
+    selectSphere->SetPosition(glm::vec3(0.0f, 2.0f, 0.0f));  // Above center
     selectSphere->SetColor(glm::vec3(1.0f, 1.0f, 0.0f));  // Yellow
     selectSphere->OnClick = [this](VirtualObject* obj, glm::vec2 screen,
                                    glm::vec3 world) {
@@ -406,7 +408,7 @@ class VirtualSpherePickingDemo {
 
     // 5. Information sphere (Shows interaction data)
     auto infoSphere = std::make_unique<VirtualSphere>("info_sphere", 1.0f);
-    infoSphere->SetPosition(glm::vec3(1.5f, -3.0f, 0.0f));
+    infoSphere->SetPosition(glm::vec3(0.0f, -2.0f, 0.0f));  // Below center
     infoSphere->SetColor(glm::vec3(0.0f, 1.0f, 1.0f));  // Cyan
     infoSphere->OnClick = [this](VirtualObject* obj, glm::vec2 screen,
                                  glm::vec3 world) {
