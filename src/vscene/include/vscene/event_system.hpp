@@ -17,6 +17,7 @@
 #include <vector>
 #include <unordered_map>
 #include <any>
+#include <string>
 #include <glm/glm.hpp>
 
 namespace quickviz {

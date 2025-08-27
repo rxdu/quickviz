@@ -8,6 +8,7 @@
 
 #include "vscene/virtual_scene.hpp"
 #include <algorithm>
+#include <chrono>
 #include <glm/gtc/quaternion.hpp>
 
 namespace quickviz {
@@ -32,6 +33,13 @@ void VirtualScene::AddObject(const std::string& id, std::unique_ptr<VirtualObjec
     
     // Store object
     objects_[id] = std::move(object);
+    
+    // Dispatch object added event
+    VirtualEvent event;
+    event.type = VirtualEventType::ObjectAdded;
+    event.object_id = id;
+    event.timestamp = std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
+    event_dispatcher_.Dispatch(event);
 }
 
 void VirtualScene::RemoveObject(const std::string& id) {
@@ -43,7 +51,7 @@ void VirtualScene::RemoveObject(const std::string& id) {
         }
         
         // Remove from selection if selected
-        selected_objects_.erase(id);
+        bool was_selected = (selected_objects_.erase(id) > 0);
         
         // Clear hover state if this object was hovered
         if (hovered_object_ == it->second.get()) {
@@ -52,6 +60,19 @@ void VirtualScene::RemoveObject(const std::string& id) {
         
         // Remove from objects
         objects_.erase(it);
+        
+        // Dispatch object removed event
+        VirtualEvent event;
+        event.type = VirtualEventType::ObjectRemoved;
+        event.object_id = id;
+        event.timestamp = std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
+        event_dispatcher_.Dispatch(event);
+        
+        // If object was selected, dispatch selection changed event
+        if (was_selected) {
+            std::vector<std::string> selected_ids(selected_objects_.begin(), selected_objects_.end());
+            event_dispatcher_.Dispatch(EventBuilder::SelectionChanged(selected_ids));
+        }
     }
 }
 
@@ -88,21 +109,32 @@ void VirtualScene::SetSelected(const std::string& id, bool selected) {
     auto* object = GetObject(id);
     if (!object) return;
     
+    bool selection_changed = false;
+    
     if (selected) {
         if (!config_.multi_selection_enabled) {
             ClearSelection();
         }
-        selected_objects_.insert(id);
+        auto [it, inserted] = selected_objects_.insert(id);
+        selection_changed = inserted;
     } else {
-        selected_objects_.erase(id);
+        selection_changed = (selected_objects_.erase(id) > 0);
     }
     
     // Update object state
     object->SetSelected(selected);
     UpdateBackendForObject(object);
+    
+    // Dispatch selection changed event
+    if (selection_changed) {
+        std::vector<std::string> selected_ids(selected_objects_.begin(), selected_objects_.end());
+        event_dispatcher_.Dispatch(EventBuilder::SelectionChanged(selected_ids));
+    }
 }
 
 void VirtualScene::ClearSelection() {
+    bool had_selection = !selected_objects_.empty();
+    
     for (const std::string& id : selected_objects_) {
         if (auto* object = GetObject(id)) {
             object->SetSelected(false);
@@ -110,6 +142,14 @@ void VirtualScene::ClearSelection() {
         }
     }
     selected_objects_.clear();
+    
+    // Dispatch selection cleared event
+    if (had_selection) {
+        VirtualEvent event;
+        event.type = VirtualEventType::SelectionCleared;
+        event.timestamp = std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
+        event_dispatcher_.Dispatch(event);
+    }
 }
 
 void VirtualScene::SelectAll() {

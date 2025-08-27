@@ -7,6 +7,8 @@ add_library(vscene
     src/virtual_sphere.cpp
     src/virtual_scene.cpp
     src/gl_render_backend.cpp
+    src/event_system.cpp
+    src/virtual_scene_panel.cpp
 )
 
 target_include_directories(vscene PUBLIC
