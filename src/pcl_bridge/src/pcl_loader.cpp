@@ -6,8 +6,8 @@
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
-#include "visualization/pcl_bridge/pcl_loader.hpp"
-#include "visualization/pcl_bridge/pcl_conversions.hpp"
+#include "pcl_bridge/pcl_loader.hpp"
+#include "pcl_bridge/pcl_conversions.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 
 #include <algorithm>

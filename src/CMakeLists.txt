@@ -3,7 +3,7 @@ add_subdirectory(core)
 add_subdirectory(imview)
 add_subdirectory(widget)
 add_subdirectory(gldraw)
-add_subdirectory(visualization)
+add_subdirectory(pcl_bridge)
 
 find_package(OpenCV QUIET)
 if (OpenCV_FOUND)

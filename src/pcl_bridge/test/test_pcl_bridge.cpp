@@ -18,14 +18,15 @@
 #include "gldraw/renderable/point_cloud.hpp"
 
 #ifdef QUICKVIZ_WITH_PCL
-#include "visualization/pcl_bridge/pcl_conversions.hpp"
-#include "visualization/pcl_bridge/pcl_visualization.hpp"
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/search/kdtree.h>
 #include <pcl/filters/extract_indices.h>
+
+#include "pcl_bridge/pcl_conversions.hpp"
+#include "pcl_bridge/pcl_visualization.hpp"
 #endif
 
 using namespace quickviz;

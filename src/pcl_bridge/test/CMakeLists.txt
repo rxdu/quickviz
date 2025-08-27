@@ -11,12 +11,12 @@ if(PCL_FOUND)
 
   add_executable(test_pcd test_pcd.cpp)
   target_include_directories(test_pcd PRIVATE ${PCL_INCLUDE_DIRS})
-  target_link_libraries(test_pcd PRIVATE gldraw ${PCL_LIBRARIES})
+  target_link_libraries(test_pcd PRIVATE gldraw pcl_bridge ${PCL_LIBRARIES})
   target_compile_definitions(test_pcd PRIVATE ${PCL_DEFINITIONS})
   
   add_executable(test_pcl_bridge test_pcl_bridge.cpp)
   target_include_directories(test_pcl_bridge PRIVATE ${PCL_INCLUDE_DIRS})
-  target_link_libraries(test_pcl_bridge PRIVATE gldraw visualization ${PCL_LIBRARIES})
+  target_link_libraries(test_pcl_bridge PRIVATE gldraw pcl_bridge ${PCL_LIBRARIES})
   target_compile_definitions(test_pcl_bridge PRIVATE ${PCL_DEFINITIONS})
   
   
@@ -27,7 +27,7 @@ if(PCL_FOUND)
   
   add_executable(test_pcl_loader_render test_pcl_loader_render.cpp)
   target_include_directories(test_pcl_loader_render PRIVATE ${PCL_INCLUDE_DIRS})
-  target_link_libraries(test_pcl_loader_render PRIVATE gldraw visualization ${PCL_LIBRARIES})
+  target_link_libraries(test_pcl_loader_render PRIVATE gldraw pcl_bridge ${PCL_LIBRARIES})
   target_compile_definitions(test_pcl_loader_render PRIVATE ${PCL_DEFINITIONS})
 
 
