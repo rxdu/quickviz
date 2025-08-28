@@ -8,19 +8,29 @@
 ### **Priority Focus: GLDraw Core Reliability**
 Make the gldraw module's core rendering and user interaction rock-solid before advancing vscene.
 
-### **GLDraw Object Selection System** - IN PROGRESS (commit 1fa8036)
-**Status**: Core functionality needs to be fixed and made reliable
+### **GLDraw Selection System** - NEARLY COMPLETE (commit 40c9797)
+**Status**: Advanced GPU-based selection system implemented, needs extension to all renderables
 
 **Recent Work**:
-- ✅ Basic object selection infrastructure in test_object_selection.cpp
-- ✅ Keyboard interaction tested (commit ea2e548)
-- 🔧 Selection mechanism not working correctly yet
+- ✅ Complete SelectionManager implementation with GPU ID-buffer rendering (selection_manager.hpp:387 lines)
+- ✅ Multi-selection support with variant-based SelectionResult system
+- ✅ Point cloud individual point selection via GPU picking working
+- ✅ Sphere object selection implemented and tested
+- ✅ Selection enabling/disabling API (commit 40c9797)
+- ✅ Point selection from multiple point clouds working (commit 37b4975)
 
-**Immediate Tasks**:
-- Debug and fix object selection ray casting in gldraw
-- Ensure reliable hit testing for all primitive types (spheres, meshes, etc.)
-- Complete mouse picking implementation with proper coordinate transforms
-- Test selection thoroughly with multiple object types
+**Remaining Tasks**:
+- [ ] Extend selection support to all renderable types (mesh, cylinder, box, arrow, etc.)
+- [ ] Add SupportsSelection() implementation to remaining OpenGlObject subclasses
+- [ ] Test selection with complex geometries and multi-object scenes
+- [ ] Optimize ID-buffer rendering for scenes with many objects
+
+**Key Features Implemented**:
+- GPU ID-buffer rendering for pixel-perfect selection accuracy
+- Type-safe SelectionResult using std::variant
+- Multi-selection with Ctrl+Click and rectangle selection
+- Configurable selection modes and filtering
+- Visual feedback via layer system
 
 ### **Virtual Scene Layer (vscene)** - ON HOLD
 **Status**: Core implementation complete, waiting for gldraw reliability
@@ -43,24 +53,64 @@ Make the gldraw module's core rendering and user interaction rock-solid before a
 ### **Phase 1: GLDraw Core Reliability** (Current Focus)
 **Objective**: Make core rendering and user interaction rock-solid
 
-#### 1.1 Object Selection System
-- [ ] Fix ray casting implementation in GlSceneManager
-- [ ] Implement reliable hit testing for all primitives
-- [ ] Proper mouse coordinate transforms (screen → world)
-- [ ] Test with spheres, boxes, cylinders, meshes
-- [ ] Selection highlighting and visual feedback
+#### 1.1 Object Selection System (90% Complete)
+- [x] GPU ID-buffer selection implementation in GlSceneManager
+- [x] Reliable hit testing for point clouds and spheres
+- [x] Proper mouse coordinate transforms (screen → world)
+- [x] Selection highlighting and visual feedback via layer system
+- [ ] Extend selection support to remaining primitives (mesh, cylinder, box, arrow, etc.)
+- [ ] Add SupportsSelection() to all OpenGlObject subclasses
 
-#### 1.2 User Interaction Foundation
-- [ ] Reliable mouse picking across all object types
-- [ ] Keyboard shortcuts and modifiers
-- [ ] Camera control improvements
-- [ ] Event propagation and handling
+#### 1.2 Enhanced Input Handling System (NEW - 0% Complete)
+**Design Document**: See `docs/notes/input_handling_design.md`
 
-#### 1.3 Point Cloud Interaction
-- [ ] Fix GPU ID-buffer point picking
-- [ ] Individual point selection
-- [ ] Rectangle/lasso selection tools
-- [ ] Selection performance optimization
+**Implementation Strategy**: Extend Core Module (Option 1)
+- Place InputEvent and enhanced InputDispatcher in `core` module
+- Leverage existing Event<Args...> template and EventDispatcher
+- Maintain clean dependency hierarchy: core → imview → gldraw
+- Reuse thread-safe async event handling infrastructure
+
+**Core Infrastructure** (in core module):
+- [ ] Create `core/include/core/event/input_event.hpp` - InputEvent class
+- [ ] Create `core/include/core/event/input_dispatcher.hpp` - Enhanced dispatcher with priorities
+- [ ] Extend EventSource enum with input-specific types
+- [ ] Add ModifierKeys struct for Ctrl/Shift/Alt state
+- [ ] Implement event consumption mechanism
+- [ ] Add priority-based handler sorting
+- [ ] Integrate with GlScenePanel::HandleInput()
+- [ ] Unit tests for new input event classes
+
+**Input Mapping** (in imview or gldraw module):
+- [ ] Implement configurable InputMapping class
+- [ ] Define standard action constants
+- [ ] Support keyboard modifiers (already in core InputEvent)
+- [ ] Add configuration file serialization
+
+**Selection Enhancement** (in gldraw module):
+- [ ] Extend SelectionManager with multiple handlers
+- [ ] Implement rich SelectionEvent with context
+- [ ] Add pre/post selection hooks
+- [ ] Support hover and preview actions
+
+**Selection Tools** (in gldraw module):
+- [ ] Create SelectionTool base class
+- [ ] Implement PointSelectionTool
+- [ ] Implement BoxSelectionTool
+- [ ] Implement LassoSelectionTool
+- [ ] Add SelectionToolManager
+
+**Visual Feedback** (in gldraw module):
+- [ ] Design SelectionVisualizer interface
+- [ ] Implement highlight styles (outline, glow, tint)
+- [ ] Add animation support
+- [ ] Integrate with existing layer system
+
+#### 1.3 Point Cloud Interaction (100% Complete)
+- [x] GPU ID-buffer point picking implemented and working
+- [x] Individual point selection with pixel-perfect accuracy
+- [x] Multi-selection with Ctrl+Click semantics  
+- [x] Rectangle selection tools implemented
+- [x] Selection performance optimization via layer system
 
 ### **Phase 2: VScene Unified Interface** (After GLDraw is stable)
 **Objective**: Provide easy-to-use interface for application development
@@ -174,7 +224,7 @@ All 23+ interactive test apps using GlView framework:
 **Current Branch**: feature-pointcloud_editing  
 **Development Strategy**: GLDraw core reliability → VScene unified interface  
 **Performance**: 60fps @ 100K+ points, Canvas 16,670x faster than target  
-**Active Work**: Fixing object selection in GLDraw module (commit 1fa8036)
+**Active Work**: Designing enhanced input handling system (Design complete, implementation pending)
 
 ---
 
