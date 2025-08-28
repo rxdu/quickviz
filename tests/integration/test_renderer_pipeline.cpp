@@ -14,7 +14,7 @@
 #include <cstring>
 
 #include "imview/viewer.hpp"
-#include "gldraw/scene_view_panel.hpp"
+#include "gldraw/gl_scene_panel.hpp"
 #include "gldraw/renderable/triangle.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 #include "gldraw/renderable/grid.hpp"
@@ -34,7 +34,7 @@ protected:
         try {
             // Create a viewer for testing
             viewer_ = std::make_unique<Viewer>("Test Viewer", 800, 600);
-            scene_manager_ = std::make_shared<SceneViewPanel>("TestScene");
+            scene_manager_ = std::make_shared<GlScenePanel>("TestScene");
             viewer_->AddSceneObject(scene_manager_);
         } catch (const std::runtime_error& e) {
             GTEST_SKIP() << "Skipping graphics test: " << e.what();
@@ -47,7 +47,7 @@ protected:
     }
 
     std::unique_ptr<Viewer> viewer_;
-    std::shared_ptr<SceneViewPanel> scene_manager_;
+    std::shared_ptr<GlScenePanel> scene_manager_;
 
 private:
     bool IsDisplayAvailable() {

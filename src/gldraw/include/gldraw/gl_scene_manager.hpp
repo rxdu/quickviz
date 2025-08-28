@@ -23,18 +23,22 @@
 #include "gldraw/frame_buffer.hpp"
 #include "gldraw/camera.hpp"
 #include "gldraw/camera_controller.hpp"
-#include "gldraw/coordinate_system_transformer.hpp"
+#include "gldraw/details/coordinate_transformer.hpp"
+#include "gldraw/details/selection_manager.hpp"
 
 // Forward declarations
 namespace quickviz {
 class PointCloud;
-class GPUSelection;
-struct GPUSelectionResult;
-enum class GPUSelectionMode;
-}
+class SelectionManager;
+struct SelectionOptions;
+class MultiSelection;
+enum class SelectionMode;
+}  // namespace quickviz
 
 namespace quickviz {
 class GlSceneManager {
+  friend class SelectionManager;  // Allow SelectionManager to access private
+                                  // members
  public:
   enum class Mode { k2D, k3D };
 
@@ -52,7 +56,6 @@ class GlSceneManager {
   // public methods
   Mode GetMode() const { return mode_; }
 
-  void SetShowRenderingInfo(bool show);
   void SetBackgroundColor(float r, float g, float b, float a);
   void SetClippingPlanes(float z_near, float z_far);
 
@@ -101,233 +104,61 @@ class GlSceneManager {
    * @param height Framebuffer height
    */
   void RenderToFramebuffer(float width, float height);
-  
+
   /**
    * @brief Get the framebuffer texture ID for ImGui rendering
    * @return OpenGL texture ID
    */
   uint32_t GetFramebufferTexture() const;
-  
+
   /**
    * @brief Get camera controller for input handling
    * @return Pointer to camera controller
    */
-  CameraController* GetCameraController() const { return camera_controller_.get(); }
-  
+  CameraController* GetCameraController() const {
+    return camera_controller_.get();
+  }
+
   // Camera access for selection tools
   Camera* GetCamera() const { return camera_.get(); }
   const glm::mat4& GetProjectionMatrix() const { return projection_; }
   const glm::mat4& GetViewMatrix() const { return view_; }
   const glm::mat4& GetCoordinateTransform() const { return coord_transform_; }
 
-  // Ray casting removed - using GPU ID-buffer selection only
+  // === Interactive Selection System ===
 
-  // GPU ID-buffer picking support
-  size_t PickPointAtPixel(int x, int y, const std::string& point_cloud_name = "");
-  size_t PickPointAtPixelWithRadius(int x, int y, int radius = 2, const std::string& point_cloud_name = "");
+  /**
+   * @brief Get the selection system for interactive selection operations
+   * @return Reference to selection manager
+   */
+  SelectionManager& GetSelection() { return *selection_manager_; }
+  const SelectionManager& GetSelection() const { return *selection_manager_; }
 
-  // === Point Selection API ===
-  
   /**
-   * @brief Set the active point cloud for selection operations
-   * @param point_cloud Point cloud to enable selection on (must be already added to scene)
-   */
-  void SetActivePointCloud(PointCloud* point_cloud);
-  
-  /**
-   * @brief Get the currently active point cloud
-   * @return Pointer to active point cloud, or nullptr if none
-   */
-  PointCloud* GetActivePointCloud() const { return active_point_cloud_; }
-  
-  /**
-   * @brief Select a single point (replace current selection)
-   * @param screen_x Screen X coordinate
-   * @param screen_y Screen Y coordinate  
-   * @param radius Picking radius in pixels
-   * @return true if a point was selected
-   */
-  bool SelectPointAt(float screen_x, float screen_y, int radius = 3);
-  
-  /**
-   * @brief Add a point to current selection
+   * @brief Main selection method - select at screen coordinates
    * @param screen_x Screen X coordinate
    * @param screen_y Screen Y coordinate
-   * @param radius Picking radius in pixels
-   * @return true if a point was selected and added
+   * @param options Selection options (radius, mode, filters)
+   * @return Selection result
    */
-  bool AddPointAt(float screen_x, float screen_y, int radius = 3);
-  
+  SelectionResult Select(float screen_x, float screen_y,
+                         const SelectionOptions& options = {});
+
   /**
-   * @brief Toggle point selection state
+   * @brief Multi-selection support - add to current selection
    * @param screen_x Screen X coordinate
    * @param screen_y Screen Y coordinate
-   * @param radius Picking radius in pixels
-   * @return true if a point was found and toggled
+   * @param options Selection options
+   * @return true if something was selected and added
    */
-  bool TogglePointAt(float screen_x, float screen_y, int radius = 3);
-  
-  /**
-   * @brief Clear all selected points
-   */
-  void ClearPointSelection();
-
-  // === Selection Data Access ===
-  
-  /**
-   * @brief Get indices of selected points
-   * @return Vector of point indices in the active point cloud
-   */
-  const std::vector<size_t>& GetSelectedPointIndices() const { return selected_point_indices_; }
-  
-  /**
-   * @brief Get number of selected points
-   */
-  size_t GetSelectedPointCount() const { return selected_point_indices_.size(); }
+  bool AddToSelection(float screen_x, float screen_y,
+                      const SelectionOptions& options = {});
 
   /**
-   * @brief Get 3D positions of selected points
-   * @return Vector of 3D positions suitable for external processing
+   * @brief Get current multi-selection state
+   * @return Multi-selection object with all selected items
    */
-  std::vector<glm::vec3> GetSelectedPoints() const;
-  
-  /**
-   * @brief Get colors of selected points (if available)
-   * @return Vector of colors, or empty if point cloud has no color data
-   */
-  std::vector<glm::vec3> GetSelectedPointColors() const;
-  
-  /**
-   * @brief Get centroid of selected points
-   * @return Centroid position, or zero vector if no selection
-   */
-  glm::vec3 GetSelectionCentroid() const;
-  
-  /**
-   * @brief Get bounding box of selected points  
-   * @return {min_bounds, max_bounds} or {{0,0,0}, {0,0,0}} if no selection
-   */
-  std::pair<glm::vec3, glm::vec3> GetSelectionBounds() const;
-
-  // === Selection Visualization ===
-  
-  /**
-   * @brief Configure selection visualization
-   * @param color Highlight color (default: yellow)
-   * @param size_multiplier Point size multiplier (default: 1.5x)
-   * @param layer_name Layer name for highlights (default: "selection")
-   */
-  void SetSelectionVisualization(const glm::vec3& color = glm::vec3(1.0f, 1.0f, 0.0f),
-                                float size_multiplier = 1.5f,
-                                const std::string& layer_name = "selection");
-  
-  /**
-   * @brief Enable/disable selection visualization
-   * @param enabled Whether to show selection highlights
-   */
-  void SetSelectionVisualizationEnabled(bool enabled);
-
-  // === Selection Callbacks ===
-  
-  /**
-   * @brief Callback type for selection changes
-   * @param indices Currently selected point indices
-   */
-  using PointSelectionCallback = std::function<void(const std::vector<size_t>&)>;
-  
-  /**
-   * @brief Set callback for selection changes
-   * @param callback Function to call when selection changes
-   */
-  void SetPointSelectionCallback(PointSelectionCallback callback) {
-    point_selection_callback_ = callback;
-  }
-  
-  // === Object Selection API ===
-  
-  /**
-   * @brief Select an object at screen coordinates
-   * @param screen_x Screen X coordinate
-   * @param screen_y Screen Y coordinate
-   * @return Name of selected object, or empty string if none
-   */
-  std::string SelectObjectAt(float screen_x, float screen_y);
-  
-  /**
-   * @brief Get currently selected object name
-   * @return Name of selected object, or empty string if none
-   */
-  const std::string& GetSelectedObjectName() const { return selected_object_name_; }
-  
-  /**
-   * @brief Clear object selection
-   */
-  void ClearObjectSelection();
-  
-  /**
-   * @brief Highlight an object (visual feedback)
-   * @param name Object name
-   * @param highlighted Whether to highlight
-   */
-  void SetObjectHighlight(const std::string& name, bool highlighted);
-  
-  /**
-   * @brief Callback type for object selection changes
-   * @param name Name of selected object (empty if none)
-   */
-  using ObjectSelectionCallback = std::function<void(const std::string&)>;
-  
-  /**
-   * @brief Set callback for object selection changes
-   * @param callback Function to call when object selection changes
-   */
-  void SetObjectSelectionCallback(ObjectSelectionCallback callback) {
-    object_selection_callback_ = callback;
-  }
-  
-  // === GPU Selection System ===
-  
-  /**
-   * @brief Get the GPU selection system
-   * @return Pointer to GPU selection system
-   */
-  GPUSelection* GetGPUSelection() const { return gpu_selection_.get(); }
-  
-  /**
-   * @brief Perform GPU-based selection at screen coordinates
-   * @param screen_x Screen X coordinate  
-   * @param screen_y Screen Y coordinate
-   * @param screen_width Viewport width
-   * @param screen_height Viewport height
-   * @param radius Selection radius in pixels (default: 2)
-   * @return GPU selection result with object/point information
-   */
-  GPUSelectionResult GPUSelectAt(float screen_x, float screen_y,
-                                float screen_width, float screen_height,
-                                int radius = 2);
-  
-  /**
-   * @brief Set GPU selection mode
-   * @param mode Selection mode (objects, points, hybrid, or closest)
-   */
-  void SetGPUSelectionMode(GPUSelectionMode mode);
-  
-  /**
-   * @brief Get current GPU selection mode
-   * @return Current selection mode
-   */
-  GPUSelectionMode GetGPUSelectionMode() const;
-  
- private:
-  void RenderIdBuffer();
-  size_t ReadPixelId(int x, int y);
-  
-  // Point selection helper methods
-  void UpdateSelectionVisualization();
-  void NotifySelectionChanged();
-  bool IsPointSelected(size_t point_index) const;
-  void RemoveFromSelection(size_t point_index);
-  void AddToSelection(size_t point_index);
+  const MultiSelection& GetMultiSelection() const;
 
  protected:
   void UpdateView(const glm::mat4& projection, const glm::mat4& view);
@@ -336,49 +167,31 @@ class GlSceneManager {
 
   std::string name_;
   Mode mode_ = Mode::k3D;
+
+  // Main on-screen framebuffer
   std::unique_ptr<FrameBuffer> frame_buffer_;
-  std::unique_ptr<FrameBuffer> id_frame_buffer_;  // Off-screen buffer for ID picking
-  glm::mat4 projection_ = glm::mat4(1.0f);
-  glm::mat4 view_ = glm::mat4(1.0f);
+
   // Use std::map instead of unordered_map to ensure consistent iteration order
   // This is critical for GPU selection ID assignment consistency
-  std::map<std::string, std::unique_ptr<OpenGlObject>>
-      drawable_objects_;
-  
-  // ID-to-object-name mapping for GPU selection
-  std::map<uint32_t, std::string> id_to_object_name_;
+  std::map<std::string, std::unique_ptr<OpenGlObject>> drawable_objects_;
 
+  // Camera and view/projection matrices
   std::unique_ptr<Camera> camera_;
   std::unique_ptr<CameraController> camera_controller_;
-  bool show_rendering_info_ = true;
+  glm::mat4 projection_ = glm::mat4(1.0f);
+  glm::mat4 view_ = glm::mat4(1.0f);
+  float z_near_ = 0.1f;
+  float z_far_ = 1000.0f;
 
   // Coordinate system transformation
   bool use_coord_transform_ = true;
   glm::mat4 coord_transform_ = glm::mat4(1.0f);
-  float z_near_ = 0.1f;
-  float z_far_ = 1000.0f;
 
   // Pre-draw callback
   PreDrawCallback pre_draw_callback_;
-  
-  // Point selection state
-  PointCloud* active_point_cloud_ = nullptr;
-  std::vector<size_t> selected_point_indices_;
-  PointSelectionCallback point_selection_callback_;
-  
-  // Selection visualization settings
-  glm::vec3 selection_color_ = glm::vec3(1.0f, 1.0f, 0.0f);  // Yellow
-  float selection_size_multiplier_ = 1.5f;
-  std::string selection_layer_name_ = "selection";
-  bool selection_visualization_enabled_ = true;
-  
-  // Object selection state
-  std::string selected_object_name_;
-  std::unordered_map<std::string, bool> object_highlights_;
-  ObjectSelectionCallback object_selection_callback_;
-  
-  // GPU selection system
-  std::unique_ptr<GPUSelection> gpu_selection_;
+
+  // Interactive selection system
+  std::unique_ptr<SelectionManager> selection_manager_;
 };
 }  // namespace quickviz
 

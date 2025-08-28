@@ -13,7 +13,7 @@
 
 #include "imview/viewer.hpp"
 #include "imview/box.hpp"
-#include "gldraw/scene_view_panel.hpp"
+#include "gldraw/gl_scene_panel.hpp"
 #include "gldraw/renderable/grid.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 
@@ -54,7 +54,7 @@ void TestBasicVisualization() {
     box->SetJustifyContent(Styling::JustifyContent::kFlexStart);
     box->SetAlignItems(Styling::AlignItems::kStretch);
 
-    auto gl_sm = std::make_shared<SceneViewPanel>("PCL Bridge Test");
+    auto gl_sm = std::make_shared<GlScenePanel>("PCL Bridge Test");
     gl_sm->SetAutoLayout(true);
     gl_sm->SetNoTitleBar(true);
     gl_sm->SetFlexGrow(1.0f);
@@ -163,7 +163,7 @@ void TestPCLBridgeIntegration() {
     auto box = std::make_shared<Box>("pcl_bridge_box");
     box->SetFlexDirection(Styling::FlexDirection::kRow);
     
-    auto gl_sm = std::make_shared<SceneViewPanel>("PCL Bridge Integration Test");
+    auto gl_sm = std::make_shared<GlScenePanel>("PCL Bridge Integration Test");
     gl_sm->SetAutoLayout(true);
     gl_sm->SetNoTitleBar(true);
     gl_sm->SetFlexGrow(1.0f);

@@ -11,7 +11,7 @@
 #include <cmath>
 #include <algorithm>
 #include "glad/glad.h"
-#include "gldraw/shader_program.hpp"
+#include "../../../include/gldraw/shader_program.hpp"
 
 namespace quickviz {
 namespace internal {

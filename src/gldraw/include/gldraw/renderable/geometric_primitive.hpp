@@ -19,7 +19,7 @@
 #include <memory>
 
 #include "gldraw/interface/opengl_object.hpp"
-#include "gldraw/shader_program.hpp"
+#include "../shader_program.hpp"
 
 namespace quickviz {
 

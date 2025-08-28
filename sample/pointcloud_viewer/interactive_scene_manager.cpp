@@ -104,19 +104,19 @@ void InteractiveSceneManager::SetPointCloud(std::unique_ptr<PointCloud> point_cl
     std::cout << "Cast to PointCloud: " << point_cloud_ptr << std::endl;
     
     if (point_cloud_ptr) {
-      SetActivePointCloud(point_cloud_ptr);
+      // TODO: The active point cloud concept has been removed from the new SelectionManager system\n      // Point cloud registration is now handled automatically in AddOpenGLObject
       std::cout << "Active point cloud set successfully" << std::endl;
     } else {
       std::cout << "Failed to cast to PointCloud!" << std::endl;
     }
     
-    // Set selection callback
-    SetPointSelectionCallback([this](const std::vector<size_t>& indices) {
-      std::cout << "Selection changed: " << indices.size() << " points selected" << std::endl;
+    // Set new SelectionManager callback
+    GetSelection().SetSelectionCallback([this](const SelectionResult& result, const MultiSelection& multi) {
+      std::cout << "Selection changed: " << multi.Count() << " items selected" << std::endl;
       
-      if (!indices.empty()) {
-        glm::vec3 centroid = GetSelectionCentroid();
-        auto [min_pt, max_pt] = GetSelectionBounds();
+      if (!multi.Empty()) {
+        glm::vec3 centroid = multi.GetCentroid();
+        auto [min_pt, max_pt] = multi.GetBounds();
         
         std::cout << "  Centroid: (" << centroid.x << ", " << centroid.y << ", " << centroid.z << ")" << std::endl;
         std::cout << "  Bounds: (" << min_pt.x << ", " << min_pt.y << ", " << min_pt.z << ") to ("
@@ -140,7 +140,8 @@ void InteractiveSceneManager::SetPointCloud(std::unique_ptr<PointCloud> point_cl
 
 void InteractiveSceneManager::HandleMouseInput() {
   if (!selection_enabled_) return;
-  if (!GetActivePointCloud()) return;
+  // TODO: Update to use new SelectionManager system without active point cloud concept
+  // For now, assume point cloud is available
   
   ImGuiIO& io = ImGui::GetIO();
   
@@ -163,19 +164,28 @@ void InteractiveSceneManager::HandleMouseInput() {
     // Use the integrated GlSceneManager selection API
     if (io.KeyShift) {
       // Ctrl+Shift = add to selection
-      AddPointAt(local_x, local_y, 3);
+      SelectionOptions options;
+      options.radius = 3;
+      options.mode = SelectionMode::kPoints;
+      AddToSelection(local_x, local_y, options);
     } else if (io.KeyAlt) {
       // Ctrl+Alt = toggle selection
-      TogglePointAt(local_x, local_y, 3);
+      SelectionOptions options;
+      options.radius = 3;
+      options.mode = SelectionMode::kPoints;
+      GetSelection().ToggleSelection(local_x, local_y, options);
     } else {
       // Ctrl alone = single selection (replace)
-      SelectPointAt(local_x, local_y, 3);
+      SelectionOptions options;
+      options.radius = 3;
+      options.mode = SelectionMode::kPoints;
+      Select(local_x, local_y, options);
     }
   }
   
   // Handle Ctrl+right click to clear selection
   if (mouse_in_viewport && window_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right) && io.KeyCtrl) {
-    ClearPointSelection();
+    ClearSelection();
   }
 }
 
@@ -183,24 +193,25 @@ void InteractiveSceneManager::HandleKeyboardInput() {
   // Handle keyboard shortcuts
   if (ImGui::IsKeyPressed(ImGuiKey_C)) {
     // Clear selection
-    ClearPointSelection();
+    ClearSelection();
   }
   
   if (ImGui::IsKeyPressed(ImGuiKey_Space)) {
     // Print selection statistics
-    if (GetSelectedPointCount() > 0) {
-      size_t count = GetSelectedPointCount();
-      auto [min_pt, max_pt] = GetSelectionBounds();
-      glm::vec3 centroid = GetSelectionCentroid();
+    const auto& multi_selection = GetMultiSelection();
+    if (!multi_selection.Empty()) {
+      size_t count = multi_selection.Count();
+      auto [min_pt, max_pt] = multi_selection.GetBounds();
+      glm::vec3 centroid = multi_selection.GetCentroid();
       
       std::cout << "\n=== Selection Statistics ===" << std::endl;
-      std::cout << "Count: " << count << " points" << std::endl;
+      std::cout << "Count: " << count << " items" << std::endl;
       std::cout << "Centroid: (" << centroid.x << ", " << centroid.y << ", " << centroid.z << ")" << std::endl;
       std::cout << "Min bound: (" << min_pt.x << ", " << min_pt.y << ", " << min_pt.z << ")" << std::endl;
       std::cout << "Max bound: (" << max_pt.x << ", " << max_pt.y << ", " << max_pt.z << ")" << std::endl;
       std::cout << "========================\n" << std::endl;
     } else {
-      std::cout << "No points selected" << std::endl;
+      std::cout << "No items selected" << std::endl;
     }
   }
   

@@ -15,7 +15,7 @@
 #include <stdexcept>
 #include <unordered_map>
 
-#include "gldraw/shader.hpp"
+#include "shader.hpp"
 
 namespace quickviz {
 class ShaderProgram {

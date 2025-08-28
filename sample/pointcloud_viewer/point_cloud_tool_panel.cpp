@@ -21,7 +21,13 @@ void PointCloudToolPanel::Draw() {
   ImGui::Begin("Point Cloud Tools");
   
   auto* interactive_sm = GetInteractiveSceneManager();
-  auto point_cloud = interactive_sm ? interactive_sm->GetActivePointCloud() : nullptr;
+  // TODO: Need to get point cloud reference from scene manager
+  PointCloud* point_cloud = nullptr;
+  // For now, try to get the point cloud from the scene manager directly
+  if (interactive_sm) {
+    auto* gl_object = interactive_sm->GetOpenGLObject("point_cloud");
+    point_cloud = dynamic_cast<PointCloud*>(gl_object);
+  }
 
   // === APPEARANCE CONTROLS SECTION ===
   ImGui::Text("Appearance Controls");
@@ -45,19 +51,20 @@ void PointCloudToolPanel::Draw() {
   ImGui::Separator();
   
   if (interactive_sm && point_cloud) {
-    size_t selected_count = interactive_sm->GetSelectedPointCount();
-    ImGui::Text("Selected Points: %zu", selected_count);
+    const auto& multi_selection = interactive_sm->GetMultiSelection();
+    size_t selected_count = multi_selection.Count();
+    ImGui::Text("Selected Items: %zu", selected_count);
     
     if (selected_count > 0) {
-      glm::vec3 centroid = interactive_sm->GetSelectionCentroid();
-      auto [min_pt, max_pt] = interactive_sm->GetSelectionBounds();
+      glm::vec3 centroid = multi_selection.GetCentroid();
+      auto [min_pt, max_pt] = multi_selection.GetBounds();
       
       ImGui::Text("Centroid: (%.3f, %.3f, %.3f)", centroid.x, centroid.y, centroid.z);
       ImGui::Text("Bounds: (%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f)", 
                   min_pt.x, min_pt.y, min_pt.z, max_pt.x, max_pt.y, max_pt.z);
       
       if (ImGui::Button("Clear Selection")) {
-        interactive_sm->ClearPointSelection();
+        interactive_sm->ClearSelection();
       }
     }
     

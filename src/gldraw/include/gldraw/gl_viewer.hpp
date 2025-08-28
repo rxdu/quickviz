@@ -22,14 +22,14 @@
 
 #include "imview/viewer.hpp"
 #include "imview/box.hpp"
-#include "gldraw/scene_view_panel.hpp"
+#include "gldraw/gl_scene_panel.hpp"
 #include "gldraw/renderable/grid.hpp"
 #include "gldraw/renderable/coordinate_frame.hpp"
 
 namespace quickviz {
 
 /**
- * @brief Reusable OpenGL view for testing renderable objects
+ * @brief Reusable OpenGL viewer for testing renderable objects
  * 
  * This class encapsulates the common setup and management code needed for
  * OpenGL rendering tests. It provides:
@@ -150,7 +150,7 @@ private:
 private:
     Config config_;
     Viewer viewer_;
-    std::shared_ptr<SceneViewPanel> scene_panel_;
+    std::shared_ptr<GlScenePanel> scene_panel_;
     SceneSetupCallback scene_setup_callback_;
     std::string description_;
     std::vector<std::pair<std::string, std::vector<std::string>>> help_sections_;

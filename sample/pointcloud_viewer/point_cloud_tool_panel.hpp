@@ -10,7 +10,7 @@
 #define QUICKVIZ_POINT_CLOUD_TOOL_PANEL_HPP
 
 #include "imview/panel.hpp"
-#include "gldraw/scene_view_panel.hpp"
+#include "gldraw/gl_scene_panel.hpp"
 
 namespace quickviz {
 class InteractiveSceneManager;

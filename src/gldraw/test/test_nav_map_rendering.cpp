@@ -17,7 +17,7 @@
 #include "imview/box.hpp"
 #include "imview/viewer.hpp"
 
-#include "gldraw/scene_view_panel.hpp"
+#include "gldraw/gl_scene_panel.hpp"
 #include "gldraw/renderable/grid.hpp"
 #include "gldraw/renderable/triangle.hpp"
 #include "gldraw/renderable/coordinate_frame.hpp"
@@ -147,7 +147,7 @@ int main(int argc, char* argv[]) {
   box->SetAlignItems(Styling::AlignItems::kStretch);
 
   // create a OpenGL scene panel to manage the OpenGL objects
-  auto gl_sm = std::make_shared<SceneViewPanel>("OpenGL Scene (2D)",
+  auto gl_sm = std::make_shared<GlScenePanel>("OpenGL Scene (2D)",
                                                 GlSceneManager::Mode::k2D);
   gl_sm->SetAutoLayout(true);
   gl_sm->SetNoTitleBar(true);

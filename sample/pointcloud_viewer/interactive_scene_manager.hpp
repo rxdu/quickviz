@@ -9,17 +9,17 @@
 #ifndef QUICKVIZ_INTERACTIVE_SCENE_MANAGER_HPP
 #define QUICKVIZ_INTERACTIVE_SCENE_MANAGER_HPP
 
-#include "gldraw/scene_view_panel.hpp"
+#include "gldraw/gl_scene_panel.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 #include <memory>
 
 namespace quickviz {
 class PointCloudToolPanel;
 
-class InteractiveSceneManager : public SceneViewPanel {
+class InteractiveSceneManager : public GlScenePanel {
  public:
   InteractiveSceneManager(const std::string& name, GlSceneManager::Mode mode = GlSceneManager::Mode::k3D)
-      : SceneViewPanel(name, mode) {}
+      : GlScenePanel(name, mode) {}
 
   void SetToolPanel(PointCloudToolPanel* panel) { tool_panel_ = panel; }
 

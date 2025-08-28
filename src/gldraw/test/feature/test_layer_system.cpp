@@ -14,7 +14,7 @@
 
 #include "imview/viewer.hpp"
 #include "imview/box.hpp"
-#include "gldraw/scene_view_panel.hpp"
+#include "gldraw/gl_scene_panel.hpp"
 #include "gldraw/renderable/grid.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 #include "gldraw/renderable/layer_manager.hpp"
@@ -38,7 +38,7 @@ class LayerSystemDemo {
     main_box->SetFlexDirection(Styling::FlexDirection::kRow);
 
     // Create 3D scene
-    scene_manager_ = std::make_shared<SceneViewPanel>("Layer System Demo");
+    scene_manager_ = std::make_shared<GlScenePanel>("Layer System Demo");
     scene_manager_->SetAutoLayout(true);
     scene_manager_->SetNoTitleBar(true);
     scene_manager_->SetFlexGrow(1.0f);
@@ -276,7 +276,7 @@ class LayerSystemDemo {
 
  private:
   Viewer viewer_;
-  std::shared_ptr<SceneViewPanel> scene_manager_;
+  std::shared_ptr<GlScenePanel> scene_manager_;
   std::unique_ptr<PointCloud> point_cloud_;
   PointCloud* point_cloud_ptr_ = nullptr;  // Raw pointer for access after move
 

@@ -8,7 +8,7 @@
  */
 
 #include "shape_renderer.hpp"
-#include "gldraw/shader_program.hpp"
+#include "../../../include/gldraw/shader_program.hpp"
 #include <iostream>
 
 namespace quickviz {

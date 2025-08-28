@@ -5,7 +5,7 @@ find_package(OpenGL REQUIRED)
 # add library
 add_library(gldraw
     ## gui integration
-    src/scene_view_panel.cpp
+    src/gl_scene_panel.cpp
     src/gl_viewer.cpp
     ## core rendering components
     src/shader.cpp
@@ -41,8 +41,8 @@ add_library(gldraw
     src/renderable/plane.cpp
     src/renderable/pose.cpp
     src/renderable/path.cpp
-    ## GPU selection system
-    src/gpu_selection.cpp
+    ## Selection system
+    src/selection_manager.cpp
     )
 target_link_libraries(gldraw PUBLIC core imcore imview stb
     Threads::Threads

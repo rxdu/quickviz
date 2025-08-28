@@ -12,7 +12,7 @@
 
 #include <iostream>
 #include "glad/glad.h"
-#include "gldraw/shader_program.hpp"
+#include "../../../include/gldraw/shader_program.hpp"
 #include "gldraw/renderable/canvas.hpp"
 #include "canvas_data.hpp"
 

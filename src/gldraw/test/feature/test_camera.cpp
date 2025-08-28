@@ -13,7 +13,7 @@
 
 #include "imview/viewer.hpp"
 #include "imview/box.hpp"
-#include "gldraw/scene_view_panel.hpp"
+#include "gldraw/gl_scene_panel.hpp"
 #include "gldraw/renderable/grid.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 
@@ -42,7 +42,7 @@ int main() {
   box->SetJustifyContent(Styling::JustifyContent::kFlexStart);
   box->SetAlignItems(Styling::AlignItems::kStretch);
 
-  auto scene_panel = std::make_shared<SceneViewPanel>("Enhanced Camera Test");
+  auto scene_panel = std::make_shared<GlScenePanel>("Enhanced Camera Test");
   scene_panel->SetAutoLayout(true);
   scene_panel->SetNoTitleBar(true);
   scene_panel->SetFlexGrow(1.0f);

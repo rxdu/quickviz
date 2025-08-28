@@ -17,8 +17,8 @@
 #include "imview/box.hpp"
 #include "imview/viewer.hpp"
 
-#include "gldraw/scene_view_panel.hpp"
-#include "gldraw/coordinate_system_transformer.hpp"
+#include "gldraw/gl_scene_panel.hpp"
+#include "../include/gldraw/details/coordinate_transformer.hpp"
 #include "gldraw/renderable/grid.hpp"
 #include "gldraw/renderable/coordinate_frame.hpp"
 
@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
   box->SetAlignItems(Styling::AlignItems::kStretch);
 
   // Create an OpenGL scene panel with coordinate system transformation enabled
-  auto gl_sm_transformed = std::make_shared<SceneViewPanel>("Standard Coordinate System (Z-up)",
+  auto gl_sm_transformed = std::make_shared<GlScenePanel>("Standard Coordinate System (Z-up)",
                                                 GlSceneManager::Mode::k3D);
   gl_sm_transformed->SetAutoLayout(true);
   gl_sm_transformed->SetNoTitleBar(true);
@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
   gl_sm_transformed->AddOpenGLObject("coordinate_frame", std::move(coord_frame_transformed));
 
   // Create a second OpenGL scene panel with coordinate system transformation disabled
-  auto gl_sm_native = std::make_shared<SceneViewPanel>("OpenGL Native (Y-up)",
+  auto gl_sm_native = std::make_shared<GlScenePanel>("OpenGL Native (Y-up)",
                                                 GlSceneManager::Mode::k3D);
   gl_sm_native->SetAutoLayout(true);
   gl_sm_native->SetNoTitleBar(true);

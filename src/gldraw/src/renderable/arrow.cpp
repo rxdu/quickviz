@@ -17,7 +17,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/vector_angle.hpp>
 
-#include "gldraw/shader.hpp"
+#include "../../include/gldraw/shader.hpp"
 
 namespace quickviz {
 

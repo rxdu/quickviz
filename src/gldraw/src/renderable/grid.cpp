@@ -13,7 +13,7 @@
 
 #include "glad/glad.h"
 #include <glm/gtc/type_ptr.hpp>
-#include "gldraw/shader.hpp"
+#include "../../include/gldraw/shader.hpp"
 
 namespace quickviz {
 namespace {

@@ -14,7 +14,7 @@
 #include <glm/glm.hpp>
 
 #include "gldraw/interface/opengl_object.hpp"
-#include "gldraw/shader_program.hpp"
+#include "../shader_program.hpp"
 #include "gldraw/renderable/types.hpp"
 
 namespace quickviz {

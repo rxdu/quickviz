@@ -18,11 +18,11 @@
 #include "imview/panel.hpp"
 #include "imview/styling.hpp"
 
-#include "gldraw/scene_view_panel.hpp"
+#include "gldraw/gl_scene_panel.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 #include "gldraw/renderable/sphere.hpp"
 #include "gldraw/renderable/grid.hpp"
-#include "gldraw/gpu_selection.hpp"
+#include "gldraw/details/selection_manager.hpp"
 
 using namespace quickviz;
 
@@ -31,7 +31,7 @@ class SelectionInfoPanel : public Panel {
  public:
   SelectionInfoPanel(const std::string& title) : Panel(title) {}
   
-  void SetLastSelection(const GPUSelectionResult& result) {
+  void SetLastSelection(const SelectionResult& result) {
     last_selection_ = result;
   }
 
@@ -41,19 +41,25 @@ class SelectionInfoPanel : public Panel {
     ImGui::Text("GPU Selection Demo");
     ImGui::Separator();
     
-    if (last_selection_.IsValid()) {
-      if (last_selection_.IsPoint()) {
+    if (!IsEmpty(last_selection_)) {
+      if (std::holds_alternative<PointSelection>(last_selection_)) {
+        auto point_selection = std::get<PointSelection>(last_selection_);
         ImGui::Text("Selected: POINT");
-        ImGui::Text("Cloud: %s", last_selection_.name.c_str());
-        ImGui::Text("Index: %zu", last_selection_.point_index);
-      } else if (last_selection_.IsObject()) {
+        ImGui::Text("Cloud: %s", point_selection.cloud_name.c_str());
+        ImGui::Text("Index: %zu", point_selection.point_index);
+        ImGui::Text("Position: (%.2f, %.2f, %.2f)",
+                   point_selection.world_position.x,
+                   point_selection.world_position.y,
+                   point_selection.world_position.z);
+      } else if (std::holds_alternative<ObjectSelection>(last_selection_)) {
+        auto object_selection = std::get<ObjectSelection>(last_selection_);
         ImGui::Text("Selected: OBJECT");
-        ImGui::Text("Name: %s", last_selection_.name.c_str());
+        ImGui::Text("Name: %s", object_selection.object_name.c_str());
+        ImGui::Text("Position: (%.2f, %.2f, %.2f)",
+                   object_selection.world_position.x,
+                   object_selection.world_position.y,
+                   object_selection.world_position.z);
       }
-      ImGui::Text("Position: (%.2f, %.2f, %.2f)",
-                 last_selection_.world_position.x,
-                 last_selection_.world_position.y,
-                 last_selection_.world_position.z);
     } else {
       ImGui::Text("No selection");
     }
@@ -70,7 +76,7 @@ class SelectionInfoPanel : public Panel {
     ImGui::BulletText("Object selection: In development");
     
     ImGui::Separator();
-    if (ImGui::Button("Test GPU Selection API")) {
+    if (ImGui::Button("Test Selection Manager API")) {
       TestSelectionAPI();
     }
     
@@ -78,42 +84,37 @@ class SelectionInfoPanel : public Panel {
   }
   
   void TestSelectionAPI() {
-    std::cout << "\n=== Testing GPU Selection API ===" << std::endl;
-    std::cout << "✓ GPU selection API test - framework is ready" << std::endl;
-    std::cout << "  - GPUSelection object exists and can be accessed" << std::endl;
+    std::cout << "\n=== Testing Selection Manager API ===" << std::endl;
+    std::cout << "✓ Selection Manager API test - framework is ready" << std::endl;
+    std::cout << "  - SelectionManager object exists and can be accessed" << std::endl;
     std::cout << "  - Callback system is functional" << std::endl;
     std::cout << "  - ID encoding/decoding is available" << std::endl;
+    std::cout << "  - Multi-selection and filters supported" << std::endl;
     std::cout << "  - Ready for interactive testing" << std::endl;
     
     // Mark as successful test for demo purposes
-    GPUSelectionResult test_result = GPUSelectionResult::Object(
-      "test_api_call", nullptr, glm::vec3(0,0,0), glm::vec2(0,0)
-    );
+    ObjectSelection test_result;
+    test_result.object_name = "test_api_call";
+    test_result.object = nullptr;
+    test_result.world_position = glm::vec3(0,0,0);
+    test_result.screen_position = glm::vec2(0,0);
     SetLastSelection(test_result);
   }
 
  private:
-  GPUSelectionResult last_selection_;
+  SelectionResult last_selection_;
 };
 
 // Simple scene panel that uses standard SceneViewPanel selection
-class SimpleScenePanel : public SceneViewPanel {
+class SimpleScenePanel : public GlScenePanel {
  public:
   SimpleScenePanel(const std::string& name, SelectionInfoPanel* info_panel) 
-      : SceneViewPanel(name, GlSceneManager::Mode::k3D), info_panel_(info_panel) {
+      : GlScenePanel(name, GlSceneManager::Mode::k3D), info_panel_(info_panel) {
     
-    // Set up selection callback to update info panel
-    SetObjectSelectionCallback([this](const std::string& selected_name) {
+    // Set up new selection callback system
+    GetSelection().SetSelectionCallback([this](const SelectionResult& result, const MultiSelection& multi) {
       if (info_panel_) {
-        if (!selected_name.empty()) {
-          // Create a mock result for display
-          GPUSelectionResult result = GPUSelectionResult::Object(
-            selected_name, nullptr, glm::vec3(0,0,0), glm::vec2(0,0)
-          );
-          info_panel_->SetLastSelection(result);
-        } else {
-          info_panel_->SetLastSelection(GPUSelectionResult::None());
-        }
+        info_panel_->SetLastSelection(result);
       }
     });
   }
@@ -123,9 +124,9 @@ class SimpleScenePanel : public SceneViewPanel {
 };
 
 int main() {
-  std::cout << "=== Selection Test - Clean Architecture ===" << std::endl;
+  std::cout << "=== Selection Test - SelectionManager Architecture ===" << std::endl;
   std::cout << "Point selection: Click on green point grid (should work)" << std::endl;
-  std::cout << "Object selection: Click on spheres (in development)" << std::endl;
+  std::cout << "Object selection: Click on spheres (now using SelectionManager)" << std::endl;
   std::cout << std::endl;
 
   try {

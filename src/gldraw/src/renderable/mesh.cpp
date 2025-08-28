@@ -19,7 +19,7 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "gldraw/shader.hpp"
+#include "../../include/gldraw/shader.hpp"
 
 namespace quickviz {
 

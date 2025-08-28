@@ -9,7 +9,7 @@
 #include <iostream>
 
 #include "imview/window.hpp"
-#include "gldraw/shader.hpp"
+#include "../include/gldraw/shader.hpp"
 #include "gldraw/shader_program.hpp"
 
 using namespace quickviz;

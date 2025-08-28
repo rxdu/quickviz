@@ -13,7 +13,7 @@
 #include <iostream>
 #include <algorithm>
 #include "glad/glad.h"
-#include "gldraw/shader_program.hpp"
+#include "../../../include/gldraw/shader_program.hpp"
 #include "canvas_data.hpp"
 
 namespace quickviz {

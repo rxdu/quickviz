@@ -20,7 +20,7 @@
 #include "imview/box.hpp"
 #include "imview/viewer.hpp"
 
-#include "gldraw/scene_view_panel.hpp"
+#include "gldraw/gl_scene_panel.hpp"
 #include "gldraw/renderable/grid.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 
@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
   box->SetAlignItems(Styling::AlignItems::kStretch);
 
   // Create scene panel
-  auto gl_sm = std::make_shared<SceneViewPanel>("OpenGL Scene");
+  auto gl_sm = std::make_shared<GlScenePanel>("OpenGL Scene");
   gl_sm->SetAutoLayout(true);
   gl_sm->SetNoTitleBar(true);
   gl_sm->SetFlexGrow(1.0f);

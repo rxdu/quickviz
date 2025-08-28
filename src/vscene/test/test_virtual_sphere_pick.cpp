@@ -26,7 +26,8 @@
 #include <thread>
 
 #include "imview/viewer.hpp"
-#include "gldraw/scene_view_panel.hpp"
+#include "gldraw/gl_scene_panel.hpp"
+#include "../../gldraw/include/gldraw/details/selection_manager.hpp"
 #include "gldraw/renderable/grid.hpp"
 #include "vscene/virtual_scene.hpp"
 #include "vscene/virtual_sphere.hpp"
@@ -38,12 +39,12 @@ class VirtualSpherePickingDemo {
  public:
   VirtualSpherePickingDemo() = default;
 
-  std::shared_ptr<SceneViewPanel> CreateScenePanel() {
+  std::shared_ptr<GlScenePanel> CreateScenePanel() {
     std::cout << "\n=== Setting up Mouse & Keyboard Interactive Picking ===\n";
 
     // Create scene panel
     scene_panel_ =
-        std::make_shared<SceneViewPanel>("Interactive Sphere Picking");
+        std::make_shared<GlScenePanel>("Interactive Sphere Picking");
     scene_panel_->SetAutoLayout(true);
     scene_panel_->SetNoTitleBar(true);
     scene_panel_->SetFlexGrow(1.0f);
@@ -81,10 +82,15 @@ class VirtualSpherePickingDemo {
   void SetupInputHandling() {
     std::cout << "Setting up mouse and keyboard input handling:\n";
 
-    // Set up object selection callback for mouse clicks
-    scene_panel_->SetObjectSelectionCallback(
-        [this](const std::string& object_name) {
-          HandleObjectSelection(object_name);
+    // Set up new SelectionManager callback for mouse clicks
+    scene_panel_->GetSelection().SetSelectionCallback(
+        [this](const SelectionResult& result, const MultiSelection& multi) {
+          if (std::holds_alternative<ObjectSelection>(result)) {
+            auto obj_selection = std::get<ObjectSelection>(result);
+            HandleObjectSelection(obj_selection.object_name);
+          } else if (IsEmpty(result)) {
+            HandleObjectSelection("");
+          }
         });
 
     std::cout << "- Mouse click object selection enabled\n";
@@ -151,7 +157,8 @@ class VirtualSpherePickingDemo {
       // Highlight the selected object
       scene_->ClearSelection();
       scene_->AddToSelection(object_name);
-      scene_panel_->SetObjectHighlight(object_name, true);
+      // TODO: Implement highlighting via new SelectionManager system
+      // For now, selection is handled by the SelectionManager internally
 
       // Trigger the object's callback
       glm::vec2 screen_pos = last_mouse_pos_;
@@ -221,9 +228,9 @@ class VirtualSpherePickingDemo {
                                              "jump_sphere", "select_sphere",
                                              "info_sphere"};
 
-    for (const auto& name : sphere_names) {
-      scene_panel_->SetObjectHighlight(name, false);
-    }
+    // TODO: Implement highlighting via new SelectionManager system
+    // For now, clear all selections once (already done above with scene_->ClearSelection())
+    scene_panel_->ClearSelection();
 
     scene_->Update(0.0f);
   }
@@ -641,7 +648,7 @@ class VirtualSpherePickingDemo {
     std::chrono::steady_clock::time_point timestamp;
   };
 
-  std::shared_ptr<SceneViewPanel> scene_panel_;
+  std::shared_ptr<GlScenePanel> scene_panel_;
   std::unique_ptr<VirtualScene> scene_;
   GlRenderBackend* gl_backend_ = nullptr;
 

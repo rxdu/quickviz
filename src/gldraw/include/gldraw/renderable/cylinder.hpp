@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "gldraw/renderable/geometric_primitive.hpp"
-#include "gldraw/shader_program.hpp"
+#include "../shader_program.hpp"
 
 namespace quickviz {
 

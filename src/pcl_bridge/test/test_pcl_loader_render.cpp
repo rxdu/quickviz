@@ -22,7 +22,7 @@
 #include "imview/viewer.hpp"
 #include "imview/panel.hpp"
 
-#include "gldraw/scene_view_panel.hpp"
+#include "gldraw/gl_scene_panel.hpp"
 #include "gldraw/renderable/grid.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 #include "pcl_bridge/pcl_loader.hpp"
@@ -262,7 +262,7 @@ int main(int argc, char* argv[]) {
     main_box->SetAlignItems(Styling::AlignItems::kStretch);
 
     // Create OpenGL scene manager for 3D visualization
-    auto gl_sm = std::make_shared<SceneViewPanel>("Point Cloud Viewer");
+    auto gl_sm = std::make_shared<GlScenePanel>("Point Cloud Viewer");
     gl_sm->SetAutoLayout(true);
     gl_sm->SetNoTitleBar(false);  // Show title bar to match the panel
     // gl_sm->SetFlexBasis(600.0f);   // Base width for 3D view

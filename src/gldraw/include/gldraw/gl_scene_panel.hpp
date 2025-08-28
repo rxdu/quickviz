@@ -1,5 +1,5 @@
 /*
- * scene_view_panel.hpp
+ * gl_scene_panel.hpp
  *
  * Created on August 27, 2025
  * Description: ImGui integration panel for GlSceneManager
@@ -21,6 +21,7 @@
 #include "gldraw/interface/opengl_object.hpp"
 #include "gldraw/camera.hpp"
 #include "gldraw/camera_controller.hpp"
+#include "details/selection_manager.hpp"
 
 // Forward declaration
 namespace quickviz {
@@ -31,28 +32,29 @@ namespace quickviz {
 
 /**
  * @brief ImGui panel wrapper for GlSceneManager
- * 
+ *
  * Separates UI integration from rendering backend by wrapping GlSceneManager
  * in an ImGui Panel. Handles ImGui window management and input processing
  * while delegating rendering to the scene manager.
  */
-class SceneViewPanel : public Panel {
+class GlScenePanel : public Panel {
  public:
   /**
    * @brief Constructor
    * @param name Panel name for ImGui window
    * @param mode 2D or 3D rendering mode
    */
-  SceneViewPanel(const std::string& name, 
+  GlScenePanel(const std::string& name,
                  GlSceneManager::Mode mode = GlSceneManager::Mode::k3D);
-  
-  virtual ~SceneViewPanel() = default;
+
+  virtual ~GlScenePanel() = default;
 
   // Panel interface
   void Draw() override;
-  
+
   /**
-   * @brief Render content without Begin/End calls (for use within existing ImGui context)
+   * @brief Render content without Begin/End calls (for use within existing
+   * ImGui context)
    */
   void RenderInsideWindow();
 
@@ -71,7 +73,7 @@ class SceneViewPanel : public Panel {
   /**
    * @brief Set background color for the 3D view
    * @param r Red component (0-1)
-   * @param g Green component (0-1)  
+   * @param g Green component (0-1)
    * @param b Blue component (0-1)
    * @param a Alpha component (0-1)
    */
@@ -80,80 +82,82 @@ class SceneViewPanel : public Panel {
   // Delegate common GlSceneManager methods
   GlSceneManager::Mode GetMode() const;
   void SetClippingPlanes(float z_near, float z_far);
-  
-  void AddOpenGLObject(const std::string& name, std::unique_ptr<OpenGlObject> object);
+
+  void AddOpenGLObject(const std::string& name,
+                       std::unique_ptr<OpenGlObject> object);
   void RemoveOpenGLObject(const std::string& name);
   OpenGlObject* GetOpenGLObject(const std::string& name);
   void ClearOpenGLObjects();
-  
+
   void SetPreDrawCallback(GlSceneManager::PreDrawCallback callback);
   void EnableCoordinateSystemTransformation(bool enable);
   bool IsCoordinateSystemTransformationEnabled() const;
-  
+
   // Camera access
   CameraController* GetCameraController() const;
   Camera* GetCamera() const;
   const glm::mat4& GetProjectionMatrix() const;
   const glm::mat4& GetViewMatrix() const;
   const glm::mat4& GetCoordinateTransform() const;
-  // Ray casting removed - using GPU ID-buffer selection only
-  
-  // GPU ID-buffer picking support
-  size_t PickPointAtPixel(int x, int y, const std::string& point_cloud_name = "");
-  size_t PickPointAtPixelWithRadius(int x, int y, int radius = 2, const std::string& point_cloud_name = "");
-  
-  // Point cloud selection
-  void SetActivePointCloud(PointCloud* point_cloud);
-  PointCloud* GetActivePointCloud() const;
-  
-  // Point selection operations
-  bool SelectPointAt(float screen_x, float screen_y, int radius = 3);
-  bool AddPointAt(float screen_x, float screen_y, int radius = 3);
-  bool TogglePointAt(float screen_x, float screen_y, int radius = 3);
-  void ClearPointSelection();
-  const std::vector<size_t>& GetSelectedPointIndices() const;
-  size_t GetSelectedPointCount() const;
-  glm::vec3 GetSelectionCentroid() const;
-  std::pair<glm::vec3, glm::vec3> GetSelectionBounds() const;
-  
-  // Selection visualization
-  void SetSelectionVisualization(const glm::vec3& color = glm::vec3(1.0f, 1.0f, 0.0f),
-                                float size_multiplier = 1.5f,
-                                const std::string& layer_name = "selection");
-  void SetSelectionVisualizationEnabled(bool enabled);
-  void SetPointSelectionCallback(GlSceneManager::PointSelectionCallback callback);
-  
-  // Object selection
-  void SelectObjectAt(float screen_x, float screen_y);
-  const std::string& GetSelectedObjectName() const;
-  void ClearObjectSelection();
-  void SetObjectHighlight(const std::string& name, bool highlighted);
-  void SetObjectSelectionCallback(GlSceneManager::ObjectSelectionCallback callback);
-  
-  // Panel method delegation (for backward compatibility with tests that used GlSceneManager)
-  void SetAutoLayout(bool auto_layout) { Panel::SetAutoLayout(auto_layout); }
-  void SetNoTitleBar(bool no_title_bar) { Panel::SetNoTitleBar(no_title_bar); }
-  void SetFlexGrow(float flex_grow) { Panel::SetFlexGrow(flex_grow); }
-  void SetFlexShrink(float flex_shrink) { Panel::SetFlexShrink(flex_shrink); }
+
+  // === Selection System ===
+
+  /**
+   * @brief Get access to the selection system
+   * @return Reference to selection manager for advanced operations
+   */
+  SelectionManager& GetSelection();
+  const SelectionManager& GetSelection() const;
+
+  /**
+   * @brief Main selection method - select at screen coordinates
+   * @param screen_x Screen X coordinate
+   * @param screen_y Screen Y coordinate
+   * @param options Selection options (radius, mode, filters)
+   * @return Selection result
+   */
+  SelectionResult Select(float screen_x, float screen_y,
+                         const SelectionOptions& options = {});
+
+  /**
+   * @brief Multi-selection - add to current selection
+   * @param screen_x Screen X coordinate
+   * @param screen_y Screen Y coordinate
+   * @param options Selection options
+   * @return true if something was selected and added
+   */
+  bool AddToSelection(float screen_x, float screen_y,
+                      const SelectionOptions& options = {});
+
+  /**
+   * @brief Get current multi-selection
+   * @return Multi-selection with all selected items
+   */
+  const MultiSelection& GetMultiSelection() const;
+
+  /**
+   * @brief Clear all selections
+   */
+  void ClearSelection();
 
  protected:
   /**
    * @brief Handle ImGui input events and forward to scene manager
    */
   void HandleInput();
-  
+
   /**
    * @brief Render FPS overlay if enabled
    */
   void RenderInfoOverlay();
-  
+
  private:
   std::unique_ptr<GlSceneManager> scene_manager_;
-  
+
   // UI state
-  bool show_rendering_info_ = false;
+  bool show_rendering_info_ = true;
 };
 
-} // namespace quickviz
+}  // namespace quickviz
 
-#endif // SCENE_VIEW_PANEL_HPP
+#endif  // SCENE_VIEW_PANEL_HPP

@@ -27,7 +27,7 @@ void GlViewer::SetupViewer() {
   box->SetAlignItems(Styling::AlignItems::kStretch);
 
   // Create scene manager with proper layout settings
-  scene_panel_ = std::make_shared<SceneViewPanel>(config_.window_title, config_.scene_mode);
+  scene_panel_ = std::make_shared<GlScenePanel>(config_.window_title, config_.scene_mode);
   scene_panel_->SetAutoLayout(true);
   scene_panel_->SetNoTitleBar(true);
   scene_panel_->SetFlexGrow(1.0f);
