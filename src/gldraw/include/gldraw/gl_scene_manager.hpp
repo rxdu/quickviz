@@ -159,6 +159,19 @@ class GlSceneManager {
    * @return Multi-selection object with all selected items
    */
   const MultiSelection& GetMultiSelection() const;
+  
+  /**
+   * @brief Enable or disable selection functionality
+   * @param enabled If false, selection operations will return empty results
+   *                and no ID buffer rendering will occur
+   */
+  void SetSelectionEnabled(bool enabled) { selection_enabled_ = enabled; }
+  
+  /**
+   * @brief Check if selection functionality is enabled
+   * @return true if selection is enabled, false otherwise
+   */
+  bool IsSelectionEnabled() const { return selection_enabled_; }
 
  protected:
   void UpdateView(const glm::mat4& projection, const glm::mat4& view);
@@ -192,6 +205,7 @@ class GlSceneManager {
 
   // Interactive selection system
   std::unique_ptr<SelectionManager> selection_manager_;
+  bool selection_enabled_ = true;
 };
 }  // namespace quickviz
 

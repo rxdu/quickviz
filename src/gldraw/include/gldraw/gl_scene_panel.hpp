@@ -45,7 +45,7 @@ class GlScenePanel : public Panel {
    * @param mode 2D or 3D rendering mode
    */
   GlScenePanel(const std::string& name,
-                 GlSceneManager::Mode mode = GlSceneManager::Mode::k3D);
+               GlSceneManager::Mode mode = GlSceneManager::Mode::k3D);
 
   virtual ~GlScenePanel() = default;
 
@@ -101,6 +101,18 @@ class GlScenePanel : public Panel {
   const glm::mat4& GetCoordinateTransform() const;
 
   // === Selection System ===
+  /**
+   * @brief Enable or disable selection functionality
+   * @param enabled If false, selection operations will return empty results
+   *                and no ID buffer rendering will occur
+   */
+  void SetSelectionEnabled(bool enabled);
+
+  /**
+   * @brief Check if selection functionality is enabled
+   * @return true if selection is enabled, false otherwise
+   */
+  bool IsSelectionEnabled() const;
 
   /**
    * @brief Get access to the selection system

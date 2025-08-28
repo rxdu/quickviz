@@ -18,7 +18,7 @@
 
 #include <glad/glad.h>
 
-#include "../include/gldraw/coordinate_transformer.hpp"
+#include "gldraw/coordinate_transformer.hpp"
 #include "gldraw/selection_manager.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 #include "gldraw/renderable/geometric_primitive.hpp"
@@ -150,10 +150,16 @@ uint32_t GlSceneManager::GetFramebufferTexture() const {
 // === Selection System Implementation ===
 
 SelectionResult GlSceneManager::Select(float screen_x, float screen_y, const SelectionOptions& options) {
+  if (!selection_enabled_) {
+    return SelectionResult{};
+  }
   return selection_manager_->Select(screen_x, screen_y, options);
 }
 
 bool GlSceneManager::AddToSelection(float screen_x, float screen_y, const SelectionOptions& options) {
+  if (!selection_enabled_) {
+    return false;
+  }
   return selection_manager_->AddToSelection(screen_x, screen_y, options);
 }
 

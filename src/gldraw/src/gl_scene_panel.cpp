@@ -154,6 +154,14 @@ void GlScenePanel::ClearSelection() {
   scene_manager_->GetSelection().ClearSelection();
 }
 
+void GlScenePanel::SetSelectionEnabled(bool enabled) {
+  scene_manager_->SetSelectionEnabled(enabled);
+}
+
+bool GlScenePanel::IsSelectionEnabled() const {
+  return scene_manager_->IsSelectionEnabled();
+}
+
 void GlScenePanel::HandleInput() {
   // Only process input when window is hovered and has focus
   if (!ImGui::IsWindowHovered()) {
