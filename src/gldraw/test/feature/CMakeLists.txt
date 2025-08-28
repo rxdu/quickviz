@@ -1,5 +1,5 @@
-add_executable(test_gl_scene_manager test_gl_scene_manager.cpp)
-target_link_libraries(test_gl_scene_manager PRIVATE gldraw)
+add_executable(test_gl_scene_panel test_gl_scene_panel.cpp)
+target_link_libraries(test_gl_scene_panel PRIVATE gldraw)
 
 add_executable(test_robot_frames test_robot_frames.cpp)
 target_link_libraries(test_robot_frames PRIVATE gldraw)
@@ -9,3 +9,6 @@ target_link_libraries(test_camera PRIVATE gldraw)
 
 add_executable(test_layer_system test_layer_system.cpp)
 target_link_libraries(test_layer_system PRIVATE gldraw)
+
+add_executable(test_object_selection test_object_selection.cpp)
+target_link_libraries(test_object_selection PRIVATE gldraw)

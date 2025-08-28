@@ -27,7 +27,7 @@
 
 #include "imview/viewer.hpp"
 #include "gldraw/gl_scene_panel.hpp"
-#include "../../gldraw/include/gldraw/details/selection_manager.hpp"
+#include "../../gldraw/include/gldraw/selection_manager.hpp"
 #include "gldraw/renderable/grid.hpp"
 #include "vscene/virtual_scene.hpp"
 #include "vscene/virtual_sphere.hpp"

@@ -18,8 +18,8 @@
 
 #include <glad/glad.h>
 
-#include "gldraw/details/coordinate_transformer.hpp"
-#include "gldraw/details/selection_manager.hpp"
+#include "../include/gldraw/coordinate_transformer.hpp"
+#include "gldraw/selection_manager.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 #include "gldraw/renderable/geometric_primitive.hpp"
 

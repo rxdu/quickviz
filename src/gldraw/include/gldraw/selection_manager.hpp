@@ -346,6 +346,9 @@ private:
   std::unordered_map<std::string, uint32_t> object_to_id_;
   uint32_t next_object_id_ = kObjectIdBase;
   
+  // Point cloud registration for point selection
+  std::unordered_map<std::string, PointCloud*> registered_point_clouds_;
+  
   // ID framebuffer for GPU-based selection
   std::unique_ptr<FrameBuffer> id_frame_buffer_;
 };

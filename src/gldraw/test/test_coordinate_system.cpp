@@ -18,7 +18,7 @@
 #include "imview/viewer.hpp"
 
 #include "gldraw/gl_scene_panel.hpp"
-#include "../include/gldraw/details/coordinate_transformer.hpp"
+#include "../include/gldraw/coordinate_transformer.hpp"
 #include "gldraw/renderable/grid.hpp"
 #include "gldraw/renderable/coordinate_frame.hpp"
 

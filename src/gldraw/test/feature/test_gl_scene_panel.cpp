@@ -32,21 +32,21 @@ int main(int argc, char* argv[]) {
   box->SetAlignItems(Styling::AlignItems::kStretch);
 
   // create a OpenGL scene panel to manage the OpenGL objects
-  auto gl_sm = std::make_shared<GlScenePanel>("OpenGL Scene");
-  gl_sm->SetAutoLayout(true);
-  gl_sm->SetNoTitleBar(true);
-  gl_sm->SetFlexGrow(1.0f);
-  gl_sm->SetFlexShrink(0.0f);
+  auto panel = std::make_shared<GlScenePanel>("OpenGL Scene");
+  panel->SetAutoLayout(true);
+  panel->SetNoTitleBar(true);
+  panel->SetFlexGrow(1.0f);
+  panel->SetFlexShrink(0.0f);
 
   // now add the rendering objects to the OpenGL scene manager
   auto triangle = std::make_unique<Triangle>(1.0f, glm::vec3(0.0f, 0.5f, 0.5f));
-  gl_sm->AddOpenGLObject("triangle", std::move(triangle));
+  panel->AddOpenGLObject("triangle", std::move(triangle));
 
   auto grid = std::make_unique<Grid>(10.0f, 1.0f, glm::vec3(0.7f, 0.7f, 0.7f));
-  gl_sm->AddOpenGLObject("grid", std::move(grid));
+  panel->AddOpenGLObject("grid", std::move(grid));
 
   // finally pass the OpenGL scene manager to the box and add it to the viewer
-  box->AddChild(gl_sm);
+  box->AddChild(panel);
   viewer.AddSceneObject(box);
 
   viewer.Show();

@@ -21,7 +21,7 @@
 #include "gldraw/interface/opengl_object.hpp"
 #include "gldraw/camera.hpp"
 #include "gldraw/camera_controller.hpp"
-#include "details/selection_manager.hpp"
+#include "gldraw/selection_manager.hpp"
 
 // Forward declaration
 namespace quickviz {
@@ -148,8 +148,10 @@ class GlScenePanel : public Panel {
 
   /**
    * @brief Render FPS overlay if enabled
+   * @param content_size Size of the content area
+   * @param image_pos Position where the image was rendered
    */
-  void RenderInfoOverlay();
+  void RenderInfoOverlay(const ImVec2& content_size, const ImVec2& image_pos);
 
  private:
   std::unique_ptr<GlSceneManager> scene_manager_;

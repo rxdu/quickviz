@@ -36,6 +36,3 @@ target_link_libraries(test_nav_map_rendering PRIVATE gldraw)
 
 add_executable(test_layer_system_box test_layer_system_box.cpp)
 target_link_libraries(test_layer_system_box PRIVATE gldraw)
-
-add_executable(test_object_selection test_object_selection.cpp)
-target_link_libraries(test_object_selection PRIVATE gldraw)

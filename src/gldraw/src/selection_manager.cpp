@@ -7,7 +7,7 @@
  * Copyright (c) 2025 Ruixiang Du (rdu)
  */
 
-#include "gldraw/details/selection_manager.hpp"
+#include "gldraw/selection_manager.hpp"
 
 #include <iostream>
 #include <algorithm>
@@ -208,20 +208,30 @@ void SelectionManager::RegisterObject(const std::string& name, OpenGlObject* obj
   
   registered_objects_[name] = object;
   
-  // Assign unique ID for this object
-  if (object_to_id_.find(name) == object_to_id_.end()) {
-    object_to_id_[name] = next_object_id_;
-    next_object_id_ += 0x100; // Use 256-unit increments for better debugging
-    
-    // Prevent overflow
-    if (next_object_id_ > kMaxObjectId) {
-      next_object_id_ = kObjectIdBase;
+  // Check if this is a PointCloud and track it separately for point selection
+  PointCloud* point_cloud = dynamic_cast<PointCloud*>(object);
+  if (point_cloud) {
+    // Track point clouds for point selection
+    registered_point_clouds_[name] = point_cloud;
+    std::cout << "[SelectionManager] Registered point cloud: " << name 
+              << " with " << point_cloud->GetPointCount() << " points" << std::endl;
+  } else {
+    // Assign unique ID for non-point-cloud objects
+    if (object_to_id_.find(name) == object_to_id_.end()) {
+      object_to_id_[name] = next_object_id_;
+      next_object_id_ += 0x100; // Use 256-unit increments for better debugging
+      
+      // Prevent overflow
+      if (next_object_id_ > kMaxObjectId) {
+        next_object_id_ = kObjectIdBase;
+      }
     }
   }
 }
 
 void SelectionManager::UnregisterObject(const std::string& name) {
   registered_objects_.erase(name);
+  registered_point_clouds_.erase(name);
   // Keep the ID mapping in case the object is re-added
   // object_to_id_.erase(name);
 }
@@ -287,9 +297,48 @@ SelectionResult SelectionManager::FindObjectById(uint32_t object_id, float scree
 }
 
 SelectionResult SelectionManager::FindPointById(uint32_t point_id, float screen_x, float screen_y) {
-  // TODO: Implement point selection by finding the point cloud that contains this point ID
-  // For now, return empty result since we've removed the legacy active point cloud concept
-  // This will be implemented when we add proper point cloud registration to SelectionManager
+  // Extract point index from ID (IDs start at kPointIdBase = 1)
+  if (point_id < kPointIdBase || point_id > kMaxPointId) {
+    return SelectionResult{};
+  }
+  
+  size_t point_index = point_id - kPointIdBase;
+  
+  // Find which point cloud contains this point index
+  // We need to check all registered point clouds
+  size_t accumulated_offset = 0;
+  
+  for (const auto& [name, point_cloud] : registered_point_clouds_) {
+    size_t point_count = point_cloud->GetPointCount();
+    
+    if (point_index < accumulated_offset + point_count) {
+      // This point belongs to this cloud
+      size_t local_index = point_index - accumulated_offset;
+      
+      PointSelection selection;
+      selection.cloud_name = name;
+      selection.point_cloud = point_cloud;
+      selection.point_index = local_index;
+      selection.screen_position = glm::vec2(screen_x, screen_y);
+      
+      // Get the actual point position
+      const auto& points = point_cloud->GetPoints();
+      if (local_index < points.size()) {
+        selection.world_position = points[local_index];
+      } else {
+        selection.world_position = glm::vec3(0.0f);
+      }
+      
+      std::cout << "[SelectionManager] Selected point " << local_index 
+                << " from cloud " << name << std::endl;
+      
+      return selection;
+    }
+    
+    accumulated_offset += point_count;
+  }
+  
+  // Point ID doesn't match any registered point cloud
   return SelectionResult{};
 }
 

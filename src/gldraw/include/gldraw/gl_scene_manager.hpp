@@ -23,8 +23,8 @@
 #include "gldraw/frame_buffer.hpp"
 #include "gldraw/camera.hpp"
 #include "gldraw/camera_controller.hpp"
-#include "gldraw/details/coordinate_transformer.hpp"
-#include "gldraw/details/selection_manager.hpp"
+#include "gldraw/coordinate_transformer.hpp"
+#include "gldraw/selection_manager.hpp"
 
 // Forward declarations
 namespace quickviz {
