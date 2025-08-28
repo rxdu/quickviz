@@ -154,14 +154,7 @@ TEST_F(RenderBackendTest, RenderToFramebuffer) {
     EXPECT_EQ(log[0], "RENDER:800.000000x600.000000");
 }
 
-// Test mouse ray generation
-TEST_F(RenderBackendTest, MouseRayGeneration) {
-    Ray ray = backend->GetMouseRay(100.0f, 200.0f, 800.0f, 600.0f);
-    
-    // Mock implementation returns simple ray
-    EXPECT_EQ(ray.origin, glm::vec3(100.0f, 200.0f, 0.0f));
-    EXPECT_EQ(ray.direction, glm::vec3(0.0f, 0.0f, -1.0f));
-}
+// Ray-casting tests removed - using GPU ID-buffer selection exclusively
 
 // Test object picking
 TEST_F(RenderBackendTest, ObjectPicking) {

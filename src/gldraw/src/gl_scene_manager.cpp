@@ -21,6 +21,7 @@
 #include "gldraw/coordinate_system_transformer.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 #include "gldraw/renderable/geometric_primitive.hpp"
+#include "gldraw/gpu_selection.hpp"
 
 namespace quickviz {
 GlSceneManager::GlSceneManager(const std::string& name, Mode mode)
@@ -41,6 +42,9 @@ GlSceneManager::GlSceneManager(const std::string& name, Mode mode)
   // Initialize the coordinate system transformation matrix
   coord_transform_ =
       CoordinateSystemTransformer::GetStandardToOpenGLTransform();
+  
+  // Initialize GPU selection system
+  gpu_selection_ = std::make_unique<GPUSelection>(this);
 }
 
 GlSceneManager::~GlSceneManager() {
@@ -71,11 +75,22 @@ void GlSceneManager::AddOpenGLObject(const std::string& name,
   if (object == nullptr) {
     throw std::invalid_argument("Object is nullptr");
   }
+  
+  // Register with GPU selection system before taking ownership
+  if (gpu_selection_) {
+    gpu_selection_->RegisterObject(name, object.get());
+  }
+  
   drawable_objects_[name] = std::move(object);
 }
 
 void GlSceneManager::RemoveOpenGLObject(const std::string& name) {
   if (drawable_objects_.find(name) != drawable_objects_.end()) {
+    // Unregister from GPU selection system before removing
+    if (gpu_selection_) {
+      gpu_selection_->UnregisterObject(name);
+    }
+    
     drawable_objects_.erase(name);
   }
 }
@@ -136,49 +151,19 @@ uint32_t GlSceneManager::GetFramebufferTexture() const {
 }
 
 
-GlSceneManager::MouseRay GlSceneManager::GetMouseRayInWorldSpace(
-    float mouse_x, float mouse_y, float window_width, float window_height) const {
-  MouseRay ray;
-  
-  // Check if we have valid dimensions
-  if (window_width <= 0 || window_height <= 0 || !camera_) {
-    return ray;
-  }
-  
-  // Convert mouse coordinates to normalized device coordinates (NDC)
-  // NDC ranges from -1 to 1 in both x and y
-  float x_ndc = (2.0f * mouse_x) / window_width - 1.0f;
-  float y_ndc = 1.0f - (2.0f * mouse_y) / window_height; // Flip Y axis
-  
-  // Create ray in clip space
-  glm::vec4 ray_clip(x_ndc, y_ndc, -1.0f, 1.0f);
-  
-  // Convert to eye space
-  glm::mat4 proj_inverse = glm::inverse(projection_);
-  glm::vec4 ray_eye = proj_inverse * ray_clip;
-  ray_eye = glm::vec4(ray_eye.x, ray_eye.y, -1.0f, 0.0f);
-  
-  // Convert to world space
-  glm::mat4 view_inverse = glm::inverse(view_);
-  glm::vec4 ray_world = view_inverse * ray_eye;
-  glm::vec3 ray_direction = glm::normalize(glm::vec3(ray_world));
-  
-  // The ray is now in world space, which is what we want
-  // The coordinate transform is applied to objects when rendering,
-  // so we work in the original world space for selection
-  
-  ray.origin = camera_->GetPosition();
-  ray.direction = ray_direction;
-  ray.valid = true;
-  
-  return ray;
-}
+// Ray casting methods removed - using GPU ID-buffer selection exclusively
 
 // GPU ID-buffer picking implementation
 void GlSceneManager::RenderIdBuffer() {
   if (!frame_buffer_) return;  // Need main framebuffer to get dimensions
   float width = frame_buffer_->GetWidth();
   float height = frame_buffer_->GetHeight();
+  
+  // CRITICAL FIX: Recalculate projection and view matrices using same logic as main render
+  // This ensures perfect synchronization between main render and ID buffer
+  float aspect_ratio = width / height;
+  glm::mat4 projection = camera_->GetProjectionMatrix(aspect_ratio, z_near_, z_far_);
+  glm::mat4 view = camera_->GetViewMatrix();
   
   // Create or resize ID framebuffer to match main framebuffer size
   // IMPORTANT: Use 0 samples (no multisampling) for ID buffer to ensure exact pixel values
@@ -192,11 +177,20 @@ void GlSceneManager::RenderIdBuffer() {
   // Render to ID framebuffer
   id_frame_buffer_->Bind();
   id_frame_buffer_->Clear(0.0f, 0.0f, 0.0f, 0.0f);  // Black background = no point (ID 0)
+  glClear(GL_DEPTH_BUFFER_BIT);  // Ensure depth buffer is cleared
+  
+  // Ensure proper OpenGL state for ID buffer rendering
+  glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LESS);
+  glDisable(GL_BLEND); // No blending for ID buffer
+  
+  // CRITICAL: Set viewport to match ID framebuffer dimensions exactly
+  glViewport(0, 0, static_cast<int>(width), static_cast<int>(height));
   
   // Apply coordinate system transformation if enabled
   glm::mat4 transform = use_coord_transform_ ? coord_transform_ : glm::mat4(1.0f);
   
-  // Render only point clouds in ID mode
+  // Render point clouds in ID mode first
   int point_cloud_count = 0;
   for (auto& obj : drawable_objects_) {
     PointCloud* point_cloud = dynamic_cast<PointCloud*>(obj.second.get());
@@ -208,13 +202,49 @@ void GlSceneManager::RenderIdBuffer() {
       point_cloud->SetRenderMode(PointMode::kIdBuffer);
       
       // Render the point cloud with ID encoding
-      point_cloud->OnDraw(projection_, view_, transform);
+      point_cloud->OnDraw(projection, view, transform);
       
       // Restore original rendering mode
       point_cloud->SetRenderMode(original_mode);
     }
   }
   
+  // Render objects with unique ID colors for selection  
+  uint32_t object_id_base = 0x800000; // Start object IDs at 8M to avoid point ID conflicts
+  uint32_t current_object_id = object_id_base;
+  
+  // Store ID->name mapping for decoding (using class member)
+  id_to_object_name_.clear();
+  
+  for (const auto& [name, object] : drawable_objects_) {
+    // Skip point clouds (already handled above)
+    if (dynamic_cast<PointCloud*>(object.get())) continue;
+    
+    if (!object->SupportsSelection()) continue;
+    
+    // Store ID mapping
+    id_to_object_name_[current_object_id] = name;
+    
+    // Convert ID to RGB color (24-bit)
+    float r = static_cast<float>((current_object_id >> 0) & 0xFF) / 255.0f;
+    float g = static_cast<float>((current_object_id >> 8) & 0xFF) / 255.0f;
+    float b = static_cast<float>((current_object_id >> 16) & 0xFF) / 255.0f;
+    glm::vec3 id_color(r, g, b);
+    
+    // Use the new ID rendering interface to render objects with solid ID colors
+    if (object->SupportsIdRendering()) {
+      object->SetIdRenderMode(true);
+      object->SetIdColor(id_color);
+      object->OnDraw(projection, view, transform);
+      object->SetIdRenderMode(false); // Restore normal rendering mode
+    }
+    
+    current_object_id += 0x100; // Use larger increments for better color separation
+    if (current_object_id > 0xFFFFFF) break; // Prevent overflow
+  }
+  
+  // Restore OpenGL state
+  glEnable(GL_BLEND); // Re-enable blending for normal rendering
   
   id_frame_buffer_->Unbind();
 }
@@ -236,9 +266,11 @@ size_t GlSceneManager::ReadPixelId(int x, int y) {
   
   id_frame_buffer_->Unbind();
   
-  // Decode point index from RGB values
-  size_t decoded = PointCloud::DecodePointId(pixel[0], pixel[1], pixel[2]);
-  return decoded;
+  // Decode ID from RGB values (works for both points and objects)
+  uint32_t decoded_id = (uint32_t(pixel[0]) << 0) | (uint32_t(pixel[1]) << 8) | (uint32_t(pixel[2]) << 16);
+  
+  // ReadPixelId decoding complete
+  return decoded_id;
 }
 
 size_t GlSceneManager::PickPointAtPixel(int x, int y, const std::string& point_cloud_name) {
@@ -533,140 +565,130 @@ void GlSceneManager::AddToSelection(size_t point_index) {
 // === Object Selection Implementation ===
 
 std::string GlSceneManager::SelectObjectAt(float screen_x, float screen_y) {
-  // Get mouse ray for ray-casting
-  if (!frame_buffer_) return "";  // Need framebuffer to get dimensions
-  float width = frame_buffer_->GetWidth();
-  float height = frame_buffer_->GetHeight();
-  MouseRay ray = GetMouseRayInWorldSpace(screen_x, screen_y, width, height);
+  if (!frame_buffer_) return "";
   
-  if (!ray.valid) {
+  // Use GPU ID-buffer selection for EVERYTHING (both objects and points)
+  // This is the unified approach we agreed on
+  
+  // Step 1: Render scene to ID buffer with unique colors for each selectable item
+  RenderIdBuffer();
+  
+  // Step 2: Read the pixel color at the mouse position
+  // Use precise pixel coordinates (round to nearest pixel center)
+  int pixel_x = static_cast<int>(std::round(screen_x));
+  int pixel_y = static_cast<int>(std::round(screen_y));
+  
+  
+  uint32_t selected_id = ReadPixelId(pixel_x, pixel_y);
+  
+  // Coordinate conversion complete
+  
+  if (selected_id == 0) {
+    // Background - no selection
+    ClearObjectSelection();
     return "";
   }
   
-  // Clear previous selection
-  if (!selected_object_name_.empty()) {
-    auto it = drawable_objects_.find(selected_object_name_);
-    if (it != drawable_objects_.end()) {
-      it->second->SetHighlighted(false);
-    }
-  }
+  // Step 3: Decode the ID to determine what was selected
   
-  // Find closest object that the ray intersects
-  std::string closest_object_name;
-  float closest_distance = std::numeric_limits<float>::max();
-  
-  for (const auto& [name, object] : drawable_objects_) {
-    // Skip objects that don't support selection
-    if (!object->SupportsSelection()) {
-      continue;
-    }
-    
-    // Get object bounding box
-    auto [min_bounds, max_bounds] = object->GetBoundingBox();
-    
-    // Skip if bounding box is invalid (zero size)
-    if (min_bounds == max_bounds) {
-      continue;
-    }
-    
-    // Apply coordinate transformation to bounds if enabled
-    if (use_coord_transform_) {
-      // Transform the 8 corners of the bounding box
-      glm::vec3 corners[8] = {
-        glm::vec3(min_bounds.x, min_bounds.y, min_bounds.z),
-        glm::vec3(max_bounds.x, min_bounds.y, min_bounds.z),
-        glm::vec3(min_bounds.x, max_bounds.y, min_bounds.z),
-        glm::vec3(max_bounds.x, max_bounds.y, min_bounds.z),
-        glm::vec3(min_bounds.x, min_bounds.y, max_bounds.z),
-        glm::vec3(max_bounds.x, min_bounds.y, max_bounds.z),
-        glm::vec3(min_bounds.x, max_bounds.y, max_bounds.z),
-        glm::vec3(max_bounds.x, max_bounds.y, max_bounds.z)
-      };
+  // Check if this is a point ID (1 to 4M-1)
+  if (selected_id >= 1 && selected_id < 0x400000) {
+    size_t point_index = selected_id - 1; // Point IDs start at 1
+    if (active_point_cloud_) {
       
-      // Transform all corners and find new AABB
-      glm::vec3 new_min(FLT_MAX);
-      glm::vec3 new_max(-FLT_MAX);
-      for (int i = 0; i < 8; ++i) {
-        glm::vec4 transformed = coord_transform_ * glm::vec4(corners[i], 1.0f);
-        glm::vec3 point(transformed.x, transformed.y, transformed.z);
-        new_min = glm::min(new_min, point);
-        new_max = glm::max(new_max, point);
+      // Highlight selected point (TODO: use PointCloud layer system)
+      if (object_selection_callback_) {
+        object_selection_callback_("point_" + std::to_string(point_index));
       }
-      min_bounds = new_min;
-      max_bounds = new_max;
+      
+      return "point_" + std::to_string(point_index);
     }
+  }
+  
+  // Check if this is an object ID (8M and above)
+  else if (selected_id >= 0x800000 && selected_id <= 0xFFFFFF) {
+    // Look up object name from ID mapping (stored in RenderIdBuffer)
     
+    // Use the ID directly - no conversion needed if ID rendering is working properly
+    uint32_t actual_object_id = selected_id;
     
-    // Simple ray-box intersection test
-    // This is a basic implementation - could be improved with more sophisticated tests
-    glm::vec3 inv_dir = 1.0f / ray.direction;
-    glm::vec3 t_min = (min_bounds - ray.origin) * inv_dir;
-    glm::vec3 t_max = (max_bounds - ray.origin) * inv_dir;
-    
-    glm::vec3 t1 = glm::min(t_min, t_max);
-    glm::vec3 t2 = glm::max(t_min, t_max);
-    
-    float t_near = glm::max(glm::max(t1.x, t1.y), t1.z);
-    float t_far = glm::min(glm::min(t2.x, t2.y), t2.z);
-    
-    // Check if ray intersects the box
-    if (t_near <= t_far && t_far >= 0) {
-      float distance = t_near >= 0 ? t_near : t_far;
-      if (distance < closest_distance) {
-        closest_distance = distance;
-        closest_object_name = name;
+    // Use the ID-to-name map that was built during rendering
+    // This map is declared as static in RenderIdBuffer() function
+    // We need to access it here, so let's make it a class member instead
+    auto it = id_to_object_name_.find(actual_object_id);
+    if (it != id_to_object_name_.end()) {
+      const std::string& name = it->second;
+      
+      // Clear previous selection and highlight new one
+      ClearObjectSelection();
+      selected_object_name_ = name;
+      
+      auto obj_it = drawable_objects_.find(name);
+      if (obj_it != drawable_objects_.end()) {
+        obj_it->second->SetHighlighted(true);
       }
+      
+      if (object_selection_callback_) {
+        object_selection_callback_(name);
+      }
+      
+      return name;
     }
   }
   
-  // Update selection
-  selected_object_name_ = closest_object_name;
-  
-  // Highlight selected object
-  if (!selected_object_name_.empty()) {
-    auto it = drawable_objects_.find(selected_object_name_);
-    if (it != drawable_objects_.end()) {
-      it->second->SetHighlighted(true);
-      object_highlights_[selected_object_name_] = true;
-    }
-  }
-  
-  // Notify callback
-  if (object_selection_callback_) {
-    object_selection_callback_(selected_object_name_);
-  }
-  
-  return selected_object_name_;
+  std::cout << "GPU Selection: Unrecognized ID " << selected_id << std::endl;
+  return "";
 }
 
 void GlSceneManager::ClearObjectSelection() {
-  // Clear highlight on current selection
+  // Clear object selection
   if (!selected_object_name_.empty()) {
     auto it = drawable_objects_.find(selected_object_name_);
     if (it != drawable_objects_.end()) {
       it->second->SetHighlighted(false);
     }
-    object_highlights_.erase(selected_object_name_);
+    selected_object_name_.clear();
   }
   
-  selected_object_name_.clear();
+  // Clear point selection (TODO: implement with PointCloud layer system)
+  // For now, just clear the object selection
   
-  // Notify callback
+  // Call callback
   if (object_selection_callback_) {
     object_selection_callback_("");
   }
 }
 
 void GlSceneManager::SetObjectHighlight(const std::string& name, bool highlighted) {
+  // This is handled internally by GPU selection system
   auto it = drawable_objects_.find(name);
   if (it != drawable_objects_.end()) {
     it->second->SetHighlighted(highlighted);
-    if (highlighted) {
-      object_highlights_[name] = true;
-    } else {
-      object_highlights_.erase(name);
-    }
   }
+}
+
+// === GPU Selection System Implementation ===
+
+GPUSelectionResult GlSceneManager::GPUSelectAt(float screen_x, float screen_y,
+                                               float screen_width, float screen_height,
+                                               int radius) {
+  if (gpu_selection_) {
+    return gpu_selection_->SelectAtScreen(screen_x, screen_y, screen_width, screen_height, radius);
+  }
+  return GPUSelectionResult::None();
+}
+
+void GlSceneManager::SetGPUSelectionMode(GPUSelectionMode mode) {
+  if (gpu_selection_) {
+    gpu_selection_->SetMode(mode);
+  }
+}
+
+GPUSelectionMode GlSceneManager::GetGPUSelectionMode() const {
+  if (gpu_selection_) {
+    return gpu_selection_->GetMode();
+  }
+  return GPUSelectionMode::kHybrid;
 }
 
 }  // namespace quickviz

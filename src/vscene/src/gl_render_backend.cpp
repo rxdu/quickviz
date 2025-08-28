@@ -87,17 +87,7 @@ std::string GlRenderBackend::PickObjectAt(float screen_x, float screen_y) {
     return "";
 }
 
-Ray GlRenderBackend::GetMouseRay(float screen_x, float screen_y, float width, float height) const {
-    auto mouse_ray = GetActiveSceneManager()->GetMouseRayInWorldSpace(screen_x, screen_y, width, height);
-    
-    Ray ray;
-    if (mouse_ray.valid) {
-        ray.origin = mouse_ray.origin;
-        ray.direction = mouse_ray.direction;
-    }
-    
-    return ray;
-}
+// Ray-casting methods removed - using GPU ID-buffer selection exclusively
 
 void GlRenderBackend::SetBackgroundColor(float r, float g, float b, float a) {
     GetActiveSceneManager()->SetBackgroundColor(r, g, b, a);

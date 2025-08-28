@@ -41,7 +41,7 @@ public:
 
     // VirtualObject interface implementation
     BoundingBox GetBounds() const override;
-    bool HitTest(const Ray& ray, float& distance) const override;
+    // Ray-casting HitTest removed - using GPU ID-buffer selection exclusively
     void UpdateBackend(RenderInterface* backend) override;
     void RemoveFromBackend(RenderInterface* backend) override;
     VirtualObjectData GetBackendData() const override;

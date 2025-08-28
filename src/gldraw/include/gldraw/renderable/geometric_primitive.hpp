@@ -186,6 +186,28 @@ public:
      * @return Pair of {min_bounds, max_bounds} in world space
      */
     std::pair<glm::vec3, glm::vec3> GetBoundingBox() const override = 0;
+    
+    // =================================================================
+    // GPU ID-Buffer Selection Support  
+    // =================================================================
+    
+    /**
+     * @brief Enable/disable ID rendering mode for GPU selection
+     * @param enabled True to render with solid ID color, false for normal rendering
+     */
+    void SetIdRenderMode(bool enabled) override { id_render_mode_ = enabled; }
+    
+    /**
+     * @brief Set the ID color for GPU selection rendering
+     * @param color RGB color encoding the object ID (values 0-1)
+     */
+    void SetIdColor(const glm::vec3& color) override { id_color_ = color; }
+    
+    /**
+     * @brief Check if this primitive supports ID rendering
+     * @return Always true - all geometric primitives support ID rendering
+     */
+    bool SupportsIdRendering() const override { return true; }
 
     // =================================================================
     // Geometry Utility Interface (Pure Virtual)
@@ -305,6 +327,10 @@ protected:
     // Selection state
     bool is_highlighted_ = false;              ///< Current selection state
     Material original_material_;               ///< Material backup for unhighlighting
+    
+    // GPU ID-Buffer selection state
+    bool id_render_mode_ = false;              ///< True when rendering with ID colors for GPU selection
+    glm::vec3 id_color_{0.0f};                 ///< RGB color encoding object ID for GPU selection
 
     // =================================================================
     // Shared Resources (Static Members)

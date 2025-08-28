@@ -815,4 +815,24 @@ size_t PointCloud::DecodePointId(uint8_t r, uint8_t g, uint8_t b) {
   }
 }
 
+size_t PointCloud::PickPointAt(float screen_x, float screen_y,
+                              float screen_width, float screen_height,
+                              const glm::mat4& projection,
+                              const glm::mat4& view,
+                              const glm::mat4& coord_transform) const {
+  // This method delegates to the scene manager's GPU picking system
+  // The scene manager maintains the ID buffer rendering pipeline
+  // Convert screen coordinates to framebuffer coordinates if needed
+  int pixel_x = static_cast<int>(screen_x);
+  int pixel_y = static_cast<int>(screen_height - screen_y); // Flip Y for OpenGL
+  
+  // Note: This is a placeholder implementation. The actual picking logic
+  // should be coordinated through the GlSceneManager's PickPointAtPixel method
+  // which maintains the ID buffer rendering pipeline.
+  
+  // For now, return SIZE_MAX to indicate no point found
+  // The SelectionManager will call GlSceneManager::PickPointAtPixel instead
+  return SIZE_MAX;
+}
+
 }  // namespace quickviz

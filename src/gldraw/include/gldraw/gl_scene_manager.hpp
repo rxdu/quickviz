@@ -12,7 +12,7 @@
 
 #include <memory>
 #include <string>
-#include <unordered_map>
+#include <map>
 #include <functional>
 
 #include <glm/glm.hpp>
@@ -28,6 +28,9 @@
 // Forward declarations
 namespace quickviz {
 class PointCloud;
+class GPUSelection;
+struct GPUSelectionResult;
+enum class GPUSelectionMode;
 }
 
 namespace quickviz {
@@ -35,12 +38,7 @@ class GlSceneManager {
  public:
   enum class Mode { k2D, k3D };
 
-  // Mouse ray casting
-  struct MouseRay {
-    glm::vec3 origin;
-    glm::vec3 direction;
-    bool valid = false;
-  };
+  // GPU ID-buffer selection system (no ray casting needed)
 
   using PreDrawCallback = std::function<void()>;
 
@@ -122,8 +120,7 @@ class GlSceneManager {
   const glm::mat4& GetViewMatrix() const { return view_; }
   const glm::mat4& GetCoordinateTransform() const { return coord_transform_; }
 
-  MouseRay GetMouseRayInWorldSpace(float mouse_x, float mouse_y, 
-                                   float window_width, float window_height) const;
+  // Ray casting removed - using GPU ID-buffer selection only
 
   // GPU ID-buffer picking support
   size_t PickPointAtPixel(int x, int y, const std::string& point_cloud_name = "");
@@ -288,6 +285,39 @@ class GlSceneManager {
     object_selection_callback_ = callback;
   }
   
+  // === GPU Selection System ===
+  
+  /**
+   * @brief Get the GPU selection system
+   * @return Pointer to GPU selection system
+   */
+  GPUSelection* GetGPUSelection() const { return gpu_selection_.get(); }
+  
+  /**
+   * @brief Perform GPU-based selection at screen coordinates
+   * @param screen_x Screen X coordinate  
+   * @param screen_y Screen Y coordinate
+   * @param screen_width Viewport width
+   * @param screen_height Viewport height
+   * @param radius Selection radius in pixels (default: 2)
+   * @return GPU selection result with object/point information
+   */
+  GPUSelectionResult GPUSelectAt(float screen_x, float screen_y,
+                                float screen_width, float screen_height,
+                                int radius = 2);
+  
+  /**
+   * @brief Set GPU selection mode
+   * @param mode Selection mode (objects, points, hybrid, or closest)
+   */
+  void SetGPUSelectionMode(GPUSelectionMode mode);
+  
+  /**
+   * @brief Get current GPU selection mode
+   * @return Current selection mode
+   */
+  GPUSelectionMode GetGPUSelectionMode() const;
+  
  private:
   void RenderIdBuffer();
   size_t ReadPixelId(int x, int y);
@@ -310,8 +340,13 @@ class GlSceneManager {
   std::unique_ptr<FrameBuffer> id_frame_buffer_;  // Off-screen buffer for ID picking
   glm::mat4 projection_ = glm::mat4(1.0f);
   glm::mat4 view_ = glm::mat4(1.0f);
-  std::unordered_map<std::string, std::unique_ptr<OpenGlObject>>
+  // Use std::map instead of unordered_map to ensure consistent iteration order
+  // This is critical for GPU selection ID assignment consistency
+  std::map<std::string, std::unique_ptr<OpenGlObject>>
       drawable_objects_;
+  
+  // ID-to-object-name mapping for GPU selection
+  std::map<uint32_t, std::string> id_to_object_name_;
 
   std::unique_ptr<Camera> camera_;
   std::unique_ptr<CameraController> camera_controller_;
@@ -341,6 +376,9 @@ class GlSceneManager {
   std::string selected_object_name_;
   std::unordered_map<std::string, bool> object_highlights_;
   ObjectSelectionCallback object_selection_callback_;
+  
+  // GPU selection system
+  std::unique_ptr<GPUSelection> gpu_selection_;
 };
 }  // namespace quickviz
 

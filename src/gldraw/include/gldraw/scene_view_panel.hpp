@@ -96,8 +96,7 @@ class SceneViewPanel : public Panel {
   const glm::mat4& GetProjectionMatrix() const;
   const glm::mat4& GetViewMatrix() const;
   const glm::mat4& GetCoordinateTransform() const;
-  GlSceneManager::MouseRay GetMouseRayInWorldSpace(float mouse_x, float mouse_y, 
-                                                   float window_width, float window_height) const;
+  // Ray casting removed - using GPU ID-buffer selection only
   
   // GPU ID-buffer picking support
   size_t PickPointAtPixel(int x, int y, const std::string& point_cloud_name = "");

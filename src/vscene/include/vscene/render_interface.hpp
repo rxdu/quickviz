@@ -17,14 +17,7 @@ namespace quickviz {
 // Forward declarations
 enum class VirtualObjectType : int;
 
-/**
- * @brief Ray for mouse picking and raycasting
- */
-struct Ray {
-    glm::vec3 origin = glm::vec3(0.0f);
-    glm::vec3 direction = glm::vec3(0.0f, 0.0f, -1.0f);
-    bool valid = false;
-};
+// Ray-casting removed - using GPU ID-buffer selection exclusively
 
 /**
  * @brief Virtual object data for backend operations
@@ -74,10 +67,8 @@ class RenderInterface {
   virtual void RenderToFramebuffer(float width, float height) = 0;
   virtual uint32_t GetFramebufferTexture() const = 0;
 
-  // Interaction support (matches GlSceneManager selection API)
+  // Interaction support (GPU ID-buffer selection only)
   virtual std::string PickObjectAt(float screen_x, float screen_y) = 0;
-  virtual Ray GetMouseRay(float screen_x, float screen_y, float width,
-                          float height) const = 0;
 
   // Viewport and camera (delegate to underlying system)
   virtual void SetBackgroundColor(float r, float g, float b, float a) = 0;

@@ -111,6 +111,24 @@ class PointCloud : public OpenGlObject {
               const glm::mat4& coord_transform = glm::mat4(1.0f)) override;
   bool IsGpuResourcesAllocated() const noexcept override { return vao_ != 0; }
 
+  // === Enhanced Selection System ===
+  bool SupportsSelection() const override { return true; }
+  bool SupportsPointPicking() const override { return true; }
+  SelectionPriority GetSelectionPriority() const override { return SelectionPriority::kPoint; }
+  
+  size_t PickPointAt(float screen_x, float screen_y,
+                    float screen_width, float screen_height,
+                    const glm::mat4& projection,
+                    const glm::mat4& view,
+                    const glm::mat4& coord_transform = glm::mat4(1.0f)) const override;
+  
+  glm::vec3 GetPointPosition(size_t point_index) const override {
+    if (point_index < points_.size()) {
+      return points_[point_index];
+    }
+    return glm::vec3(0.0f);
+  }
+
  private:
   // Helper methods for buffer updates
   void UpdateColors(ColorMode color_mode);

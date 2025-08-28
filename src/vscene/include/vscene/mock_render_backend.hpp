@@ -73,10 +73,7 @@ public:
         return 0; // Mock texture ID
     }
     
-    Ray GetMouseRay(float screen_x, float screen_y, float width, float height) const override {
-        // Simple mock ray - in real implementation this would use camera projection
-        return Ray{glm::vec3(screen_x, screen_y, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)};
-    }
+    // Ray-casting removed - using GPU ID-buffer selection exclusively
     
     void SetBackgroundColor(float r, float g, float b, float a) override {
         mock_background_color_ = glm::vec4(r, g, b, a);

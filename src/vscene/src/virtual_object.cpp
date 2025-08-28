@@ -111,22 +111,6 @@ bool BoundingBox::Contains(const glm::vec3& point) const {
            point.z >= min.z && point.z <= max.z;
 }
 
-bool BoundingBox::Intersects(const Ray& ray, float& distance) const {
-    // Simple ray-box intersection using slab method
-    glm::vec3 inv_dir = 1.0f / ray.direction;
-    glm::vec3 t1 = (min - ray.origin) * inv_dir;
-    glm::vec3 t2 = (max - ray.origin) * inv_dir;
-    
-    glm::vec3 tmin = glm::min(t1, t2);
-    glm::vec3 tmax = glm::max(t1, t2);
-    
-    float t_near = glm::max(glm::max(tmin.x, tmin.y), tmin.z);
-    float t_far = glm::min(glm::min(tmax.x, tmax.y), tmax.z);
-    
-    if (t_near > t_far || t_far < 0) return false;
-    
-    distance = t_near > 0 ? t_near : t_far;
-    return distance >= 0;
-}
+// Ray-casting Intersects removed - using GPU ID-buffer selection exclusively
 
 } // namespace quickviz

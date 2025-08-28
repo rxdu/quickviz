@@ -53,7 +53,6 @@ public:
     uint32_t GetFramebufferTexture() const override;
     
     std::string PickObjectAt(float screen_x, float screen_y) override;
-    Ray GetMouseRay(float screen_x, float screen_y, float width, float height) const override;
     
     void SetBackgroundColor(float r, float g, float b, float a) override;
 

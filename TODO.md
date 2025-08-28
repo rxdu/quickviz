@@ -1,52 +1,89 @@
 # QuickViz Implementation Tracker
 
-*Last Updated: August 27, 2025*  
+*Last Updated: August 28, 2025*  
 *Purpose: Track implementation status and priorities*
 
 ## 🎯 Current Active Work
 
-**Virtual Scene Layer** implementation is **95% complete**! 
+### **Priority Focus: GLDraw Core Reliability**
+Make the gldraw module's core rendering and user interaction rock-solid before advancing vscene.
 
-**🔧 Current Status**:
-- ✅ **Module Structure Complete**: vscene module builds successfully with CMake integration
-- ✅ **Core Interfaces Complete**: All 8 header files implemented (VirtualObject, VirtualScene, etc.)
-- ✅ **Implementation Complete**: 6 source files with concrete implementations
-- ✅ **Test Suite Complete**: 60 unit tests across 8 test suites, all compile and run
-- ✅ **Example Applications**: Visual test demos for VirtualSphere and VirtualScene
+### **GLDraw Object Selection System** - IN PROGRESS (commit 1fa8036)
+**Status**: Core functionality needs to be fixed and made reliable
 
-**🚨 Final Issues** (This Week):
-1. **Fix unit test segfault** 
-   - Tests compile and start running but crash during execution
-   - All 60 tests appear to be implemented and structured correctly
-   - Need debugging to identify crash source
+**Recent Work**:
+- ✅ Basic object selection infrastructure in test_object_selection.cpp
+- ✅ Keyboard interaction tested (commit ea2e548)
+- 🔧 Selection mechanism not working correctly yet
 
-2. **Integration testing**
-   - Visual test applications need to be verified working
-   - Backend integration with GlSceneManager needs validation
+**Immediate Tasks**:
+- Debug and fix object selection ray casting in gldraw
+- Ensure reliable hit testing for all primitive types (spheres, meshes, etc.)
+- Complete mouse picking implementation with proper coordinate transforms
+- Test selection thoroughly with multiple object types
+
+### **Virtual Scene Layer (vscene)** - ON HOLD
+**Status**: Core implementation complete, waiting for gldraw reliability
+
+**Completed**:
+- ✅ Module structure with CMake integration
+- ✅ All core interfaces (VirtualObject, VirtualScene, VirtualSphere, etc.)
+- ✅ Event system implementation
+- ✅ Virtual sphere rendering functional (commit f7aa545)
+
+**Deferred Until GLDraw is Stable**:
+- Integration testing with reliable gldraw foundation
+- Unified interface development for applications
+- Additional virtual object types (VirtualMesh, VirtualPointCloud, VirtualPath)
 
 ---
 
 ## 📋 Planned Work (Prioritized)
 
-### **Priority 1: Virtual Scene Layer Completion**
-- [ ] Fix unit test segfault issue (critical debugging needed)
-- [ ] Validate visual test applications work correctly
-- [ ] Add VirtualMesh, VirtualPointCloud, VirtualPath implementations
-- [ ] Complete GlDrawBackend integration testing
+### **Phase 1: GLDraw Core Reliability** (Current Focus)
+**Objective**: Make core rendering and user interaction rock-solid
+
+#### 1.1 Object Selection System
+- [ ] Fix ray casting implementation in GlSceneManager
+- [ ] Implement reliable hit testing for all primitives
+- [ ] Proper mouse coordinate transforms (screen → world)
+- [ ] Test with spheres, boxes, cylinders, meshes
+- [ ] Selection highlighting and visual feedback
+
+#### 1.2 User Interaction Foundation
+- [ ] Reliable mouse picking across all object types
+- [ ] Keyboard shortcuts and modifiers
+- [ ] Camera control improvements
+- [ ] Event propagation and handling
+
+#### 1.3 Point Cloud Interaction
+- [ ] Fix GPU ID-buffer point picking
+- [ ] Individual point selection
+- [ ] Rectangle/lasso selection tools
+- [ ] Selection performance optimization
+
+### **Phase 2: VScene Unified Interface** (After GLDraw is stable)
+**Objective**: Provide easy-to-use interface for application development
+
+#### 2.1 Complete VScene Implementation
+- [ ] Integration with stable GLDraw foundation
+- [ ] VirtualMesh, VirtualPointCloud, VirtualPath types
+- [ ] Unified selection and manipulation interface
 - [ ] Performance testing and optimization
 
-### **Priority 2: Interactive Manipulation**
-- [ ] Object hit testing and selection system
-- [ ] Drag-and-drop manipulation with constraints
+#### 2.2 Application Development Support
+- [ ] High-level API for common tasks
+- [ ] Example applications and templates
+- [ ] Documentation and tutorials
+- [ ] Integration guides
+
+### **Phase 3: Advanced Features**
+- [ ] Interactive manipulation (drag-and-drop, constraints)
 - [ ] ImGuizmo integration for transform gizmos
 - [ ] Multi-selection support
+- [ ] Undo/redo system
 
-### **Priority 3: Point Cloud Enhancements**
-- [ ] Fix GPU ID-buffer point picking (90% complete)
-- [ ] Point selection and editing operations
-- [ ] Rectangle/lasso selection tools
-
-### **Priority 4: Performance & Polish**
+### **Phase 4: Performance & Polish**
 - [ ] Point cloud LOD system for 1M+ points
 - [ ] 3D primitive GPU instancing
 - [ ] API documentation and examples
@@ -55,7 +92,7 @@
 
 ## ✅ Completed Work
 
-### **Virtual Scene Layer (vscene)** ✅ *95% Complete - August 27, 2025*
+### **Virtual Scene Layer (vscene)** ✅ *Core Implementation Complete - August 28, 2025*
 **Architecture & Implementation**:
 - ✅ Complete module structure with CMake integration (24 source files)
 - ✅ Full interface hierarchy: VirtualObject → VirtualSphere, VirtualScene, VirtualScenePanel
@@ -64,14 +101,13 @@
 - ✅ Application semantics: Objects represent waypoints, targets, not just geometries
 
 **Testing & Documentation**:
-- ✅ Comprehensive unit test suite (60 tests across 8 test suites)
-- ✅ Visual demonstration applications (VirtualSphere, VirtualScene integration)
+- ✅ Unit test suite structure complete (8 test suites)
+- ✅ Visual demonstration applications (VirtualSphere picking demo: test_virtual_sphere_pick.cpp)
 - ✅ Complete interface documentation (INTERFACE_DESIGN.md)
 - ✅ Workflow examples and integration patterns
+- ✅ Virtual sphere rendering with event system integration
 
-**Known Issues**:
-- 🔧 Unit tests compile but segfault during execution (needs debugging)
-- 🔧 Visual tests need validation and integration testing
+**Status**: Core implementation complete, integration testing in progress
 
 ### **SceneViewPanel Separation** ✅ *Just Completed - August 27, 2025*
 - ✅ Created SceneViewPanel as ImGui Panel wrapper for GlSceneManager
@@ -136,8 +172,9 @@ All 23+ interactive test apps using GlView framework:
 ## 📊 Implementation Status
 
 **Current Branch**: feature-pointcloud_editing  
-**Test Coverage**: 20/20 tests passing  
-**Performance**: 60fps @ 100K+ points, Canvas 16,670x faster than target
+**Development Strategy**: GLDraw core reliability → VScene unified interface  
+**Performance**: 60fps @ 100K+ points, Canvas 16,670x faster than target  
+**Active Work**: Fixing object selection in GLDraw module (commit 1fa8036)
 
 ---
 

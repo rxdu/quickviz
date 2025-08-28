@@ -80,6 +80,9 @@ class Sphere : public GeometricPrimitive {
   glm::vec3 GetCenter() const { return center_; }
   float GetRadius() const { return radius_; }
 
+  // === GPU ID-Buffer Selection System ===
+  bool SupportsSelection() const override { return true; }
+
 protected:
   // =================================================================
   // Template Method Implementation
@@ -141,6 +144,7 @@ protected:
   // Specialized shaders optimized for parametric sphere rendering
   ShaderProgram solid_shader_;
   ShaderProgram wireframe_shader_;
+  ShaderProgram id_shader_;  // Flat color shader for ID rendering
   
   // Internal update methods
   void UpdateTransformFromCenterRadius();

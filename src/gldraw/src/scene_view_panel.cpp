@@ -118,10 +118,7 @@ const glm::mat4& SceneViewPanel::GetCoordinateTransform() const {
   return scene_manager_->GetCoordinateTransform();
 }
 
-GlSceneManager::MouseRay SceneViewPanel::GetMouseRayInWorldSpace(float mouse_x, float mouse_y, 
-                                                                 float window_width, float window_height) const {
-  return scene_manager_->GetMouseRayInWorldSpace(mouse_x, mouse_y, window_width, window_height);
-}
+// Ray casting methods removed - using GPU ID-buffer selection only
 
 // GPU picking delegation
 size_t SceneViewPanel::PickPointAtPixel(int x, int y, const std::string& point_cloud_name) {
@@ -221,7 +218,7 @@ void SceneViewPanel::HandleInput() {
 
   ImGuiIO& io = ImGui::GetIO();
 
-  // Handle mouse clicks for object selection (regardless of WantCaptureMouse)
+  // Handle mouse clicks for selection (pass coordinates to scene manager)
   if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
     ImVec2 mouse_pos = ImGui::GetMousePos();
     ImVec2 window_pos = ImGui::GetWindowPos();
@@ -231,7 +228,9 @@ void SceneViewPanel::HandleInput() {
     float relative_x = mouse_pos.x - window_pos.x - window_content_min.x;
     float relative_y = mouse_pos.y - window_pos.y - window_content_min.y;
     
-    // Delegate to scene manager for object selection
+    // Track selection calls (removed debug output)
+    
+    // Let scene manager handle selection (both objects and points)
     scene_manager_->SelectObjectAt(relative_x, relative_y);
   }
 

@@ -43,34 +43,7 @@ BoundingBox VirtualSphere::GetBounds() const {
     return bounds_;
 }
 
-bool VirtualSphere::HitTest(const Ray& ray, float& distance) const {
-    // Get sphere center from transform
-    glm::vec3 center = glm::vec3(GetState().transform[3]);
-    
-    // Ray-sphere intersection
-    glm::vec3 oc = ray.origin - center;
-    float a = glm::dot(ray.direction, ray.direction);
-    float b = 2.0f * glm::dot(oc, ray.direction);
-    float c = glm::dot(oc, oc) - radius_ * radius_;
-    
-    float discriminant = b * b - 4 * a * c;
-    if (discriminant < 0) return false;
-    
-    float sqrt_discriminant = sqrt(discriminant);
-    float t1 = (-b - sqrt_discriminant) / (2.0f * a);
-    float t2 = (-b + sqrt_discriminant) / (2.0f * a);
-    
-    // Return closest positive intersection
-    if (t1 > 0) {
-        distance = t1;
-        return true;
-    } else if (t2 > 0) {
-        distance = t2;
-        return true;
-    }
-    
-    return false;
-}
+// Ray-casting HitTest removed - using GPU ID-buffer selection exclusively
 
 void VirtualSphere::UpdateBackend(RenderInterface* backend) {
     if (backend && IsBackendUpdateNeeded()) {

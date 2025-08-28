@@ -25,7 +25,7 @@ class PointCloudToolPanel : public Panel {
   struct MouseInfo {
     bool valid = false;
     glm::vec2 screen_pos;
-    GlSceneManager::MouseRay ray;
+    glm::vec3 world_pos; // 3D position if available from GPU selection
   };
 
   void UpdateMouseInfo(const MouseInfo& info) { mouse_info_ = info; }

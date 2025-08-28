@@ -100,6 +100,32 @@ void main() {
 }
 )";
 
+// ID rendering shader for GPU selection (flat color, no lighting)
+const char* kIdVertexShader = R"(
+#version 330 core
+layout (location = 0) in vec3 aPos;
+
+uniform mat4 mvp;
+uniform vec3 center;
+uniform float radius;
+
+void main() {
+    vec3 worldPos = center + aPos * radius;
+    gl_Position = mvp * vec4(worldPos, 1.0);
+}
+)";
+
+const char* kIdFragmentShader = R"(
+#version 330 core
+out vec4 FragColor;
+uniform vec3 color;
+
+void main() {
+    // Flat color output without any lighting for ID buffer
+    FragColor = vec4(color, 1.0);
+}
+)";
+
 }  // namespace
 
 Sphere::Sphere() : GeometricPrimitive() {
@@ -164,6 +190,8 @@ std::pair<glm::vec3, glm::vec3> Sphere::GetBoundingBox() const {
   glm::vec3 half_extents(radius_, radius_, radius_);
   return {center_ - half_extents, center_ + half_extents};
 }
+
+// Ray intersection methods removed - using GPU ID-buffer selection exclusively
 
 // Legacy color methods now update both legacy values and base class material
 // These are kept for backward compatibility but deprecated
@@ -319,6 +347,18 @@ void Sphere::AllocateGpuResources() {
       throw std::runtime_error("Sphere wireframe shader linking failed");
     }
     
+    // Initialize ID shader for GPU selection
+    Shader id_vs(kIdVertexShader, Shader::Type::kVertex);
+    Shader id_fs(kIdFragmentShader, Shader::Type::kFragment);
+    if (!id_vs.Compile() || !id_fs.Compile()) {
+      throw std::runtime_error("Sphere ID shader compilation failed");
+    }
+    id_shader_.AttachShader(id_vs);
+    id_shader_.AttachShader(id_fs);
+    if (!id_shader_.LinkProgram()) {
+      throw std::runtime_error("Sphere ID shader linking failed");
+    }
+    
     // Create VAOs and VBOs for solid rendering
     glGenVertexArrays(1, &vao_solid_);
     glGenBuffers(1, &vbo_vertices_);
@@ -450,15 +490,24 @@ void Sphere::PrepareShaders(const glm::mat4& mvp_matrix, const glm::mat4& model_
 void Sphere::RenderSolid() {
   if (vao_solid_ == 0) return;
   
-  // Use specialized solid shader for sphere rendering
-  solid_shader_.Use();
-  solid_shader_.SetUniform("mvp", stored_mvp_matrix_);
-  solid_shader_.SetUniform("center", center_);
-  solid_shader_.SetUniform("radius", radius_);
-  solid_shader_.SetUniform("color", material_.diffuse_color);
-  solid_shader_.SetUniform("opacity", material_.opacity);
-  solid_shader_.TrySetUniform("lightPos", glm::vec3(10, 10, 10));
-  solid_shader_.TrySetUniform("viewPos", glm::vec3(0, 0, 5));
+  if (id_render_mode_) {
+    // Use flat ID shader for GPU selection (no lighting)
+    id_shader_.Use();
+    id_shader_.SetUniform("mvp", stored_mvp_matrix_);
+    id_shader_.SetUniform("center", center_);
+    id_shader_.SetUniform("radius", radius_);
+    id_shader_.SetUniform("color", id_color_);
+  } else {
+    // Use specialized solid shader for normal sphere rendering
+    solid_shader_.Use();
+    solid_shader_.SetUniform("mvp", stored_mvp_matrix_);
+    solid_shader_.SetUniform("center", center_);
+    solid_shader_.SetUniform("radius", radius_);
+    solid_shader_.SetUniform("color", material_.diffuse_color);
+    solid_shader_.SetUniform("opacity", material_.opacity);
+    solid_shader_.TrySetUniform("lightPos", glm::vec3(10, 10, 10));
+    solid_shader_.TrySetUniform("viewPos", glm::vec3(0, 0, 5));
+  }
   
   glBindVertexArray(vao_solid_);
   glDrawElements(GL_TRIANGLES, solid_indices_.size(), GL_UNSIGNED_INT, nullptr);
@@ -476,7 +525,7 @@ void Sphere::RenderWireframe() {
   wireframe_shader_.SetUniform("mvp", stored_mvp_matrix_);
   wireframe_shader_.SetUniform("center", center_);
   wireframe_shader_.SetUniform("radius", radius_);
-  wireframe_shader_.SetUniform("color", material_.wireframe_color);
+  wireframe_shader_.SetUniform("color", id_render_mode_ ? id_color_ : material_.wireframe_color);
   
   glBindVertexArray(vao_wireframe_);
   glDrawElements(GL_LINES, wireframe_indices_.size(), GL_UNSIGNED_INT, nullptr);
@@ -494,7 +543,7 @@ void Sphere::RenderPoints() {
   wireframe_shader_.SetUniform("mvp", stored_mvp_matrix_);
   wireframe_shader_.SetUniform("center", center_);
   wireframe_shader_.SetUniform("radius", radius_);
-  wireframe_shader_.SetUniform("color", material_.diffuse_color);
+  wireframe_shader_.SetUniform("color", id_render_mode_ ? id_color_ : material_.diffuse_color);
   
   glBindVertexArray(vao_wireframe_);
   glDrawArrays(GL_POINTS, 0, vertices_.size());

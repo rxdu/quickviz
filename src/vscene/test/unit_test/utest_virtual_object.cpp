@@ -120,28 +120,7 @@ TEST_F(VirtualObjectTest, BoundingBox) {
     EXPECT_FALSE(bounds.Contains(glm::vec3(0.0f, 0.0f, 0.0f))); // Outside
 }
 
-// Test ray-sphere intersection
-TEST_F(VirtualObjectTest, HitTesting) {
-    sphere->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
-    sphere->SetRadius(1.0f);
-    
-    // Ray from distance hitting center
-    Ray ray_hit = { glm::vec3(-3.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f) };
-    float distance_hit;
-    EXPECT_TRUE(sphere->HitTest(ray_hit, distance_hit));
-    EXPECT_FLOAT_EQ(distance_hit, 2.0f); // Should hit at distance 2 (3 - 1)
-    
-    // Ray missing sphere
-    Ray ray_miss = { glm::vec3(-3.0f, 2.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f) };
-    float distance_miss;
-    EXPECT_FALSE(sphere->HitTest(ray_miss, distance_miss));
-    
-    // Ray starting inside sphere
-    Ray ray_inside = { glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f) };
-    float distance_inside;
-    EXPECT_TRUE(sphere->HitTest(ray_inside, distance_inside));
-    EXPECT_FLOAT_EQ(distance_inside, 1.0f); // Should hit at exit point
-}
+// Ray-casting HitTesting tests removed - using GPU ID-buffer selection exclusively
 
 // Test backend data conversion
 TEST_F(VirtualObjectTest, BackendDataConversion) {
@@ -207,11 +186,7 @@ TEST(BoundingBoxTest, Utilities) {
     EXPECT_EQ(box.GetCenter(), glm::vec3(0.0f, 0.0f, 0.0f));
     EXPECT_EQ(box.GetSize(), glm::vec3(2.0f, 2.0f, 2.0f));
     
-    // Test ray intersection
-    Ray ray = { glm::vec3(-2.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f) };
-    float distance;
-    EXPECT_TRUE(box.Intersects(ray, distance));
-    EXPECT_FLOAT_EQ(distance, 1.0f); // Should intersect at x = -1
+    // Ray intersection tests removed - using GPU ID-buffer selection exclusively
 }
 
 /*

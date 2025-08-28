@@ -41,6 +41,8 @@ add_library(gldraw
     src/renderable/plane.cpp
     src/renderable/pose.cpp
     src/renderable/path.cpp
+    ## GPU selection system
+    src/gpu_selection.cpp
     )
 target_link_libraries(gldraw PUBLIC core imcore imview stb
     Threads::Threads

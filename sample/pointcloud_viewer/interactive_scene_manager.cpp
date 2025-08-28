@@ -39,8 +39,8 @@ void InteractiveSceneManager::Draw() {
   if (window_hovered && mouse_in_content) {
     mouse_info.valid = true;
     mouse_info.screen_pos = glm::vec2(local_x, local_y);
-    mouse_info.ray = GetMouseRayInWorldSpace(local_x, local_y, content_size.x,
-                                             content_size.y);
+    // Use placeholder world position (could be enhanced with depth buffer sampling)
+    mouse_info.world_pos = glm::vec3(0.0f, 0.0f, 0.0f);
 
     // Draw crosshair overlay
     ImDrawList* draw_list = ImGui::GetWindowDrawList();

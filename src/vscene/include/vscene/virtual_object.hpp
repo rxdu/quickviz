@@ -25,7 +25,6 @@
 namespace quickviz {
 
 // Forward declarations
-struct Ray;
 struct BoundingBox;
 struct VirtualObjectData;
 
@@ -82,7 +81,7 @@ public:
 
     // Interaction interface (pure virtual - must be implemented)
     virtual BoundingBox GetBounds() const = 0;
-    virtual bool HitTest(const Ray& ray, float& distance) const = 0;
+    // Ray-casting HitTest removed - using GPU ID-buffer selection exclusively
     
     // Backend synchronization (pure virtual)
     virtual void UpdateBackend(RenderInterface* backend) = 0;
@@ -115,14 +114,13 @@ private:
 };
 
 // Common geometric types
-// Note: Ray is now defined in render_interface.hpp
 
 struct BoundingBox {
     glm::vec3 min = glm::vec3(0.0f);
     glm::vec3 max = glm::vec3(0.0f);
     
     bool Contains(const glm::vec3& point) const;
-    bool Intersects(const Ray& ray, float& distance) const;
+    // Ray-casting Intersects removed - using GPU ID-buffer selection exclusively
     glm::vec3 GetCenter() const { return (min + max) * 0.5f; }
     glm::vec3 GetSize() const { return max - min; }
 };
