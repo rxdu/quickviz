@@ -8,8 +8,8 @@
 ### **Priority Focus: GLDraw Core Reliability**
 Make the gldraw module's core rendering and user interaction rock-solid before advancing vscene.
 
-### **GLDraw Selection System** - NEARLY COMPLETE (commit 40c9797)
-**Status**: Advanced GPU-based selection system implemented, needs extension to all renderables
+### **GLDraw Selection System** - COMPLETE (commit 40c9797 + August 29 fixes)
+**Status**: Complete GPU-based selection system with critical primitives implemented and coordinate transformation bugs fixed
 
 **Recent Work**:
 - ✅ Complete SelectionManager implementation with GPU ID-buffer rendering (selection_manager.hpp:387 lines)
@@ -18,6 +18,7 @@ Make the gldraw module's core rendering and user interaction rock-solid before a
 - ✅ Sphere object selection implemented and tested
 - ✅ Selection enabling/disabling API (commit 40c9797)
 - ✅ Point selection from multiple point clouds working (commit 37b4975)
+- ✅ **CRITICAL**: Fixed double transformation bugs in Cylinder and BoundingBox (August 29, 2025)
 
 **Remaining Tasks**:
 - [ ] **Primitive Selection Extension** - Based on `docs/notes/primitive_selection_extension_design.md`
@@ -90,15 +91,20 @@ Make the gldraw module's core rendering and user interaction rock-solid before a
 - [x] Reliable hit testing for point clouds and spheres
 - [x] Proper mouse coordinate transforms (screen → world)
 - [x] Selection highlighting and visual feedback via layer system
-- [ ] **Priority 1 - Critical Graph Editing Primitives**:
+- [x] **Priority 1 - Critical Graph Editing Primitives**: ✅ COMPLETED
   - [x] LineStrip selection (polylines, curved paths) ✅ COMPLETED
   - [x] Mesh selection (zones, regions, areas) ✅ COMPLETED
-  - [x] Cylinder selection refinement (SetHighlighted method) ✅ COMPLETED
+  - [x] Cylinder selection refinement (coordinate transformation bugs fixed) ✅ COMPLETED
 - [ ] **Priority 2 - Enhanced Interactivity**:
   - [ ] Text3D selection (clickable labels)
   - [ ] Arrow selection (directional indicators) 
   - [ ] Plane selection (2D regions)
   - [ ] Path selection (trajectories)
+- [x] **Priority 2.5 - Architectural Consolidation** ✅ PHASE 1 COMPLETED (August 29, 2025):
+  - [x] Fix BoundingBox double transformation bug (coordinate transformation corrected) ✅ COMPLETED
+  - [x] Fix Cylinder shader uniform errors (clean uniform usage) ✅ COMPLETED  
+  - [x] Document renderable architecture tiers and design rationale ✅ COMPLETED
+  - [ ] **Phase 2**: Migrate to GeometricPrimitive shared shaders (deferred - performance considerations)
 - [ ] **Priority 3 - Specialized Primitives**:
   - [ ] Create Box/Cube primitive (solid volumes)
   - [ ] Create Billboard primitive (screen-aligned text)

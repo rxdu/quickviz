@@ -569,7 +569,6 @@ void Cylinder::RenderSolid() {
   // Use specialized solid shader for cylinder rendering
   solid_shader_.Use();
   solid_shader_.SetUniform("mvp", stored_mvp_matrix_);
-  solid_shader_.SetUniform("model", stored_model_matrix_);
   solid_shader_.SetUniform("color", material_.diffuse_color);
   solid_shader_.SetUniform("opacity", material_.opacity);
   solid_shader_.TrySetUniform("lightPos", glm::vec3(10, 10, 10));
@@ -590,7 +589,6 @@ void Cylinder::RenderWireframe() {
   // Use specialized wireframe shader for cylinder rendering
   wireframe_shader_.Use();
   wireframe_shader_.SetUniform("mvp", stored_mvp_matrix_);
-  wireframe_shader_.SetUniform("model", stored_model_matrix_);
   wireframe_shader_.SetUniform("color", material_.wireframe_color);
   
   glBindVertexArray(vao_wireframe_);
@@ -607,7 +605,6 @@ void Cylinder::RenderPoints() {
   // Use specialized wireframe shader for point rendering
   wireframe_shader_.Use();
   wireframe_shader_.SetUniform("mvp", stored_mvp_matrix_);
-  wireframe_shader_.SetUniform("model", stored_model_matrix_);
   wireframe_shader_.SetUniform("color", material_.diffuse_color);
   
   glBindVertexArray(vao_sides_);
@@ -625,7 +622,6 @@ void Cylinder::RenderSpecialFeatures(const glm::mat4& mvp_matrix, const glm::mat
     
     solid_shader_.Use();
     solid_shader_.SetUniform("mvp", mvp_matrix);
-    solid_shader_.SetUniform("model", model_matrix);
     solid_shader_.SetUniform("color", material_.diffuse_color);
     solid_shader_.SetUniform("opacity", material_.opacity);
     solid_shader_.TrySetUniform("lightPos", glm::vec3(10, 10, 10));

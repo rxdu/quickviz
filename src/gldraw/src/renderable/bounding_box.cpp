@@ -25,10 +25,10 @@ const char* kEdgeVertexShader = R"(
 layout (location = 0) in vec3 aPos;
 
 uniform mat4 mvp;
-uniform mat4 transform;
 
 void main() {
-    gl_Position = mvp * transform * vec4(aPos, 1.0);
+    // CRITICAL FIX: MVP already includes full transformation
+    gl_Position = mvp * vec4(aPos, 1.0);
 }
 )";
 
@@ -51,12 +51,13 @@ out vec3 FragPos;
 out vec3 Normal;
 
 uniform mat4 mvp;
-uniform mat4 transform;
+uniform mat4 model;
 
 void main() {
-    FragPos = vec3(transform * vec4(aPos, 1.0));
-    Normal = mat3(transpose(inverse(transform))) * aNormal;
-    gl_Position = mvp * transform * vec4(aPos, 1.0);
+    // CRITICAL FIX: MVP already includes full transformation
+    FragPos = vec3(model * vec4(aPos, 1.0));
+    Normal = mat3(transpose(inverse(model))) * aNormal;
+    gl_Position = mvp * vec4(aPos, 1.0);
 }
 )";
 
@@ -156,7 +157,12 @@ glm::vec3 BoundingBox::GetCentroid() const {
 }
 
 std::pair<glm::vec3, glm::vec3> BoundingBox::GetBoundingBox() const {
-  return {min_point_, max_point_};
+  // CRITICAL FIX: Return bounding box in local coordinates
+  // Transform will be applied by the selection system
+  glm::vec3 center = (min_point_ + max_point_) * 0.5f;
+  glm::vec3 local_min = min_point_ - center;
+  glm::vec3 local_max = max_point_ - center;
+  return {local_min, local_max};
 }
 
 // Legacy SetColor handled by base class
@@ -228,19 +234,24 @@ void BoundingBox::GenerateBoxGeometry() {
   edge_indices_.clear();
   face_indices_.clear();
   
-  // Generate 8 vertices of the box (in world coordinates for now)
+  // CRITICAL FIX: Generate vertices in local coordinates to eliminate double transformation bug
+  // Transform will be applied by the MVP matrix, not by vertex generation
+  glm::vec3 center = (min_point_ + max_point_) * 0.5f;
+  glm::vec3 local_min = min_point_ - center;
+  glm::vec3 local_max = max_point_ - center;
+  
   vertices_ = {
-    // Bottom face (z = min)
-    {min_point_.x, min_point_.y, min_point_.z},  // 0: min, min, min
-    {max_point_.x, min_point_.y, min_point_.z},  // 1: max, min, min
-    {max_point_.x, max_point_.y, min_point_.z},  // 2: max, max, min
-    {min_point_.x, max_point_.y, min_point_.z},  // 3: min, max, min
+    // Bottom face (z = min) - in local coordinates
+    {local_min.x, local_min.y, local_min.z},  // 0: min, min, min
+    {local_max.x, local_min.y, local_min.z},  // 1: max, min, min
+    {local_max.x, local_max.y, local_min.z},  // 2: max, max, min
+    {local_min.x, local_max.y, local_min.z},  // 3: min, max, min
     
-    // Top face (z = max)
-    {min_point_.x, min_point_.y, max_point_.z},  // 4: min, min, max
-    {max_point_.x, min_point_.y, max_point_.z},  // 5: max, min, max
-    {max_point_.x, max_point_.y, max_point_.z},  // 6: max, max, max
-    {min_point_.x, max_point_.y, max_point_.z}   // 7: min, max, max
+    // Top face (z = max) - in local coordinates
+    {local_min.x, local_min.y, local_max.z},  // 4: min, min, max
+    {local_max.x, local_min.y, local_max.z},  // 5: max, min, max
+    {local_max.x, local_max.y, local_max.z},  // 6: max, max, max
+    {local_min.x, local_max.y, local_max.z}   // 7: min, max, max
   };
   
   // Generate edge indices (12 edges of a cube)
@@ -400,7 +411,7 @@ void BoundingBox::RenderSolid() {
   // Use specialized face shader for solid rendering
   face_shader_.Use();
   face_shader_.SetUniform("mvp", stored_mvp_matrix_);
-  face_shader_.SetUniform("transform", stored_model_matrix_);
+  face_shader_.SetUniform("model", stored_model_matrix_);
   face_shader_.SetUniform("color", material_.diffuse_color);
   face_shader_.SetUniform("opacity", material_.opacity);
   face_shader_.TrySetUniform("lightPos", glm::vec3(10, 10, 10));
@@ -421,7 +432,6 @@ void BoundingBox::RenderWireframe() {
   // Use specialized edge shader for wireframe rendering
   edge_shader_.Use();
   edge_shader_.SetUniform("mvp", stored_mvp_matrix_);
-  edge_shader_.SetUniform("transform", stored_model_matrix_);
   edge_shader_.SetUniform("color", material_.wireframe_color);
   
   // Draw wireframe edges
@@ -439,7 +449,6 @@ void BoundingBox::RenderPoints() {
   // Use specialized edge shader for point rendering
   edge_shader_.Use();
   edge_shader_.SetUniform("mvp", stored_mvp_matrix_);
-  edge_shader_.SetUniform("transform", stored_model_matrix_);
   edge_shader_.SetUniform("color", material_.diffuse_color);
   
   // Draw all 8 corner points
@@ -465,7 +474,6 @@ void BoundingBox::RenderSpecialFeatures(const glm::mat4& mvp_matrix, const glm::
     
     edge_shader_.Use();
     edge_shader_.SetUniform("mvp", mvp_matrix);
-    edge_shader_.SetUniform("transform", model_matrix);
     edge_shader_.SetUniform("color", edge_color_);
     
     glLineWidth(edge_width_);
@@ -483,7 +491,6 @@ void BoundingBox::RenderSpecialFeatures(const glm::mat4& mvp_matrix, const glm::
   if (show_corner_points_) {
     edge_shader_.Use();
     edge_shader_.SetUniform("mvp", mvp_matrix);
-    edge_shader_.SetUniform("transform", model_matrix);
     edge_shader_.SetUniform("color", edge_color_);
     
     glEnable(GL_PROGRAM_POINT_SIZE);
@@ -493,6 +500,73 @@ void BoundingBox::RenderSpecialFeatures(const glm::mat4& mvp_matrix, const glm::
     glBindVertexArray(0);
     glDisable(GL_PROGRAM_POINT_SIZE);
   }
+}
+
+void BoundingBox::RenderIdBuffer(const glm::mat4& mvp_matrix) {
+  if (vao_faces_ == 0) return;
+  
+  // Use the shared GeometricPrimitive ID shader but render with bounding box's geometry directly
+  // This ensures correct ID color rendering for GPU selection
+  
+  // Get the static ID shader from GeometricPrimitive
+  static std::unique_ptr<ShaderProgram> id_shader = nullptr;
+  static bool shader_initialized = false;
+  
+  if (!shader_initialized) {
+    try {
+      const char* id_vertex_shader = R"(
+        #version 330 core
+        layout (location = 0) in vec3 aPos;
+        
+        uniform mat4 uMVP;
+        
+        void main() {
+          gl_Position = uMVP * vec4(aPos, 1.0);
+        }
+      )";
+      
+      const char* id_fragment_shader = R"(
+        #version 330 core
+        out vec4 FragColor;
+        
+        uniform vec3 uIdColor;
+        
+        void main() {
+          FragColor = vec4(uIdColor, 1.0);
+        }
+      )";
+      
+      id_shader = std::make_unique<ShaderProgram>();
+      Shader vs(id_vertex_shader, Shader::Type::kVertex);
+      Shader fs(id_fragment_shader, Shader::Type::kFragment);
+      
+      if (vs.Compile() && fs.Compile()) {
+        id_shader->AttachShader(vs);
+        id_shader->AttachShader(fs);
+        if (!id_shader->LinkProgram()) {
+          id_shader = nullptr;
+        }
+      } else {
+        id_shader = nullptr;
+      }
+      shader_initialized = true;
+    } catch (const std::exception&) {
+      id_shader = nullptr;
+      shader_initialized = true;
+    }
+  }
+  
+  if (!id_shader) return;
+  
+  // Use the ID shader with bounding box geometry
+  id_shader->Use();
+  id_shader->SetUniform("uMVP", mvp_matrix);
+  id_shader->SetUniform("uIdColor", id_color_);
+  
+  // Render bounding box faces with ID color
+  glBindVertexArray(vao_faces_);
+  glDrawElements(GL_TRIANGLES, face_indices_.size(), GL_UNSIGNED_INT, nullptr);
+  glBindVertexArray(0);
 }
 
 void BoundingBox::UpdateTransformFromBounds() {
