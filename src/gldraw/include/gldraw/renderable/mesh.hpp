@@ -45,6 +45,16 @@ class Mesh : public OpenGlObject {
   void OnDraw(const glm::mat4& projection, const glm::mat4& view,
               const glm::mat4& coord_transform = glm::mat4(1.0f)) override;
   bool IsGpuResourcesAllocated() const noexcept override { return vao_ != 0; }
+  
+  // Selection interface
+  bool SupportsSelection() const override { return true; }
+  void SetHighlighted(bool highlighted) override;
+  std::pair<glm::vec3, glm::vec3> GetBoundingBox() const override;
+  
+  // ID rendering support for GPU selection
+  bool SupportsIdRendering() const override { return true; }
+  void SetIdRenderMode(bool enabled) override { id_render_mode_ = enabled; }
+  void SetIdColor(const glm::vec3& color) override { id_color_ = color; }
 
   // Utility methods
   size_t GetVertexCount() const { return vertices_.size(); }
@@ -57,6 +67,7 @@ class Mesh : public OpenGlObject {
   void DrawMesh(const glm::mat4& mvp);
   void DrawWireframe(const glm::mat4& mvp);
   void DrawNormals(const glm::mat4& mvp);
+  void DrawIdBuffer(const glm::mat4& mvp);
 
   // Mesh data
   std::vector<glm::vec3> vertices_;
@@ -72,6 +83,15 @@ class Mesh : public OpenGlObject {
   float normal_scale_ = 0.1f;
   glm::vec3 normal_color_ = glm::vec3(0.0f, 1.0f, 0.0f);
   
+  // Selection state
+  bool is_highlighted_ = false;
+  glm::vec3 original_color_;
+  bool original_wireframe_mode_;
+  
+  // ID rendering for GPU selection
+  bool id_render_mode_ = false;
+  glm::vec3 id_color_{0.0f};
+  
   // OpenGL resources
   uint32_t vao_ = 0;
   uint32_t vertex_vbo_ = 0;
@@ -81,6 +101,7 @@ class Mesh : public OpenGlObject {
   ShaderProgram mesh_shader_;
   ShaderProgram wireframe_shader_;
   ShaderProgram normal_shader_;
+  ShaderProgram id_shader_;
   
   bool needs_update_ = true;
 };

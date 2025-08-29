@@ -18,6 +18,7 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <limits>
 
 #include "../../include/gldraw/shader.hpp"
 
@@ -126,6 +127,29 @@ void main() {
 }
 )";
 
+// ID rendering shaders for GPU-based selection
+const char* id_vertex_shader = R"(
+#version 330 core
+layout (location = 0) in vec3 aPos;
+
+uniform mat4 uMVP;
+
+void main() {
+    gl_Position = uMVP * vec4(aPos, 1.0);
+}
+)";
+
+const char* id_fragment_shader = R"(
+#version 330 core
+out vec4 FragColor;
+
+uniform vec3 uIdColor;
+
+void main() {
+    FragColor = vec4(uIdColor, 1.0);
+}
+)";
+
 } // anonymous namespace
 
 Mesh::Mesh() {
@@ -217,6 +241,18 @@ void Mesh::AllocateGpuResources() {
     if (!normal_shader_.LinkProgram()) {
       throw std::runtime_error("Normal shader linking failed");
     }
+    
+    // Compile and link ID shader for GPU selection
+    Shader id_vs(id_vertex_shader, Shader::Type::kVertex);
+    Shader id_fs(id_fragment_shader, Shader::Type::kFragment);
+    if (!id_vs.Compile() || !id_fs.Compile()) {
+      throw std::runtime_error("ID shader compilation failed");
+    }
+    id_shader_.AttachShader(id_vs);
+    id_shader_.AttachShader(id_fs);
+    if (!id_shader_.LinkProgram()) {
+      throw std::runtime_error("ID shader linking failed");
+    }
 
     // Generate OpenGL objects
     glGenVertexArrays(1, &vao_);
@@ -270,6 +306,12 @@ void Mesh::OnDraw(const glm::mat4& projection, const glm::mat4& view,
 
   glm::mat4 model = glm::mat4(1.0f);
   glm::mat4 mvp = projection * view * coord_transform * model;
+
+  // Handle ID rendering mode for GPU selection
+  if (id_render_mode_) {
+    DrawIdBuffer(mvp);
+    return;
+  }
 
   // Draw solid mesh
   if (!wireframe_mode_) {
@@ -402,6 +444,56 @@ void Mesh::DrawNormals(const glm::mat4& mvp) {
   // TODO: Implement normal visualization
   // This requires a geometry shader or separate line rendering
   // For now, skip implementation
+}
+
+void Mesh::DrawIdBuffer(const glm::mat4& mvp) {
+  if (vertices_.empty() || indices_.empty()) return;
+
+  id_shader_.Use();
+  id_shader_.SetUniform("uMVP", mvp);
+  id_shader_.SetUniform("uIdColor", id_color_);
+
+  glBindVertexArray(vao_);
+  glDrawElements(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, 0);
+  glBindVertexArray(0);
+}
+
+void Mesh::SetHighlighted(bool highlighted) {
+  if (is_highlighted_ == highlighted) return;
+  
+  is_highlighted_ = highlighted;
+  
+  if (highlighted) {
+    // Save original values
+    original_color_ = color_;
+    original_wireframe_mode_ = wireframe_mode_;
+    
+    // Apply highlight style - use outline mode for meshes
+    color_ = glm::vec3(1.0f, 1.0f, 0.0f);  // Yellow highlight
+    wireframe_mode_ = true;                 // Show wireframe outline
+    wireframe_color_ = glm::vec3(1.0f, 1.0f, 0.0f);  // Yellow wireframe
+  } else {
+    // Restore original values
+    color_ = original_color_;
+    wireframe_mode_ = original_wireframe_mode_;
+    wireframe_color_ = glm::vec3(0.0f, 0.0f, 0.0f);  // Default wireframe color
+  }
+}
+
+std::pair<glm::vec3, glm::vec3> Mesh::GetBoundingBox() const {
+  if (vertices_.empty()) {
+    return {glm::vec3(0.0f), glm::vec3(0.0f)};
+  }
+  
+  glm::vec3 min_point(std::numeric_limits<float>::max());
+  glm::vec3 max_point(std::numeric_limits<float>::lowest());
+  
+  for (const auto& vertex : vertices_) {
+    min_point = glm::min(min_point, vertex);
+    max_point = glm::max(max_point, vertex);
+  }
+  
+  return {min_point, max_point};
 }
 
 }  // namespace quickviz

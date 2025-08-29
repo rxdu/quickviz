@@ -33,9 +33,10 @@ uniform mat4 mvp;
 uniform mat4 model;
 
 void main() {
+    // CRITICAL FIX: MVP already includes model transform, don't apply twice
     FragPos = vec3(model * vec4(aPos, 1.0));
     Normal = mat3(transpose(inverse(model))) * aNormal;
-    gl_Position = mvp * model * vec4(aPos, 1.0);
+    gl_Position = mvp * vec4(aPos, 1.0);
 }
 )";
 
@@ -82,7 +83,8 @@ uniform mat4 mvp;
 uniform mat4 model;
 
 void main() {
-    gl_Position = mvp * model * vec4(aPos, 1.0);
+    // CRITICAL FIX: MVP already includes model transform, don't apply twice
+    gl_Position = mvp * vec4(aPos, 1.0);
 }
 )";
 
@@ -187,12 +189,14 @@ glm::vec3 Cylinder::GetCentroid() const {
 }
 
 std::pair<glm::vec3, glm::vec3> Cylinder::GetBoundingBox() const {
-  glm::vec3 center = GetCentroid();
-  float height = GetHeight();
+  // CRITICAL FIX: Calculate bounding box in local coordinates
+  // Transform will be applied by the selection system
+  glm::vec3 axis = top_center_ - base_center_;
+  float height = glm::length(axis);
   
-  // Simple AABB approximation - could be improved for rotated cylinders
+  // Local coordinates bounding box (centered at origin)
   glm::vec3 half_extents(radius_, height * 0.5f, radius_);
-  return {center - half_extents, center + half_extents};
+  return {-half_extents, half_extents};
 }
 
 // Legacy color methods now handled by base class
@@ -273,6 +277,12 @@ void Cylinder::GenerateCylinderGeometry() {
   }
   perp2 = glm::cross(axis, perp1);
   
+  // CRITICAL FIX: Generate vertices in local coordinates relative to center
+  // This eliminates double transformation bug
+  glm::vec3 center = (base_center_ + top_center_) * 0.5f;
+  glm::vec3 local_bottom = base_center_ - center;
+  glm::vec3 local_top = top_center_ - center;
+  
   // Generate vertices for cylinder sides
   for (int i = 0; i <= radial_segments_; ++i) {
     float angle = 2.0f * M_PI * i / radial_segments_;
@@ -282,12 +292,12 @@ void Cylinder::GenerateCylinderGeometry() {
     glm::vec3 radial_dir = cos_a * perp1 + sin_a * perp2;
     glm::vec3 offset = radius_ * radial_dir;
     
-    // Bottom vertex
-    vertices_.push_back(base_center_ + offset);
+    // Bottom vertex (in local coordinates)
+    vertices_.push_back(local_bottom + offset);
     normals_.push_back(radial_dir);  // Outward normal
     
-    // Top vertex
-    vertices_.push_back(top_center_ + offset);
+    // Top vertex (in local coordinates)
+    vertices_.push_back(local_top + offset);
     normals_.push_back(radial_dir);  // Outward normal
   }
   
@@ -310,12 +320,12 @@ void Cylinder::GenerateCylinderGeometry() {
   if (show_bottom_cap_ || show_top_cap_) {
     size_t cap_start_idx = vertices_.size();
     
-    // Bottom cap center
-    vertices_.push_back(base_center_);
+    // Bottom cap center (in local coordinates)
+    vertices_.push_back(local_bottom);
     normals_.push_back(-axis);  // Downward normal
     
-    // Top cap center  
-    vertices_.push_back(top_center_);
+    // Top cap center (in local coordinates)
+    vertices_.push_back(local_top);
     normals_.push_back(axis);   // Upward normal
     
     // Bottom cap vertices
@@ -325,7 +335,7 @@ void Cylinder::GenerateCylinderGeometry() {
       float sin_a = sin(angle);
       
       glm::vec3 radial_dir = cos_a * perp1 + sin_a * perp2;
-      vertices_.push_back(base_center_ + radius_ * radial_dir);
+      vertices_.push_back(local_bottom + radius_ * radial_dir);
       normals_.push_back(-axis);
     }
     
@@ -336,7 +346,7 @@ void Cylinder::GenerateCylinderGeometry() {
       float sin_a = sin(angle);
       
       glm::vec3 radial_dir = cos_a * perp1 + sin_a * perp2;
-      vertices_.push_back(top_center_ + radius_ * radial_dir);
+      vertices_.push_back(local_top + radius_ * radial_dir);
       normals_.push_back(axis);
     }
     
@@ -636,6 +646,91 @@ void Cylinder::RenderSpecialFeatures(const glm::mat4& mvp_matrix, const glm::mat
       glDrawElements(GL_TRIANGLES, top_cap_indices_.size(), GL_UNSIGNED_INT, nullptr);
       glBindVertexArray(0);
     }
+  }
+}
+
+void Cylinder::RenderIdBuffer(const glm::mat4& mvp_matrix) {
+  if (vao_sides_ == 0) return;
+  
+  // Use the shared GeometricPrimitive ID shader but render with cylinder's geometry directly
+  // Call parent's method to get the ID shader, but render cylinder geometry instead of calling RenderSolid
+  
+  // Get the static ID shader from GeometricPrimitive
+  // (Implementation note: This is a bit hacky but avoids duplicating shader code)
+  static std::unique_ptr<ShaderProgram> id_shader = nullptr;
+  static bool shader_initialized = false;
+  
+  if (!shader_initialized) {
+    try {
+      const char* id_vertex_shader = R"(
+        #version 330 core
+        layout (location = 0) in vec3 aPos;
+        
+        uniform mat4 uMVP;
+        
+        void main() {
+          gl_Position = uMVP * vec4(aPos, 1.0);
+        }
+      )";
+      
+      const char* id_fragment_shader = R"(
+        #version 330 core
+        out vec4 FragColor;
+        
+        uniform vec3 uIdColor;
+        
+        void main() {
+          FragColor = vec4(uIdColor, 1.0);
+        }
+      )";
+      
+      id_shader = std::make_unique<ShaderProgram>();
+      Shader vs(id_vertex_shader, Shader::Type::kVertex);
+      Shader fs(id_fragment_shader, Shader::Type::kFragment);
+      
+      if (vs.Compile() && fs.Compile()) {
+        id_shader->AttachShader(vs);
+        id_shader->AttachShader(fs);
+        if (!id_shader->LinkProgram()) {
+          id_shader = nullptr;
+        }
+      } else {
+        id_shader = nullptr;
+      }
+      shader_initialized = true;
+    } catch (const std::exception&) {
+      id_shader = nullptr;
+      shader_initialized = true;
+    }
+  }
+  
+  if (!id_shader) return;
+  
+  // Use the ID shader with cylinder geometry
+  id_shader->Use();
+  id_shader->SetUniform("uMVP", mvp_matrix);
+  id_shader->SetUniform("uIdColor", id_color_);
+  
+  // Render cylinder sides with ID color
+  glBindVertexArray(vao_sides_);
+  glDrawElements(GL_TRIANGLES, side_indices_.size(), GL_UNSIGNED_INT, nullptr);
+  glBindVertexArray(0);
+  
+  // Also render caps if enabled (for complete cylinder selection)
+  if (vao_caps_ != 0) {
+    glBindVertexArray(vao_caps_);
+    
+    if (show_bottom_cap_ && !bottom_cap_indices_.empty()) {
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_bottom_cap_);
+      glDrawElements(GL_TRIANGLES, bottom_cap_indices_.size(), GL_UNSIGNED_INT, nullptr);
+    }
+    
+    if (show_top_cap_ && !top_cap_indices_.empty()) {
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_top_cap_);
+      glDrawElements(GL_TRIANGLES, top_cap_indices_.size(), GL_UNSIGNED_INT, nullptr);
+    }
+    
+    glBindVertexArray(0);
   }
 }
 

@@ -100,6 +100,9 @@ protected:
   // Cylinder-specific rendering methods
   void RenderSpecialFeatures(const glm::mat4& mvp_matrix, const glm::mat4& model_matrix);
   
+  // Override ID rendering to use cylinder's geometry directly
+  void RenderIdBuffer(const glm::mat4& mvp_matrix) override;
+  
 private:
   void GenerateCylinderGeometry();
   void UpdateGpuBuffers();

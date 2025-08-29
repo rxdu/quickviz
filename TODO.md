@@ -29,8 +29,8 @@ Make the gldraw module's core rendering and user interaction rock-solid before a
 **Detailed Primitive Selection Status**:
 
 *Existing Primitives Needing Selection Support*:
-- [ ] **LineStrip** - Critical for polyline/path editing (inherits OpenGlObject directly)
-- [ ] **Mesh** - Critical for zone/region editing (inherits OpenGlObject directly) 
+- [x] **LineStrip** - Critical for polyline/path editing (inherits OpenGlObject directly) ✅ COMPLETED
+- [x] **Mesh** - Critical for zone/region editing (inherits OpenGlObject directly) ✅ COMPLETED
 - [ ] **Text3D** - Important for clickable labels (inherits OpenGlObject directly)
 - [ ] **Arrow** - Useful for directional indicators (inherits OpenGlObject directly)
 - [ ] **Plane** - Useful for 2D regions (inherits OpenGlObject directly)
@@ -41,7 +41,7 @@ Make the gldraw module's core rendering and user interaction rock-solid before a
 *GeometricPrimitive-based (Already Have Infrastructure)*:
 - [x] **Sphere** - Complete (already has SupportsSelection = true)
 - [x] **GeometricPrimitive** - Base class complete (SupportsSelection = true)
-- [ ] **Cylinder** - Has GetBoundingBox but needs SetHighlighted implementation
+- [x] **Cylinder** - Complete (inherits full selection interface from GeometricPrimitive) ✅ COMPLETED
 - [ ] **BoundingBox** - Has infrastructure but needs testing
 
 *Non-Selectable by Design*:
@@ -91,9 +91,9 @@ Make the gldraw module's core rendering and user interaction rock-solid before a
 - [x] Proper mouse coordinate transforms (screen → world)
 - [x] Selection highlighting and visual feedback via layer system
 - [ ] **Priority 1 - Critical Graph Editing Primitives**:
-  - [ ] LineStrip selection (polylines, curved paths) - Most urgent
-  - [ ] Mesh selection (zones, regions, areas) - Most urgent
-  - [ ] Cylinder selection refinement (SetHighlighted method)
+  - [x] LineStrip selection (polylines, curved paths) ✅ COMPLETED
+  - [x] Mesh selection (zones, regions, areas) ✅ COMPLETED
+  - [x] Cylinder selection refinement (SetHighlighted method) ✅ COMPLETED
 - [ ] **Priority 2 - Enhanced Interactivity**:
   - [ ] Text3D selection (clickable labels)
   - [ ] Arrow selection (directional indicators) 

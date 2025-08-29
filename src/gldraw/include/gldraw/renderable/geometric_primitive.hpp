@@ -291,6 +291,13 @@ protected:
      */
     virtual void RenderPoints() = 0;
 
+    /**
+     * @brief Render the primitive with solid ID color for GPU selection
+     * Called by OnDraw() when id_render_mode_ == true
+     * Default implementation renders solid geometry with ID shader
+     */
+    virtual void RenderIdBuffer(const glm::mat4& mvp_matrix);
+
     // =================================================================
     // State Management Utilities
     // =================================================================

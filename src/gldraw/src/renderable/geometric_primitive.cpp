@@ -143,6 +143,12 @@ void GeometricPrimitive::OnDraw(const glm::mat4& projection, const glm::mat4& vi
         glm::mat4 model_matrix = GetTransform();
         glm::mat4 mvp_matrix = projection * view * coord_transform * model_matrix;
         
+        // Handle ID rendering mode for GPU selection
+        if (id_render_mode_) {
+            RenderIdBuffer(mvp_matrix);
+            return;
+        }
+        
         // Setup OpenGL state for this render mode
         SetupRenderState();
         
@@ -461,6 +467,84 @@ const char* RenderModeToString(GeometricPrimitive::RenderMode mode) {
         case GeometricPrimitive::RenderMode::kOutline: return "Outline";
         default: return "Unknown";
     }
+}
+
+// =================================================================
+// ID Buffer Rendering (Default Implementation)
+// =================================================================
+
+void GeometricPrimitive::RenderIdBuffer(const glm::mat4& mvp_matrix) {
+    // Default implementation: create simple ID shader and render solid geometry
+    // Subclasses can override for more specialized ID rendering
+    
+    // Create static ID shader (shared across all instances)
+    static std::unique_ptr<ShaderProgram> id_shader = nullptr;
+    static bool shader_initialized = false;
+    
+    if (!shader_initialized) {
+        try {
+            // Simple ID vertex shader
+            const char* id_vertex_shader = R"(
+                #version 330 core
+                layout (location = 0) in vec3 aPos;
+                
+                uniform mat4 uMVP;
+                
+                void main() {
+                    gl_Position = uMVP * vec4(aPos, 1.0);
+                }
+            )";
+            
+            // Simple ID fragment shader
+            const char* id_fragment_shader = R"(
+                #version 330 core
+                out vec4 FragColor;
+                
+                uniform vec3 uIdColor;
+                
+                void main() {
+                    FragColor = vec4(uIdColor, 1.0);
+                }
+            )";
+            
+            id_shader = std::make_unique<ShaderProgram>();
+            Shader vs(id_vertex_shader, Shader::Type::kVertex);
+            Shader fs(id_fragment_shader, Shader::Type::kFragment);
+            
+            if (!vs.Compile() || !fs.Compile()) {
+                std::cerr << "GeometricPrimitive: ID shader compilation failed" << std::endl;
+                shader_initialized = true; // Prevent retry
+                return;
+            }
+            
+            id_shader->AttachShader(vs);
+            id_shader->AttachShader(fs);
+            
+            if (!id_shader->LinkProgram()) {
+                std::cerr << "GeometricPrimitive: ID shader linking failed" << std::endl;
+                shader_initialized = true; // Prevent retry
+                return;
+            }
+            
+            shader_initialized = true;
+        } catch (const std::exception& e) {
+            std::cerr << "GeometricPrimitive: ID shader initialization failed: " << e.what() << std::endl;
+            shader_initialized = true; // Prevent retry
+            return;
+        }
+    }
+    
+    if (!id_shader) {
+        return; // Shader creation failed
+    }
+    
+    // Use the ID shader and render solid geometry
+    id_shader->Use();
+    id_shader->SetUniform("uMVP", mvp_matrix);
+    id_shader->SetUniform("uIdColor", id_color_);
+    
+    // Call RenderSolid() to draw the geometry with ID color
+    RenderSolid();
 }
 
 const char* BlendModeToString(GeometricPrimitive::BlendMode mode) {
