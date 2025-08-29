@@ -32,7 +32,7 @@ Make the gldraw module's core rendering and user interaction rock-solid before a
 *Existing Primitives Needing Selection Support*:
 - [x] **LineStrip** - Critical for polyline/path editing (inherits OpenGlObject directly) ✅ COMPLETED
 - [x] **Mesh** - Critical for zone/region editing (inherits OpenGlObject directly) ✅ COMPLETED
-- [ ] **Text3D** - Important for clickable labels (inherits OpenGlObject directly)
+- [x] ~~**Text3D**~~ - **REMOVED** (Replaced by Billboard primitive with modern font rendering) ✅ COMPLETED (August 29, 2025)
 - [ ] **Arrow** - Useful for directional indicators (inherits OpenGlObject directly)
 - [ ] **Plane** - Useful for 2D regions (inherits OpenGlObject directly)
 - [ ] **Path** - Trajectory editing (inherits OpenGlObject directly)
@@ -54,7 +54,7 @@ Make the gldraw module's core rendering and user interaction rock-solid before a
 
 *Missing Primitives for Complete Graph Editing*:
 - [ ] **Box/Cube** primitive (currently only BoundingBox exists for volumes)
-- [x] **Billboard** primitive for screen-aligned labels ✅ COMPLETED (August 29, 2025)
+- [x] **Billboard** primitive for screen-aligned labels ✅ COMPLETED (August 29, 2025) - **REPLACES TEXT3D**
 - [ ] **Polyline** specialized primitive (different from LineStrip)
 - [ ] **RegionMesh** specialized for area editing with vertex manipulation
 
@@ -96,7 +96,7 @@ Make the gldraw module's core rendering and user interaction rock-solid before a
   - [x] Mesh selection (zones, regions, areas) ✅ COMPLETED
   - [x] Cylinder selection refinement (coordinate transformation bugs fixed) ✅ COMPLETED
 - [ ] **Priority 2 - Enhanced Interactivity**:
-  - [ ] Text3D selection (clickable labels)
+  - [x] ~~Text3D selection~~ - **REMOVED** (Replaced by Billboard with built-in selection support) ✅ COMPLETED (August 29, 2025)
   - [ ] Arrow selection (directional indicators) 
   - [ ] Plane selection (2D regions)
   - [ ] Path selection (trajectories)
@@ -107,7 +107,7 @@ Make the gldraw module's core rendering and user interaction rock-solid before a
   - [ ] **Phase 2**: Migrate to GeometricPrimitive shared shaders (deferred - performance considerations)
 - [ ] **Priority 3 - Specialized Primitives**:
   - [ ] Create Box/Cube primitive (solid volumes)
-  - [ ] Create Billboard primitive (screen-aligned text)
+  - [x] ~~Create Billboard primitive~~ - **COMPLETED** (Modern replacement for Text3D with selection support) ✅ COMPLETED (August 29, 2025)
   - [ ] Create RegionMesh primitive (vertex-editable areas)
 
 #### 1.2 Enhanced Input Handling System (NEW - 0% Complete)
@@ -336,3 +336,50 @@ struct CameraConfig {
 ```
 
 **IMPACT**: Low immediate risk, affects user experience consistency between camera modes
+
+---
+
+## 🗑️ Deprecated/Removed Components
+
+### **Text3D Primitive - REMOVED** ✅ (August 29, 2025)
+
+#### **Removal Rationale**
+The primitive Text3D implementation has been completely replaced by the modern Billboard primitive, which provides:
+- **Superior font rendering**: Uses STB TrueType with proper font atlas generation vs. primitive bitmap text
+- **Built-in selection support**: Inherits full GPU selection system from OpenGlObject
+- **Screen-aligned billboarding**: Always faces camera for optimal readability
+- **Professional typography**: Anti-aliasing, kerning, and multiple font styles
+- **Visual effects**: Background, outline, transparency, and highlight support
+
+#### **Migration Path**
+**Before (Text3D):**
+```cpp
+auto text = std::make_unique<Text3D>("Label", position);
+text->SetColor(glm::vec3(1.0f, 1.0f, 1.0f));
+scene_manager->AddOpenGLObject("label", std::move(text));
+```
+
+**After (Billboard):**
+```cpp
+auto billboard = std::make_unique<Billboard>("Label");
+billboard->SetPosition(position);
+billboard->SetColor(glm::vec3(1.0f, 1.0f, 1.0f));
+billboard->SetFontSize(16.0f);  // Control text size
+billboard->SetBillboardMode(Billboard::Mode::kSphere);  // Always face camera
+scene_manager->AddOpenGLObject("label", std::move(billboard));
+```
+
+#### **Files Removed**
+- ✅ `src/gldraw/include/gldraw/renderable/text3d.hpp`
+- ✅ `src/gldraw/src/renderable/text3d.cpp`
+- ✅ `src/gldraw/test/renderable/test_text3d.cpp`
+- ✅ `src/gldraw/test/test_text3d_minimal.cpp`
+- ✅ CMakeLists.txt references updated
+- ✅ VirtualObjectType::Text3D → VirtualObjectType::Billboard
+
+#### **Benefits of Migration**
+- **Consistent scaling**: Centralized `pixels_to_world_scale_` prevents scaling inconsistencies
+- **Selection integration**: Full GPU-based selection with visual feedback
+- **Better performance**: Efficient font atlas vs. per-character geometry generation  
+- **Modern rendering**: Proper alpha blending and anti-aliasing support
+- **Flexible positioning**: Multiple billboard modes (sphere, cylinder, fixed orientation)

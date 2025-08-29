@@ -43,8 +43,6 @@ target_link_libraries(test_pose PRIVATE gldraw)
 add_executable(test_sphere test_sphere.cpp)
 target_link_libraries(test_sphere PRIVATE gldraw)
 
-add_executable(test_text3d test_text3d.cpp)
-target_link_libraries(test_text3d PRIVATE gldraw)
 
 add_executable(test_texture test_texture.cpp)
 target_link_libraries(test_texture PRIVATE gldraw)

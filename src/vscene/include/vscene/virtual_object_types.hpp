@@ -40,7 +40,7 @@ enum class VirtualObjectType : int {
     // Composite objects
     CoordinateFrame = 200,
     Arrow = 201,
-    Text3D = 202,
+    Billboard = 202,  // Replaces deprecated Text3D
     
     // Special types
     Group = 300,        // Container for multiple objects
@@ -66,7 +66,7 @@ inline const char* ToString(VirtualObjectType type) {
         case VirtualObjectType::Triangle: return "triangle";
         case VirtualObjectType::CoordinateFrame: return "coordinateframe";
         case VirtualObjectType::Arrow: return "arrow";
-        case VirtualObjectType::Text3D: return "text3d";
+        case VirtualObjectType::Billboard: return "billboard";
         case VirtualObjectType::Group: return "group";
         case VirtualObjectType::Custom: return "custom";
         default: return "unknown";
@@ -92,7 +92,7 @@ inline VirtualObjectType FromString(const std::string& type_str) {
         {"triangle", VirtualObjectType::Triangle},
         {"coordinateframe", VirtualObjectType::CoordinateFrame},
         {"arrow", VirtualObjectType::Arrow},
-        {"text3d", VirtualObjectType::Text3D},
+        {"billboard", VirtualObjectType::Billboard},
         {"group", VirtualObjectType::Group},
         {"custom", VirtualObjectType::Custom}
     };

@@ -89,7 +89,7 @@ TEST(VirtualObjectTypesTest, TypeCategorization) {
     // Composite objects
     EXPECT_TRUE(IsCompositeObject(VirtualObjectType::CoordinateFrame));
     EXPECT_TRUE(IsCompositeObject(VirtualObjectType::Arrow));
-    EXPECT_TRUE(IsCompositeObject(VirtualObjectType::Text3D));
+    EXPECT_TRUE(IsCompositeObject(VirtualObjectType::Billboard));
     
     // Cross-category checks
     EXPECT_FALSE(IsGeometricPrimitive(VirtualObjectType::Mesh));

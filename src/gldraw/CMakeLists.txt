@@ -36,7 +36,6 @@ add_library(gldraw
     src/renderable/bounding_box.cpp
     src/renderable/sphere.cpp
     src/renderable/cylinder.cpp
-    src/renderable/text3d.cpp
     src/renderable/billboard.cpp
     src/font_renderer.cpp
     src/renderable/frustum.cpp

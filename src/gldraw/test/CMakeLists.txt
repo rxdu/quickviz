@@ -26,8 +26,6 @@ target_link_libraries(test_coordinate_system PRIVATE gldraw)
 add_executable(test_primitive_drawing test_primitive_drawing.cpp)
 target_link_libraries(test_primitive_drawing PRIVATE gldraw)
 
-add_executable(test_text3d_minimal test_text3d_minimal.cpp)
-target_link_libraries(test_text3d_minimal PRIVATE gldraw)
 
 add_executable(test_canvas_st test_canvas_st.cpp)
 target_link_libraries(test_canvas_st PRIVATE gldraw)
