@@ -49,14 +49,14 @@ void SetupBillboardScene(GlSceneManager* scene_manager) {
     
     // 2. Waypoint labels demonstrating selection
     CreateWaypointLabels(scene_manager);
-    
+
     // 3. Billboard mode demonstrations
     CreateBillboardModes(scene_manager);
-    
+
     // 4. Typography and visual effects demo
     CreateTypographyDemo(scene_manager);
     
-    // 5. Selection and interaction demo
+    // 5. Selection and interaction demo (disabled - too many overlapping billboards)
     CreateSelectionDemo(scene_manager);
     
     std::cout << "✓ Billboard scene setup complete!" << std::endl;
@@ -66,44 +66,31 @@ void SetupBillboardScene(GlSceneManager* scene_manager) {
 void CreateAxisLabels(GlSceneManager* scene_manager) {
     // X-axis label - Red
     auto x_label = std::make_unique<Billboard>("X-Axis");
-    x_label->SetPosition(glm::vec3(4.0f, 0.0f, 0.0f));
+    x_label->SetPosition(glm::vec3(2.5f, 0.0f, 0.0f));
     x_label->SetColor(glm::vec3(1.0f, 0.2f, 0.2f));
-    x_label->SetFontSize(20.0f);
+    x_label->SetFontSize(16.0f);  // Reasonable font size in pixels
     x_label->SetBillboardMode(Billboard::Mode::kSphere);
-    x_label->SetAlignment(Billboard::Alignment::kLeft);
+    x_label->SetAlignment(Billboard::Alignment::kCenter);
     scene_manager->AddOpenGLObject("x_axis_label", std::move(x_label));
     
     // Y-axis label - Green  
     auto y_label = std::make_unique<Billboard>("Y-Axis");
-    y_label->SetPosition(glm::vec3(0.0f, 4.0f, 0.0f));
+    y_label->SetPosition(glm::vec3(0.0f, 2.5f, 0.0f));
     y_label->SetColor(glm::vec3(0.2f, 1.0f, 0.2f));
-    y_label->SetFontSize(20.0f);
+    y_label->SetFontSize(16.0f);  // Reasonable font size in pixels
     y_label->SetBillboardMode(Billboard::Mode::kSphere);
-    y_label->SetAlignment(Billboard::Alignment::kLeft);
+    y_label->SetAlignment(Billboard::Alignment::kCenter);
     scene_manager->AddOpenGLObject("y_axis_label", std::move(y_label));
     
     // Z-axis label - Blue
     auto z_label = std::make_unique<Billboard>("Z-Axis");
-    z_label->SetPosition(glm::vec3(0.0f, 0.0f, 4.0f));
+    z_label->SetPosition(glm::vec3(0.0f, 0.0f, 2.5f));
     z_label->SetColor(glm::vec3(0.2f, 0.2f, 1.0f));
-    z_label->SetFontSize(20.0f);
+    z_label->SetFontSize(16.0f);  // Reasonable font size in pixels
     z_label->SetBillboardMode(Billboard::Mode::kSphere);
-    z_label->SetAlignment(Billboard::Alignment::kLeft);
+    z_label->SetAlignment(Billboard::Alignment::kCenter);
     scene_manager->AddOpenGLObject("z_axis_label", std::move(z_label));
-    
-    // Add corresponding arrows
-    auto x_arrow = std::make_unique<Arrow>(glm::vec3(0.0f), glm::vec3(3.5f, 0.0f, 0.0f));
-    x_arrow->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));
-    scene_manager->AddOpenGLObject("x_arrow", std::move(x_arrow));
-    
-    auto y_arrow = std::make_unique<Arrow>(glm::vec3(0.0f), glm::vec3(0.0f, 3.5f, 0.0f));
-    y_arrow->SetColor(glm::vec3(0.0f, 1.0f, 0.0f));
-    scene_manager->AddOpenGLObject("y_arrow", std::move(y_arrow));
-    
-    auto z_arrow = std::make_unique<Arrow>(glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 3.5f));
-    z_arrow->SetColor(glm::vec3(0.0f, 0.0f, 1.0f));
-    scene_manager->AddOpenGLObject("z_arrow", std::move(z_arrow));
-    
+
     std::cout << "✓ Created axis labels with professional typography" << std::endl;
 }
 
@@ -115,10 +102,10 @@ void CreateWaypointLabels(GlSceneManager* scene_manager) {
     };
     
     std::vector<Waypoint> waypoints = {
-        {"Start", glm::vec3(-6.0f, -3.0f, 1.0f), glm::vec3(0.2f, 0.8f, 0.2f)},
-        {"Checkpoint A", glm::vec3(-2.0f, 2.0f, 2.0f), glm::vec3(0.8f, 0.6f, 0.2f)},
-        {"Checkpoint B", glm::vec3(3.0f, -1.0f, 1.5f), glm::vec3(0.6f, 0.2f, 0.8f)},
-        {"Goal", glm::vec3(6.0f, 3.0f, 2.5f), glm::vec3(0.8f, 0.2f, 0.2f)}
+        {"Start", glm::vec3(-6.0f, -3.0f, 0.0f), glm::vec3(0.2f, 0.8f, 0.2f)},
+        {"Checkpoint A", glm::vec3(-2.0f, 2.0f, 0.0f), glm::vec3(0.8f, 0.6f, 0.2f)},
+        {"Checkpoint B", glm::vec3(3.0f, -1.0f, 0.0f), glm::vec3(0.6f, 0.2f, 0.8f)},
+        {"Goal", glm::vec3(6.0f, 3.0f, 0.0f), glm::vec3(0.8f, 0.2f, 0.2f)}
     };
     
     for (const auto& wp : waypoints) {
@@ -133,7 +120,7 @@ void CreateWaypointLabels(GlSceneManager* scene_manager) {
         
         // Create billboard label
         auto label = std::make_unique<Billboard>(wp.name);
-        label->SetPosition(wp.position + glm::vec3(0.0f, 0.0f, 0.8f));
+        label->SetPosition(wp.position + glm::vec3(0.0f, 0.0f, 0.0f));
         label->SetColor(glm::vec3(1.0f, 1.0f, 1.0f));
         label->SetFontSize(16.0f);
         label->SetBillboardMode(Billboard::Mode::kSphere);

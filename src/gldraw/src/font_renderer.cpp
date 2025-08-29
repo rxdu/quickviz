@@ -150,10 +150,24 @@ FontRenderer::FontRenderer() {
 }
 
 FontRenderer::~FontRenderer() {
+  // Only delete OpenGL resources if there's still a valid context
+  // This prevents crashes during program exit when context is already destroyed
   if (atlas_texture_ != 0) {
-    glDeleteTextures(1, &atlas_texture_);
+    try {
+      // Check if we can make OpenGL calls safely
+      GLint current_texture = 0;
+      glGetIntegerv(GL_TEXTURE_BINDING_2D, &current_texture);
+      glDeleteTextures(1, &atlas_texture_);
+    } catch (...) {
+      // Ignore OpenGL errors during destruction
+    }
   }
-  delete static_cast<stbtt_fontinfo*>(stb_font_info_);
+  
+  // Safe cleanup of STB font info
+  if (stb_font_info_ != nullptr) {
+    delete static_cast<stbtt_fontinfo*>(stb_font_info_);
+    stb_font_info_ = nullptr;
+  }
 }
 
 bool FontRenderer::Initialize(const unsigned char* font_data, size_t data_size, float font_size) {
@@ -382,10 +396,11 @@ std::vector<FontRenderer::TextVertex> FontRenderer::GenerateTextVertices(
     if (!glyph) continue;
     
     if (c != ' ' && glyph->width > 0 && glyph->height > 0) {
-      float x0 = x + glyph->bearing_x;
-      float y0 = y + glyph->bearing_y;  // Flip Y direction: + instead of -
-      float x1 = x0 + glyph->width;
-      float y1 = y0 - glyph->height;    // Flip Y direction: - instead of +
+      // Apply scale to all glyph dimensions
+      float x0 = x + glyph->bearing_x * scale;
+      float y0 = y + glyph->bearing_y * scale;
+      float x1 = x0 + glyph->width * scale;
+      float y1 = y0 - glyph->height * scale;
       
       // First triangle - normal texture coordinates
       vertices.push_back({glm::vec3(x0, y0, position.z), glm::vec2(glyph->tex_x0, glyph->tex_y0)});
@@ -398,7 +413,7 @@ std::vector<FontRenderer::TextVertex> FontRenderer::GenerateTextVertices(
       vertices.push_back({glm::vec3(x0, y1, position.z), glm::vec2(glyph->tex_x0, glyph->tex_y1)});
     }
     
-    x += glyph->advance_x;  // Remove extra scale - already scaled in glyph info
+    x += glyph->advance_x * scale;  // Apply scale to character advance
   }
   
   return vertices;

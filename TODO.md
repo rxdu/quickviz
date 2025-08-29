@@ -289,3 +289,50 @@ All 23+ interactive test apps using GlView framework:
 2. Create test applications for new features
 3. Follow existing patterns in codebase
 4. Maintain 100% test pass rate
+
+---
+
+## 🔧 Code Quality & Technical Debt
+
+### **Scaling Inconsistencies** - DOCUMENTATION (August 29, 2025)
+
+#### **Billboard Scaling - RESOLVED** ✅
+- ✅ **FIXED**: Billboard text scaling inconsistency between `GenerateGeometry()` and `GetBoundingBox()`
+- ✅ **FIXED**: FontRenderer `scale` parameter was not being applied in `GenerateTextVertices()`
+- ✅ **IMPLEMENTED**: Centralized `pixels_to_world_scale_` member variable for consistent scaling
+- ✅ **ADDED**: Public API `SetPixelsToWorldScale()` for configuration
+- **Pattern**: Single source of truth approach prevents future inconsistencies
+
+#### **Camera Controller Scaling Inconsistencies** - DOCUMENTED FOR FUTURE FIX
+**Status**: Identified but not yet addressed, documented for future consolidation
+
+**HIGH PRIORITY**:
+- **Rotation Sensitivity Mismatch**: 
+  - Standard modes: `0.05f` (default_mouse_sensitivity)
+  - TopDown mode: `0.5f` (10x higher - inconsistent user experience)
+  - **File**: `src/gldraw/src/camera_controller.cpp:171` vs `src/gldraw/include/gldraw/camera.hpp:23`
+
+**MEDIUM PRIORITY**:
+- **Translation Sensitivity**: `0.01f` duplicated in 3 locations
+  - **Files**: `src/gldraw/src/camera_controller.cpp:119, 143, 188`
+- **Distance Normalization**: `10.0f` hardcoded factor used for different purposes
+  - **Files**: `src/gldraw/src/camera_controller.cpp:146, 193`
+- **Minimum Distance Constraints**: Various values (`1.0f`, `0.1f`) scattered
+  - **Files**: `src/gldraw/src/camera_controller.cpp:38, 147, 194, 224, 230`
+- **Zoom Speed Constants**: Same values (`2.0f`) controlling different zoom behaviors
+  - **Files**: `src/gldraw/include/gldraw/camera.hpp:25`, `src/gldraw/include/gldraw/camera_controller.hpp:50-51`
+
+**RECOMMENDED SOLUTION**:
+Create centralized `CameraConfig` structure similar to Billboard's `pixels_to_world_scale_` approach:
+```cpp
+struct CameraConfig {
+    static constexpr float default_rotation_sensitivity = 0.05f;
+    static constexpr float topdown_rotation_sensitivity = 0.5f;  // Document why different
+    static constexpr float translation_sensitivity = 0.01f;
+    static constexpr float distance_normalization = 10.0f;
+    static constexpr float min_distance = 1.0f;
+    // ... other constants
+};
+```
+
+**IMPACT**: Low immediate risk, affects user experience consistency between camera modes

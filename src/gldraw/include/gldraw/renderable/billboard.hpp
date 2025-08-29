@@ -15,7 +15,7 @@
 #include <vector>
 #include <glm/glm.hpp>
 
-#include "gldraw/renderable/geometric_primitive.hpp"
+#include "gldraw/interface/opengl_object.hpp"
 #include "gldraw/font_renderer.hpp"
 #include "../shader_program.hpp"
 
@@ -33,7 +33,7 @@ namespace quickviz {
  * 
  * Replaces the primitive Text3D implementation with modern font rendering.
  */
-class Billboard : public GeometricPrimitive {
+class Billboard : public OpenGlObject {
 public:
   enum class Mode {
     kSphere,     // Always face camera (both rotation axes)
@@ -74,60 +74,63 @@ public:
   void SetOutlineWidth(float width);
   
   // =================================================================
-  // GeometricPrimitive Interface Implementation
+  // OpenGlObject Interface Implementation
   // =================================================================
   
   // Transform interface
   void SetPosition(const glm::vec3& position);
   glm::vec3 GetPosition() const { return position_; }
-  void SetTransform(const glm::mat4& transform) override;
-  glm::mat4 GetTransform() const override;
+  void SetTransform(const glm::mat4& transform);
+  glm::mat4 GetTransform() const;
   
-  // Geometry calculations
-  float GetVolume() const override { return 0.0f; } // 2D primitive
-  float GetSurfaceArea() const override;
-  glm::vec3 GetCentroid() const override { return position_; }
-  std::pair<glm::vec3, glm::vec3> GetBoundingBox() const override;
+  // Appearance settings
+  void SetColor(const glm::vec3& color);
+  void SetWireframeColor(const glm::vec3& color);
+  void SetOpacity(float opacity);
   
   // OpenGL resource management
   void AllocateGpuResources() override;
   void ReleaseGpuResources() noexcept override;
   bool IsGpuResourcesAllocated() const noexcept override { return vao_ != 0; }
+  void OnDraw(const glm::mat4& projection, const glm::mat4& view,
+              const glm::mat4& coord_transform = glm::mat4(1.0f)) override;
+  
+  // Selection interface
+  bool SupportsSelection() const override { return true; }
+  void SetHighlighted(bool highlighted) override;
+  std::pair<glm::vec3, glm::vec3> GetBoundingBox() const override;
+  
+  // ID rendering support for GPU selection
+  bool SupportsIdRendering() const override { return true; }
+  void SetIdRenderMode(bool enabled) override { id_render_mode_ = enabled; }
+  void SetIdColor(const glm::vec3& color) override { id_color_ = color; }
 
   // Utility methods
   const std::string& GetText() const { return text_; }
   glm::vec2 GetTextDimensions() const; // Screen-space dimensions in pixels
   float GetFontSize() const { return font_size_; }
-
-protected:
-  // =================================================================
-  // Template Method Implementation
-  // =================================================================
   
-  void PrepareShaders(const glm::mat4& mvp_matrix, const glm::mat4& model_matrix) override;
-  void RenderSolid() override;
-  void RenderWireframe() override;
-  void RenderPoints() override;
-  
-  // Override ID rendering for billboard-specific geometry
-  void RenderIdBuffer(const glm::mat4& mvp_matrix) override;
+  // Scaling configuration
+  void SetPixelsToWorldScale(float scale) { pixels_to_world_scale_ = scale; GenerateGeometry(); }
+  float GetPixelsToWorldScale() const { return pixels_to_world_scale_; }
 
 private:
+  // Internal rendering methods
+  void DrawBillboard(const glm::mat4& mvp);
+  void DrawIdBuffer(const glm::mat4& mvp);
   void GenerateGeometry();
   void UpdateGpuBuffers();
   void SetupShaders();
   glm::mat4 CalculateBillboardMatrix(const glm::mat4& view_matrix) const;
   glm::vec2 CalculateTextOffset() const;
-  void InitializeFontRenderer();
 
   // Text properties
   std::string text_;
   glm::vec3 position_ = glm::vec3(0.0f);
   float font_size_ = 16.0f; // Size in pixels
   
-  // Font rendering
-  static std::shared_ptr<FontRenderer> font_renderer_;
-  static bool font_renderer_initialized_;
+  // Font rendering - local instance per Billboard
+  std::unique_ptr<FontRenderer> font_renderer_;
   
   // Alignment
   Alignment alignment_ = Alignment::kCenter;
@@ -155,17 +158,34 @@ private:
   std::vector<glm::vec2> tex_coords_;
   std::vector<uint32_t> indices_;
   
+  // Text appearance
+  glm::vec3 color_ = glm::vec3(1.0f, 1.0f, 1.0f);  // White by default
+  glm::vec3 wireframe_color_ = glm::vec3(1.0f, 1.0f, 0.0f);  // Yellow wireframe
+  float opacity_ = 1.0f;
+  
+  // Selection state
+  bool is_highlighted_ = false;
+  glm::vec3 original_color_;
+  glm::vec3 original_wireframe_color_;
+  
+  // ID rendering for GPU selection
+  bool id_render_mode_ = false;
+  glm::vec3 id_color_{0.0f};
+  
   // Shaders
   ShaderProgram billboard_shader_;
   ShaderProgram background_shader_;
+  ShaderProgram id_shader_;
   
   // Cached text metrics
   mutable glm::vec2 text_dimensions_ = glm::vec2(0.0f);
   mutable bool text_dimensions_dirty_ = true;
   
-  // Billboard transformation matrices (stored during PrepareShaders)
-  mutable glm::mat4 stored_mvp_matrix_ = glm::mat4(1.0f);
-  mutable glm::mat4 stored_model_matrix_ = glm::mat4(1.0f);
+  // Scaling configuration
+  float pixels_to_world_scale_ = 0.008f;  // Conversion factor: 1 pixel = 0.008 world units
+  
+  // Dirty flag for geometry updates
+  bool needs_update_ = true;
 };
 
 } // namespace quickviz
