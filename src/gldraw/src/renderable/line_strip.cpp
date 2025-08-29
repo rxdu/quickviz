@@ -11,6 +11,7 @@
 
 #include <iostream>
 #include <cmath>
+#include <limits>
 
 #include <glad/glad.h>
 #include <glm/gtc/matrix_transform.hpp>
@@ -92,6 +93,28 @@ uniform vec3 arrowColor;
 
 void main() {
     FinalColor = vec4(arrowColor, 1.0);
+}
+)";
+
+// ID rendering shaders for GPU-based selection
+const char* kIdVertexShader = R"(
+#version 330 core
+layout (location = 0) in vec3 aPos;
+
+uniform mat4 mvp;
+
+void main() {
+    gl_Position = mvp * vec4(aPos, 1.0);
+}
+)";
+
+const char* kIdFragmentShader = R"(
+#version 330 core
+out vec4 FinalColor;
+uniform vec3 idColor;
+
+void main() {
+    FinalColor = vec4(idColor, 1.0);
 }
 )";
 
@@ -201,6 +224,18 @@ void LineStrip::AllocateGpuResources() {
     arrow_shader_.AttachShader(arrow_fs);
     if (!arrow_shader_.LinkProgram()) {
       throw std::runtime_error("Arrow shader linking failed");
+    }
+
+    // Compile and link ID shader for GPU selection
+    Shader id_vs(kIdVertexShader, Shader::Type::kVertex);
+    Shader id_fs(kIdFragmentShader, Shader::Type::kFragment);
+    if (!id_vs.Compile() || !id_fs.Compile()) {
+      throw std::runtime_error("ID shader compilation failed");
+    }
+    id_shader_.AttachShader(id_vs);
+    id_shader_.AttachShader(id_fs);
+    if (!id_shader_.LinkProgram()) {
+      throw std::runtime_error("ID shader linking failed");
     }
 
     // Create line VAO and VBOs
@@ -405,6 +440,12 @@ void LineStrip::OnDraw(const glm::mat4& projection, const glm::mat4& view,
 
   glm::mat4 mvp = projection * view * coord_transform;
 
+  // Handle ID rendering mode for GPU selection
+  if (id_render_mode_) {
+    DrawIdBuffer(mvp);
+    return;
+  }
+
   // Draw line strip
   DrawLineStrip(mvp);
 
@@ -413,6 +454,63 @@ void LineStrip::OnDraw(const glm::mat4& projection, const glm::mat4& view,
 
   // Draw arrows if enabled
   DrawArrows(mvp);
+}
+
+void LineStrip::DrawIdBuffer(const glm::mat4& mvp) {
+  if (points_.empty()) return;
+
+  id_shader_.Use();
+  id_shader_.SetUniform("mvp", mvp);
+  id_shader_.SetUniform("idColor", id_color_);
+
+  glBindVertexArray(vao_);
+  
+  // Render thick lines for better selection coverage
+  glLineWidth(line_width_ * 3.0f);
+  
+  if (closed_ && points_.size() > 2) {
+    glDrawArrays(GL_LINE_LOOP, 0, points_.size());
+  } else {
+    glDrawArrays(GL_LINE_STRIP, 0, points_.size());
+  }
+
+  glBindVertexArray(0);
+}
+
+void LineStrip::SetHighlighted(bool highlighted) {
+  if (is_highlighted_ == highlighted) return;
+  
+  is_highlighted_ = highlighted;
+  
+  if (highlighted) {
+    // Save original values
+    original_color_ = uniform_color_;
+    original_line_width_ = line_width_;
+    
+    // Apply highlight style
+    SetColor(glm::vec3(1.0f, 1.0f, 0.0f));  // Yellow highlight
+    SetLineWidth(line_width_ * 2.0f);       // Thicker line
+  } else {
+    // Restore original values
+    SetColor(original_color_);
+    SetLineWidth(original_line_width_);
+  }
+}
+
+std::pair<glm::vec3, glm::vec3> LineStrip::GetBoundingBox() const {
+  if (points_.empty()) {
+    return {glm::vec3(0.0f), glm::vec3(0.0f)};
+  }
+  
+  glm::vec3 min_point(std::numeric_limits<float>::max());
+  glm::vec3 max_point(std::numeric_limits<float>::lowest());
+  
+  for (const auto& point : points_) {
+    min_point = glm::min(min_point, point);
+    max_point = glm::max(max_point, point);
+  }
+  
+  return {min_point, max_point};
 }
 
 }  // namespace quickviz

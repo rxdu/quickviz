@@ -9,6 +9,3 @@ target_link_libraries(test_camera PRIVATE gldraw)
 
 add_executable(test_layer_system test_layer_system.cpp)
 target_link_libraries(test_layer_system PRIVATE gldraw)
-
-add_executable(test_object_selection test_object_selection.cpp)
-target_link_libraries(test_object_selection PRIVATE gldraw)

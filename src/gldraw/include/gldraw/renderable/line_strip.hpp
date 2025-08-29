@@ -48,6 +48,16 @@ class LineStrip : public OpenGlObject {
   void OnDraw(const glm::mat4& projection, const glm::mat4& view,
               const glm::mat4& coord_transform = glm::mat4(1.0f)) override;
   bool IsGpuResourcesAllocated() const noexcept override { return vao_ != 0; }
+  
+  // Selection interface
+  bool SupportsSelection() const override { return true; }
+  void SetHighlighted(bool highlighted) override;
+  std::pair<glm::vec3, glm::vec3> GetBoundingBox() const override;
+  
+  // ID rendering support for GPU selection
+  bool SupportsIdRendering() const override { return true; }
+  void SetIdRenderMode(bool enabled) override { id_render_mode_ = enabled; }
+  void SetIdColor(const glm::vec3& color) override { id_color_ = color; }
 
   // Utility methods
   size_t GetPointCount() const { return points_.size(); }
@@ -58,6 +68,7 @@ class LineStrip : public OpenGlObject {
   void DrawLineStrip(const glm::mat4& mvp);
   void DrawPoints(const glm::mat4& mvp);
   void DrawArrows(const glm::mat4& mvp);
+  void DrawIdBuffer(const glm::mat4& mvp);
   void GenerateArrowGeometry();
 
   // Line data
@@ -70,6 +81,15 @@ class LineStrip : public OpenGlObject {
   LineType line_type_ = LineType::kSolid;
   bool closed_ = false;
   bool use_per_vertex_colors_ = false;
+  
+  // Selection state
+  bool is_highlighted_ = false;
+  glm::vec3 original_color_;
+  float original_line_width_;
+  
+  // ID rendering for GPU selection
+  bool id_render_mode_ = false;
+  glm::vec3 id_color_{0.0f};
   
   // Point visualization
   bool show_points_ = false;
@@ -93,6 +113,7 @@ class LineStrip : public OpenGlObject {
   ShaderProgram line_shader_;
   ShaderProgram point_shader_;
   ShaderProgram arrow_shader_;
+  ShaderProgram id_shader_;
   
   bool needs_update_ = true;
   bool needs_arrow_update_ = true;

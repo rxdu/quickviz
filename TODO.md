@@ -20,10 +20,42 @@ Make the gldraw module's core rendering and user interaction rock-solid before a
 - ✅ Point selection from multiple point clouds working (commit 37b4975)
 
 **Remaining Tasks**:
-- [ ] Extend selection support to all renderable types (mesh, cylinder, box, arrow, etc.)
-- [ ] Add SupportsSelection() implementation to remaining OpenGlObject subclasses
+- [ ] **Primitive Selection Extension** - Based on `docs/notes/primitive_selection_extension_design.md`
+- [ ] Implement selection for existing primitives (see detailed breakdown below)
+- [ ] Add missing primitive types for complete graph editing support
 - [ ] Test selection with complex geometries and multi-object scenes
 - [ ] Optimize ID-buffer rendering for scenes with many objects
+
+**Detailed Primitive Selection Status**:
+
+*Existing Primitives Needing Selection Support*:
+- [ ] **LineStrip** - Critical for polyline/path editing (inherits OpenGlObject directly)
+- [ ] **Mesh** - Critical for zone/region editing (inherits OpenGlObject directly) 
+- [ ] **Text3D** - Important for clickable labels (inherits OpenGlObject directly)
+- [ ] **Arrow** - Useful for directional indicators (inherits OpenGlObject directly)
+- [ ] **Plane** - Useful for 2D regions (inherits OpenGlObject directly)
+- [ ] **Path** - Trajectory editing (inherits OpenGlObject directly)
+- [ ] **Triangle** - Basic primitive selection (inherits OpenGlObject directly)
+- [ ] **Pose** - Selectable pose markers (inherits OpenGlObject directly)
+
+*GeometricPrimitive-based (Already Have Infrastructure)*:
+- [x] **Sphere** - Complete (already has SupportsSelection = true)
+- [x] **GeometricPrimitive** - Base class complete (SupportsSelection = true)
+- [ ] **Cylinder** - Has GetBoundingBox but needs SetHighlighted implementation
+- [ ] **BoundingBox** - Has infrastructure but needs testing
+
+*Non-Selectable by Design*:
+- **Grid** - Background reference, should remain non-selectable
+- **CoordinateFrame** - Background reference, should remain non-selectable  
+- **Texture** - Image overlay, typically non-interactive
+- **Canvas** - Drawing surface, not a selectable object
+- **Frustum** - Visualization aid, typically non-selectable
+
+*Missing Primitives for Complete Graph Editing*:
+- [ ] **Box/Cube** primitive (currently only BoundingBox exists for volumes)
+- [ ] **Billboard** primitive for screen-aligned labels
+- [ ] **Polyline** specialized primitive (different from LineStrip)
+- [ ] **RegionMesh** specialized for area editing with vertex manipulation
 
 **Key Features Implemented**:
 - GPU ID-buffer rendering for pixel-perfect selection accuracy
@@ -58,8 +90,19 @@ Make the gldraw module's core rendering and user interaction rock-solid before a
 - [x] Reliable hit testing for point clouds and spheres
 - [x] Proper mouse coordinate transforms (screen → world)
 - [x] Selection highlighting and visual feedback via layer system
-- [ ] Extend selection support to remaining primitives (mesh, cylinder, box, arrow, etc.)
-- [ ] Add SupportsSelection() to all OpenGlObject subclasses
+- [ ] **Priority 1 - Critical Graph Editing Primitives**:
+  - [ ] LineStrip selection (polylines, curved paths) - Most urgent
+  - [ ] Mesh selection (zones, regions, areas) - Most urgent
+  - [ ] Cylinder selection refinement (SetHighlighted method)
+- [ ] **Priority 2 - Enhanced Interactivity**:
+  - [ ] Text3D selection (clickable labels)
+  - [ ] Arrow selection (directional indicators) 
+  - [ ] Plane selection (2D regions)
+  - [ ] Path selection (trajectories)
+- [ ] **Priority 3 - Specialized Primitives**:
+  - [ ] Create Box/Cube primitive (solid volumes)
+  - [ ] Create Billboard primitive (screen-aligned text)
+  - [ ] Create RegionMesh primitive (vertex-editable areas)
 
 #### 1.2 Enhanced Input Handling System (NEW - 0% Complete)
 **Design Document**: See `docs/notes/input_handling_design.md`

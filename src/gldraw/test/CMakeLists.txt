@@ -1,5 +1,6 @@
 add_subdirectory(feature)
 add_subdirectory(renderable)
+add_subdirectory(scene_interaction)
 
 add_executable(test_framebuffer test_framebuffer.cpp)
 target_link_libraries(test_framebuffer PRIVATE gldraw)
