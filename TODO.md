@@ -43,7 +43,7 @@ Make the gldraw module's core rendering and user interaction rock-solid before a
 - [x] **Sphere** - Complete (already has SupportsSelection = true)
 - [x] **GeometricPrimitive** - Base class complete (SupportsSelection = true)
 - [x] **Cylinder** - Complete (inherits full selection interface from GeometricPrimitive) ✅ COMPLETED
-- [ ] **BoundingBox** - Has infrastructure but needs testing
+- [x] **BoundingBox** - Complete (selection working, comprehensive test suite) ✅ COMPLETED
 
 *Non-Selectable by Design*:
 - **Grid** - Background reference, should remain non-selectable
@@ -54,7 +54,7 @@ Make the gldraw module's core rendering and user interaction rock-solid before a
 
 *Missing Primitives for Complete Graph Editing*:
 - [ ] **Box/Cube** primitive (currently only BoundingBox exists for volumes)
-- [ ] **Billboard** primitive for screen-aligned labels
+- [x] **Billboard** primitive for screen-aligned labels ✅ COMPLETED (August 29, 2025)
 - [ ] **Polyline** specialized primitive (different from LineStrip)
 - [ ] **RegionMesh** specialized for area editing with vertex manipulation
 

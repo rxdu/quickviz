@@ -6,7 +6,7 @@
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
-#include "../include/gldraw/shader_program.hpp"
+#include "gldraw/shader_program.hpp"
 
 #include <iostream>
 

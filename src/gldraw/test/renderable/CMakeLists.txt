@@ -1,6 +1,9 @@
 add_executable(test_arrow test_arrow.cpp)
 target_link_libraries(test_arrow PRIVATE gldraw)
 
+add_executable(test_billboard test_billboard.cpp)
+target_link_libraries(test_billboard PRIVATE gldraw)
+
 add_executable(test_bounding_box test_bounding_box.cpp)
 target_link_libraries(test_bounding_box PRIVATE gldraw)
 

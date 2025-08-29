@@ -16,7 +16,7 @@
 #include <algorithm>
 #include <numeric>
 
-#include "../../include/gldraw/shader.hpp"
+#include "gldraw/shader.hpp"
 
 namespace quickviz {
 

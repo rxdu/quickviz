@@ -37,3 +37,6 @@ target_link_libraries(test_nav_map_rendering PRIVATE gldraw)
 
 add_executable(test_layer_system_box test_layer_system_box.cpp)
 target_link_libraries(test_layer_system_box PRIVATE gldraw)
+
+add_executable(test_font_renderer test_font_renderer.cpp)
+target_link_libraries(test_font_renderer PRIVATE gldraw)

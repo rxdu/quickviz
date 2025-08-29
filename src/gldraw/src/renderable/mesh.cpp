@@ -20,7 +20,7 @@
 #include <stdexcept>
 #include <limits>
 
-#include "../../include/gldraw/shader.hpp"
+#include "gldraw/shader.hpp"
 
 namespace quickviz {
 

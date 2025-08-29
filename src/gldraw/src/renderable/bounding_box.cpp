@@ -15,7 +15,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "../../include/gldraw/shader.hpp"
+#include "gldraw/shader.hpp"
 
 namespace quickviz {
 

@@ -37,6 +37,8 @@ add_library(gldraw
     src/renderable/sphere.cpp
     src/renderable/cylinder.cpp
     src/renderable/text3d.cpp
+    src/renderable/billboard.cpp
+    src/font_renderer.cpp
     src/renderable/frustum.cpp
     src/renderable/plane.cpp
     src/renderable/pose.cpp

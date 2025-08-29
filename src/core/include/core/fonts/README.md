@@ -1,6 +1,3 @@
-style: rdu
--------------
-
 ## Font 
 
 * [Source Link](https://fonts.google.com/specimen/Open+Sans?preview.text_type=custom&selection.family=Open+Sans:wght@600#standard-styles)
