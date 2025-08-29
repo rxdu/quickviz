@@ -120,7 +120,7 @@ void CreateWaypointLabels(GlSceneManager* scene_manager) {
         
         // Create billboard label
         auto label = std::make_unique<Billboard>(wp.name);
-        label->SetPosition(wp.position + glm::vec3(0.0f, 0.0f, 0.0f));
+        label->SetPosition(wp.position + glm::vec3(0.0f, 0.0f, 0.5f));
         label->SetColor(glm::vec3(1.0f, 1.0f, 1.0f));
         label->SetFontSize(16.0f);
         label->SetBillboardMode(Billboard::Mode::kSphere);

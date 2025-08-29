@@ -167,11 +167,10 @@ void Sphere::SetTransform(const glm::mat4& transform) {
 }
 
 glm::mat4 Sphere::GetTransform() const {
-  // Create transform matrix from center and radius
-  glm::mat4 transform = glm::mat4(1.0f);
-  transform = glm::translate(transform, center_);
-  transform = glm::scale(transform, glm::vec3(radius_));
-  return transform_ * transform;
+  // Sphere handles position and scale in shader uniforms (center + aPos * radius)
+  // So GetTransform() should only return additional user-applied transforms
+  // This prevents double transformation (transform matrix + shader uniforms)
+  return transform_;
 }
 
 float Sphere::GetVolume() const {
