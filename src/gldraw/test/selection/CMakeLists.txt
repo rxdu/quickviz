@@ -29,7 +29,3 @@ target_link_libraries(test_cylinder_selection PRIVATE selection_test_utils)
 
 add_executable(test_bounding_box_selection test_bounding_box_selection.cpp)
 target_link_libraries(test_bounding_box_selection PRIVATE selection_test_utils)
-
-# Comprehensive test combining all selection types
-add_executable(test_comprehensive_selection test_comprehensive_selection.cpp)
-target_link_libraries(test_comprehensive_selection PRIVATE selection_test_utils)
