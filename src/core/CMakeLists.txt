@@ -5,7 +5,6 @@ find_package(Threads REQUIRED)
 add_library(core
     # widgets
     src/buffer/buffer_registry.cpp
-    src/event/event_dispatcher.cpp
     src/event/async_event_dispatcher.cpp)
 target_link_libraries(core PUBLIC Threads::Threads)
 target_include_directories(core PUBLIC

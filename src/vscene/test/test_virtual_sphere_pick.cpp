@@ -138,7 +138,7 @@ class VirtualSpherePickingDemo {
       std::cout << "\n🖱️  Clicked background - no object selected\n";
 
       // Handle background clicks
-      auto* dispatcher = scene_->GetEventDispatcher();
+      auto* dispatcher = scene_->GetVirtualEventDispatcher();
       if (dispatcher) {
         VirtualEvent event;
         event.type = VirtualEventType::BackgroundClicked;
@@ -468,7 +468,7 @@ class VirtualSpherePickingDemo {
   void SetupEventSystem() {
     std::cout << "Setting up event system for scene-level interactions:\n";
 
-    auto* dispatcher = scene_->GetEventDispatcher();
+    auto* dispatcher = scene_->GetVirtualEventDispatcher();
     if (!dispatcher) {
       std::cout << "Warning: Event dispatcher not available\n";
       return;

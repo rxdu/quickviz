@@ -4,7 +4,7 @@
  * Created on: August 27, 2025
  * Description: Unit tests for virtual scene event system
  * 
- * Tests the EventDispatcher, EventBuilder, and event integration with VirtualScene.
+ * Tests the VirtualEventDispatcher, EventBuilder, and event integration with VirtualScene.
  *
  * Copyright (c) 2025 Ruixiang Du (rdu)
  */
@@ -23,7 +23,7 @@ using namespace quickviz;
 class EventSystemTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        dispatcher_ = std::make_unique<EventDispatcher>();
+        dispatcher_ = std::make_unique<VirtualEventDispatcher>();
         events_received_.clear();
         
         // Set up event handler that captures all events
@@ -32,9 +32,9 @@ protected:
         };
     }
 
-    std::unique_ptr<EventDispatcher> dispatcher_;
+    std::unique_ptr<VirtualEventDispatcher> dispatcher_;
     std::vector<VirtualEvent> events_received_;
-    EventDispatcher::EventHandler event_handler_;
+    VirtualEventDispatcher::EventHandler event_handler_;
 };
 
 // Test basic event subscription and dispatch
@@ -190,7 +190,7 @@ protected:
         events_received_.clear();
         
         // Subscribe to all event types we care about
-        auto* dispatcher = scene_->GetEventDispatcher();
+        auto* dispatcher = scene_->GetVirtualEventDispatcher();
         
         event_handler_ = [this](const VirtualEvent& event) {
             events_received_.push_back(event);
@@ -205,7 +205,7 @@ protected:
     std::unique_ptr<VirtualScene> scene_;
     std::unique_ptr<MockRenderBackend> backend_;
     std::vector<VirtualEvent> events_received_;
-    EventDispatcher::EventHandler event_handler_;
+    VirtualEventDispatcher::EventHandler event_handler_;
 };
 
 // Test object addition events

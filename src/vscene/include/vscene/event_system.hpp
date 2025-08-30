@@ -96,11 +96,11 @@ struct VirtualEvent {
 /**
  * @brief Event dispatcher for virtual scene events
  * 
- * EventDispatcher manages event subscriptions and dispatching for the
+ * VirtualEventDispatcher manages event subscriptions and dispatching for the
  * virtual scene system. Applications subscribe to events they care about
  * and receive callbacks when those events occur.
  */
-class EventDispatcher {
+class VirtualEventDispatcher {
 public:
     using EventHandler = std::function<void(const VirtualEvent&)>;
     using EventFilter = std::function<bool(const VirtualEvent&)>;
@@ -181,7 +181,7 @@ private:
  */
 class EventSubscription {
 public:
-    EventSubscription(EventDispatcher* dispatcher, VirtualEventType type);
+    EventSubscription(VirtualEventDispatcher* dispatcher, VirtualEventType type);
     ~EventSubscription();
     
     // No copying (move-only)
@@ -193,7 +193,7 @@ public:
     EventSubscription& operator=(EventSubscription&& other) noexcept;
 
 private:
-    EventDispatcher* dispatcher_;
+    VirtualEventDispatcher* dispatcher_;
     VirtualEventType type_;
     bool valid_;
 };

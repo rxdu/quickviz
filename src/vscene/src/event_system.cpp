@@ -13,14 +13,14 @@
 namespace quickviz {
 
 // ============================================================================
-// EventDispatcher Implementation
+// VirtualEventDispatcher Implementation
 // ============================================================================
 
-void EventDispatcher::Subscribe(VirtualEventType type, EventHandler handler) {
+void VirtualEventDispatcher::Subscribe(VirtualEventType type, EventHandler handler) {
     Subscribe(type, handler, nullptr);
 }
 
-void EventDispatcher::Subscribe(VirtualEventType type, EventHandler handler, EventFilter filter) {
+void VirtualEventDispatcher::Subscribe(VirtualEventType type, EventHandler handler, EventFilter filter) {
     if (!handler) return;
     
     // Create empty filter if none provided
@@ -29,15 +29,15 @@ void EventDispatcher::Subscribe(VirtualEventType type, EventHandler handler, Eve
     subscribers_[type].emplace_back(handler, actual_filter);
 }
 
-void EventDispatcher::Unsubscribe(VirtualEventType type) {
+void VirtualEventDispatcher::Unsubscribe(VirtualEventType type) {
     subscribers_[type].clear();
 }
 
-void EventDispatcher::UnsubscribeAll() {
+void VirtualEventDispatcher::UnsubscribeAll() {
     subscribers_.clear();
 }
 
-void EventDispatcher::Dispatch(const VirtualEvent& event) {
+void VirtualEventDispatcher::Dispatch(const VirtualEvent& event) {
     if (batching_enabled_) {
         batched_events_.push_back(event);
         return;
@@ -47,18 +47,18 @@ void EventDispatcher::Dispatch(const VirtualEvent& event) {
     events_dispatched_++;
 }
 
-void EventDispatcher::DispatchAsync(const VirtualEvent& event) {
+void VirtualEventDispatcher::DispatchAsync(const VirtualEvent& event) {
     // For now, just dispatch synchronously
     // In a more advanced implementation, this could use a thread pool
     Dispatch(event);
 }
 
-void EventDispatcher::BeginBatch() {
+void VirtualEventDispatcher::BeginBatch() {
     batching_enabled_ = true;
     batched_events_.clear();
 }
 
-void EventDispatcher::EndBatch() {
+void VirtualEventDispatcher::EndBatch() {
     batching_enabled_ = false;
     
     // Dispatch all batched events
@@ -69,16 +69,16 @@ void EventDispatcher::EndBatch() {
     batched_events_.clear();
 }
 
-void EventDispatcher::ClearBatch() {
+void VirtualEventDispatcher::ClearBatch() {
     batched_events_.clear();
 }
 
-size_t EventDispatcher::GetSubscriberCount(VirtualEventType type) const {
+size_t VirtualEventDispatcher::GetSubscriberCount(VirtualEventType type) const {
     auto it = subscribers_.find(type);
     return (it != subscribers_.end()) ? it->second.size() : 0;
 }
 
-size_t EventDispatcher::GetTotalSubscribers() const {
+size_t VirtualEventDispatcher::GetTotalSubscribers() const {
     size_t total = 0;
     for (const auto& [type, handlers] : subscribers_) {
         total += handlers.size();
@@ -86,7 +86,7 @@ size_t EventDispatcher::GetTotalSubscribers() const {
     return total;
 }
 
-void EventDispatcher::DispatchToSubscribers(const VirtualEvent& event) {
+void VirtualEventDispatcher::DispatchToSubscribers(const VirtualEvent& event) {
     auto it = subscribers_.find(event.type);
     if (it == subscribers_.end()) {
         return; // No subscribers for this event type
@@ -104,7 +104,7 @@ void EventDispatcher::DispatchToSubscribers(const VirtualEvent& event) {
     }
 }
 
-bool EventDispatcher::PassesFilter(const VirtualEvent& event, const EventFilter& filter) const {
+bool VirtualEventDispatcher::PassesFilter(const VirtualEvent& event, const EventFilter& filter) const {
     if (!filter) return true;
     
     try {
@@ -188,7 +188,7 @@ VirtualEvent EventBuilder::CreateBaseEvent(VirtualEventType type, const std::str
 // EventSubscription Implementation
 // ============================================================================
 
-EventSubscription::EventSubscription(EventDispatcher* dispatcher, VirtualEventType type)
+EventSubscription::EventSubscription(VirtualEventDispatcher* dispatcher, VirtualEventType type)
     : dispatcher_(dispatcher), type_(type), valid_(true) {
 }
 

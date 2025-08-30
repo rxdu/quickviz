@@ -186,7 +186,7 @@ void VirtualScenePanel::ProcessMouseClick(int button) {
         event.ctrl_pressed = ImGui::GetIO().KeyCtrl;
         event.shift_pressed = ImGui::GetIO().KeyShift;
         event.alt_pressed = ImGui::GetIO().KeyAlt;
-        virtual_scene_->GetEventDispatcher()->Dispatch(event);
+        virtual_scene_->GetVirtualEventDispatcher()->Dispatch(event);
         
         // Clear selection unless Ctrl is held
         if (!ImGui::GetIO().KeyCtrl) {
@@ -248,7 +248,7 @@ void VirtualScenePanel::DispatchClickEvent(VirtualObject* object, int button) {
     event.shift_pressed = ImGui::GetIO().KeyShift;
     event.alt_pressed = ImGui::GetIO().KeyAlt;
     
-    virtual_scene_->GetEventDispatcher()->Dispatch(event);
+    virtual_scene_->GetVirtualEventDispatcher()->Dispatch(event);
 }
 
 void VirtualScenePanel::DispatchDragEvent(VirtualObject* object) {
@@ -259,7 +259,7 @@ void VirtualScenePanel::DispatchDragEvent(VirtualObject* object) {
     glm::vec3 world_delta(mouse_delta.x, -mouse_delta.y, 0.0f);
     
     auto event = EventBuilder::ObjectDragged(object->GetId(), mouse_pos, world_delta);
-    virtual_scene_->GetEventDispatcher()->Dispatch(event);
+    virtual_scene_->GetVirtualEventDispatcher()->Dispatch(event);
 }
 
 void VirtualScenePanel::DispatchHoverEvent(VirtualObject* object, bool entering) {
@@ -273,7 +273,7 @@ void VirtualScenePanel::DispatchHoverEvent(VirtualObject* object, bool entering)
     event.screen_pos = GetLocalMousePosition();
     event.timestamp = std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
     
-    virtual_scene_->GetEventDispatcher()->Dispatch(event);
+    virtual_scene_->GetVirtualEventDispatcher()->Dispatch(event);
 }
 
 } // namespace quickviz

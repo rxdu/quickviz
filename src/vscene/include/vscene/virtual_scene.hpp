@@ -80,8 +80,8 @@ public:
     void Render();
 
     // Event system access
-    EventDispatcher* GetEventDispatcher() { return &event_dispatcher_; }
-    const EventDispatcher* GetEventDispatcher() const { return &event_dispatcher_; }
+    VirtualEventDispatcher* GetVirtualEventDispatcher() { return &event_dispatcher_; }
+    const VirtualEventDispatcher* GetVirtualEventDispatcher() const { return &event_dispatcher_; }
 
     // Utility operations
     BoundingBox GetSceneBounds() const;
@@ -113,7 +113,7 @@ private:
     
     // Systems
     std::unique_ptr<RenderInterface> backend_;
-    EventDispatcher event_dispatcher_;
+    VirtualEventDispatcher event_dispatcher_;
     Config config_;
 
     // Internal methods

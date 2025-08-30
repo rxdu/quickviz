@@ -118,7 +118,7 @@ waypoint->OnClick = [](VirtualObject* obj, ...) { /* handle click */ };
 scene_panel->AddObject("waypoint_001", std::move(waypoint));
 
 // 5. Subscribe to scene events
-auto dispatcher = scene_panel->GetEventDispatcher();
+auto dispatcher = scene_panel->GetVirtualEventDispatcher();
 dispatcher->Subscribe(VirtualEventType::BackgroundClicked, [...]);
 ```
 
@@ -129,7 +129,7 @@ User Input (ImGui)
     → VirtualScenePanel::HandleInput()
     → VirtualScene::Pick() / ProcessClick()
     → VirtualObject callbacks
-    → EventDispatcher::Dispatch()  
+    → VirtualEventDispatcher::Dispatch()  
     → Application handlers
 ```
 

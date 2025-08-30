@@ -46,7 +46,7 @@ public:
 
     // Virtual scene access
     VirtualScene* GetVirtualScene() const { return virtual_scene_.get(); }
-    EventDispatcher* GetEventDispatcher() const { return virtual_scene_->GetEventDispatcher(); }
+    VirtualEventDispatcher* GetVirtualEventDispatcher() const { return virtual_scene_->GetVirtualEventDispatcher(); }
 
     // Backend management
     void SetRenderBackend(std::unique_ptr<RenderInterface> backend);

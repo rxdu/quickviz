@@ -22,6 +22,9 @@
 #include "gldraw/camera.hpp"
 #include "gldraw/camera_controller.hpp"
 #include "gldraw/selection_manager.hpp"
+#include "core/event/input_event.hpp"
+#include "core/event/event_dispatcher.hpp"
+#include "core/event/input_mapping.hpp"
 
 // Forward declaration
 namespace quickviz {
@@ -152,11 +155,38 @@ class GlScenePanel : public Panel {
    */
   void ClearSelection();
 
+  // === Enhanced Input System ===
+  /**
+   * @brief Get the input dispatcher for registering custom handlers
+   * @return Reference to the input dispatcher
+   */
+  EventDispatcher& GetInputDispatcher() { return input_dispatcher_; }
+  const EventDispatcher& GetInputDispatcher() const { return input_dispatcher_; }
+
+  /**
+   * @brief Get the input mapping for configuring key/mouse bindings
+   * @return Reference to the input mapping
+   */
+  InputMapping& GetInputMapping() { return input_mapping_; }
+  const InputMapping& GetInputMapping() const { return input_mapping_; }
+
+  /**
+   * @brief Enable/disable the enhanced input system
+   * @param enabled If true, uses the new input system; false for legacy
+   */
+  void SetEnhancedInputEnabled(bool enabled) { use_enhanced_input_ = enabled; }
+  bool IsEnhancedInputEnabled() const { return use_enhanced_input_; }
+
  protected:
   /**
    * @brief Handle ImGui input events and forward to scene manager
    */
   void HandleInput();
+
+  /**
+   * @brief Enhanced input handling using the new input system
+   */
+  void HandleInputEnhanced();
 
   /**
    * @brief Render FPS overlay if enabled
@@ -166,10 +196,20 @@ class GlScenePanel : public Panel {
   void RenderInfoOverlay(const ImVec2& content_size, const ImVec2& image_pos);
 
  private:
+  // Helper methods for input conversion
+  std::shared_ptr<InputEvent> CreateInputEvent(InputEventType type, int button_or_key = -1);
+  ModifierKeys GetCurrentModifiers();
+
+ private:
   std::unique_ptr<GlSceneManager> scene_manager_;
 
   // UI state
   bool show_rendering_info_ = true;
+  
+  // Enhanced input system
+  EventDispatcher input_dispatcher_;
+  InputMapping input_mapping_;
+  bool use_enhanced_input_ = false;  // Default to legacy for compatibility
 };
 
 }  // namespace quickviz

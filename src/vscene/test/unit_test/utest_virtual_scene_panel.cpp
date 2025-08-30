@@ -36,7 +36,7 @@ protected:
 // Test basic panel creation and access
 TEST_F(VirtualScenePanelTest, BasicCreationAndAccess) {
     EXPECT_NE(panel_->GetVirtualScene(), nullptr);
-    EXPECT_NE(panel_->GetEventDispatcher(), nullptr);
+    EXPECT_NE(panel_->GetVirtualEventDispatcher(), nullptr);
     EXPECT_EQ(panel_->GetRenderBackend(), backend_);
     
     // Test initial state
@@ -105,7 +105,7 @@ TEST_F(VirtualScenePanelTest, EventSystemAccess) {
     std::vector<VirtualEvent> events_received;
     
     // Subscribe to events through panel
-    auto* dispatcher = panel_->GetEventDispatcher();
+    auto* dispatcher = panel_->GetVirtualEventDispatcher();
     dispatcher->Subscribe(VirtualEventType::ObjectAdded, 
         [&events_received](const VirtualEvent& e) {
             events_received.push_back(e);
