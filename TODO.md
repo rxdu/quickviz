@@ -24,12 +24,11 @@
 - [ ] Performance optimization for large scenes
 
 ### Core Module Improvements
-**Status**: Analysis complete, implementation pending  
-**Priority**:
-- [ ] BufferRegistry singleton removal (critical - blocks widgets)
-- [ ] AsyncEventDispatcher improvements (important for GUI)
+**Status**: Critical improvements completed  
+**Remaining**:
 - [ ] Move fonts from core/include to resources/
-- [ ] Fix ThreadSafeQueue namespace
+- [ ] Replace std::cerr with lightweight logger
+- [ ] Error handling improvements (std::expected)
 
 ---
 
@@ -63,7 +62,13 @@
 
 ## ✅ Recently Completed
 
-### September 2025
+### December 2024
+- ✅ **ThreadSafeQueue modernization** - Fixed critical move constructor bug, added shutdown protocol with Close()/IsClosed(), Pop() returns std::optional<T>
+- ✅ **BufferRegistry type safety** - Added runtime type checking with std::type_index, replaced exception-based API with std::optional returns
+- ✅ **AsyncEventDispatcher complete redesign** - Instance-based with owned worker thread, handler token system, graceful shutdown, bool consumption semantics
+- ✅ **AsyncEventEmitter updates** - Instance-based with dependency injection, perfect forwarding
+
+### September 2024
 - ✅ Complete unified input system with gamepad support
 - ✅ Removed legacy InputHandler API
 - ✅ GamepadManager with Meyer's Singleton pattern
@@ -72,7 +77,7 @@
 - ✅ ImGuiInputUtils integration with GamepadManager
 - ✅ Full InputEvent flow for mouse/keyboard/gamepad
 
-### August 2025
+### August 2024
 - ✅ VScene core implementation
 - ✅ SceneViewPanel separation
 - ✅ Enhanced EventDispatcher (modern, unified)
@@ -93,9 +98,9 @@
 ## 📊 Status Summary
 
 **Branch**: feature-pointcloud_editing  
-**Focus**: Core reliability before features  
+**Focus**: Core reliability improvements completed, ready for selection tools  
 **Performance**: 60fps @ 100K+ points  
-**Tests**: All passing
+**Tests**: 58/58 core tests passing, 4 integration tests need fixes
 
 ---
 
