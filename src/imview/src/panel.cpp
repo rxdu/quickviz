@@ -219,4 +219,46 @@ void Panel::SetWindowNoCloseButton() {
 void Panel::OnJoystickUpdate(const JoystickInput& input) {
   // do nothing by default
 }
+
+void Panel::ProcessPanelInput() {
+  if (!IsMouseOverContent()) return;
+  if (!input_manager_) return;
+
+  ScopedInputPoller poller;
+  if (!poller.HasEvents()) return;
+
+  // Process events through input manager first (for action mapping)
+  input_manager_->ProcessEvents(poller.GetEvents());
+
+  // Then give derived class a chance to handle raw events
+  for (const auto& event : poller.GetEvents()) {
+    if (OnInputEvent(event)) {
+      continue; // Event consumed by derived class
+    }
+
+    // Default handling for common events
+    switch (event.GetType()) {
+      case InputEventType::kMousePress:
+        OnMouseClick(event.GetScreenPosition(), event.GetMouseButton());
+        break;
+      case InputEventType::kMouseMove:
+      case InputEventType::kMouseDrag:
+        OnMouseMove(event.GetScreenPosition(), event.GetDelta());
+        break;
+      case InputEventType::kKeyPress:
+        OnKeyPress(event.GetKey(), event.GetModifiers());
+        break;
+      default:
+        break;
+    }
+  }
+}
+
+glm::vec2 Panel::GetContentRelativeMousePos() const {
+  return ImGuiInputUtils::GetContentRelativeMousePos();
+}
+
+bool Panel::IsMouseOverContent() const {
+  return ImGuiInputUtils::IsMouseOverContent();
+}
 }  // namespace quickviz

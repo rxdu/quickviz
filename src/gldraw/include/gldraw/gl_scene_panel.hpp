@@ -25,6 +25,7 @@
 #include "core/event/input_event.hpp"
 #include "core/event/event_dispatcher.hpp"
 #include "core/event/input_mapping.hpp"
+#include "gldraw/input/scene_input_handler.hpp"
 
 // Forward declaration
 namespace quickviz {
@@ -178,13 +179,17 @@ class GlScenePanel : public Panel {
   bool IsEnhancedInputEnabled() const { return use_enhanced_input_; }
 
  protected:
+  // Override Panel input methods for 3D scene interaction
+  bool OnInputEvent(const InputEvent& event) override;
+  void OnMouseClick(const glm::vec2& position, int button) override;
+
   /**
-   * @brief Handle ImGui input events and forward to scene manager
+   * @brief Handle ImGui input events and forward to scene manager (legacy)
    */
   void HandleInput();
 
   /**
-   * @brief Enhanced input handling using the new input system
+   * @brief Enhanced input handling using the new input system (legacy)
    */
   void HandleInputEnhanced();
 
@@ -206,10 +211,13 @@ class GlScenePanel : public Panel {
   // UI state
   bool show_rendering_info_ = true;
   
-  // Enhanced input system
+  // Enhanced input system (legacy)
   EventDispatcher input_dispatcher_;
   InputMapping input_mapping_;
   bool use_enhanced_input_ = false;  // Default to legacy for compatibility
+
+  // New imview-based input system
+  std::shared_ptr<SceneInputHandler> scene_input_handler_;
 };
 
 }  // namespace quickviz

@@ -14,6 +14,7 @@
 #include <unordered_map>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
 
 #include "core/event/input_event.hpp"
 
@@ -21,21 +22,43 @@ namespace quickviz {
 
 // Predefined action constants
 namespace Actions {
+// Selection actions
 constexpr const char* SELECT_SINGLE = "select_single";
 constexpr const char* SELECT_ADD = "select_add";
 constexpr const char* SELECT_TOGGLE = "select_toggle";
 constexpr const char* SELECT_BOX = "select_box";
 constexpr const char* SELECT_LASSO = "select_lasso";
+constexpr const char* CLEAR_SELECTION = "clear_selection";
+constexpr const char* DELETE_SELECTED = "delete_selected";
+
+// Camera actions
 constexpr const char* CAMERA_ROTATE = "camera_rotate";
 constexpr const char* CAMERA_PAN = "camera_pan";
 constexpr const char* CAMERA_ZOOM = "camera_zoom";
-constexpr const char* CLEAR_SELECTION = "clear_selection";
-constexpr const char* DELETE_SELECTED = "delete_selected";
+constexpr const char* CAMERA_ZOOM_IN = "camera_zoom_in";
+constexpr const char* CAMERA_ZOOM_OUT = "camera_zoom_out";
+
+// Edit actions
 constexpr const char* UNDO = "undo";
 constexpr const char* REDO = "redo";
 constexpr const char* COPY = "copy";
 constexpr const char* PASTE = "paste";
 constexpr const char* CUT = "cut";
+
+// Navigation actions (gamepad-friendly)
+constexpr const char* NAVIGATE_UP = "navigate_up";
+constexpr const char* NAVIGATE_DOWN = "navigate_down";
+constexpr const char* NAVIGATE_LEFT = "navigate_left";
+constexpr const char* NAVIGATE_RIGHT = "navigate_right";
+constexpr const char* NAVIGATE_CONFIRM = "navigate_confirm";
+constexpr const char* NAVIGATE_CANCEL = "navigate_cancel";
+constexpr const char* NAVIGATE_MENU = "navigate_menu";
+constexpr const char* NAVIGATE_BACK = "navigate_back";
+
+// Tool actions
+constexpr const char* TOOL_PRIMARY = "tool_primary";
+constexpr const char* TOOL_SECONDARY = "tool_secondary";
+constexpr const char* TOOL_ALTERNATE = "tool_alternate";
 }  // namespace Actions
 
 class InputMapping {
@@ -70,6 +93,15 @@ class InputMapping {
     Binding binding;
     binding.trigger = key;
     binding.modifiers = modifiers;
+    binding.event_type = type;
+    action_bindings_[action].push_back(binding);
+  }
+
+  void MapGamepadAction(const std::string& action, int gamepad_key,
+                        InputEventType type = InputEventType::kGamepadButtonPress) {
+    Binding binding;
+    binding.trigger = gamepad_key;
+    binding.modifiers = ModifierKeys();  // Gamepads don't use modifier keys
     binding.event_type = type;
     action_bindings_[action].push_back(binding);
   }
@@ -201,7 +233,7 @@ class InputMapping {
     const int kRight = 1; 
     const int kMiddle = 2;
 
-    // Selection actions
+    // Selection actions - Mouse
     MapMouseAction(Actions::SELECT_SINGLE, kLeft);
 
     ModifierKeys ctrl_mod;
@@ -212,7 +244,7 @@ class InputMapping {
     shift_mod.shift = true;
     MapMouseAction(Actions::SELECT_BOX, kLeft, shift_mod);
 
-    // Camera actions
+    // Camera actions - Mouse
     MapMouseAction(Actions::CAMERA_ROTATE, kRight);
     MapMouseAction(Actions::CAMERA_PAN, kMiddle);
 
@@ -240,7 +272,12 @@ class InputMapping {
     MapKeyAction(Actions::COPY, KEY_C, ctrl_mod);
     MapKeyAction(Actions::PASTE, KEY_V, ctrl_mod);
     MapKeyAction(Actions::CUT, KEY_X, ctrl_mod);
+
+    // Setup gamepad mappings (implemented in .cpp to avoid ImGui dependency in header)
+    SetupDefaultGamepadMappings();
   }
+
+  void SetupDefaultGamepadMappings();
 
   std::unordered_map<std::string, std::vector<Binding>> action_bindings_;
 };

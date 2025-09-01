@@ -68,6 +68,9 @@ Window::Window(std::string title, uint32_t width, uint32_t height,
     throw std::runtime_error("Failed to initialize GLAD");
   }
 #endif
+
+  // Initialize input management
+  input_manager_ = std::make_unique<InputManager>();
 }
 
 Window::~Window() {

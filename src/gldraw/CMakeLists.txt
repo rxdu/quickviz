@@ -44,6 +44,8 @@ add_library(gldraw
     src/renderable/path.cpp
     ## Selection system
     src/selection_manager.cpp
+    ## Input system
+    src/input/scene_input_handler.cpp
     )
 target_link_libraries(gldraw PUBLIC core imcore imview stb
     Threads::Threads

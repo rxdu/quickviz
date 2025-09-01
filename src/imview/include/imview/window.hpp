@@ -17,6 +17,9 @@
 #include <GLFW/glfw3.h>
 
 #include <string>
+#include <memory>
+
+#include "imview/input/input_manager.hpp"
 
 namespace quickviz {
 class Window {
@@ -53,11 +56,16 @@ class Window {
   // for testing purposes, not recommended for normal use
   GLFWwindow *GetWindowObject();
 
+  // Input management
+  InputManager& GetInputManager() { return *input_manager_; }
+  const InputManager& GetInputManager() const { return *input_manager_; }
+
  protected:
   void ApplyWindowHints(uint32_t window_hints);
   void LoadDefaultStyle();
 
   GLFWwindow *win_;
+  std::unique_ptr<InputManager> input_manager_;
 };
 }  // namespace quickviz
 

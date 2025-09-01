@@ -23,6 +23,12 @@ namespace quickviz {
 GlScenePanel::GlScenePanel(const std::string& name, GlSceneManager::Mode mode)
     : Panel(name) {
   scene_manager_ = std::make_unique<GlSceneManager>(name + "_manager", mode);
+  
+  // Create and register the 3D scene input handler
+  scene_input_handler_ = SceneInputHandlerFactory::CreateStandard(scene_manager_.get());
+  
+  // Register with panel's input manager when it becomes available
+  // This will be done in SetInputManager or when the panel is added to a viewer
 }
 
 void GlScenePanel::Draw() {
@@ -32,12 +38,8 @@ void GlScenePanel::Draw() {
 }
 
 void GlScenePanel::RenderInsideWindow() {
-  // Handle input processing
-  if (use_enhanced_input_) {
-    HandleInputEnhanced();
-  } else {
-    HandleInput();
-  }
+  // Process input using the new ImGui-centric system
+  ProcessPanelInput();
 
   // Get current content region BEFORE rendering the image
   ImVec2 content_size = ImGui::GetContentRegionAvail();
@@ -398,6 +400,35 @@ ModifierKeys GlScenePanel::GetCurrentModifiers() {
   mods.alt = io.KeyAlt;
   mods.super = io.KeySuper;
   return mods;
+}
+
+// New imview-based input handling methods
+bool GlScenePanel::OnInputEvent(const InputEvent& event) {
+  // Register the scene input handler with panel's input manager if not done already
+  if (scene_input_handler_ && GetInputManager()) {
+    GetInputManager()->RegisterHandler(scene_input_handler_);
+    
+    // Update viewport size for coordinate transformations
+    ImVec2 content_size = ImGui::GetContentRegionAvail();
+    scene_input_handler_->SetViewportSize(
+      static_cast<int>(content_size.x), 
+      static_cast<int>(content_size.y)
+    );
+  }
+  
+  // The scene input handler will be called automatically through the input manager
+  // No need to manually dispatch here - just return false to allow normal processing
+  return false;
+}
+
+void GlScenePanel::OnMouseClick(const glm::vec2& position, int button) {
+  // This is a fallback method if the scene input handler doesn't consume the event
+  // Convert position to content-relative coordinates for scene manager
+  
+  if (button == MouseButton::kLeft) {
+    // Perform selection
+    scene_manager_->Select(static_cast<int>(position.x), static_cast<int>(position.y));
+  }
 }
 
 }  // namespace quickviz

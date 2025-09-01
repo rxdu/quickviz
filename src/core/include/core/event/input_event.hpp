@@ -19,13 +19,23 @@
 namespace quickviz {
 
 enum class InputEventType {
+  // Mouse events
   kMousePress,
   kMouseRelease,
   kMouseMove,
   kMouseDrag,
   kMouseWheel,
+  
+  // Keyboard events
   kKeyPress,
-  kKeyRelease
+  kKeyRelease,
+  
+  // Gamepad/Joystick events
+  kGamepadButtonPress,
+  kGamepadButtonRelease,
+  kGamepadAxisMove,
+  kGamepadConnected,
+  kGamepadDisconnected
 };
 
 struct ModifierKeys {
@@ -93,6 +103,16 @@ class InputEvent : public BaseEvent {
         return "KeyPress";
       case InputEventType::kKeyRelease:
         return "KeyRelease";
+      case InputEventType::kGamepadButtonPress:
+        return "GamepadButtonPress";
+      case InputEventType::kGamepadButtonRelease:
+        return "GamepadButtonRelease";
+      case InputEventType::kGamepadAxisMove:
+        return "GamepadAxisMove";
+      case InputEventType::kGamepadConnected:
+        return "GamepadConnected";
+      case InputEventType::kGamepadDisconnected:
+        return "GamepadDisconnected";
       default:
         return "Unknown";
     }
@@ -126,6 +146,19 @@ class InputEvent : public BaseEvent {
   void SetUserData(void* data) { user_data_ = data; }
   void* GetUserData() const { return user_data_; }
 
+  // Gamepad-specific methods
+  void SetGamepadId(int id) { gamepad_id_ = id; }
+  int GetGamepadId() const { return gamepad_id_; }
+  
+  void SetGamepadName(const std::string& name) { gamepad_name_ = name; }
+  const std::string& GetGamepadName() const { return gamepad_name_; }
+  
+  void SetAxisValue(float value) { axis_value_ = value; }
+  float GetAxisValue() const { return axis_value_; }
+  
+  void SetAxisIndex(int index) { axis_index_ = index; }
+  int GetAxisIndex() const { return axis_index_; }
+
   // Helper methods
   bool IsMouseEvent() const {
     return type_ == InputEventType::kMousePress ||
@@ -139,6 +172,14 @@ class InputEvent : public BaseEvent {
     return type_ == InputEventType::kKeyPress ||
            type_ == InputEventType::kKeyRelease;
   }
+  
+  bool IsGamepadEvent() const {
+    return type_ == InputEventType::kGamepadButtonPress ||
+           type_ == InputEventType::kGamepadButtonRelease ||
+           type_ == InputEventType::kGamepadAxisMove ||
+           type_ == InputEventType::kGamepadConnected ||
+           type_ == InputEventType::kGamepadDisconnected;
+  }
 
   bool HasModifier() const { return !modifiers_.IsEmpty(); }
 
@@ -151,6 +192,12 @@ class InputEvent : public BaseEvent {
   float timestamp_;
   bool consumed_;
   void* user_data_;
+  
+  // Gamepad-specific data
+  int gamepad_id_ = -1;
+  std::string gamepad_name_;
+  float axis_value_ = 0.0f;
+  int axis_index_ = -1;
 
   static float GetCurrentTime() {
     static auto start = std::chrono::steady_clock::now();
