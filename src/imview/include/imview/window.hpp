@@ -18,10 +18,13 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 
 #include "imview/input/input_manager.hpp"
 
 namespace quickviz {
+class Panel;  // Forward declaration
+
 class Window {
  public:
   enum WINDOW_HINT {
@@ -52,6 +55,7 @@ class Window {
   void CloseWindow();
   void PollEvents();
   void SwapBuffers();
+  void DisableExitOnEsc();
 
   // for testing purposes, not recommended for normal use
   GLFWwindow *GetWindowObject();
@@ -60,12 +64,19 @@ class Window {
   InputManager& GetInputManager() { return *input_manager_; }
   const InputManager& GetInputManager() const { return *input_manager_; }
 
+  // Panel registration for centralized input
+  void RegisterPanel(std::shared_ptr<Panel> panel);
+  void UnregisterPanel(const std::string& panel_name);
+  void ClearPanels();
+
  protected:
   void ApplyWindowHints(uint32_t window_hints);
   void LoadDefaultStyle();
 
   GLFWwindow *win_;
   std::unique_ptr<InputManager> input_manager_;
+  std::vector<std::weak_ptr<Panel>> registered_panels_;
+  bool exit_on_esc_ = true;
 };
 }  // namespace quickviz
 

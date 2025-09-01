@@ -22,3 +22,6 @@ target_link_libraries(test_joystick_input PRIVATE imview)
 
 add_executable(test_keyboard_mouse_input test_keyboard_mouse_input.cpp)
 target_link_libraries(test_keyboard_mouse_input PRIVATE imview)
+
+add_executable(test_centralized_input test_centralized_input.cpp)
+target_link_libraries(test_centralized_input PRIVATE imview gtest gtest_main)

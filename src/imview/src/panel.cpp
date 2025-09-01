@@ -10,6 +10,7 @@
 #include "imview/panel.hpp"
 
 #include "imgui_internal.h"
+#include "imview/window.hpp"
 
 namespace quickviz {
 Panel::Panel(std::string name) : SceneObject(name) {
@@ -220,47 +221,6 @@ void Panel::SetWindowNoCloseButton() {
 }
 
 
-void Panel::ProcessPanelInput() {
-  if (!input_manager_) return;
-
-  ScopedInputPoller poller;
-  if (!poller.HasEvents()) return;
-
-  // Process events through input manager first (for action mapping)
-  input_manager_->ProcessEvents(poller.GetEvents());
-
-  // Then give derived class a chance to handle events through unified system
-  for (const auto& event : poller.GetEvents()) {
-    // Check input policy before processing
-    if (!ShouldProcessInput(event)) {
-      continue; // Event blocked by input policy
-    }
-    
-    if (OnInputEvent(event)) {
-      continue; // Event consumed by derived class
-    }
-
-    // Default handling for common events (with policy check already done)
-    switch (event.GetType()) {
-      case InputEventType::kMousePress:
-        OnMouseClick(event.GetScreenPosition(), event.GetMouseButton());
-        break;
-      case InputEventType::kMouseMove:
-      case InputEventType::kMouseDrag:
-        OnMouseMove(event.GetScreenPosition(), event.GetDelta());
-        break;
-      case InputEventType::kKeyPress:
-        OnKeyPress(event.GetKey(), event.GetModifiers());
-        break;
-      case InputEventType::kGamepadButtonPress:
-        OnGamepadButton(event.GetButtonOrKey(), event.GetGamepadId());
-        break;
-      default:
-        break;
-    }
-  }
-}
-
 glm::vec2 Panel::GetContentRelativeMousePos() const {
   return ImGuiInputUtils::GetContentRelativeMousePos();
 }
@@ -275,5 +235,28 @@ bool Panel::IsWindowFocused() const {
 
 bool Panel::IsWindowHovered() const {
   return ImGui::IsWindowHovered();
+}
+
+void Panel::AttachToWindow(Window& window) {
+  // Detach from previous window if any
+  if (attached_window_) {
+    DetachFromWindow();
+  }
+  
+  // Attach to new window
+  attached_window_ = &window;
+  
+  // Register with window's centralized input manager
+  // Note: We need to create a shared_ptr for this panel to register it
+  // This requires the panel to be managed by shared_ptr in the calling code
+  // For now, we'll handle this in the application layer
+}
+
+void Panel::DetachFromWindow() {
+  if (attached_window_) {
+    // Unregister from window's input manager
+    attached_window_->UnregisterPanel(GetName());
+    attached_window_ = nullptr;
+  }
 }
 }  // namespace quickviz

@@ -17,11 +17,12 @@
 #include "imgui.h"
 #include "imview/scene_object.hpp"
 #include "imview/input/imgui_input_utils.hpp"
-#include "imview/input/input_manager.hpp"
 #include "imview/input/input_policy.hpp"
 #include "imview/input/input_dispatcher.hpp"
 
 namespace quickviz {
+class Window;  // Forward declaration
+
 class Panel : public SceneObject, public InputControlled, public InputEventHandler {
  public:
   Panel(std::string name);
@@ -70,12 +71,11 @@ class Panel : public SceneObject, public InputControlled, public InputEventHandl
 
   virtual void Draw() = 0;
 
-  // Input management
-  void SetInputManager(std::shared_ptr<InputManager> input_manager) { 
-    input_manager_ = input_manager; 
-  }
-  InputManager* GetInputManager() const { return input_manager_.get(); }
-
+  // Window attachment for centralized input
+  void AttachToWindow(Window& window);
+  void DetachFromWindow();
+  bool IsAttachedToWindow() const { return attached_window_ != nullptr; }
+  
  protected:
   // for derived classes
   void Begin(bool* p_open = NULL);
@@ -84,9 +84,6 @@ class Panel : public SceneObject, public InputControlled, public InputEventHandl
   // InputEventHandler interface - override in derived classes for input handling
   bool OnInputEvent(const InputEvent& event) override { return false; }
   int GetPriority() const override { return GetInputPolicy().priority; }
-
-  // Input processing (called during panel rendering)  
-  virtual void ProcessPanelInput();
 
   // Convenience methods for common input handling (optional)
   virtual void OnMouseClick(const glm::vec2& position, int button) {}
@@ -106,7 +103,9 @@ class Panel : public SceneObject, public InputControlled, public InputEventHandl
   bool auto_layout_ = false;
   ImGuiWindowFlags flags_ = ImGuiWindowFlags_None;
   ImGuiWindowClass window_class_;
-  std::shared_ptr<InputManager> input_manager_;
+  
+  // Centralized input management
+  Window* attached_window_ = nullptr;
 };
 }  // namespace quickviz
 

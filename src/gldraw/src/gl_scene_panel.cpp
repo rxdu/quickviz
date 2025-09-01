@@ -39,9 +39,6 @@ void GlScenePanel::Draw() {
 }
 
 void GlScenePanel::RenderInsideWindow() {
-  // Process input using the new ImGui-centric system
-  ProcessPanelInput();
-
   // Get current content region BEFORE rendering the image
   ImVec2 content_size = ImGui::GetContentRegionAvail();
 
@@ -405,20 +402,19 @@ ModifierKeys GlScenePanel::GetCurrentModifiers() {
 
 // New imview-based input handling methods
 bool GlScenePanel::OnInputEvent(const InputEvent& event) {
-  // Register the scene input handler with panel's input manager if not done already
-  if (scene_input_handler_ && GetInputManager()) {
-    GetInputManager()->RegisterHandler(scene_input_handler_);
-    
-    // Update viewport size for coordinate transformations
+  // Update viewport size for coordinate transformations
+  if (scene_input_handler_) {
     ImVec2 content_size = ImGui::GetContentRegionAvail();
     scene_input_handler_->SetViewportSize(
       static_cast<int>(content_size.x), 
       static_cast<int>(content_size.y)
     );
+    
+    // Forward event to scene input handler directly
+    return scene_input_handler_->OnInputEvent(event);
   }
   
-  // The scene input handler will be called automatically through the input manager
-  // No need to manually dispatch here - just return false to allow normal processing
+  // No scene input handler - allow event to propagate
   return false;
 }
 
