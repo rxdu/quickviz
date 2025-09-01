@@ -74,7 +74,14 @@ class LidarSimulator {
 // Function to generate point cloud data in a separate thread
 void GeneratePointCloud(std::string buffer_name, std::atomic<bool>& running) {
   auto& buffer_registry = BufferRegistry::GetInstance();
-  auto point_buffer = buffer_registry.GetBuffer<std::vector<glm::vec4>>(buffer_name);
+  auto point_buffer_opt = buffer_registry.GetBuffer<std::vector<glm::vec4>>(buffer_name);
+  
+  if (!point_buffer_opt) {
+    std::cerr << "Failed to get point cloud buffer: " << buffer_name << std::endl;
+    return;
+  }
+  
+  auto point_buffer = *point_buffer_opt;
   
   LidarSimulator lidar_sim(10000, 5.0f);
   auto start_time = std::chrono::high_resolution_clock::now();
@@ -141,8 +148,13 @@ int main(int argc, char* argv[]) {
   // Set up pre-draw callback to update point cloud from buffer
   gl_sm->SetPreDrawCallback([point_cloud_ptr, buffer_name]() {
     auto& buffer_registry = BufferRegistry::GetInstance();
-    auto point_buffer = buffer_registry.GetBuffer<std::vector<glm::vec4>>(buffer_name);
+    auto point_buffer_opt = buffer_registry.GetBuffer<std::vector<glm::vec4>>(buffer_name);
     
+    if (!point_buffer_opt) {
+      return; // Buffer not available
+    }
+    
+    auto point_buffer = *point_buffer_opt;
     std::vector<glm::vec4> points;
     if (point_buffer->Read(points)) {
       point_cloud_ptr->SetPoints(std::move(points), PointCloud::ColorMode::kScalarField);

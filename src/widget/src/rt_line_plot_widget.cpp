@@ -50,8 +50,12 @@ void RtLinePlotWidget::AddLine(const std::string& line_name,
   line_specs_[line_name].name = line_name;
   line_specs_[line_name].internal_buffer = ScrollingPlotBuffer();
   auto& buffer_registry = BufferRegistry::GetInstance();
-  line_specs_[line_name].input_buffer =
-      buffer_registry.GetBuffer<DataPoint>(buffer_name);
+  if (auto buffer = buffer_registry.GetBuffer<DataPoint>(buffer_name)) {
+    line_specs_[line_name].input_buffer = *buffer;
+  } else {
+    std::cerr << "Warning: Buffer '" << buffer_name << "' not found for line plot widget" << std::endl;
+    line_specs_[line_name].input_buffer = nullptr;
+  }
 }
 
 void RtLinePlotWidget::Draw() {

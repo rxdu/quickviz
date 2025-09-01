@@ -76,7 +76,14 @@ std::unique_ptr<std::thread> generate_thread;
 // Function to generate texture data in a separate thread
 void GenerateTextureData(const std::string& buffer_name, std::atomic<bool>& running) {
     auto& buffer_registry = BufferRegistry::GetInstance();
-    auto texture_buffer = buffer_registry.GetBuffer<std::vector<unsigned char>>(buffer_name);
+    auto texture_buffer_opt = buffer_registry.GetBuffer<std::vector<unsigned char>>(buffer_name);
+    
+    if (!texture_buffer_opt) {
+        std::cerr << "Failed to get texture buffer: " << buffer_name << std::endl;
+        return;
+    }
+    
+    auto texture_buffer = *texture_buffer_opt;
     
     DynamicTextureGenerator generator(TEX_WIDTH, TEX_HEIGHT);
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -117,8 +124,13 @@ void SetupTextureScene(GlSceneManager* scene_manager) {
     // Set up pre-draw callback to update texture from buffer
     scene_manager->SetPreDrawCallback([texture_ptr, buffer_name]() {
         auto& buffer_registry = BufferRegistry::GetInstance();
-        auto texture_buffer = buffer_registry.GetBuffer<std::vector<unsigned char>>(buffer_name);
+        auto texture_buffer_opt = buffer_registry.GetBuffer<std::vector<unsigned char>>(buffer_name);
         
+        if (!texture_buffer_opt) {
+            return; // Buffer not available
+        }
+        
+        auto texture_buffer = *texture_buffer_opt;
         std::vector<unsigned char> data;
         if (texture_buffer->Read(data)) {
             texture_ptr->UpdateData(TEX_WIDTH, TEX_HEIGHT, Texture::PixelFormat::kRgba, std::move(data));

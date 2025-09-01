@@ -21,7 +21,12 @@ BufferedCvImageWidget::BufferedCvImageWidget(const std::string& widget_name,
   this->SetNoBackground(true);
 
   auto& buffer_registry = BufferRegistry::GetInstance();
-  buffer_ = buffer_registry.GetBuffer<cv::Mat>(buffer_name);
+  if (auto buffer = buffer_registry.GetBuffer<cv::Mat>(buffer_name)) {
+    buffer_ = *buffer;
+  } else {
+    std::cerr << "Warning: Buffer '" << buffer_name << "' not found for image widget" << std::endl;
+    buffer_ = nullptr;
+  }
 
   glGenTextures(1, &image_texture_);
 }

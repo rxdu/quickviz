@@ -45,17 +45,15 @@ TEST_F(BufferRegistryTest, CanRegisterAndRetrieveBuffer) {
     BufferRegistry::GetInstance().AddBuffer<int>("test_buffer", buffer);
     
     // Retrieve the buffer
-    auto retrieved = BufferRegistry::GetInstance().GetBuffer<int>("test_buffer");
-    EXPECT_NE(retrieved, nullptr);
-    EXPECT_EQ(retrieved, buffer);
+    auto retrieved_opt = BufferRegistry::GetInstance().GetBuffer<int>("test_buffer");
+    ASSERT_TRUE(retrieved_opt.has_value());
+    EXPECT_EQ(*retrieved_opt, buffer);
 }
 
-TEST_F(BufferRegistryTest, ThrowsForNonExistentBuffer) {
-    // The API throws exceptions instead of returning null
-    EXPECT_THROW(
-        BufferRegistry::GetInstance().GetBuffer<int>("non_existent"),
-        std::runtime_error
-    );
+TEST_F(BufferRegistryTest, ReturnsNulloptForNonExistentBuffer) {
+    // The API returns nullopt instead of throwing exceptions
+    auto result = BufferRegistry::GetInstance().GetBuffer<int>("non_existent");
+    EXPECT_FALSE(result.has_value());
 }
 
 TEST_F(BufferRegistryTest, CanRemoveBuffer) {
@@ -63,16 +61,15 @@ TEST_F(BufferRegistryTest, CanRemoveBuffer) {
     
     // Register and verify
     BufferRegistry::GetInstance().AddBuffer<std::string>("temp_buffer", buffer);
-    auto retrieved = BufferRegistry::GetInstance().GetBuffer<std::string>("temp_buffer");
-    EXPECT_NE(retrieved, nullptr);
+    auto retrieved_opt = BufferRegistry::GetInstance().GetBuffer<std::string>("temp_buffer");
+    ASSERT_TRUE(retrieved_opt.has_value());
+    EXPECT_NE(*retrieved_opt, nullptr);
     
     // Remove and verify
     BufferRegistry::GetInstance().RemoveBuffer("temp_buffer");
     
-    EXPECT_THROW(
-        BufferRegistry::GetInstance().GetBuffer<std::string>("temp_buffer"),
-        std::runtime_error
-    );
+    auto removed_opt = BufferRegistry::GetInstance().GetBuffer<std::string>("temp_buffer");
+    EXPECT_FALSE(removed_opt.has_value());
 }
 
 TEST_F(BufferRegistryTest, ThrowsOnDuplicateRegistration) {
@@ -96,15 +93,14 @@ TEST_F(BufferRegistryTest, HandlesTypeMismatch) {
     auto int_buffer = std::make_shared<DoubleBuffer<int>>();
     BufferRegistry::GetInstance().AddBuffer<int>("type_test", int_buffer);
     
-    // Try to retrieve with wrong type - should throw
-    EXPECT_THROW(
-        BufferRegistry::GetInstance().GetBuffer<std::string>("type_test"),
-        std::runtime_error
-    );
+    // Try to retrieve with wrong type - should return nullopt
+    auto wrong_type_opt = BufferRegistry::GetInstance().GetBuffer<std::string>("type_test");
+    EXPECT_FALSE(wrong_type_opt.has_value());
     
     // Correct type should work
-    auto correct_type = BufferRegistry::GetInstance().GetBuffer<int>("type_test");
-    EXPECT_NE(correct_type, nullptr);
+    auto correct_type_opt = BufferRegistry::GetInstance().GetBuffer<int>("type_test");
+    ASSERT_TRUE(correct_type_opt.has_value());
+    EXPECT_NE(*correct_type_opt, nullptr);
     
     // Clean up
     BufferRegistry::GetInstance().RemoveBuffer("type_test");
@@ -115,8 +111,10 @@ TEST_F(BufferRegistryTest, BufferFunctionality) {
     auto buffer = std::make_shared<DoubleBuffer<int>>();
     BufferRegistry::GetInstance().AddBuffer<int>("func_test", buffer);
     
-    auto retrieved = BufferRegistry::GetInstance().GetBuffer<int>("func_test");
-    EXPECT_NE(retrieved, nullptr);
+    auto retrieved_opt = BufferRegistry::GetInstance().GetBuffer<int>("func_test");
+    ASSERT_TRUE(retrieved_opt.has_value());
+    
+    auto retrieved = *retrieved_opt;
     
     // Test writing and reading
     retrieved->Write(42);
