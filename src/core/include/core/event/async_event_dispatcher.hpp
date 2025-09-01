@@ -17,6 +17,7 @@
 #include <string>
 #include <queue>
 #include <atomic>
+#include <unordered_map>
 
 #include "core/event/event.hpp"
 #include "core/event/thread_safe_queue.hpp"
@@ -32,6 +33,7 @@ class AsyncEventDispatcher {
   void Dispatch(std::shared_ptr<BaseEvent> event);
   void HandleEvents();
   void Reset();
+  void Shutdown();
 
  private:
   AsyncEventDispatcher() = default;

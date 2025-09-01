@@ -34,8 +34,13 @@ void AsyncEventDispatcher::Dispatch(std::shared_ptr<BaseEvent> event) {
         "Error: Dispatch called from the same thread as HandleEvents!");
   }
 
-  // push the event to the queue
-  event_queue_.Push(event);
+  // push the event to the queue (may throw if queue is closed)
+  try {
+    event_queue_.Push(event);
+  } catch (const std::runtime_error&) {
+    // Queue is closed - dispatcher is shutting down, silently ignore
+    // This prevents exceptions during application shutdown
+  }
 }
 
 void AsyncEventDispatcher::HandleEvents() {
@@ -86,5 +91,13 @@ void AsyncEventDispatcher::Reset() {
   // Reset thread IDs
   dispatch_thread_id_ = std::thread::id();
   handle_events_thread_id_ = std::thread::id();
+}
+
+void AsyncEventDispatcher::Shutdown() {
+  // Close the event queue to prevent new events and wake up waiting threads
+  event_queue_.Close();
+  
+  // Clear handlers
+  Reset();
 }
 }  // namespace quickviz
