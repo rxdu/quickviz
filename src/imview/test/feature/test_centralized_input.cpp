@@ -12,6 +12,7 @@
 
 #include "imview/window.hpp"
 #include "imview/panel.hpp"
+#include "imview/input/gamepad_manager.hpp"
 #include "core/event/input_event.hpp"
 
 using namespace quickviz;
@@ -57,8 +58,8 @@ class CentralizedInputTest : public ::testing::Test {
   }
 
   void TearDown() override {
+    // Window destructor automatically handles GamepadManager shutdown and glfwTerminate()
     window_.reset();
-    glfwTerminate();
   }
 
   std::unique_ptr<Window> window_;

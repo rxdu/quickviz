@@ -14,6 +14,7 @@
 #include <algorithm>
 
 #include "imview/panel.hpp"
+#include "imview/input/gamepad_manager.hpp"
 
 namespace quickviz {
 namespace {
@@ -82,6 +83,9 @@ Window::Window(std::string title, uint32_t width, uint32_t height,
 }
 
 Window::~Window() {
+  // Shutdown GamepadManager before terminating GLFW to prevent segfaults
+  GamepadManager::GetInstance().Shutdown();
+  
   glfwDestroyWindow(win_);
   glfwTerminate();
 }

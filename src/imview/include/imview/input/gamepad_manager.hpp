@@ -107,6 +107,13 @@ public:
   bool IsMonitoringEnabled() const { return monitoring_enabled_; }
 
   /**
+   * @brief Safely shutdown the gamepad manager before GLFW termination
+   * Note: This is automatically called by Window destructor. Manual calls
+   * are only needed when using GLFW without the QuickViz Window class.
+   */
+  void Shutdown();
+
+  /**
    * @brief Get current gamepad state for InputEvent creation
    * @param gamepad_id GLFW gamepad ID  
    * @return Current button/axis state, empty if not connected
@@ -118,15 +125,20 @@ public:
   };
   GamepadState GetGamepadState(int gamepad_id);
 
+  /**
+   * @brief Poll for gamepad input events since last poll
+   * @return Vector of input events from all connected gamepads
+   */
+  std::vector<InputEvent> PollEvents();
+
 private:
   GamepadManager() : monitoring_enabled_(false) {
     UpdateGamepadList();
   }
   
   ~GamepadManager() {
-    if (monitoring_enabled_) {
-      glfwSetJoystickCallback(nullptr);
-    }
+    // Do nothing - Shutdown() is automatically called by Window destructor
+    // This prevents segfaults when singleton is destroyed after program exit
   }
 
   void InitializeGLFWCallback();
@@ -134,9 +146,27 @@ private:
   static void GLFWGamepadCallback(int jid, int event);
   void OnGamepadEvent(int jid, int event);
 
+  // Event generation helpers
+  std::vector<InputEvent> GenerateButtonEvents(int gamepad_id, 
+                                              const GamepadState& current, 
+                                              const GamepadState& previous);
+  std::vector<InputEvent> GenerateAxisEvents(int gamepad_id,
+                                            const GamepadState& current,
+                                            const GamepadState& previous);
+  std::vector<InputEvent> GenerateHatEvents(int gamepad_id,
+                                           const GamepadState& current,
+                                           const GamepadState& previous);
+  InputEvent CreateGamepadEvent(InputEventType type, int gamepad_id, int button_or_key = -1);
+
   bool monitoring_enabled_;
   std::unordered_map<int, GamepadInfo> gamepads_;
   ConnectionCallback connection_callback_;
+  
+  // State tracking for delta-based event generation
+  std::unordered_map<int, GamepadState> previous_states_;
+  
+  // Flag to prevent GLFW calls after shutdown
+  bool shutdown_ = false;
 };
 
 }  // namespace quickviz

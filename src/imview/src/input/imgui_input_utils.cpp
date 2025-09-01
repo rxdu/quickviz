@@ -9,7 +9,6 @@
 #include "imview/input/imgui_input_utils.hpp"
 #include "imview/input/gamepad_manager.hpp"
 #include <algorithm>
-#include <unordered_map>
 #include <cmath>
 #include <iostream>
 
@@ -191,105 +190,13 @@ void ImGuiInputUtils::PollKeyboardEvents(std::vector<InputEvent>& events) {
 void ImGuiInputUtils::PollGamepadEvents(std::vector<InputEvent>& events) {
   if (ShouldCaptureGamepadInput()) return;
   
-  // ARCHITECTURAL DECISION: Use GamepadManager instead of ImGui's gamepad system
-  // This creates a unified input system where all input types flow through InputEvent objects
-  // while handling the different requirements of each input device appropriately.
-  //
-  // NOTE: Gamepad handling differs from mouse/keyboard for several reasons:
-  // 1. Multiple Controller Support: GamepadManager can handle multiple gamepads 
-  //    simultaneously, while ImGui assumes single gamepad for UI navigation
-  // 2. Precision Analog Input: Direct GLFW access provides raw float values 
-  //    for smooth camera/3D interaction, vs ImGui's button-like deadzone behavior
-  // 3. Application vs UI Focus: GamepadManager is designed for application input
-  //    handling (robotics, 3D navigation), while ImGui gamepad is for UI navigation
-  // 4. Hardware Abstraction: GamepadManager provides connection monitoring and
-  //    device enumeration that ImGui doesn't expose
-  
+  // Use GamepadManager's centralized event polling
+  // GamepadManager now handles all state tracking and event generation internally
   auto& gamepad_manager = GamepadManager::GetInstance();
-  auto connected_gamepads = gamepad_manager.GetConnectedGamepads();
+  auto gamepad_events = gamepad_manager.PollEvents();
   
-  // Track previous state for change detection (stored as static for simplicity)
-  // In production code, this should be instance member or manager responsibility
-  // NOTE: Using static map means state persists across multiple viewer instances
-  // CRITICAL: Must be declared OUTSIDE the loop to persist across frames!
-  // Bug fix: Previously declared inside loop, causing state to reset every iteration
-  // which led to stuck buttons and missed release events
-  static std::unordered_map<int, GamepadManager::GamepadState> previous_states;
-  
-  // Poll all connected gamepads (unlike mouse/keyboard which are singular)
-  for (const auto& gamepad_info : connected_gamepads) {
-    int gamepad_id = gamepad_info.id;
-    auto current_state = gamepad_manager.GetGamepadState(gamepad_id);
-    
-    auto& previous_state = previous_states[gamepad_id];
-    
-    // Button events: Compare current vs previous button states
-    // IMPORTANT: Handle button count changes properly to avoid stuck buttons
-    // - First poll: previous_state is empty, need to handle all current buttons
-    // - Reconnection: button count may change, need to release any orphaned buttons
-    // - This fixes the issue where buttons would get stuck in pressed state
-    size_t max_buttons = std::max(current_state.buttons.size(), previous_state.buttons.size());
-    for (size_t i = 0; i < max_buttons; ++i) {
-      bool was_pressed = (i < previous_state.buttons.size()) && (previous_state.buttons[i] != 0);
-      bool is_pressed = (i < current_state.buttons.size()) && (current_state.buttons[i] != 0);
-      
-      if (is_pressed && !was_pressed) {
-        auto event = CreateKeyEvent(InputEventType::kGamepadButtonPress, static_cast<int>(i));
-        event.SetGamepadId(gamepad_id);
-        events.push_back(event);
-      } else if (!is_pressed && was_pressed) {
-        auto event = CreateKeyEvent(InputEventType::kGamepadButtonRelease, static_cast<int>(i));
-        event.SetGamepadId(gamepad_id);
-        events.push_back(event);
-      }
-    }
-    
-    // Axis events: Generate continuous movement events for changed axes
-    // Unlike discrete button presses, axes provide continuous float values
-    const float axis_threshold = 0.01f;  // Minimum change to generate event
-    size_t max_axes = std::max(current_state.axes.size(), previous_state.axes.size());
-    for (size_t i = 0; i < max_axes; ++i) {
-      float current_value = (i < current_state.axes.size()) ? current_state.axes[i] : 0.0f;
-      float previous_value = (i < previous_state.axes.size()) ? previous_state.axes[i] : 0.0f;
-      
-      if (std::abs(current_value - previous_value) > axis_threshold) {
-        auto event = CreateKeyEvent(InputEventType::kGamepadAxisMove, -1);
-        event.SetGamepadId(gamepad_id);
-        event.SetAxisIndex(static_cast<int>(i));
-        event.SetAxisValue(current_value);
-        events.push_back(event);
-      }
-    }
-    
-    // Hat/POV events: Digital directional pad
-    size_t max_hats = std::max(current_state.hats.size(), previous_state.hats.size());
-    for (size_t i = 0; i < max_hats; ++i) {
-      unsigned char current_hat = (i < current_state.hats.size()) ? current_state.hats[i] : 0;
-      unsigned char previous_hat = (i < previous_state.hats.size()) ? previous_state.hats[i] : 0;
-      
-      if (current_hat != previous_hat) {
-        // Generate press events for newly pressed directions
-        unsigned char pressed_directions = current_hat & (~previous_hat);
-        unsigned char released_directions = previous_hat & (~current_hat);
-        
-        if (pressed_directions != 0) {
-          auto event = CreateKeyEvent(InputEventType::kGamepadButtonPress, static_cast<int>(current_hat));
-          event.SetGamepadId(gamepad_id);
-          // Store hat index in a custom field if needed
-          events.push_back(event);
-        }
-        
-        if (released_directions != 0) {
-          auto event = CreateKeyEvent(InputEventType::kGamepadButtonRelease, static_cast<int>(previous_hat));
-          event.SetGamepadId(gamepad_id);
-          events.push_back(event);
-        }
-      }
-    }
-    
-    // Update previous state for next frame
-    previous_state = current_state;
-  }
+  // Add all gamepad events to the output vector
+  events.insert(events.end(), gamepad_events.begin(), gamepad_events.end());
 }
 
 void ImGuiInputUtils::PollAllEvents(std::vector<InputEvent>& events) {
