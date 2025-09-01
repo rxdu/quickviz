@@ -26,7 +26,6 @@ class TuiPanel : public SceneObject {
   // public API
   void OnRender() override;
   void OnResize(float width, float height) override;
-  void OnJoystickUpdate(const JoystickInput &input) override {};
 
   void SetTitleBar(bool value);
   void SetNoBorder(bool value);

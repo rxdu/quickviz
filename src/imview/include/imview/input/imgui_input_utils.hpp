@@ -9,16 +9,17 @@
 #ifndef IMVIEW_IMGUI_INPUT_UTILS_HPP
 #define IMVIEW_IMGUI_INPUT_UTILS_HPP
 
-#include "core/event/input_event.hpp"
-#include "core/event/input_mapping.hpp"
-#include "imview/input/mouse.hpp"
 #include "imgui.h"
 
-namespace quickviz {
+#include "core/event/input_event.hpp"
+#include "core/event/input_mapping.hpp"
 
+#include "imview/input/input_types.hpp"
+
+namespace quickviz {
 /**
  * @brief Utility class for creating InputEvents from ImGui state
- * 
+ *
  * This class provides static methods to convert ImGui input state
  * into our standardized InputEvent objects for consistent handling.
  */
@@ -51,7 +52,8 @@ class ImGuiInputUtils {
    * @param content_offset Offset of content region from window origin
    * @return Mouse position relative to content area
    */
-  static glm::vec2 GetContentRelativeMousePos(const glm::vec2& content_offset = glm::vec2(0));
+  static glm::vec2 GetContentRelativeMousePos(
+      const glm::vec2& content_offset = glm::vec2(0));
 
   /**
    * @brief Check if mouse is over current ImGui window content
@@ -78,7 +80,8 @@ class ImGuiInputUtils {
   static void PollKeyboardEvents(std::vector<InputEvent>& events);
 
   /**
-   * @brief Check for gamepad/joystick events and create corresponding InputEvents
+   * @brief Check for gamepad/joystick events and create corresponding
+   * InputEvents
    * @param events Output vector to store generated events
    */
   static void PollGamepadEvents(std::vector<InputEvent>& events);
@@ -110,7 +113,7 @@ class ImGuiInputUtils {
 
 /**
  * @brief RAII class for scoped input polling within a panel
- * 
+ *
  * Usage:
  *   ScopedInputPoller poller;
  *   if (poller.HasEvents()) {
@@ -126,7 +129,7 @@ class ScopedInputPoller {
 
   bool HasEvents() const { return !events_.empty(); }
   const std::vector<InputEvent>& GetEvents() const { return events_; }
-  
+
   // Get specific event types
   std::vector<InputEvent> GetMouseEvents() const;
   std::vector<InputEvent> GetKeyboardEvents() const;

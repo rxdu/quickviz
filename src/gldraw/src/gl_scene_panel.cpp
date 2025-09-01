@@ -14,7 +14,8 @@
 
 #include "imgui.h"
 #include "imview/fonts.hpp"
-#include "imview/input/mouse.hpp"
+#include "imview/input/input_types.hpp"
+
 #include "gldraw/renderable/point_cloud.hpp"
 #include "gldraw/selection_manager.hpp"
 

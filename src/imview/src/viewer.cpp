@@ -19,11 +19,14 @@
 
 #include <iostream>
 #include <functional>
+#include <algorithm>
 
 #include "implot/implot.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include "imview/opengl_capability_checker.hpp"
+#include "opengl_capability_checker.hpp"
+#include "imview/panel.hpp"
+#include "imview/input/imgui_input_utils.hpp"
 
 namespace quickviz {
 namespace {
@@ -43,21 +46,6 @@ struct FramebufferSizeCallback<Ret(Params...)> {
 template <typename Ret, typename... Params>
 std::function<Ret(Params...)> FramebufferSizeCallback<Ret(Params...)>::func;
 
-template <typename T>
-struct JoystickCallback;
-
-template <typename Ret, typename... Params>
-struct JoystickCallback<Ret(Params...)> {
-  template <typename... Args>
-  static Ret callback(Args... args) {
-    return func(args...);
-  }
-  static std::function<Ret(Params...)> func;
-};
-
-// Initialize the static member.
-template <typename Ret, typename... Params>
-std::function<Ret(Params...)> JoystickCallback<Ret(Params...)>::func;
 }  // namespace
 
 Viewer::Viewer(std::string title, uint32_t width, uint32_t height,
@@ -114,7 +102,8 @@ Viewer::Viewer(std::string title, uint32_t width, uint32_t height,
 }
 
 Viewer::~Viewer() {
-  scene_objects_.clear();
+  // Properly unregister all input handlers before clearing
+  ClearSceneObjects();
 
   Fonts::UnloadFonts();
   ImGui_ImplOpenGL3_Shutdown();
@@ -221,129 +210,13 @@ void Viewer::EnableGamepadNav(bool enable) {
   }
 }
 
-void Viewer::EnumerateJoysticks() {
-  joysticks_.clear();
-  for (int i = GLFW_JOYSTICK_1; i < GLFW_JOYSTICK_LAST; i++) {
-    if (glfwJoystickPresent(i)) {
-      JoystickDevice js;
-      js.id = i;
-      js.name = glfwGetJoystickName(i);
-      joysticks_[i] = js;
-    }
-  }
-}
 
-void Viewer::OnJoystickEvent(int id, int event) {
-  if (event == GLFW_CONNECTED) {
-    EnumerateJoysticks();
-  } else if (event == GLFW_DISCONNECTED) {
-    if (current_joystick_input_.device.id == id) {
-      StopJoystickInputMonitoring();
-    }
-    joysticks_.erase(id);
-  }
 
-  std::vector<JoystickDevice> js;
-  for (const auto &pair : joysticks_) {
-    js.push_back(pair.second);
-  }
-  for (auto &obj : scene_objects_) {
-    obj->OnJoystickDeviceChange(js);
-  }
-}
 
-bool Viewer::StartJoystickInputMonitoring(int id) {
-  if (joysticks_.find(id) == joysticks_.end()) {
-    std::cerr << "[ERROR] Viewer::RegisterJoystickInputUpdateCallback(): "
-                 "Joystick with ID "
-              << id << " not found" << std::endl;
-    return false;
-  }
-  current_joystick_input_.device.id = id;
-  current_joystick_input_.device.name = joysticks_[id].name;
-  current_joystick_input_.axes.clear();
-  current_joystick_input_.buttons.clear();
-  current_joystick_input_.hats.clear();
-  return true;
-}
 
-void Viewer::StopJoystickInputMonitoring() {
-  current_joystick_input_.device.id = -1;
-  current_joystick_input_.device.name = "";
-  current_joystick_input_.axes.clear();
-  current_joystick_input_.buttons.clear();
-  current_joystick_input_.hats.clear();
-}
 
-bool Viewer::IsJoystickInputMonitoringActive() const {
-  return current_joystick_input_.device.id >= GLFW_JOYSTICK_1 &&
-         current_joystick_input_.device.id < GLFW_JOYSTICK_LAST;
-}
 
-void Viewer::EnableJoystickInput(bool enable) {
-  handle_joystick_input_ = enable;
-  if (handle_joystick_input_) {
-    EnumerateJoysticks();
 
-    // manually trigger the joystick device change callback to ensure
-    // all scene objects are aware of the initially available joysticks
-    std::vector<JoystickDevice> js;
-    for (const auto &pair : joysticks_) {
-      js.push_back(pair.second);
-    }
-    for (auto &obj : scene_objects_) {
-      obj->OnJoystickDeviceChange(js);
-    }
-
-    JoystickCallback<void(int, int)>::func =
-        std::bind(&Viewer::OnJoystickEvent, this, std::placeholders::_1,
-                  std::placeholders::_2);
-
-    void (*joystick_callback)(int, int) =
-        static_cast<decltype(joystick_callback)>(
-            JoystickCallback<void(int, int)>::callback);
-
-    glfwSetJoystickCallback(joystick_callback);
-  }
-}
-
-std::vector<JoystickDevice> Viewer::GetListOfJoysticks() {
-  if (!handle_joystick_input_) {
-    EnumerateJoysticks();
-  }
-  std::vector<JoystickDevice> js;
-  for (const auto &pair : joysticks_) {
-    js.push_back(pair.second);
-  }
-  return js;
-}
-
-bool Viewer::GetJoystickInput(int id, JoystickInput &input) {
-  input.device.id = id;
-  input.device.name = joysticks_[id].name;
-  if (glfwJoystickPresent(id)) {
-    // clear previous data
-    input.axes.clear();
-    input.buttons.clear();
-    input.hats.clear();
-
-    // read input data
-    int axis_count, button_count;
-    const float *axes = glfwGetJoystickAxes(id, &axis_count);
-    const unsigned char *buttons = glfwGetJoystickButtons(id, &button_count);
-
-    input.axes.assign(axes, axes + axis_count);
-    input.buttons.assign(buttons, buttons + button_count);
-
-#if ((GLFW_VERSION_MAJOR >= 3) && (GLFW_VERSION_MINOR >= 3))
-    int hat_count;
-    const unsigned char *hats = glfwGetJoystickHats(id, &hat_count);
-    input.hats.assign(hats, hats + hat_count);
-#endif
-    return true;
-  }
-  return false;
-}
 
 void Viewer::SetWindowShouldClose() {
   glfwSetWindowShouldClose(win_, GLFW_TRUE);
@@ -381,21 +254,6 @@ void Viewer::RenderSceneObjects() {
   }
 }
 
-void Viewer::HandleJoystickInput() {
-  if (handle_joystick_input_ &&
-      current_joystick_input_.device.id >= GLFW_JOYSTICK_1 &&
-      current_joystick_input_.device.id < GLFW_JOYSTICK_LAST) {
-    JoystickInput input;
-    if (GetJoystickInput(current_joystick_input_.device.id, input)) {
-      if (input != current_joystick_input_) {
-        for (auto &obj : scene_objects_) {
-          obj->OnJoystickUpdate(input);
-        }
-        current_joystick_input_ = input;
-      }
-    }
-  }
-}
 
 bool Viewer::AddSceneObject(std::shared_ptr<SceneObject> obj) {
   if (obj == nullptr) {
@@ -404,7 +262,47 @@ bool Viewer::AddSceneObject(std::shared_ptr<SceneObject> obj) {
     return false;
   }
   scene_objects_.push_back(obj);
+  
+  // Register as input handler if it's a Panel (which implements InputEventHandler)
+  auto panel = std::dynamic_pointer_cast<Panel>(obj);
+  if (panel) {
+    GetInputManager().GetDispatcher().RegisterHandler(panel);
+  }
+  
   return true;
+}
+
+bool Viewer::RemoveSceneObject(std::shared_ptr<SceneObject> obj) {
+  if (obj == nullptr) {
+    return false;
+  }
+  
+  // Find and remove from scene objects
+  auto it = std::find(scene_objects_.begin(), scene_objects_.end(), obj);
+  if (it != scene_objects_.end()) {
+    // Unregister as input handler if it's a Panel
+    auto panel = std::dynamic_pointer_cast<Panel>(obj);
+    if (panel) {
+      GetInputManager().GetDispatcher().UnregisterHandler(panel->GetName());
+    }
+    
+    scene_objects_.erase(it);
+    return true;
+  }
+  
+  return false;
+}
+
+void Viewer::ClearSceneObjects() {
+  // Unregister all panels from input dispatcher
+  for (auto& obj : scene_objects_) {
+    auto panel = std::dynamic_pointer_cast<Panel>(obj);
+    if (panel) {
+      GetInputManager().GetDispatcher().UnregisterHandler(panel->GetName());
+    }
+  }
+  
+  scene_objects_.clear();
 }
 
 void Viewer::OnResize(GLFWwindow *window, int width, int height) {
@@ -458,15 +356,40 @@ void Viewer::Show() {
 
   SetupOpenGL();
 
-  // main loop
+  // Main rendering loop with unified input system
+  // 
+  // INPUT HANDLER REGISTRATION:
+  // - Handlers are registered ONCE when objects are added via AddSceneObject()
+  // - Panels that implement InputEventHandler are automatically registered
+  // - Handlers are properly unregistered when removed via RemoveSceneObject()
+  // - This avoids the overhead of checking/registering every frame
+  //
+  // INPUT EVENT FLOW:
+  // 1. PollEvents() - handles GLFW window events (resize, close, etc.)
+  // 2. CreateNewImGuiFrame() - establishes ImGui context for the frame
+  // 3. ImGuiInputUtils::PollAllEvents() - polls mouse/keyboard/gamepad state
+  // 4. ProcessEvents() - dispatches events to registered handlers by priority
+  // 5. RenderSceneObjects() - handlers can use input state for rendering
+  
   while (!ShouldClose()) {
     // handle events
     PollEvents();
-    HandleJoystickInput();
-
+    
     // draw stuff
     ClearBackground();
     CreateNewImGuiFrame();
+    
+    // Poll and dispatch input events through the unified input system
+    // Must be done AFTER CreateNewImGuiFrame() so ImGui context is active
+    {
+      std::vector<InputEvent> events;
+      ImGuiInputUtils::PollAllEvents(events);
+      
+      // Dispatch events to all registered handlers
+      // (Handlers are registered once when added via AddSceneObject)
+      GetInputManager().ProcessEvents(events);
+    }
+    
     RenderSceneObjects();
     RenderImGuiFrame();
 

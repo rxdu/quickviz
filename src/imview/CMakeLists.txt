@@ -45,6 +45,7 @@ add_library(imview
     src/input/input_dispatcher.cpp
     src/input/input_manager.cpp
     src/input/imgui_input_utils.cpp
+    src/input/gamepad_manager.cpp
     ${AUTO_LAYOUT_SRC}
     # terminal
     ${TUI_COMP_SRC})

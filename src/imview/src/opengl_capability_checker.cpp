@@ -7,7 +7,7 @@
  * Copyright (c) 2025 Ruixiang Du (rdu)
  */
 
-#include "imview/opengl_capability_checker.hpp"
+#include "opengl_capability_checker.hpp"
 
 #include <iostream>
 #include <sstream>

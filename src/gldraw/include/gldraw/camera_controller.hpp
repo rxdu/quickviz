@@ -10,7 +10,7 @@
 #define QUICKVIZ_CAMERA_CONTROLLER_HPP
 
 #include "gldraw/camera.hpp"
-#include "imview/input/mouse.hpp"
+#include "imview/input/input_types.hpp"
 
 namespace quickviz {
 class CameraController {

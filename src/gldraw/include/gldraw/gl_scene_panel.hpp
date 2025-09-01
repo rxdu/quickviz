@@ -53,6 +53,9 @@ class GlScenePanel : public Panel {
 
   virtual ~GlScenePanel() = default;
 
+  // InputEventHandler interface  
+  std::string GetName() const override { return "GlScenePanel"; }
+
   // Panel interface
   void Draw() override;
 

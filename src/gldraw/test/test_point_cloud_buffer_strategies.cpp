@@ -183,9 +183,8 @@ public:
     // Nothing to do
   }
 
-  void OnJoystickUpdate(const JoystickInput& input) override {
-    // Nothing to do
-  }
+  // Remove legacy joystick method - not needed anymore
+  // GetName() not needed as SceneObject no longer requires InputHandler interface
 
 private:
   // Generate random points for testing

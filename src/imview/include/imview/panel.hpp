@@ -18,18 +18,22 @@
 #include "imview/scene_object.hpp"
 #include "imview/input/imgui_input_utils.hpp"
 #include "imview/input/input_manager.hpp"
+#include "imview/input/input_policy.hpp"
+#include "imview/input/input_dispatcher.hpp"
 
 namespace quickviz {
-class Panel : public SceneObject {
+class Panel : public SceneObject, public InputControlled, public InputEventHandler {
  public:
   Panel(std::string name);
   virtual ~Panel() = default;
+
+  // InputEventHandler interface
+  std::string GetName() const override { return name_; }
 
   // public API
   void SetAutoLayout(bool value);
   bool IsAutoLayout() const;
   void OnRender() override;
-  void OnJoystickUpdate(const JoystickInput& input) override;
 
   void SetNoTitleBar(bool value);
   void SetNoResize(bool value);
@@ -77,18 +81,26 @@ class Panel : public SceneObject {
   void Begin(bool* p_open = NULL);
   void End();
 
-  // Input processing (called during panel rendering)
+  // InputEventHandler interface - override in derived classes for input handling
+  bool OnInputEvent(const InputEvent& event) override { return false; }
+  int GetPriority() const override { return GetInputPolicy().priority; }
+
+  // Input processing (called during panel rendering)  
   virtual void ProcessPanelInput();
 
-  // Input event handling - override in derived classes
-  virtual bool OnInputEvent(const InputEvent& event) { return false; }
+  // Convenience methods for common input handling (optional)
   virtual void OnMouseClick(const glm::vec2& position, int button) {}
   virtual void OnMouseMove(const glm::vec2& position, const glm::vec2& delta) {}
   virtual void OnKeyPress(int key, const ModifierKeys& modifiers) {}
+  virtual void OnGamepadButton(int button, int gamepad_id) {}
 
   // Input utilities for derived classes  
   glm::vec2 GetContentRelativeMousePos() const;
   bool IsMouseOverContent() const;
+  
+  // InputControlled overrides for ImGui context awareness
+  bool IsWindowFocused() const override;
+  bool IsWindowHovered() const override;
 
  private:
   bool auto_layout_ = false;

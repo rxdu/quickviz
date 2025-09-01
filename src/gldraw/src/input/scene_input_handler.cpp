@@ -8,7 +8,7 @@
 
 #include "gldraw/input/scene_input_handler.hpp"
 #include "gldraw/gl_scene_manager.hpp"
-#include "imview/input/mouse.hpp"
+#include "imview/input/input_types.hpp"
 #include "core/event/input_mapping.hpp"
 
 namespace quickviz {

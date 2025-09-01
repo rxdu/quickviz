@@ -12,7 +12,10 @@
 #include "imgui_internal.h"
 
 namespace quickviz {
-Panel::Panel(std::string name) : SceneObject(name) {}
+Panel::Panel(std::string name) : SceneObject(name) {
+  // Initialize with default input policy allowing all input
+  SetInputPolicy(InputPolicy::AllowAll());
+}
 
 void Panel::OnRender() {
   if (auto_layout_) {
@@ -216,12 +219,8 @@ void Panel::SetWindowNoCloseButton() {
   window_class_.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoCloseButton;
 }
 
-void Panel::OnJoystickUpdate(const JoystickInput& input) {
-  // do nothing by default
-}
 
 void Panel::ProcessPanelInput() {
-  if (!IsMouseOverContent()) return;
   if (!input_manager_) return;
 
   ScopedInputPoller poller;
@@ -230,13 +229,18 @@ void Panel::ProcessPanelInput() {
   // Process events through input manager first (for action mapping)
   input_manager_->ProcessEvents(poller.GetEvents());
 
-  // Then give derived class a chance to handle raw events
+  // Then give derived class a chance to handle events through unified system
   for (const auto& event : poller.GetEvents()) {
+    // Check input policy before processing
+    if (!ShouldProcessInput(event)) {
+      continue; // Event blocked by input policy
+    }
+    
     if (OnInputEvent(event)) {
       continue; // Event consumed by derived class
     }
 
-    // Default handling for common events
+    // Default handling for common events (with policy check already done)
     switch (event.GetType()) {
       case InputEventType::kMousePress:
         OnMouseClick(event.GetScreenPosition(), event.GetMouseButton());
@@ -247,6 +251,9 @@ void Panel::ProcessPanelInput() {
         break;
       case InputEventType::kKeyPress:
         OnKeyPress(event.GetKey(), event.GetModifiers());
+        break;
+      case InputEventType::kGamepadButtonPress:
+        OnGamepadButton(event.GetButtonOrKey(), event.GetGamepadId());
         break;
       default:
         break;
@@ -260,5 +267,13 @@ glm::vec2 Panel::GetContentRelativeMousePos() const {
 
 bool Panel::IsMouseOverContent() const {
   return ImGuiInputUtils::IsMouseOverContent();
+}
+
+bool Panel::IsWindowFocused() const {
+  return ImGui::IsWindowFocused();
+}
+
+bool Panel::IsWindowHovered() const {
+  return ImGui::IsWindowHovered();
 }
 }  // namespace quickviz

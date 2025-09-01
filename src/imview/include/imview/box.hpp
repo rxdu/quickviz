@@ -37,11 +37,6 @@ class Box : public SceneObject, public Container {
 
   void OnResize(float width, float height) override;
   void OnRender() override;
-  void OnJoystickDeviceChange(
-      const std::vector<JoystickDevice> &devices) override;
-  void OnJoystickUpdate(const JoystickInput &input) override;
-
-  virtual void ProcessJoystickInput(const JoystickInput &input) {};
 
  protected:
   std::unordered_map<std::string, std::shared_ptr<SceneObject>> children_;
