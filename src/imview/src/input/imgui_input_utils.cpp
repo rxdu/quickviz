@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <unordered_map>
 #include <cmath>
+#include <iostream>
 
 namespace quickviz {
 
@@ -103,28 +104,86 @@ void ImGuiInputUtils::PollMouseEvents(std::vector<InputEvent>& events) {
 }
 
 void ImGuiInputUtils::PollKeyboardEvents(std::vector<InputEvent>& events) {
-  if (ShouldCaptureKeyboardInput()) return;
+  // NOTE: ImGui may capture keyboard input when UI elements have focus
+  // This prevents application-level keyboard handling, which is usually desired
+  // However, for input testing we may want to bypass this check
   
+  // Check if we should respect ImGui's keyboard capture
+  static bool bypass_imgui_capture = false;
+  static bool capture_override_logged = false;
+  
+  // Allow bypassing ImGui capture for testing by checking for special key combo
+  // Ctrl+Shift+K toggles bypass mode
   ImGuiIO& io = ImGui::GetIO();
+  if (io.KeyCtrl && io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_K)) {
+    bypass_imgui_capture = !bypass_imgui_capture;
+    if (!capture_override_logged) {
+      std::cout << "[INFO] Keyboard capture bypass " 
+                << (bypass_imgui_capture ? "ENABLED" : "DISABLED") 
+                << " (Ctrl+Shift+K to toggle)" << std::endl;
+      capture_override_logged = true;
+    }
+  }
   
-  // Check commonly used keys
-  // Note: ImGui uses its own key codes, we might need conversion
-  static const int common_keys[] = {
-    ImGuiKey_Delete,
-    ImGuiKey_Escape,
-    ImGuiKey_Enter,
-    ImGuiKey_Space,
-    ImGuiKey_Tab,
-    ImGuiKey_A, ImGuiKey_C, ImGuiKey_V, ImGuiKey_X, ImGuiKey_Z, ImGuiKey_Y
+  if (ShouldCaptureKeyboardInput() && !bypass_imgui_capture) {
+    // DEBUG: Show when ImGui is capturing keyboard
+    static int capture_count = 0;
+    if (++capture_count % 120 == 0) { // Log every 2 seconds at 60fps
+      std::cout << "[DEBUG] ImGui capturing keyboard input. Press Ctrl+Shift+K to bypass for testing." << std::endl;
+    }
+    return;
+  }
+  
+  // Check all ImGui keys systematically
+  // ImGui provides a comprehensive key system, we should poll all of them
+  static const ImGuiKey all_keys[] = {
+    // Function keys
+    ImGuiKey_F1, ImGuiKey_F2, ImGuiKey_F3, ImGuiKey_F4, ImGuiKey_F5, ImGuiKey_F6,
+    ImGuiKey_F7, ImGuiKey_F8, ImGuiKey_F9, ImGuiKey_F10, ImGuiKey_F11, ImGuiKey_F12,
+    
+    // Number keys
+    ImGuiKey_0, ImGuiKey_1, ImGuiKey_2, ImGuiKey_3, ImGuiKey_4,
+    ImGuiKey_5, ImGuiKey_6, ImGuiKey_7, ImGuiKey_8, ImGuiKey_9,
+    
+    // Letter keys
+    ImGuiKey_A, ImGuiKey_B, ImGuiKey_C, ImGuiKey_D, ImGuiKey_E, ImGuiKey_F,
+    ImGuiKey_G, ImGuiKey_H, ImGuiKey_I, ImGuiKey_J, ImGuiKey_K, ImGuiKey_L,
+    ImGuiKey_M, ImGuiKey_N, ImGuiKey_O, ImGuiKey_P, ImGuiKey_Q, ImGuiKey_R,
+    ImGuiKey_S, ImGuiKey_T, ImGuiKey_U, ImGuiKey_V, ImGuiKey_W, ImGuiKey_X,
+    ImGuiKey_Y, ImGuiKey_Z,
+    
+    // Special keys
+    ImGuiKey_Space, ImGuiKey_Enter, ImGuiKey_Escape, ImGuiKey_Tab, ImGuiKey_Backspace,
+    ImGuiKey_Delete, ImGuiKey_Insert, ImGuiKey_Home, ImGuiKey_End, 
+    ImGuiKey_PageUp, ImGuiKey_PageDown,
+    
+    // Arrow keys
+    ImGuiKey_LeftArrow, ImGuiKey_RightArrow, ImGuiKey_UpArrow, ImGuiKey_DownArrow,
+    
+    // Modifier keys
+    ImGuiKey_LeftCtrl, ImGuiKey_RightCtrl, ImGuiKey_LeftShift, ImGuiKey_RightShift,
+    ImGuiKey_LeftAlt, ImGuiKey_RightAlt, ImGuiKey_LeftSuper, ImGuiKey_RightSuper,
+    
+    // Punctuation and symbols (commonly used)
+    ImGuiKey_Minus, ImGuiKey_Equal, ImGuiKey_LeftBracket, ImGuiKey_RightBracket,
+    ImGuiKey_Backslash, ImGuiKey_Semicolon, ImGuiKey_Apostrophe, ImGuiKey_Comma,
+    ImGuiKey_Period, ImGuiKey_Slash, ImGuiKey_GraveAccent,
+    
+    // Keypad
+    ImGuiKey_Keypad0, ImGuiKey_Keypad1, ImGuiKey_Keypad2, ImGuiKey_Keypad3, ImGuiKey_Keypad4,
+    ImGuiKey_Keypad5, ImGuiKey_Keypad6, ImGuiKey_Keypad7, ImGuiKey_Keypad8, ImGuiKey_Keypad9,
+    ImGuiKey_KeypadDecimal, ImGuiKey_KeypadDivide, ImGuiKey_KeypadMultiply,
+    ImGuiKey_KeypadSubtract, ImGuiKey_KeypadAdd, ImGuiKey_KeypadEnter, ImGuiKey_KeypadEqual
   };
   
-  for (int imgui_key : common_keys) {
-    if (ImGui::IsKeyPressed(static_cast<ImGuiKey>(imgui_key))) {
-      // Convert ImGui key to our key system (placeholder - needs proper mapping)
-      events.push_back(CreateKeyEvent(InputEventType::kKeyPress, imgui_key));
+  for (ImGuiKey imgui_key : all_keys) {
+    if (ImGui::IsKeyPressed(imgui_key)) {
+      auto event = CreateKeyEvent(InputEventType::kKeyPress, static_cast<int>(imgui_key));
+      events.push_back(event);
     }
-    if (ImGui::IsKeyReleased(static_cast<ImGuiKey>(imgui_key))) {
-      events.push_back(CreateKeyEvent(InputEventType::kKeyRelease, imgui_key));
+    if (ImGui::IsKeyReleased(imgui_key)) {
+      auto event = CreateKeyEvent(InputEventType::kKeyRelease, static_cast<int>(imgui_key));
+      events.push_back(event);
     }
   }
 }

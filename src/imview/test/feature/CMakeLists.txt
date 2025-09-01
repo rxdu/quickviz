@@ -19,3 +19,6 @@ target_link_libraries(test_popup PRIVATE imview)
 
 add_executable(test_joystick_input test_joystick_input.cpp)
 target_link_libraries(test_joystick_input PRIVATE imview)
+
+add_executable(test_keyboard_mouse_input test_keyboard_mouse_input.cpp)
+target_link_libraries(test_keyboard_mouse_input PRIVATE imview)
