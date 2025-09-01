@@ -1,12 +1,14 @@
 # Unified Input Architecture for QuickViz
 
-## Problem Statement
+*Status: IMPLEMENTED - September 1, 2025*
 
-Currently, input handling is inconsistent across different input types:
+## Problem Statement (RESOLVED)
+
+Previously, input handling was inconsistent across different input types:
 - **Mouse/Keyboard**: New ImGui-centric `InputEvent` system
 - **Joystick**: Legacy callback-based `JoystickInput` system
 
-## Proposed Solution: Unified InputEvent System
+## Implemented Solution: Unified InputEvent System
 
 ### 1. Extend InputEvent for All Input Types
 
@@ -23,13 +25,12 @@ enum class InputEventType {
   kKeyPress,
   kKeyRelease,
   
-  // Joystick events (NEW)
-  kJoystickConnected,
-  kJoystickDisconnected,
-  kJoystickAxisMove,
-  kJoystickButtonPress,
-  kJoystickButtonRelease,
-  kJoystickHatMove
+  // Gamepad events (IMPLEMENTED)
+  kGamepadConnected,
+  kGamepadDisconnected,
+  kGamepadAxisMove,
+  kGamepadButtonPress,
+  kGamepadButtonRelease
 };
 
 class InputEvent {
@@ -139,9 +140,44 @@ Input Source → ImGuiInputUtils → InputEvent → InputDispatcher → InputEve
 ✅ **ImGui integration** for all input (respects capture flags)
 ✅ **Backward compatibility** through adapters
 
-## Implementation Notes
+## Implementation Details (COMPLETED)
 
-- **Polling vs Callbacks**: Move to polling-based approach for consistency
-- **Performance**: Cache joystick state, only generate events on changes
-- **ImGui Integration**: Check `io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad`
-- **Action Mapping**: Extend `InputMapping` to support joystick actions
+### Actual Implementation
+
+1. **GamepadManager** (src/imview/input/gamepad_manager.hpp)
+   - Meyer's Singleton pattern for thread-safe initialization
+   - Direct GLFW polling for multiple gamepad support
+   - Connection/disconnection monitoring with callbacks
+   - Hardware state caching with GamepadState struct
+
+2. **ImGuiInputUtils::PollGamepadEvents()** (src/imview/input/imgui_input_utils.cpp)
+   - Uses GamepadManager instead of ImGui's gamepad system
+   - Proper state tracking with static map (OUTSIDE loop - critical bug fix)
+   - Handles button count changes for hot-plug support
+   - Generates InputEvent objects for unified processing
+
+3. **Viewer Integration** (src/imview/viewer.cpp)
+   - Polls events AFTER CreateNewImGuiFrame() for valid context
+   - One-time handler registration in AddSceneObject()
+   - Proper cleanup in RemoveSceneObject() and destructor
+   - Unified event flow: Poll → Dispatch → Handlers
+
+4. **Legacy System Removal**
+   - Removed InputHandler interface completely
+   - Removed joystick callback methods from SceneObject
+   - Replaced with InputEventHandler and InputPolicy system
+   - Clean migration path for existing code
+
+### Key Architecture Decisions
+
+- **GamepadManager over ImGui gamepad**: Better multi-device support, raw analog values
+- **Polling over callbacks**: Consistent with mouse/keyboard, simpler state management  
+- **Static state persistence**: Careful placement outside loops to avoid reset bugs
+- **Unified InputEvent**: All input types use same event structure and dispatch
+
+### Performance Optimizations
+
+- One-time handler registration (not per frame)
+- Event generation only on state changes (with thresholds)
+- Direct GLFW access for minimal overhead
+- Efficient state comparison with std::max for size mismatches
