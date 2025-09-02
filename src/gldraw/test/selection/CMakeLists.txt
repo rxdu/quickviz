@@ -32,3 +32,6 @@ target_link_libraries(test_bounding_box_selection PRIVATE selection_test_utils)
 
 add_executable(test_comprehensive_selection test_comprehensive_selection.cpp)
 target_link_libraries(test_comprehensive_selection PRIVATE selection_test_utils)
+
+add_executable(test_id_buffer_debug test_id_buffer_debug.cpp)
+target_link_libraries(test_id_buffer_debug PRIVATE selection_test_utils)

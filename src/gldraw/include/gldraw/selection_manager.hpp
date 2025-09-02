@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <map>
 #include <functional>
 #include <memory>
 #include <variant>
@@ -303,11 +304,11 @@ public:
   }
 
 private:
-  // ID encoding/decoding
+  // ID encoding/decoding - Optimized for more points per cloud, fewer total objects
   static constexpr uint32_t kBackgroundId = 0x000000;
   static constexpr uint32_t kPointIdBase = 0x000001;
-  static constexpr uint32_t kObjectIdBase = 0x800000;
-  static constexpr uint32_t kMaxPointId = 0x7FFFFF;
+  static constexpr uint32_t kObjectIdBase = 0xFC0000;  // Start objects at ~16.5M, allows ~256K objects
+  static constexpr uint32_t kMaxPointId = 0xFBFFFF;    // Point space: ~16.5M IDs  
   static constexpr uint32_t kMaxObjectId = 0xFFFFFF;
   
   uint32_t EncodeObjectId(const std::string& object_name);
@@ -347,7 +348,16 @@ private:
   uint32_t next_object_id_ = kObjectIdBase;
   
   // Point cloud registration for point selection
-  std::unordered_map<std::string, PointCloud*> registered_point_clouds_;
+  std::map<std::string, PointCloud*> registered_point_clouds_;  // Use std::map to match rendering order  
+  
+  // Explicit index range tracking for each point cloud
+  struct PointCloudRange {
+    uint32_t start_index;
+    uint32_t end_index;  // exclusive (one past last valid index)
+    PointCloud* point_cloud;
+  };
+  std::vector<PointCloudRange> point_cloud_ranges_;
+  uint32_t next_global_index_ = kPointIdBase;
   
   // ID framebuffer for GPU-based selection
   std::unique_ptr<FrameBuffer> id_frame_buffer_;

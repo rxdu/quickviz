@@ -70,6 +70,9 @@ class PointCloud : public OpenGlObject {
   }
   void SetRenderMode(PointMode mode) { render_mode_ = mode; }
   PointMode GetRenderMode() const { return render_mode_; }
+  
+  // Selection support
+  void SetObjectIdBase(uint32_t object_id);
 
   // Layer management
   PointLayerManager& GetLayerManager() { return layer_manager_; }
@@ -158,6 +161,7 @@ class PointCloud : public OpenGlObject {
   float min_scalar_ = 0.0f;
   float max_scalar_ = 1.0f;
   PointMode render_mode_ = PointMode::kPoint;
+  uint32_t object_id_base_ = 0;  // Base object ID for point selection
 
   // Buffer management
   size_t buffer_capacity_ = 0;

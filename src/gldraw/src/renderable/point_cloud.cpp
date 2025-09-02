@@ -477,10 +477,8 @@ void PointCloud::OnDraw(const glm::mat4& projection, const glm::mat4& view,
           UpdateBufferWithSubData(color_vbo_, colors_.data(), data_size);
         }
         
-        // Update ID buffer with point indices (0, 1, 2, ...)
         std::vector<float> point_ids(active_points_);
-        std::iota(point_ids.begin(), point_ids.end(), 0.0f);
-        
+        std::iota(point_ids.begin(), point_ids.end(), static_cast<float>(object_id_base_));
         
         if (use_mapping) {
           UpdateBufferWithMapping(id_vbo_, point_ids.data(), active_points_ * sizeof(float));
@@ -493,10 +491,8 @@ void PointCloud::OnDraw(const glm::mat4& projection, const glm::mat4& view,
         glBindBuffer(GL_ARRAY_BUFFER, color_vbo_);
         glBufferData(GL_ARRAY_BUFFER, data_size, colors_.data(), GL_STATIC_DRAW);
         
-        // Update ID buffer with point indices (0, 1, 2, ...)
         std::vector<float> point_ids(active_points_);
-        std::iota(point_ids.begin(), point_ids.end(), 0.0f);
-        
+        std::iota(point_ids.begin(), point_ids.end(), static_cast<float>(object_id_base_));
         
         glBindBuffer(GL_ARRAY_BUFFER, id_vbo_);
         glBufferData(GL_ARRAY_BUFFER, active_points_ * sizeof(float), point_ids.data(), GL_STATIC_DRAW);
@@ -515,9 +511,7 @@ void PointCloud::OnDraw(const glm::mat4& projection, const glm::mat4& view,
       glm::mat4 mvp = projection * view * coord_transform;
       id_shader_.TrySetUniform("u_mvp", mvp);
       id_shader_.TrySetUniform("u_point_size_px", point_size_);
-      id_shader_.TrySetUniform("u_base_id", 1);  // Reserve 0 for background
-      
-      
+      id_shader_.TrySetUniform("u_base_id", static_cast<int>(object_id_base_));
       glEnable(GL_PROGRAM_POINT_SIZE);
       glEnable(GL_DEPTH_TEST);
       
@@ -527,7 +521,7 @@ void PointCloud::OnDraw(const glm::mat4& projection, const glm::mat4& view,
       
       glBindVertexArray(0);
       glDisable(GL_PROGRAM_POINT_SIZE);
-      glDisable(GL_DEPTH_TEST);
+      // Don't disable GL_DEPTH_TEST here - let the selection manager control it
       glUseProgram(0);
     } else {
       // Normal rendering mode
@@ -833,6 +827,13 @@ size_t PointCloud::PickPointAt(float screen_x, float screen_y,
   // For now, return SIZE_MAX to indicate no point found
   // The SelectionManager will call GlSceneManager::PickPointAtPixel instead
   return SIZE_MAX;
+}
+
+void PointCloud::SetObjectIdBase(uint32_t object_id) {
+  object_id_base_ = object_id;
+  
+  // Mark for ID buffer regeneration on next draw
+  needs_update_ = true;
 }
 
 }  // namespace quickviz

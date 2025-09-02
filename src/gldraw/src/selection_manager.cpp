@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 
 #include <glad/glad.h>
 #include "gldraw/scene_manager.hpp"
@@ -220,28 +221,63 @@ void SelectionManager::RegisterObject(const std::string& name, OpenGlObject* obj
   
   registered_objects_[name] = object;
   
-  // Check if this is a PointCloud and track it separately for point selection
-  PointCloud* point_cloud = dynamic_cast<PointCloud*>(object);
-  if (point_cloud) {
-    // Track point clouds for point selection
-    registered_point_clouds_[name] = point_cloud;
-  } else {
-    // Assign unique ID for non-point-cloud objects
-    if (object_to_id_.find(name) == object_to_id_.end()) {
-      object_to_id_[name] = next_object_id_;
-      next_object_id_ += 0x100; // Use 256-unit increments for better debugging
+  // Assign unique ID for all objects (including point clouds)
+  if (object_to_id_.find(name) == object_to_id_.end()) {
+    object_to_id_[name] = next_object_id_;
+    next_object_id_ += 1;
+    
+    // Also track point clouds separately for point selection
+    PointCloud* point_cloud = dynamic_cast<PointCloud*>(object);
+    if (point_cloud) {
+      registered_point_clouds_[name] = point_cloud;
       
-      // Prevent overflow
-      if (next_object_id_ > kMaxObjectId) {
-        next_object_id_ = kObjectIdBase;
+      // Assign explicit global index range for this point cloud
+      uint32_t point_count = point_cloud->GetPointCount();
+      if (next_global_index_ + point_count < kMaxPointId) {
+        PointCloudRange range;
+        range.start_index = next_global_index_;
+        range.end_index = next_global_index_ + point_count;
+        range.point_cloud = point_cloud;
+        
+        point_cloud_ranges_.push_back(range);
+        
+        // Set the ID base on the point cloud so it uses the correct range
+        point_cloud->SetObjectIdBase(next_global_index_);
+        
+        next_global_index_ += point_count;
+        
+      } else {
+        std::cerr << "[SelectionManager] Warning: Point cloud '" << name 
+                  << "' exceeds available ID space" << std::endl;
       }
+    }
+    
+    // Prevent overflow
+    if (next_object_id_ > kMaxObjectId) {
+      next_object_id_ = kObjectIdBase;
     }
   }
 }
 
 void SelectionManager::UnregisterObject(const std::string& name) {
   registered_objects_.erase(name);
-  registered_point_clouds_.erase(name);
+  
+  // Remove point cloud and its range if it exists
+  auto pc_it = registered_point_clouds_.find(name);
+  if (pc_it != registered_point_clouds_.end()) {
+    PointCloud* point_cloud = pc_it->second;
+    registered_point_clouds_.erase(pc_it);
+    
+    // Remove from ranges (note: this is O(n), could optimize with map if needed)
+    point_cloud_ranges_.erase(
+      std::remove_if(point_cloud_ranges_.begin(), point_cloud_ranges_.end(),
+                    [point_cloud](const PointCloudRange& range) {
+                      return range.point_cloud == point_cloud;
+                    }),
+      point_cloud_ranges_.end()
+    );
+  }
+  
   // Keep the ID mapping in case the object is re-added
   // object_to_id_.erase(name);
 }
@@ -307,43 +343,43 @@ SelectionResult SelectionManager::FindObjectById(uint32_t object_id, float scree
 }
 
 SelectionResult SelectionManager::FindPointById(uint32_t point_id, float screen_x, float screen_y) {
-  // Extract point index from ID (IDs start at kPointIdBase = 1)
-  if (point_id < kPointIdBase || point_id > kMaxPointId) {
+  // Simple approach: point_id is just the global index across all point clouds
+  if (point_id < kPointIdBase || point_id >= kObjectIdBase) {
     return SelectionResult{};
   }
   
-  size_t point_index = point_id - kPointIdBase;
-  
-  // Find which point cloud contains this point index
-  // We need to check all registered point clouds
-  size_t accumulated_offset = 0;
-  
-  for (const auto& [name, point_cloud] : registered_point_clouds_) {
-    size_t point_count = point_cloud->GetPointCount();
-    
-    if (point_index < accumulated_offset + point_count) {
-      // This point belongs to this cloud
-      size_t local_index = point_index - accumulated_offset;
+  // Find which cloud this point_id belongs to using explicit ranges
+  for (const auto& range : point_cloud_ranges_) {
+    if (point_id >= range.start_index && point_id < range.end_index) {
+      // Found the right cloud!
+      size_t local_index = point_id - range.start_index;
+      
+      // Find cloud name
+      std::string cloud_name;
+      for (const auto& [name, pc] : registered_point_clouds_) {
+        if (pc == range.point_cloud) {
+          cloud_name = name;
+          break;
+        }
+      }
+      
       
       PointSelection selection;
-      selection.cloud_name = name;
-      selection.point_cloud = point_cloud;
+      selection.cloud_name = cloud_name;
+      selection.point_cloud = range.point_cloud;
       selection.point_index = local_index;
       selection.screen_position = glm::vec2(screen_x, screen_y);
       
       // Get the actual point position
-      const auto& points = point_cloud->GetPoints();
+      const auto& points = range.point_cloud->GetPoints();
       if (local_index < points.size()) {
         selection.world_position = points[local_index];
       } else {
         selection.world_position = glm::vec3(0.0f);
       }
       
-      
       return selection;
     }
-    
-    accumulated_offset += point_count;
   }
   
   // Point ID doesn't match any registered point cloud
@@ -415,15 +451,32 @@ void SelectionManager::RenderIdBuffer() {
   for (auto& [name, obj] : scene_manager_->drawable_objects_) {
     PointCloud* point_cloud = dynamic_cast<PointCloud*>(obj.get());
     if (point_cloud) {
-      // Temporarily switch to ID buffer rendering mode
-      PointMode original_mode = point_cloud->GetRenderMode();
-      point_cloud->SetRenderMode(PointMode::kIdBuffer);
-      
-      // Render the point cloud with ID encoding
-      point_cloud->OnDraw(projection, view, transform);
-      
-      // Restore original rendering mode
-      point_cloud->SetRenderMode(original_mode);
+      // Get the object ID for this point cloud
+      auto id_it = object_to_id_.find(name);
+      if (id_it != object_to_id_.end()) {
+        uint32_t object_id = id_it->second;
+        
+        // Temporarily switch to ID buffer rendering mode
+        PointMode original_mode = point_cloud->GetRenderMode();
+        point_cloud->SetRenderMode(PointMode::kIdBuffer);
+        
+        // Find the explicit range for this point cloud
+        uint32_t id_base = kPointIdBase;
+        for (const auto& range : point_cloud_ranges_) {
+          if (range.point_cloud == point_cloud) {
+            id_base = range.start_index;  // start_index is already the absolute ID
+            break;
+          }
+        }
+        
+        point_cloud->SetObjectIdBase(id_base);
+        
+        // Render the point cloud with ID encoding
+        point_cloud->OnDraw(projection, view, transform);
+        
+        // Restore original rendering mode
+        point_cloud->SetRenderMode(original_mode);
+      }
     }
   }
   

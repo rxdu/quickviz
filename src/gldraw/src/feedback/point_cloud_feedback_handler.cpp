@@ -14,6 +14,7 @@
 
 #include <sstream>
 #include <algorithm>
+#include <iostream>
 
 #include "gldraw/renderable/point_cloud.hpp"
 
@@ -60,9 +61,10 @@ void PointCloudFeedbackHandler::ShowPointFeedback(PointCloud* point_cloud,
                                                  const std::vector<size_t>& point_indices,
                                                  FeedbackType type,
                                                  const FeedbackTheme& theme) {
-  if (!point_cloud || point_indices.empty()) {
+  if (!point_cloud) {
     return;
   }
+  
 
   // Get or create the feedback layer for this point cloud and type
   auto feedback_layer = GetOrCreateFeedbackLayer(point_cloud, type, theme);
@@ -71,7 +73,19 @@ void PointCloudFeedbackHandler::ShowPointFeedback(PointCloud* point_cloud,
   }
 
   // Set the points to highlight on this layer
-  feedback_layer->SetPoints(point_indices);
+  if (!point_indices.empty()) {
+    // Specific point feedback (e.g., selection)
+    feedback_layer->SetPoints(point_indices);
+  } else {
+    // Object-level feedback (e.g., hover) - highlight all points
+    std::vector<size_t> all_indices;
+    size_t point_count = point_cloud->GetPointCount();
+    all_indices.reserve(point_count);
+    for (size_t i = 0; i < point_count; ++i) {
+      all_indices.push_back(i);
+    }
+    feedback_layer->SetPoints(all_indices);
+  }
   feedback_layer->SetVisible(true);
 
   // Apply theme-specific styling
