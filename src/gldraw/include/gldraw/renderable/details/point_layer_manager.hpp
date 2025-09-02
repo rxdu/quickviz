@@ -15,6 +15,7 @@
 #include <string>
 #include <memory>
 #include <algorithm>
+#include <functional>
 #include <glm/glm.hpp>
 
 namespace quickviz {
@@ -43,6 +44,10 @@ public:
     PointLayer(const std::string& name, int priority = 0);
     ~PointLayer() = default;
 
+    // Change notification callback
+    using ChangeCallback = std::function<void(const std::string& layer_name)>;
+    void SetChangeCallback(ChangeCallback callback) { change_callback_ = callback; }
+
     // Layer properties
     void SetName(const std::string& name) { name_ = name; }
     const std::string& GetName() const { return name_; }
@@ -50,10 +55,21 @@ public:
     void SetPriority(int priority) { priority_ = priority; }
     int GetPriority() const { return priority_; }
     
-    void SetVisible(bool visible) { visible_ = visible; }
+    void SetVisible(bool visible) { 
+        if (visible_ != visible) {
+            visible_ = visible; 
+            NotifyChange();
+        }
+    }
     bool IsVisible() const { return visible_; }
     
-    void SetOpacity(float opacity) { opacity_ = std::max(0.0f, std::min(opacity, 1.0f)); }
+    void SetOpacity(float opacity) { 
+        float new_opacity = std::max(0.0f, std::min(opacity, 1.0f));
+        if (opacity_ != new_opacity) {
+            opacity_ = new_opacity;
+            NotifyChange();
+        }
+    }
     float GetOpacity() const { return opacity_; }
 
     // Point management
@@ -107,6 +123,10 @@ private:
     float outline_width_;
     glm::vec3 outline_color_;
     float glow_intensity_;
+    
+    // Change notification
+    ChangeCallback change_callback_;
+    void NotifyChange() { if (change_callback_) change_callback_(name_); }
 };
 
 /**

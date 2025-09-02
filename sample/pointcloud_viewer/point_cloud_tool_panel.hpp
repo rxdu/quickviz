@@ -11,6 +11,7 @@
 
 #include "imview/panel.hpp"
 #include "gldraw/gl_scene_panel.hpp"
+#include "gldraw/tools/point_selection_tool.hpp"
 
 namespace quickviz {
 class InteractiveSceneManager;
@@ -35,8 +36,16 @@ class PointCloudToolPanel : public Panel {
   MouseInfo mouse_info_;
   float point_size_ = 3.0f;  // Default point size
   
+  // Tool selection state
+  bool point_selection_tool_active_ = false;
+  int selection_radius_ = 3;
+  int selection_mode_index_ = 0;  // Index for combo box
+  
   // Helper methods
   InteractiveSceneManager* GetInteractiveSceneManager() const;
+  void DrawToolSelectionUI();
+  void DrawPointSelectionControls();
+  std::shared_ptr<PointSelectionTool> GetPointSelectionTool() const;
 };
 }  // namespace quickviz
 

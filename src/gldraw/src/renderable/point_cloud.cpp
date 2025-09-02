@@ -566,7 +566,14 @@ void PointCloud::OnDraw(const glm::mat4& projection, const glm::mat4& view,
 
 // Layer management implementations
 std::shared_ptr<PointLayer> PointCloud::CreateLayer(const std::string& name, int priority) {
-  return layer_manager_.CreateLayer(name, priority);
+  auto layer = layer_manager_.CreateLayer(name, priority);
+  if (layer) {
+    // Set up change callback to automatically invalidate buffer when layer changes
+    layer->SetChangeCallback([this](const std::string& layer_name) {
+      this->InvalidateLayerBuffer(layer_name);
+    });
+  }
+  return layer;
 }
 
 std::shared_ptr<PointLayer> PointCloud::GetLayer(const std::string& name) {

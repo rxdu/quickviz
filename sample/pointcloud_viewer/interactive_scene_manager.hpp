@@ -11,6 +11,7 @@
 
 #include "gldraw/gl_scene_panel.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
+#include "gldraw/tools/point_selection_tool.hpp"
 #include <memory>
 
 namespace quickviz {
@@ -19,7 +20,13 @@ class PointCloudToolPanel;
 class InteractiveSceneManager : public GlScenePanel {
  public:
   InteractiveSceneManager(const std::string& name, SceneManager::Mode mode = SceneManager::Mode::k3D)
-      : GlScenePanel(name, mode) {}
+      : GlScenePanel(name, mode) {
+    // Disable built-in selection in SceneInputHandler to avoid conflicts with PointSelectionTool
+    // but keep camera controls and tool input forwarding active
+    GetSceneInputHandler()->SetSelectionEnabled(false);
+    
+    InitializeTools();
+  }
 
   void SetToolPanel(PointCloudToolPanel* panel) { tool_panel_ = panel; }
 
@@ -34,7 +41,11 @@ class InteractiveSceneManager : public GlScenePanel {
   // UI components
   bool selection_enabled_ = true;
   
-  // Internal methods for handling input
+  // Tool management
+  std::shared_ptr<PointSelectionTool> point_selection_tool_;
+  
+  // Internal methods
+  void InitializeTools();
   void HandleMouseInput();
   void HandleKeyboardInput();
 };

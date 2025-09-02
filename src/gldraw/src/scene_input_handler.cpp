@@ -9,6 +9,7 @@
 #include "gldraw/scene_input_handler.hpp"
 #include "gldraw/scene_manager.hpp"
 #include "gldraw/camera_control_config.hpp"
+#include "gldraw/tools/interaction_tool.hpp"
 #include "imview/input/input_types.hpp"
 #include "core/event/input_mapping.hpp"
 
@@ -35,14 +36,21 @@ bool SceneInputHandler::OnInputEvent(const InputEvent& event) {
 bool SceneInputHandler::HandleMouseEvent(const InputEvent& event) {
   bool handled = false;
 
-  // Handle camera control first (lower priority in terms of consumption)
+  // Handle active tool input first (highest priority)
+  if (auto active_tool = scene_manager_->GetActiveTool()) {
+    if (active_tool->OnInputEvent(event)) {
+      return true;  // Tool consumed the event
+    }
+  }
+
+  // Handle camera control second (lower priority in terms of consumption)
   if (camera_control_enabled_) {
     if (HandleCameraControl(event)) {
       handled = true;
     }
   }
 
-  // Handle selection (higher priority - can consume events)
+  // Handle selection last (only if no tool is active and selection is enabled)
   if (selection_enabled_) {
     if (HandleObjectSelection(event)) {
       return true;  // Consume selection events
@@ -53,7 +61,14 @@ bool SceneInputHandler::HandleMouseEvent(const InputEvent& event) {
 }
 
 bool SceneInputHandler::HandleKeyboardEvent(const InputEvent& event) {
-  // Handle keyboard shortcuts
+  // Handle active tool input first (highest priority)
+  if (auto active_tool = scene_manager_->GetActiveTool()) {
+    if (active_tool->OnInputEvent(event)) {
+      return true;  // Tool consumed the event
+    }
+  }
+
+  // Handle keyboard shortcuts for built-in functionality
   if (event.GetType() == InputEventType::kKeyPress) {
     const auto& mods = event.GetModifiers();
     int key = event.GetKey();

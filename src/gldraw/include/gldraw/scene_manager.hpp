@@ -30,6 +30,8 @@
 namespace quickviz {
 class PointCloud;
 class SelectionManager;
+class ToolManager;
+class InteractionTool;
 struct SelectionOptions;
 class MultiSelection;
 enum class SelectionMode;
@@ -173,6 +175,34 @@ class SceneManager {
    */
   bool IsSelectionEnabled() const { return selection_enabled_; }
 
+  // === Interactive Tools System ===
+
+  /**
+   * @brief Get the tool manager for interactive tools
+   * @return Reference to tool manager
+   */
+  ToolManager& GetTools() { return *tool_manager_; }
+  const ToolManager& GetTools() const { return *tool_manager_; }
+
+  /**
+   * @brief Register an interaction tool with the scene
+   * @param tool Shared pointer to tool
+   */
+  void RegisterTool(std::shared_ptr<InteractionTool> tool);
+
+  /**
+   * @brief Activate a tool by name
+   * @param name Tool name to activate
+   * @return true if tool was found and activated
+   */
+  bool ActivateTool(const std::string& name);
+
+  /**
+   * @brief Get currently active tool
+   * @return Active tool, or nullptr if none active
+   */
+  std::shared_ptr<InteractionTool> GetActiveTool() const;
+
  protected:
   void UpdateView(const glm::mat4& projection, const glm::mat4& view);
 
@@ -206,6 +236,9 @@ class SceneManager {
   // Interactive selection system
   std::unique_ptr<SelectionManager> selection_manager_;
   bool selection_enabled_ = true;
+
+  // Interactive tools system
+  std::unique_ptr<ToolManager> tool_manager_;
 };
 }  // namespace quickviz
 

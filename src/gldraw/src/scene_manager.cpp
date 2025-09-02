@@ -20,6 +20,7 @@
 
 #include "gldraw/coordinate_transformer.hpp"
 #include "gldraw/selection_manager.hpp"
+#include "gldraw/tools/interaction_tool.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 #include "gldraw/renderable/geometric_primitive.hpp"
 
@@ -45,6 +46,9 @@ SceneManager::SceneManager(const std::string& name, Mode mode)
   
   // Initialize selection system
   selection_manager_ = std::make_unique<SelectionManager>(this);
+  
+  // Initialize tool system
+  tool_manager_ = std::make_unique<ToolManager>(this);
 }
 
 SceneManager::~SceneManager() {
@@ -165,6 +169,20 @@ bool SceneManager::AddToSelection(float screen_x, float screen_y, const Selectio
 
 const MultiSelection& SceneManager::GetMultiSelection() const {
   return selection_manager_->GetMultiSelection();
+}
+
+// === Interactive Tools System Implementation ===
+
+void SceneManager::RegisterTool(std::shared_ptr<InteractionTool> tool) {
+  tool_manager_->RegisterTool(tool);
+}
+
+bool SceneManager::ActivateTool(const std::string& name) {
+  return tool_manager_->ActivateTool(name);
+}
+
+std::shared_ptr<InteractionTool> SceneManager::GetActiveTool() const {
+  return tool_manager_->GetActiveTool();
 }
 
 }  // namespace quickviz

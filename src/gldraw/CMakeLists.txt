@@ -48,6 +48,9 @@ add_library(gldraw
     src/feedback/visual_feedback_system.cpp
     src/feedback/point_cloud_feedback_handler.cpp
     src/feedback/object_feedback_handler.cpp
+    ## interaction tools
+    src/tools/interaction_tool.cpp
+    src/tools/point_selection_tool.cpp
     )
 target_link_libraries(gldraw PUBLIC core imcore imview stb
     Threads::Threads

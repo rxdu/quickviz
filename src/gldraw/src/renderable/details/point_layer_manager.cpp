@@ -31,26 +31,40 @@ PointLayer::PointLayer(const std::string& name, int priority)
 void PointLayer::SetPoints(const std::vector<size_t>& point_indices) {
     point_indices_.clear();
     point_indices_.insert(point_indices.begin(), point_indices.end());
+    NotifyChange();
 }
 
 void PointLayer::SetPoints(std::vector<size_t>&& point_indices) {
     point_indices_.clear();
     point_indices_.insert(std::make_move_iterator(point_indices.begin()),
                          std::make_move_iterator(point_indices.end()));
+    NotifyChange();
 }
 
 void PointLayer::AddPoints(const std::vector<size_t>& point_indices) {
-    point_indices_.insert(point_indices.begin(), point_indices.end());
+    if (!point_indices.empty()) {
+        point_indices_.insert(point_indices.begin(), point_indices.end());
+        NotifyChange();
+    }
 }
 
 void PointLayer::RemovePoints(const std::vector<size_t>& point_indices) {
+    bool changed = false;
     for (size_t index : point_indices) {
-        point_indices_.erase(index);
+        if (point_indices_.erase(index) > 0) {
+            changed = true;
+        }
+    }
+    if (changed) {
+        NotifyChange();
     }
 }
 
 void PointLayer::ClearPoints() {
-    point_indices_.clear();
+    if (!point_indices_.empty()) {
+        point_indices_.clear();
+        NotifyChange();
+    }
 }
 
 // LayerManager implementation

@@ -110,19 +110,18 @@ void InteractiveSceneManager::SetPointCloud(std::unique_ptr<PointCloud> point_cl
       std::cout << "Failed to cast to PointCloud!" << std::endl;
     }
     
-    // Set new SelectionManager callback
-    GetSelection().SetSelectionCallback([this](const SelectionResult& result, const MultiSelection& multi) {
-      std::cout << "Selection changed: " << multi.Count() << " items selected" << std::endl;
-      
-      if (!multi.Empty()) {
-        glm::vec3 centroid = multi.GetCentroid();
-        auto [min_pt, max_pt] = multi.GetBounds();
-        
-        std::cout << "  Centroid: (" << centroid.x << ", " << centroid.y << ", " << centroid.z << ")" << std::endl;
-        std::cout << "  Bounds: (" << min_pt.x << ", " << min_pt.y << ", " << min_pt.z << ") to ("
-                  << max_pt.x << ", " << max_pt.y << ", " << max_pt.z << ")" << std::endl;
-      }
-    });
+    // Legacy SelectionManager callback disabled - tools now handle their own selection feedback
+    // GetSelection().SetSelectionCallback([this](const SelectionResult& result, const MultiSelection& multi) {
+    //   std::cout << "Selection changed: " << multi.Count() << " items selected" << std::endl;
+    //   
+    //   if (!multi.Empty()) {
+    //     glm::vec3 centroid = multi.GetCentroid();
+    //     auto [min_pt, max_pt] = multi.GetBounds();
+    //     
+    //     std::cout << "  Centroid: (" << centroid.x << ", " << centroid.y << ", " << centroid.z << ")" << std::endl;
+    //     std::cout << "  Bounds: (" << min_pt.x << ", " << min_pt.y << ", " << max_pt.z << ")" << std::endl;
+    //   }
+    // });
     
     std::cout << "Point selection system initialized for " << point_cloud_ptr->GetPointCount() << " points" << std::endl;
     
@@ -139,54 +138,9 @@ void InteractiveSceneManager::SetPointCloud(std::unique_ptr<PointCloud> point_cl
 }
 
 void InteractiveSceneManager::HandleMouseInput() {
-  if (!selection_enabled_) return;
-  // TODO: Update to use new SelectionManager system without active point cloud concept
-  // For now, assume point cloud is available
-  
-  ImGuiIO& io = ImGui::GetIO();
-  
-  // Get current mouse position relative to window
-  ImVec2 content_size = ImGui::GetContentRegionAvail();
-  ImVec2 window_pos = ImGui::GetWindowPos();
-  ImVec2 window_content_min = ImGui::GetWindowContentRegionMin();
-  float local_x = io.MousePos.x - window_pos.x - window_content_min.x;
-  float local_y = io.MousePos.y - window_pos.y - window_content_min.y;
-  
-  // Check if mouse is inside the content area
-  bool mouse_in_viewport = (local_x >= 0 && local_x <= content_size.x &&
-                            local_y >= 0 && local_y <= content_size.y);
-  
-  // Check if this window is hovered (not blocked by other ImGui windows)
-  bool window_hovered = ImGui::IsWindowHovered();
-  
-  // Handle Ctrl+left click for point picking (to avoid interfering with camera controls)
-  if (mouse_in_viewport && window_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && io.KeyCtrl) {
-    // Use the integrated GlSceneManager selection API
-    if (io.KeyShift) {
-      // Ctrl+Shift = add to selection
-      SelectionOptions options;
-      options.radius = 3;
-      options.mode = SelectionMode::kPoints;
-      AddToSelection(local_x, local_y, options);
-    } else if (io.KeyAlt) {
-      // Ctrl+Alt = toggle selection
-      SelectionOptions options;
-      options.radius = 3;
-      options.mode = SelectionMode::kPoints;
-      GetSelection().ToggleSelection(local_x, local_y, options);
-    } else {
-      // Ctrl alone = single selection (replace)
-      SelectionOptions options;
-      options.radius = 3;
-      options.mode = SelectionMode::kPoints;
-      Select(local_x, local_y, options);
-    }
-  }
-  
-  // Handle Ctrl+right click to clear selection
-  if (mouse_in_viewport && window_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right) && io.KeyCtrl) {
-    ClearSelection();
-  }
+  // Legacy system disabled - all selection now handled by PointSelectionTool
+  // This prevents conflicts between legacy system and interactive tools
+  return;
 }
 
 void InteractiveSceneManager::HandleKeyboardInput() {
@@ -220,6 +174,41 @@ void InteractiveSceneManager::HandleKeyboardInput() {
     selection_enabled_ = !selection_enabled_;
     std::cout << "Selection " << (selection_enabled_ ? "enabled" : "disabled") << std::endl;
   }
+}
+
+void InteractiveSceneManager::InitializeTools() {
+  // Create point selection tool
+  point_selection_tool_ = PointSelectionToolFactory::CreateStandard(GetSceneManager(), "point_select");
+  
+  // Set up callbacks for the tool
+  point_selection_tool_->SetSelectionCallback([this](const SelectionResult& result, const MultiSelection& multi) {
+    std::cout << "Tool selection changed: " << multi.Count() << " items selected" << std::endl;
+    
+    if (!multi.Empty()) {
+      glm::vec3 centroid = multi.GetCentroid();
+      auto [min_pt, max_pt] = multi.GetBounds();
+      
+      std::cout << "  Centroid: (" << centroid.x << ", " << centroid.y << ", " << centroid.z << ")" << std::endl;
+      std::cout << "  Bounds: (" << min_pt.x << ", " << min_pt.y << ", " << min_pt.z << ") to ("
+                << max_pt.x << ", " << max_pt.y << ", " << max_pt.z << ")" << std::endl;
+    }
+  });
+  
+  point_selection_tool_->SetHoverCallback([](const SelectionResult& result) {
+    if (auto point_sel = std::get_if<PointSelection>(&result)) {
+      // Only print occasionally to avoid spam
+      static int hover_count = 0;
+      if (++hover_count % 30 == 0) {  // Print every 30th hover
+        std::cout << "Hovering over point " << point_sel->point_index 
+                  << " in cloud '" << point_sel->cloud_name << "'" << std::endl;
+      }
+    }
+  });
+  
+  // Register the tool with the scene manager
+  GetSceneManager()->RegisterTool(point_selection_tool_);
+  
+  std::cout << "PointSelectionTool initialized and registered" << std::endl;
 }
 
 }  // namespace quickviz
