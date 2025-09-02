@@ -9,7 +9,6 @@
 
 #include "gldraw/selection_manager.hpp"
 
-#include <iostream>
 #include <algorithm>
 #include <cmath>
 
@@ -115,11 +114,24 @@ SelectionResult SelectionManager::Select(float screen_x, float screen_y, const S
   // Render ID buffer for current frame
   RenderIdBuffer();
   
-  // Convert screen coordinates to pixel coordinates
-  // TODO: Get actual viewport dimensions from scene manager
+  // Convert screen coordinates to pixel coordinates  
+  // CRITICAL FIX: The screen coordinates are relative to ImGui content region,
+  // but ID buffer matches the main framebuffer size. We need to ensure both use same size.
+  
+  if (!id_frame_buffer_ || !scene_manager_->frame_buffer_) {
+    return SelectionResult{}; // Can't select without buffers
+  }
+  
+  float id_buffer_width = id_frame_buffer_->GetWidth();
+  float id_buffer_height = id_frame_buffer_->GetHeight();
+  float main_buffer_width = scene_manager_->frame_buffer_->GetWidth();
+  float main_buffer_height = scene_manager_->frame_buffer_->GetHeight();
+  
+  // Screen coordinates should be relative to the same space as the rendered content
+  // If ID buffer matches main buffer, use direct mapping
   int pixel_x = static_cast<int>(std::round(screen_x));
   int pixel_y = static_cast<int>(std::round(screen_y));
-  
+
   // Read pixel ID (with radius tolerance if specified)
   uint32_t selected_id = 0;
   if (options.radius <= 0) {
@@ -129,7 +141,7 @@ SelectionResult SelectionManager::Select(float screen_x, float screen_y, const S
     // For now, just use center pixel
     selected_id = ReadPixelId(pixel_x, pixel_y);
   }
-  
+
   if (selected_id == kBackgroundId) {
     return SelectionResult{}; // No selection
   }
@@ -213,8 +225,6 @@ void SelectionManager::RegisterObject(const std::string& name, OpenGlObject* obj
   if (point_cloud) {
     // Track point clouds for point selection
     registered_point_clouds_[name] = point_cloud;
-    std::cout << "[SelectionManager] Registered point cloud: " << name 
-              << " with " << point_cloud->GetPointCount() << " points" << std::endl;
   } else {
     // Assign unique ID for non-point-cloud objects
     if (object_to_id_.find(name) == object_to_id_.end()) {
@@ -329,8 +339,6 @@ SelectionResult SelectionManager::FindPointById(uint32_t point_id, float screen_
         selection.world_position = glm::vec3(0.0f);
       }
       
-      std::cout << "[SelectionManager] Selected point " << local_index 
-                << " from cloud " << name << std::endl;
       
       return selection;
     }
@@ -371,7 +379,7 @@ void SelectionManager::RenderIdBuffer() {
   if (!scene_manager_->frame_buffer_) return;  // Need main framebuffer to get dimensions
   float width = scene_manager_->frame_buffer_->GetWidth();
   float height = scene_manager_->frame_buffer_->GetHeight();
-  
+
   // CRITICAL FIX: Recalculate projection and view matrices using same logic as main render
   // This ensures perfect synchronization between main render and ID buffer
   float aspect_ratio = width / height;

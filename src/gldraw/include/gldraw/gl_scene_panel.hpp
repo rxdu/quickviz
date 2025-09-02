@@ -24,9 +24,10 @@
 #include "gldraw/selection_manager.hpp"
 #include "scene_input_handler.hpp"
 
-// Forward declaration
+// Forward declarations
 namespace quickviz {
 class PointCloud;
+class VisualFeedbackSystem;
 }
 
 namespace quickviz {
@@ -48,7 +49,7 @@ class GlScenePanel : public Panel {
   GlScenePanel(const std::string& name,
                SceneManager::Mode mode = SceneManager::Mode::k3D);
 
-  virtual ~GlScenePanel() = default;
+  virtual ~GlScenePanel();  // Explicit destructor needed for unique_ptr with forward declaration
 
   // InputEventHandler interface
   std::string GetName() const override { return "GlScenePanel"; }
@@ -99,6 +100,12 @@ class GlScenePanel : public Panel {
 
   // Camera access
   CameraController* GetCameraController() const;
+  
+  /**
+   * @brief Get the visual feedback system
+   * @return Pointer to VisualFeedbackSystem for managing visual feedback
+   */
+  VisualFeedbackSystem* GetFeedbackSystem() const;
   Camera* GetCamera() const;
   const glm::mat4& GetProjectionMatrix() const;
   const glm::mat4& GetViewMatrix() const;
@@ -181,12 +188,19 @@ class GlScenePanel : public Panel {
 
  private:
   std::unique_ptr<SceneManager> scene_manager_;
+  
+  // Visual feedback system
+  std::unique_ptr<VisualFeedbackSystem> feedback_system_;
 
   // UI state
   bool show_rendering_info_ = true;
 
   // Modern imview-based input system - all input goes through this handler
   std::shared_ptr<SceneInputHandler> scene_input_handler_;
+  
+  // Cached content position and size for coordinate conversion
+  glm::vec2 cached_content_pos_{0, 0};
+  glm::vec2 cached_content_size_{0, 0};
 };
 
 }  // namespace quickviz

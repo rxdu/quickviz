@@ -18,12 +18,22 @@
 
 #include "gldraw/renderable/point_cloud.hpp"
 #include "gldraw/selection_manager.hpp"
+#include "gldraw/feedback/visual_feedback_system.hpp"
 
 namespace quickviz {
 
 GlScenePanel::GlScenePanel(const std::string& name, SceneManager::Mode mode)
     : Panel(name) {
   scene_manager_ = std::make_unique<SceneManager>(name + "_manager", mode);
+  
+  // Create visual feedback system
+  feedback_system_ = std::make_unique<VisualFeedbackSystem>(scene_manager_.get());
+
+  // Connect selection changes to visual feedback system
+  scene_manager_->GetSelection().SetSelectionCallback(
+    [this](const SelectionResult& result, const MultiSelection& multi) {
+      feedback_system_->OnSelectionChanged(multi);
+    });
 
   // Create and register the 3D scene input handler
   scene_input_handler_ =
@@ -32,6 +42,8 @@ GlScenePanel::GlScenePanel(const std::string& name, SceneManager::Mode mode)
   // Use specialized input policy for 3D scene interaction
   SetInputPolicy(InputPolicy::SceneInteraction());
 }
+
+GlScenePanel::~GlScenePanel() = default;  // Explicit destructor for unique_ptr with forward declaration
 
 void GlScenePanel::Draw() {
   Begin();
@@ -43,8 +55,20 @@ void GlScenePanel::RenderInsideWindow() {
   // Get current content region BEFORE rendering the image
   ImVec2 content_size = ImGui::GetContentRegionAvail();
 
-  // Save image position for overlay rendering
+  // Save image position for overlay rendering and coordinate conversion
   ImVec2 image_pos = ImGui::GetCursorScreenPos();
+  
+  // Cache these values for use in OnInputEvent
+  cached_content_pos_ = glm::vec2(image_pos.x, image_pos.y);
+  cached_content_size_ = glm::vec2(content_size.x, content_size.y);
+
+  // Update feedback system animations
+  static float last_time = 0.0f;
+  float current_time = ImGui::GetTime();
+  float delta_time = current_time - last_time;
+  last_time = current_time;
+  
+  feedback_system_->Update(delta_time);
 
   // Render the scene to framebuffer
   scene_manager_->RenderToFramebuffer(content_size.x, content_size.y);
@@ -114,6 +138,10 @@ bool GlScenePanel::IsCoordinateSystemTransformationEnabled() const {
 // Camera access delegation
 CameraController* GlScenePanel::GetCameraController() const {
   return scene_manager_->GetCameraController();
+}
+
+VisualFeedbackSystem* GlScenePanel::GetFeedbackSystem() const {
+  return feedback_system_.get();
 }
 
 Camera* GlScenePanel::GetCamera() const { return scene_manager_->GetCamera(); }
@@ -195,14 +223,30 @@ void GlScenePanel::RenderInfoOverlay(const ImVec2& content_size,
 
 // New imview-based input handling methods
 bool GlScenePanel::OnInputEvent(const InputEvent& event) {
-  // Update viewport size for coordinate transformations
   if (scene_input_handler_) {
-    ImVec2 content_size = ImGui::GetContentRegionAvail();
-    scene_input_handler_->SetViewportSize(static_cast<int>(content_size.x),
-                                          static_cast<int>(content_size.y));
+    // Update viewport size for the handler
+    scene_input_handler_->SetViewportSize(static_cast<int>(cached_content_size_.x),
+                                          static_cast<int>(cached_content_size_.y));
 
-    // Forward event to scene input handler directly
-    return scene_input_handler_->OnInputEvent(event);
+    // For mouse events, convert to panel-local coordinates
+    if (event.IsMouseEvent()) {
+      InputEvent local_event = event;
+      
+      // Use the cached content position from the last render
+      glm::vec2 global_pos = event.GetScreenPosition();
+      
+      // Calculate local coordinates relative to this panel's rendered content area
+      float local_x = global_pos.x - cached_content_pos_.x;
+      float local_y = global_pos.y - cached_content_pos_.y;
+      
+      // Replace the screen position with panel-local coordinates
+      local_event.SetScreenPosition(glm::vec2(local_x, local_y));
+      
+      return scene_input_handler_->OnInputEvent(local_event);
+    } else {
+      // Non-mouse events - forward directly
+      return scene_input_handler_->OnInputEvent(event);
+    }
   }
 
   // No scene input handler - allow event to propagate

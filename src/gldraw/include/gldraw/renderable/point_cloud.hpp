@@ -19,7 +19,7 @@
 #include "gldraw/interface/opengl_object.hpp"
 #include "../shader_program.hpp"
 #include "gldraw/renderable/types.hpp"
-#include "gldraw/renderable/layer_manager.hpp"
+#include "details/point_layer_manager.hpp"
 
 namespace quickviz {
 class PointCloud : public OpenGlObject {
@@ -72,8 +72,8 @@ class PointCloud : public OpenGlObject {
   PointMode GetRenderMode() const { return render_mode_; }
 
   // Layer management
-  LayerManager& GetLayerManager() { return layer_manager_; }
-  const LayerManager& GetLayerManager() const { return layer_manager_; }
+  PointLayerManager& GetLayerManager() { return layer_manager_; }
+  const PointLayerManager& GetLayerManager() const { return layer_manager_; }
   
   std::shared_ptr<PointLayer> CreateLayer(const std::string& name, int priority = 0);
   std::shared_ptr<PointLayer> GetLayer(const std::string& name);
@@ -168,7 +168,7 @@ class PointCloud : public OpenGlObject {
   bool needs_update_ = false;
   
   // Layer management
-  LayerManager layer_manager_;
+  PointLayerManager layer_manager_;
   
   // Layer rendering support
   void UpdateLayerRendering();

@@ -1,13 +1,13 @@
 /*
- * @file layer_manager.hpp
+ * @file point_layer_manager.hpp
  * @date Dec 2024
  * @brief Multi-layer rendering system for point cloud highlighting and visualization
  *
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
-#ifndef QUICKVIZ_LAYER_MANAGER_HPP
-#define QUICKVIZ_LAYER_MANAGER_HPP
+#ifndef QUICKVIZ_POINT_LAYER_MANAGER_HPP
+#define QUICKVIZ_POINT_LAYER_MANAGER_HPP
 
 #include <vector>
 #include <unordered_map>
@@ -112,10 +112,10 @@ private:
 /**
  * @brief Manages multiple rendering layers for point clouds
  */
-class LayerManager {
+class PointLayerManager {
 public:
-    LayerManager();
-    ~LayerManager() = default;
+    PointLayerManager();
+    ~PointLayerManager() = default;
 
     // Layer management
     std::shared_ptr<PointLayer> CreateLayer(const std::string& name, int priority = 0);
@@ -185,4 +185,4 @@ private:
 
 } // namespace quickviz
 
-#endif // QUICKVIZ_LAYER_MANAGER_HPP
+#endif // QUICKVIZ_POINT_LAYER_MANAGER_HPP

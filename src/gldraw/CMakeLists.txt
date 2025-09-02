@@ -17,10 +17,6 @@ add_library(gldraw
     src/selection_manager.cpp
     src/scene_input_handler.cpp
     ## renderable objects
-    src/renderable/grid.cpp
-    src/renderable/triangle.cpp
-    src/renderable/point_cloud.cpp
-    src/renderable/canvas.cpp
     src/renderable/details/batched_render_strategy.cpp
     src/renderable/details/individual_render_strategy.cpp
     src/renderable/details/shape_renderer.cpp
@@ -28,9 +24,13 @@ add_library(gldraw
     src/renderable/details/opengl_resource_pool.cpp
     src/renderable/details/shape_renderer_utils.cpp
     src/renderable/details/canvas_data_manager.cpp
+    src/renderable/details/point_layer_manager.cpp
+    src/renderable/grid.cpp
+    src/renderable/triangle.cpp
+    src/renderable/point_cloud.cpp
+    src/renderable/canvas.cpp
     src/renderable/coordinate_frame.cpp
     src/renderable/texture.cpp
-    src/renderable/layer_manager.cpp
     src/renderable/geometric_primitive.cpp
     src/renderable/mesh.cpp
     src/renderable/line_strip.cpp
@@ -44,6 +44,10 @@ add_library(gldraw
     src/renderable/plane.cpp
     src/renderable/pose.cpp
     src/renderable/path.cpp
+    ## feedback system
+    src/feedback/visual_feedback_system.cpp
+    src/feedback/point_cloud_feedback_handler.cpp
+    src/feedback/object_feedback_handler.cpp
     )
 target_link_libraries(gldraw PUBLIC core imcore imview stb
     Threads::Threads

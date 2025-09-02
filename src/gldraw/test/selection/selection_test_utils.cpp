@@ -13,6 +13,8 @@
 #include <cmath>
 #include <algorithm>
 
+#include "gldraw/feedback/visual_feedback_system.hpp"
+
 #include "gldraw/renderable/sphere.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 #include "gldraw/renderable/line_strip.hpp"
@@ -141,10 +143,6 @@ void SelectionDemoPanel::SetSelectionCallback(std::function<void(const Selection
 }
 
 void SelectionDemoPanel::Draw() {
-  // Handle custom mouse input first
-  HandleMouseSelection();
-  
-  // Then draw normally
   GlScenePanel::Draw();
   HandleKeyboardShortcuts();
 }
@@ -231,10 +229,19 @@ SelectionTestApp::SelectionTestApp(const std::string& title) : title_(title) {
   info_panel_->SetFlexShrink(0.0f);
   
   // Connect scene panel to info panel via callback (like original design)
+  // IMPORTANT: Also forward to visual feedback system
   scene_panel_->SetSelectionCallback(
-      [info_panel_ptr = info_panel_.get()](const SelectionResult& result, const MultiSelection& multi) {
+      [info_panel_ptr = info_panel_.get(), scene_panel = scene_panel_.get()]
+      (const SelectionResult& result, const MultiSelection& multi) {
+        // Update info panel
         info_panel_ptr->SetLastSelection(result);
         info_panel_ptr->UpdateMultiSelection(multi);
+        
+        // Forward to visual feedback system
+        auto feedback_system = scene_panel->GetFeedbackSystem();
+        if (feedback_system) {
+          feedback_system->OnSelectionChanged(multi);
+        }
       });
   
   // Setup container layout

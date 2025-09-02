@@ -17,7 +17,7 @@
 #include "gldraw/gl_scene_panel.hpp"
 #include "gldraw/renderable/grid.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
-#include "gldraw/renderable/layer_manager.hpp"
+#include "../include/gldraw/renderable/details/point_layer_manager.hpp"
 
 using namespace quickviz;
 
@@ -126,7 +126,7 @@ void TestBasicLayering() {
 void TestLayerManagerStandalone() {
     std::cout << "\n=== Testing LayerManager Standalone ===" << std::endl;
     
-    LayerManager manager;
+    PointLayerManager manager;
     
     // Test layer creation and management
     auto layer1 = manager.CreateLayer("layer1", 10);

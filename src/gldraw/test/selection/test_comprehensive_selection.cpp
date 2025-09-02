@@ -15,10 +15,11 @@
  * Copyright (c) 2025 Ruixiang Du (rdu)
  */
 
-#include "../selection_test_utils.hpp"
+#include "selection_test_utils.hpp"
 #include "gldraw/renderable/sphere.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 #include "gldraw/renderable/line_strip.hpp"
+#include "gldraw/feedback/visual_feedback_system.hpp"
 #include "core/event/input_event.hpp"
 #include <random>
 #include <cmath>
@@ -37,7 +38,7 @@ class ComprehensiveSelectionTest : public SelectionTestApp {
     SetupEnhancedInteractions();
   }
 
-  void SetupTestObjects(GlSceneManager* scene_manager) override {
+  void SetupTestObjects(SceneManager* scene_manager) override {
     SetupMixedObjectScene(scene_manager);
     PrintSceneDescription();
   }
@@ -83,7 +84,7 @@ class ComprehensiveSelectionTest : public SelectionTestApp {
   }
 
  private:
-  void SetupMixedObjectScene(GlSceneManager* scene_manager) {
+  void SetupMixedObjectScene(SceneManager* scene_manager) {
     // Create a realistic mixed scene with all supported selection types
     
     SetupSceneSpheres(scene_manager);
@@ -94,7 +95,7 @@ class ComprehensiveSelectionTest : public SelectionTestApp {
     SetupConnectingElements(scene_manager);
   }
 
-  void SetupSceneSpheres(GlSceneManager* scene_manager) {
+  void SetupSceneSpheres(SceneManager* scene_manager) {
     // Create spheres representing key locations/nodes
     std::vector<std::pair<glm::vec3, std::string>> key_locations = {
         {glm::vec3(-8.0f, -8.0f, 2.0f), "start_node"},
@@ -126,7 +127,7 @@ class ComprehensiveSelectionTest : public SelectionTestApp {
     std::cout << "✓ Created scene spheres: " << key_locations.size() << " key locations" << std::endl;
   }
 
-  void SetupScenePointClouds(GlSceneManager* scene_manager) {
+  void SetupScenePointClouds(SceneManager* scene_manager) {
     // Sensor data visualization as point clouds
     
     // 1. LIDAR scan pattern
@@ -190,7 +191,7 @@ class ComprehensiveSelectionTest : public SelectionTestApp {
               << " points), measurements (" << measurement_points.size() << " points)" << std::endl;
   }
 
-  void SetupSceneLineStrips(GlSceneManager* scene_manager) {
+  void SetupSceneLineStrips(SceneManager* scene_manager) {
     // Connection paths and boundaries
     
     // 1. Main navigation path
@@ -252,7 +253,7 @@ class ComprehensiveSelectionTest : public SelectionTestApp {
     std::cout << "✓ Created scene line strips: main path, alternative, perimeter" << std::endl;
   }
 
-  void SetupConnectingElements(GlSceneManager* scene_manager) {
+  void SetupConnectingElements(SceneManager* scene_manager) {
     // Visual connection between elevated marker and junction
     std::vector<glm::vec3> connection_line = {
         glm::vec3(0.0f, 0.0f, 6.0f),    // elevated_marker
@@ -300,21 +301,21 @@ class ComprehensiveSelectionTest : public SelectionTestApp {
   // ===== Enhanced Interaction Methods =====
   
   void SetupEnhancedInteractions() {
-    // Setup custom input handlers for enhanced interactions
-    auto& input_dispatcher = scene_panel_->GetInputDispatcher();
+    // Note: Custom input handling has been simplified to work with current architecture
+    // Enhanced interactions will be handled through the selection callback system
     
-    // Register enhanced key handlers
-    input_dispatcher.RegisterTypedHandler<InputEvent>("enhanced_interactions",
-        [this](std::shared_ptr<InputEvent> event) -> bool {
-            return HandleEnhancedKeyInput(*event);
-        });
-    
-    // Set up enhanced callback that calls both the info panel update and our enhancements
+    // Set up enhanced callback that calls info panel, visual feedback, and our enhancements
     scene_panel_->SetSelectionCallback(
         [this](const SelectionResult& result, const MultiSelection& selection) {
             // First update the info panel UI (what the base class normally does)
             info_panel_->SetLastSelection(result);
             info_panel_->UpdateMultiSelection(selection);
+            
+            // Forward to visual feedback system
+            auto feedback_system = scene_panel_->GetFeedbackSystem();
+            if (feedback_system) {
+              feedback_system->OnSelectionChanged(selection);
+            }
             
             // Then add our enhanced effects
             HandleEnhancedSelection(result, selection);

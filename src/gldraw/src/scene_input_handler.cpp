@@ -84,6 +84,7 @@ bool SceneInputHandler::HandleCameraControl(const InputEvent& event) {
       if (IsCameraControlButton(button, event.GetModifiers())) {
         camera_active_ = true;
         active_camera_button_ = button;
+        // Store mouse position (already in panel-local coordinates)
         last_mouse_pos_ = event.GetScreenPosition();
         return true;
       }
@@ -102,6 +103,7 @@ bool SceneInputHandler::HandleCameraControl(const InputEvent& event) {
     case InputEventType::kMouseDrag:
     case InputEventType::kMouseMove: {
       if (camera_active_) {
+        // Get current position (already in panel-local coordinates)
         glm::vec2 current_pos = event.GetScreenPosition();
         glm::vec2 delta = current_pos - last_mouse_pos_;
         last_mouse_pos_ = current_pos;
@@ -146,12 +148,16 @@ bool SceneInputHandler::HandleObjectSelection(const InputEvent& event) {
   int button = event.GetMouseButton();
   if (!IsSelectionButton(button, event.GetModifiers())) return false;
 
-  // Perform selection
+  // Get mouse position (already converted to panel-local coordinates by GlScenePanel)
   glm::vec2 mouse_pos = event.GetScreenPosition();
   
-  // Convert to viewport coordinates if needed
   float x = mouse_pos.x;
   float y = mouse_pos.y;
+  
+  // Validate coordinates are within viewport bounds
+  if (x < 0 || x >= viewport_width_ || y < 0 || y >= viewport_height_) {
+    return false;
+  }
 
   // Perform the actual selection
   auto selection_result = scene_manager_->Select(static_cast<int>(x), static_cast<int>(y));

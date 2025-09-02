@@ -6,7 +6,7 @@
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
-#include "gldraw/renderable/layer_manager.hpp"
+#include "../../../include/gldraw/renderable/details/point_layer_manager.hpp"
 #include <algorithm>
 #include <iostream>
 #include <limits>
@@ -54,12 +54,12 @@ void PointLayer::ClearPoints() {
 }
 
 // LayerManager implementation
-LayerManager::LayerManager()
+PointLayerManager::PointLayerManager()
     : global_opacity_(1.0f)
     , needs_sorting_(false) {
 }
 
-std::shared_ptr<PointLayer> LayerManager::CreateLayer(const std::string& name, int priority) {
+std::shared_ptr<PointLayer> PointLayerManager::CreateLayer(const std::string& name, int priority) {
     // Check if layer already exists
     if (HasLayer(name)) {
         std::cout << "Warning: Layer '" << name << "' already exists. Returning existing layer." << std::endl;
@@ -74,7 +74,7 @@ std::shared_ptr<PointLayer> LayerManager::CreateLayer(const std::string& name, i
     return layer;
 }
 
-bool LayerManager::RemoveLayer(const std::string& name) {
+bool PointLayerManager::RemoveLayer(const std::string& name) {
     auto it = layer_map_.find(name);
     if (it == layer_map_.end()) {
         return false;
@@ -88,32 +88,32 @@ bool LayerManager::RemoveLayer(const std::string& name) {
     return true;
 }
 
-bool LayerManager::RemoveLayer(std::shared_ptr<PointLayer> layer) {
+bool PointLayerManager::RemoveLayer(std::shared_ptr<PointLayer> layer) {
     if (!layer) return false;
     return RemoveLayer(layer->GetName());
 }
 
-void LayerManager::ClearAllLayers() {
+void PointLayerManager::ClearAllLayers() {
     layers_.clear();
     layer_map_.clear();
     needs_sorting_ = false;
 }
 
-std::shared_ptr<PointLayer> LayerManager::GetLayer(const std::string& name) {
+std::shared_ptr<PointLayer> PointLayerManager::GetLayer(const std::string& name) {
     auto it = layer_map_.find(name);
     return (it != layer_map_.end()) ? it->second : nullptr;
 }
 
-const std::shared_ptr<PointLayer> LayerManager::GetLayer(const std::string& name) const {
+const std::shared_ptr<PointLayer> PointLayerManager::GetLayer(const std::string& name) const {
     auto it = layer_map_.find(name);
     return (it != layer_map_.end()) ? it->second : nullptr;
 }
 
-std::vector<std::shared_ptr<PointLayer>> LayerManager::GetAllLayers() const {
+std::vector<std::shared_ptr<PointLayer>> PointLayerManager::GetAllLayers() const {
     return layers_;
 }
 
-std::vector<std::shared_ptr<PointLayer>> LayerManager::GetVisibleLayers() const {
+std::vector<std::shared_ptr<PointLayer>> PointLayerManager::GetVisibleLayers() const {
     std::vector<std::shared_ptr<PointLayer>> visible_layers;
     for (const auto& layer : layers_) {
         if (layer && layer->IsVisible()) {
@@ -123,7 +123,7 @@ std::vector<std::shared_ptr<PointLayer>> LayerManager::GetVisibleLayers() const 
     return visible_layers;
 }
 
-std::vector<std::shared_ptr<PointLayer>> LayerManager::GetLayersByPriority() const {
+std::vector<std::shared_ptr<PointLayer>> PointLayerManager::GetLayersByPriority() const {
     auto sorted_layers = layers_;
     std::sort(sorted_layers.begin(), sorted_layers.end(),
               [](const std::shared_ptr<PointLayer>& a, const std::shared_ptr<PointLayer>& b) {
@@ -132,11 +132,11 @@ std::vector<std::shared_ptr<PointLayer>> LayerManager::GetLayersByPriority() con
     return sorted_layers;
 }
 
-bool LayerManager::HasLayer(const std::string& name) const {
+bool PointLayerManager::HasLayer(const std::string& name) const {
     return layer_map_.find(name) != layer_map_.end();
 }
 
-void LayerManager::SetAllLayersVisible(bool visible) {
+void PointLayerManager::SetAllLayersVisible(bool visible) {
     for (auto& layer : layers_) {
         if (layer) {
             layer->SetVisible(visible);
@@ -144,14 +144,14 @@ void LayerManager::SetAllLayersVisible(bool visible) {
     }
 }
 
-void LayerManager::SetLayerVisibility(const std::string& name, bool visible) {
+void PointLayerManager::SetLayerVisibility(const std::string& name, bool visible) {
     auto layer = GetLayer(name);
     if (layer) {
         layer->SetVisible(visible);
     }
 }
 
-std::vector<std::string> LayerManager::GetLayersContainingPoint(size_t point_index) const {
+std::vector<std::string> PointLayerManager::GetLayersContainingPoint(size_t point_index) const {
     std::vector<std::string> containing_layers;
     for (const auto& layer : layers_) {
         if (layer && layer->ContainsPoint(point_index)) {
@@ -161,7 +161,7 @@ std::vector<std::string> LayerManager::GetLayersContainingPoint(size_t point_ind
     return containing_layers;
 }
 
-std::shared_ptr<PointLayer> LayerManager::GetTopLayerContainingPoint(size_t point_index) const {
+std::shared_ptr<PointLayer> PointLayerManager::GetTopLayerContainingPoint(size_t point_index) const {
     std::shared_ptr<PointLayer> top_layer = nullptr;
     int highest_priority = std::numeric_limits<int>::min();
     
@@ -177,7 +177,7 @@ std::shared_ptr<PointLayer> LayerManager::GetTopLayerContainingPoint(size_t poin
     return top_layer;
 }
 
-bool LayerManager::IsPointInAnyLayer(size_t point_index) const {
+bool PointLayerManager::IsPointInAnyLayer(size_t point_index) const {
     for (const auto& layer : layers_) {
         if (layer && layer->ContainsPoint(point_index)) {
             return true;
@@ -186,7 +186,7 @@ bool LayerManager::IsPointInAnyLayer(size_t point_index) const {
     return false;
 }
 
-std::vector<LayerManager::LayerRenderData> LayerManager::GenerateRenderData() const {
+std::vector<PointLayerManager::LayerRenderData> PointLayerManager::GenerateRenderData() const {
     std::vector<LayerRenderData> render_data;
     
     auto sorted_layers = GetLayersByPriority();
@@ -213,7 +213,7 @@ std::vector<LayerManager::LayerRenderData> LayerManager::GenerateRenderData() co
     return render_data;
 }
 
-LayerManager::LayerStats LayerManager::GetStatistics() const {
+PointLayerManager::LayerStats PointLayerManager::GetStatistics() const {
     LayerStats stats;
     stats.total_layers = layers_.size();
     stats.visible_layers = 0;
@@ -241,7 +241,7 @@ LayerManager::LayerStats LayerManager::GetStatistics() const {
     return stats;
 }
 
-void LayerManager::PrintLayerInfo() const {
+void PointLayerManager::PrintLayerInfo() const {
     std::cout << "\n=== Layer Manager Status ===" << std::endl;
     std::cout << "Total layers: " << layers_.size() << std::endl;
     std::cout << "Global opacity: " << global_opacity_ << std::endl;
@@ -265,7 +265,7 @@ void LayerManager::PrintLayerInfo() const {
     std::cout << "========================\n" << std::endl;
 }
 
-void LayerManager::SortLayersByPriority() {
+void PointLayerManager::SortLayersByPriority() {
     if (!needs_sorting_) return;
     
     std::sort(layers_.begin(), layers_.end(),

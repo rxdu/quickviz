@@ -18,7 +18,13 @@ InputEvent ImGuiInputUtils::CreateMouseEvent(InputEventType type, int button) {
   auto event = InputEvent(type, button);
   
   ImGuiIO& io = ImGui::GetIO();
+  
+  // Set global screen position (relative to GLFW window)
   event.SetScreenPosition(glm::vec2(io.MousePos.x, io.MousePos.y));
+  
+  // Note: Local coordinates are best calculated by the specific panel/window
+  // that processes the event, as it has the correct context.
+  // Panels should call SetLocalPosition() when they receive the event.
   
   if (type == InputEventType::kMouseMove || type == InputEventType::kMouseDrag) {
     event.SetDelta(glm::vec2(io.MouseDelta.x, io.MouseDelta.y));

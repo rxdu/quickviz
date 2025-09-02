@@ -15,3 +15,6 @@ target_link_libraries(test_camera_control_mappings PRIVATE gldraw)
 
 add_executable(test_camera_configuration test_camera_configuration.cpp)
 target_link_libraries(test_camera_configuration PRIVATE gldraw)
+
+add_executable(test_visual_feedback_system test_visual_feedback_system.cpp)
+target_link_libraries(test_visual_feedback_system PRIVATE gldraw)

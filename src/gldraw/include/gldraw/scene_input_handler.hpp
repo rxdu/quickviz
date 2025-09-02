@@ -50,7 +50,7 @@ class SceneInputHandler : public InputEventHandler {
   void SetCameraControlConfig(const CameraControlConfig& config) { camera_config_ = config; }
   const CameraControlConfig& GetCameraControlConfig() const { return camera_config_; }
 
-  // Viewport configuration for coordinate transformation
+  // Viewport configuration
   void SetViewportSize(int width, int height) { 
     viewport_width_ = width; 
     viewport_height_ = height; 
