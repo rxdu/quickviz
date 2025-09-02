@@ -119,7 +119,7 @@ TEST_F(RendererPipelineTest, CameraController) {
     
     // Test camera operations
     controller.ProcessKeyboard(Camera::Movement::kForward, 0.016f);
-    controller.ProcessMouseMovement(1.0f, 1.0f);
+    controller.ProcessOrbitMovement(1.0f, 1.0f);
     
     SUCCEED();
 }

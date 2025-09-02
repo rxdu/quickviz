@@ -11,12 +11,24 @@
 namespace quickviz {
 CameraController::CameraController(Camera& camera, glm::vec3 position,
                                    float yaw, float pitch)
-    : camera_(camera) {
+    : camera_(camera), config_(CameraControllerConfig::Default()) {
   camera_.SetPosition(position);
   camera_.SetYaw(yaw);
   camera_.SetPitch(pitch);
 
-  orbit_distance_ = glm::length(camera_.GetPosition());
+  orbit_distance_ = config_.initial_orbit_distance;
+
+  UpdateOrbitPosition();
+}
+
+CameraController::CameraController(Camera& camera, const CameraControllerConfig& config,
+                                   glm::vec3 position, float yaw, float pitch)
+    : camera_(camera), config_(config) {
+  camera_.SetPosition(position);
+  camera_.SetYaw(yaw);
+  camera_.SetPitch(pitch);
+
+  orbit_distance_ = config_.initial_orbit_distance;
 
   UpdateOrbitPosition();
 }
@@ -35,7 +47,7 @@ void CameraController::SetMode(CameraController::Mode mode) {
 
     // make sure the position is not too low
     glm::vec3 position = camera_.GetPosition();
-    if (position.y < 1.0f) position.y = 1.0f;  // Set a minimum height
+    if (position.y < config_.min_height) position.y = config_.min_height;
     camera_.SetPosition(position);
 
     // Reset rotation angle for top-down view
@@ -43,9 +55,6 @@ void CameraController::SetMode(CameraController::Mode mode) {
   }
 }
 
-void CameraController::SetActiveMouseButton(int button) {
-  active_mouse_button_ = button;
-}
 
 void CameraController::SetHeight(float height) {
   glm::vec3 position = camera_.GetPosition();
@@ -80,9 +89,35 @@ void CameraController::SetYaw(float yaw) {
 }
 
 void CameraController::SetOrbitTarget(const glm::vec3& target) {
+  if (!IsValidPosition(target)) {
+    // Use current target if invalid position provided
+    return;
+  }
   orbit_target_ = target;
   if (mode_ == Mode::kOrbit) {
     UpdateOrbitPosition();
+  }
+}
+
+void CameraController::SetConfig(const CameraControllerConfig& config) {
+  CameraControllerConfig validated_config = config;
+  validated_config.Validate();
+  
+  if (!validated_config.IsValid()) {
+    // Log warning but use validated config anyway
+    // In a production system, you might want to use a logging system here
+    validated_config = CameraControllerConfig::Default();
+    validated_config.Validate();
+  }
+  
+  config_ = validated_config;
+  
+  // Re-validate current orbit distance with new limits
+  if (orbit_distance_ < config_.min_orbit_distance) {
+    orbit_distance_ = config_.min_orbit_distance;
+    if (mode_ == Mode::kOrbit) {
+      UpdateOrbitPosition();
+    }
   }
 }
 
@@ -107,127 +142,24 @@ void CameraController::ProcessKeyboard(
   }
 }
 
-void CameraController::ProcessMouseMovement(float x_offset, float y_offset) {
-  switch (mode_) {
-    case Mode::kFirstPerson:
-    case Mode::kFreeLook:
-      if (active_mouse_button_ == MouseButton::kLeft) {
-        // Left mouse: standard look around
-        camera_.ProcessMouseMovement(x_offset, y_offset);
-      } else if (active_mouse_button_ == MouseButton::kMiddle) {
-        // Middle mouse: translate perpendicular to viewing direction
-        float sensitivity = 0.01f;
-        
-        // Get camera's right and up vectors
-        glm::vec3 right = camera_.GetRight();
-        glm::vec3 up = camera_.GetUp();
-        
-        // Calculate translation in world space
-        glm::vec3 position = camera_.GetPosition();
-        glm::vec3 translation = (-x_offset * right + y_offset * up) * sensitivity;
-        
-        camera_.SetPosition(position + translation);
-      } else if (active_mouse_button_ == MouseButton::kRight) {
-        // Right mouse: alternative - could be used for different behavior
-        camera_.ProcessMouseMovement(x_offset, y_offset);
-      }
-      break;
-    case Mode::kOrbit:
-      if (active_mouse_button_ == MouseButton::kLeft) {
-        // Left mouse: rotation around target
-        camera_.ProcessMouseMovement(x_offset, y_offset);
-        UpdateOrbitPosition();
-      } else if (active_mouse_button_ == MouseButton::kMiddle) {
-        // Middle mouse: translate the orbit target
-        // Calculate movement in camera's local coordinate system
-        float sensitivity = 0.01f;
-        
-        // Scale movement based on distance for consistent speed
-        float distance_factor = orbit_distance_ / 10.0f;
-        if (distance_factor < 0.1f) distance_factor = 0.1f;
-        
-        // Get camera's right and up vectors
-        glm::vec3 right = camera_.GetRight();
-        glm::vec3 up = camera_.GetUp();
-        
-        // Calculate translation in world space
-        glm::vec3 translation = (-x_offset * right + y_offset * up) * 
-                               sensitivity * distance_factor;
-        
-        // Update orbit target
-        orbit_target_ += translation;
-        UpdateOrbitPosition();
-      } else if (active_mouse_button_ == MouseButton::kRight) {
-        // Right mouse: could be used for alternative rotation or other function
-        camera_.ProcessMouseMovement(x_offset, y_offset);
-        UpdateOrbitPosition();
-      }
-      break;
-    case Mode::kTopDown:
-      // Handle mouse movement for top-down view based on mouse button
-      if (active_mouse_button_ == MouseButton::kLeft) {
-        // Instead of directly setting camera yaw, we'll track rotation angle
-        // ourselves and apply it only when there's significant mouse movement
-        float rotation_sensitivity = 0.5f;
-
-        // Only process rotation if there's actual mouse movement
-        if (std::abs(x_offset) > 0.1f) {
-          // Update our own rotation variable
-          top_down_rotation_ += x_offset * rotation_sensitivity;
-
-          // Keep rotation in range [0, 360)
-          while (top_down_rotation_ >= 360.0f) top_down_rotation_ -= 360.0f;
-          while (top_down_rotation_ < 0.0f) top_down_rotation_ += 360.0f;
-
-          // Set the camera yaw directly instead of using ProcessMouseMovement
-          camera_.SetYaw(top_down_rotation_);
-        }
-      } else if (active_mouse_button_ == MouseButton::kMiddle) {
-        // Translation/panning on the X-Z plane - implement true dragging
-        // behavior
-        float sensitivity = 0.01f;
-
-        // Calculate movement based on camera height for consistent speed at
-        // different zoom levels
-        float height_factor =
-            camera_.GetPosition().y / 10.0f;  // Normalize based on height
-        if (height_factor < 0.1f) height_factor = 0.1f;  // Minimum factor
-
-        // Apply rotation to the mouse movement vectors to correctly map to the
-        // rotated world
-        // 1. Create a rotation matrix for the current rotation angle
-        float angle_rad = glm::radians(top_down_rotation_);
-
-        // 2. Calculate rotated axes based on the current rotation
-        float rot_dx =
-            -y_offset * std::cos(angle_rad) - x_offset * std::sin(angle_rad);
-        float rot_dz =
-            -y_offset * std::sin(angle_rad) + x_offset * std::cos(angle_rad);
-
-        // 3. Apply sensitivity and height scaling
-        rot_dx *= sensitivity * height_factor;
-        rot_dz *= sensitivity * height_factor;
-
-        // 4. Update camera position
-        glm::vec3 position = camera_.GetPosition();
-        position.x += rot_dx;
-        position.z += rot_dz;
-        camera_.SetPosition(position);
-      }
-      break;
-  }
-}
 
 void CameraController::ProcessMouseScroll(float y_offset) {
+  if (!std::isfinite(y_offset) || std::abs(y_offset) > 100.0f) {
+    return;  // Ignore invalid or excessive scroll values
+  }
   if (mode_ == Mode::kOrbit) {
-    orbit_distance_ -= y_offset * orbit_zoom_speed_;
-    if (orbit_distance_ < 1.0f) orbit_distance_ = 1.0f;
+    orbit_distance_ -= y_offset * config_.orbit_zoom_speed;
+    if (orbit_distance_ < config_.min_orbit_distance) {
+      orbit_distance_ = config_.min_orbit_distance;
+    }
     UpdateOrbitPosition();
   } else if (mode_ == Mode::kTopDown) {
     glm::vec3 position = camera_.GetPosition();
     // In TopDown mode, adjust Y position (height) with scroll
-    position.y -= y_offset * topdown_zoom_speed_;
-    if (position.y < 1.0f) position.y = 1.0f;  // Set a minimum height
+    position.y -= y_offset * config_.topdown_zoom_speed;
+    if (position.y < config_.min_height) {
+      position.y = config_.min_height;
+    }
     camera_.SetPosition(position);
   } else {
     camera_.ProcessMouseScroll(y_offset);
@@ -246,4 +178,116 @@ void CameraController::UpdateOrbitPosition() {
   camera_.SetPosition(glm::vec3(cam_x, cam_y, cam_z));
   camera_.LookAt(orbit_target_);
 }
+
+void CameraController::ProcessOrbitMovement(float x_offset, float y_offset) {
+  if (!IsValidMovement(x_offset, y_offset)) {
+    return;
+  }
+  switch (mode_) {
+    case Mode::kFirstPerson:
+    case Mode::kFreeLook:
+      // Standard look around movement
+      camera_.ProcessMouseMovement(x_offset, y_offset);
+      break;
+    case Mode::kOrbit:
+      // Rotation around target
+      camera_.ProcessMouseMovement(x_offset, y_offset);
+      UpdateOrbitPosition();
+      break;
+    case Mode::kTopDown:
+      // Rotation in top-down view
+      if (std::abs(x_offset) > config_.rotation_threshold) {
+        top_down_rotation_ += x_offset * config_.orbit_rotation_sensitivity;
+        
+        // Keep rotation in range [0, 360)
+        while (top_down_rotation_ >= 360.0f) top_down_rotation_ -= 360.0f;
+        while (top_down_rotation_ < 0.0f) top_down_rotation_ += 360.0f;
+        
+        camera_.SetYaw(top_down_rotation_);
+      }
+      break;
+  }
+}
+
+void CameraController::ProcessPanMovement(float x_offset, float y_offset) {
+  if (!IsValidMovement(x_offset, y_offset)) {
+    return;
+  }
+  switch (mode_) {
+    case Mode::kFirstPerson:
+    case Mode::kFreeLook:
+      {
+        // Translate perpendicular to viewing direction
+        glm::vec3 right = camera_.GetRight();
+        glm::vec3 up = camera_.GetUp();
+        glm::vec3 position = camera_.GetPosition();
+        glm::vec3 translation = (-x_offset * right + y_offset * up) * config_.pan_sensitivity;
+        camera_.SetPosition(position + translation);
+      }
+      break;
+    case Mode::kOrbit:
+      {
+        // Translate the orbit target
+        float distance_factor = orbit_distance_ / config_.distance_scale_factor;
+        if (distance_factor < 0.1f) distance_factor = 0.1f;
+        
+        glm::vec3 right = camera_.GetRight();
+        glm::vec3 up = camera_.GetUp();
+        glm::vec3 translation = (-x_offset * right + y_offset * up) * 
+                               config_.pan_sensitivity * distance_factor;
+        
+        orbit_target_ += translation;
+        UpdateOrbitPosition();
+      }
+      break;
+    case Mode::kTopDown:
+      {
+        // Translation on the X-Z plane
+        glm::vec3 position = camera_.GetPosition();
+        float height_factor = position.y / config_.height_scale_factor;
+        if (height_factor < 0.1f) height_factor = 0.1f;
+        
+        float angle_rad = glm::radians(top_down_rotation_);
+        float rot_dx = -y_offset * std::cos(angle_rad) - x_offset * std::sin(angle_rad);
+        float rot_dz = -y_offset * std::sin(angle_rad) + x_offset * std::cos(angle_rad);
+        
+        rot_dx *= config_.pan_sensitivity * height_factor;
+        rot_dz *= config_.pan_sensitivity * height_factor;
+        
+        position.x += rot_dx;
+        position.z += rot_dz;
+        camera_.SetPosition(position);
+      }
+      break;
+  }
+}
+
+// Static validation helper implementations
+bool CameraController::IsValidMovement(float x_offset, float y_offset) {
+  // Check for finite values and reasonable range
+  constexpr float max_movement = 1000.0f;
+  
+  return std::isfinite(x_offset) && std::isfinite(y_offset) &&
+         std::abs(x_offset) <= max_movement && std::abs(y_offset) <= max_movement;
+}
+
+bool CameraController::IsValidPosition(const glm::vec3& position) {
+  // Check for finite values and reasonable range
+  constexpr float max_position = 1e6f;  // 1 million units max
+  constexpr float min_position = -1e6f;
+  
+  return std::isfinite(position.x) && std::isfinite(position.y) && std::isfinite(position.z) &&
+         position.x >= min_position && position.x <= max_position &&
+         position.y >= min_position && position.y <= max_position &&
+         position.z >= min_position && position.z <= max_position;
+}
+
+bool CameraController::IsValidDistance(float distance) {
+  // Check for positive finite distance within reasonable bounds
+  constexpr float max_distance = 1e6f;  // 1 million units max
+  constexpr float min_distance = 1e-6f; // Very small but positive
+  
+  return std::isfinite(distance) && distance >= min_distance && distance <= max_distance;
+}
+
 }  // namespace quickviz

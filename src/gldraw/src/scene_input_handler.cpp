@@ -8,6 +8,7 @@
 
 #include "gldraw/scene_input_handler.hpp"
 #include "gldraw/scene_manager.hpp"
+#include "gldraw/camera_control_config.hpp"
 #include "imview/input/input_types.hpp"
 #include "core/event/input_mapping.hpp"
 
@@ -18,7 +19,9 @@ SceneInputHandler::SceneInputHandler(SceneManager* scene_manager, int priority)
 }
 
 bool SceneInputHandler::OnInputEvent(const InputEvent& event) {
-  if (!enabled_ || !scene_manager_) return false;
+  if (!enabled_ || !scene_manager_) {
+    return false;
+  }
 
   if (event.IsMouseEvent()) {
     return HandleMouseEvent(event);
@@ -82,7 +85,6 @@ bool SceneInputHandler::HandleCameraControl(const InputEvent& event) {
         camera_active_ = true;
         active_camera_button_ = button;
         last_mouse_pos_ = event.GetScreenPosition();
-        camera_controller->SetActiveMouseButton(static_cast<MouseButton>(button));
         return true;
       }
       break;
@@ -92,7 +94,6 @@ bool SceneInputHandler::HandleCameraControl(const InputEvent& event) {
       if (camera_active_ && event.GetMouseButton() == active_camera_button_) {
         camera_active_ = false;
         active_camera_button_ = -1;
-        camera_controller->SetActiveMouseButton(MouseButton::kNone);
         return true;
       }
       break;
@@ -105,13 +106,18 @@ bool SceneInputHandler::HandleCameraControl(const InputEvent& event) {
         glm::vec2 delta = current_pos - last_mouse_pos_;
         last_mouse_pos_ = current_pos;
         
-        // Update camera based on active button
-        if (active_camera_button_ == MouseButton::kRight) {
-          camera_controller->ProcessMouseMovement(delta.x, delta.y);
-        } else if (active_camera_button_ == MouseButton::kMiddle) {
-          // Pan camera - for now, we'll use mouse movement
-          // TODO: Implement proper pan functionality if needed
-          camera_controller->ProcessMouseMovement(delta.x, delta.y);
+        // Use decoupled movement methods based on camera configuration
+        MouseButton active_button = static_cast<MouseButton>(active_camera_button_);
+        if (camera_config_.IsOrbitControl(active_button, {})) {
+          // Explicit orbit movement with sensitivity
+          camera_controller->ProcessOrbitMovement(
+              delta.x * camera_config_.orbit_sensitivity, 
+              delta.y * camera_config_.orbit_sensitivity);
+        } else if (camera_config_.IsPanControl(active_button, {})) {
+          // Explicit pan movement with sensitivity
+          camera_controller->ProcessPanMovement(
+              delta.x * camera_config_.pan_sensitivity, 
+              delta.y * camera_config_.pan_sensitivity);
         }
         return true;
       }
@@ -119,9 +125,12 @@ bool SceneInputHandler::HandleCameraControl(const InputEvent& event) {
     }
 
     case InputEventType::kMouseWheel: {
-      glm::vec2 scroll_delta = event.GetDelta();
-      camera_controller->ProcessMouseScroll(scroll_delta.y);
-      return true;
+      if (camera_config_.enable_wheel_zoom) {
+        glm::vec2 scroll_delta = event.GetDelta();
+        camera_controller->ProcessMouseScroll(scroll_delta.y * camera_config_.zoom_sensitivity);
+        return true;
+      }
+      break;
     }
 
     default:
@@ -164,18 +173,13 @@ bool SceneInputHandler::HandleObjectSelection(const InputEvent& event) {
 }
 
 bool SceneInputHandler::IsCameraControlButton(int button, const ModifierKeys& modifiers) const {
-  // Right mouse button for orbit/rotate
-  if (button == MouseButton::kRight && modifiers.IsEmpty()) return true;
-  
-  // Middle mouse button for pan
-  if (button == MouseButton::kMiddle && modifiers.IsEmpty()) return true;
-  
-  return false;
+  MouseButton mouse_button = static_cast<MouseButton>(button);
+  return camera_config_.IsCameraControl(mouse_button, modifiers);
 }
 
 bool SceneInputHandler::IsSelectionButton(int button, const ModifierKeys& modifiers) const {
-  // Left mouse button for selection (with or without modifiers)
-  return button == MouseButton::kLeft;
+  MouseButton mouse_button = static_cast<MouseButton>(button);
+  return camera_config_.IsSelectionControl(mouse_button, modifiers);
 }
 
 glm::vec3 SceneInputHandler::ScreenToWorld(const glm::vec2& screen_pos, float depth) const {
@@ -198,14 +202,43 @@ glm::vec2 SceneInputHandler::WorldToScreen(const glm::vec3& world_pos) const {
 std::shared_ptr<SceneInputHandler> SceneInputHandlerFactory::CreateStandard(
     SceneManager* scene_manager, int priority) {
   auto handler = std::make_shared<SceneInputHandler>(scene_manager, priority);
+  handler->SetCameraControlConfig(CameraControlConfig::ModelingSoftware());
   handler->SetCameraControlEnabled(true);
   handler->SetSelectionEnabled(true);
+  return handler;
+}
+
+std::shared_ptr<SceneInputHandler> SceneInputHandlerFactory::CreateFPSStyle(
+    SceneManager* scene_manager, int priority) {
+  auto handler = std::make_shared<SceneInputHandler>(scene_manager, priority);
+  handler->SetCameraControlConfig(CameraControlConfig::FPSStyle());
+  handler->SetCameraControlEnabled(true);
+  handler->SetSelectionEnabled(true);
+  return handler;
+}
+
+std::shared_ptr<SceneInputHandler> SceneInputHandlerFactory::CreateWebViewer(
+    SceneManager* scene_manager, int priority) {
+  auto handler = std::make_shared<SceneInputHandler>(scene_manager, priority);
+  handler->SetCameraControlConfig(CameraControlConfig::WebViewer());
+  handler->SetCameraControlEnabled(true);
+  handler->SetSelectionEnabled(false); // Web viewer typically disables selection
+  return handler;
+}
+
+std::shared_ptr<SceneInputHandler> SceneInputHandlerFactory::CreateCustom(
+    SceneManager* scene_manager, const CameraControlConfig& config, int priority) {
+  auto handler = std::make_shared<SceneInputHandler>(scene_manager, priority);
+  handler->SetCameraControlConfig(config);
+  handler->SetCameraControlEnabled(config.enable_orbit || config.enable_pan);
+  handler->SetSelectionEnabled(config.enable_selection);
   return handler;
 }
 
 std::shared_ptr<SceneInputHandler> SceneInputHandlerFactory::CreateCameraOnly(
     SceneManager* scene_manager, int priority) {
   auto handler = std::make_shared<SceneInputHandler>(scene_manager, priority);
+  handler->SetCameraControlConfig(CameraControlConfig::ModelingSoftware());
   handler->SetCameraControlEnabled(true);
   handler->SetSelectionEnabled(false);
   return handler;
@@ -214,6 +247,7 @@ std::shared_ptr<SceneInputHandler> SceneInputHandlerFactory::CreateCameraOnly(
 std::shared_ptr<SceneInputHandler> SceneInputHandlerFactory::CreateSelectionOnly(
     SceneManager* scene_manager, int priority) {
   auto handler = std::make_shared<SceneInputHandler>(scene_manager, priority);
+  handler->SetCameraControlConfig(CameraControlConfig::ModelingSoftware());
   handler->SetCameraControlEnabled(false);
   handler->SetSelectionEnabled(true);
   return handler;

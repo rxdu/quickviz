@@ -35,6 +35,9 @@ struct InputPolicy {
   bool only_when_hovered = false;    // Only process input when mouse is over panel
   bool consume_processed_events = true;  // Consume events that are handled
   
+  // ImGui integration control
+  bool bypass_imgui_capture = false; // Override ImGui's input capture for mouse clicks
+  
   // Priority for event processing
   int priority = 50;  // Higher values processed first
   
@@ -149,6 +152,17 @@ struct InputPolicy {
   static InputPolicy HoveredOnly() {
     InputPolicy policy;
     policy.only_when_hovered = true;
+    return policy;
+  }
+  
+  /**
+   * @brief Create policy for 3D scene interaction (bypasses ImGui capture)
+   */
+  static InputPolicy SceneInteraction() {
+    InputPolicy policy;
+    policy.bypass_imgui_capture = true;
+    policy.only_when_hovered = false; // Allow interaction even when not hovering
+    policy.priority = 75; // Higher priority for 3D scenes
     return policy;
   }
 };

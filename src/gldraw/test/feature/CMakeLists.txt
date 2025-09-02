@@ -9,3 +9,9 @@ target_link_libraries(test_camera PRIVATE gldraw)
 
 add_executable(test_layer_system test_layer_system.cpp)
 target_link_libraries(test_layer_system PRIVATE gldraw)
+
+add_executable(test_camera_control_mappings test_camera_control_mappings.cpp)
+target_link_libraries(test_camera_control_mappings PRIVATE gldraw)
+
+add_executable(test_camera_configuration test_camera_configuration.cpp)
+target_link_libraries(test_camera_configuration PRIVATE gldraw)

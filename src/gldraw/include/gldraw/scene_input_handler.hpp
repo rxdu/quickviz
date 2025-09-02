@@ -17,6 +17,7 @@
 #include "gldraw/camera.hpp"
 #include "gldraw/camera_controller.hpp"
 #include "gldraw/selection_manager.hpp"
+#include "gldraw/camera_control_config.hpp"
 
 namespace quickviz {
 
@@ -44,6 +45,10 @@ class SceneInputHandler : public InputEventHandler {
   void SetEnabled(bool enabled) { enabled_ = enabled; }
   void SetCameraControlEnabled(bool enabled) { camera_control_enabled_ = enabled; }
   void SetSelectionEnabled(bool enabled) { selection_enabled_ = enabled; }
+  
+  // Camera control configuration
+  void SetCameraControlConfig(const CameraControlConfig& config) { camera_config_ = config; }
+  const CameraControlConfig& GetCameraControlConfig() const { return camera_config_; }
 
   // Viewport configuration for coordinate transformation
   void SetViewportSize(int width, int height) { 
@@ -77,6 +82,9 @@ class SceneInputHandler : public InputEventHandler {
   
   int viewport_width_ = 800;
   int viewport_height_ = 600;
+  
+  // Camera control configuration
+  CameraControlConfig camera_config_ = CameraControlConfig::ModelingSoftware();
   
   // Track mouse state for camera control
   bool camera_active_ = false;
@@ -112,6 +120,31 @@ class SceneInputHandlerFactory {
    */
   static std::shared_ptr<SceneInputHandler> CreateSelectionOnly(
     SceneManager* scene_manager, int priority = 60);
+  
+  /**
+   * @brief Create handler with FPS-style controls (left-click orbit)
+   * @param scene_manager Scene manager to control
+   * @param priority Handler priority (default: 50)
+   */
+  static std::shared_ptr<SceneInputHandler> CreateFPSStyle(
+    SceneManager* scene_manager, int priority = 50);
+  
+  /**
+   * @brief Create handler with web viewer style (left-click orbit, right-click pan)
+   * @param scene_manager Scene manager to control
+   * @param priority Handler priority (default: 50)
+   */
+  static std::shared_ptr<SceneInputHandler> CreateWebViewer(
+    SceneManager* scene_manager, int priority = 50);
+  
+  /**
+   * @brief Create handler with custom camera control configuration
+   * @param scene_manager Scene manager to control
+   * @param config Camera control configuration
+   * @param priority Handler priority (default: 50)
+   */
+  static std::shared_ptr<SceneInputHandler> CreateCustom(
+    SceneManager* scene_manager, const CameraControlConfig& config, int priority = 50);
 };
 
 }  // namespace quickviz

@@ -91,7 +91,8 @@ void MouseCallback(GLFWwindow* window, double xpos, double ypos) {
   lastY = ypos;
 
   //  camera.ProcessMouseMovement(xoffset, yoffset);
-  camera_controller.ProcessMouseMovement(xoffset, yoffset);
+  // Use explicit orbit movement since this is a raw camera test
+  camera_controller.ProcessOrbitMovement(xoffset, yoffset);
 }
 
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {

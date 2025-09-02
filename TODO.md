@@ -5,9 +5,19 @@
 
 ## 🎯 Current Active Work
 
+### CameraController Refactoring
+**Status**: Input handling decoupled, architecture improvements needed  
+**Focus**: Clean up CameraController implementation for maintainability
+**Priority**:
+- [ ] Extract hardcoded sensitivity/scaling values into configurable parameters
+- [ ] Add input validation and bounds checking
+- [ ] Improve API consistency for position/orientation handling
+- [ ] Organize mode-specific logic (reduce scattered switch statements)
+- [ ] Add missing utility methods (smooth animation, fit bounds, etc.)
+
 ### User Input Handling & Public API
-**Status**: Unified input system complete with gamepad support  
-**Focus**: Build complete input handling for graph editing applications
+**Status**: Configurable camera controls complete, selection tools pending  
+**Focus**: Build complete input handling for graph editing applications  
 **Priority**:
 - [ ] Selection tools (PointSelectionTool, BoxSelectionTool, LassoSelectionTool)
 - [ ] SelectionManager integration with input events
@@ -69,6 +79,9 @@
 - ✅ **AsyncEventEmitter updates** - Instance-based with dependency injection, perfect forwarding
 
 ### September 2024
+- ✅ **Configurable camera controls** - Complete CameraControlConfig system with presets (Modeling, FPS, WebViewer, CAD, Scientific, SingleButton styles)
+- ✅ **Camera input decoupling** - Removed hardcoded mouse button logic from CameraController, added ProcessOrbitMovement/ProcessPanMovement methods
+- ✅ **Input system fixes** - Fixed WebViewer right-click panning, ImGui input capture bypass for 3D scenes
 - ✅ Complete unified input system with gamepad support
 - ✅ Removed legacy InputHandler API
 - ✅ GamepadManager with Meyer's Singleton pattern

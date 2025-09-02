@@ -11,6 +11,7 @@
 #include <iostream>
 
 #include <yoga/Yoga.h>
+#include "imview/input/input_dispatcher.hpp"
 
 namespace quickviz {
 namespace {
@@ -90,6 +91,23 @@ void Box::OnRender() {
   for (auto child : children_) {
     if (child.second->IsVisible()) child.second->OnRender();
   }
+}
+
+bool Box::OnInputEvent(const InputEvent& event) {
+  // Propagate input events to children that implement InputEventHandler
+  for (const auto& [name, child] : children_) {
+    // Try to cast child to InputEventHandler
+    auto input_handler = std::dynamic_pointer_cast<InputEventHandler>(child);
+    if (input_handler) {
+      // Forward the event to the child
+      if (input_handler->OnInputEvent(event)) {
+        // Child consumed the event, stop propagation
+        return true;
+      }
+    }
+  }
+  
+  return false;
 }
 
 }  // namespace quickviz

@@ -14,6 +14,7 @@
 
 #include "imgui.h"
 #include "imview/fonts.hpp"
+#include "imview/input/input_policy.hpp"
 
 #include "gldraw/renderable/point_cloud.hpp"
 #include "gldraw/selection_manager.hpp"
@@ -28,8 +29,8 @@ GlScenePanel::GlScenePanel(const std::string& name, SceneManager::Mode mode)
   scene_input_handler_ =
       SceneInputHandlerFactory::CreateStandard(scene_manager_.get());
 
-  // Register with panel's input manager when it becomes available
-  // This will be done in SetInputManager or when the panel is added to a viewer
+  // Use specialized input policy for 3D scene interaction
+  SetInputPolicy(InputPolicy::SceneInteraction());
 }
 
 void GlScenePanel::Draw() {
@@ -98,8 +99,7 @@ void GlScenePanel::ClearOpenGLObjects() {
   scene_manager_->ClearOpenGLObjects();
 }
 
-void GlScenePanel::SetPreDrawCallback(
-    SceneManager::PreDrawCallback callback) {
+void GlScenePanel::SetPreDrawCallback(SceneManager::PreDrawCallback callback) {
   scene_manager_->SetPreDrawCallback(std::move(callback));
 }
 

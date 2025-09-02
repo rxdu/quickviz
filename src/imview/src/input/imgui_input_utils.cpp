@@ -65,20 +65,42 @@ glm::vec2 ImGuiInputUtils::GetMouseDelta() {
 }
 
 void ImGuiInputUtils::PollMouseEvents(std::vector<InputEvent>& events) {
-  if (ShouldCaptureMouseInput()) return;
+  ImGuiIO& io = ImGui::GetIO();
   
-  // Mouse clicks
+  // Check if ImGui wants to capture mouse input
+  bool imgui_wants_mouse = ShouldCaptureMouseInput();
+  
+  // Always use manual detection for now, but we could make this configurable
+  // The manual detection works reliably for both regular UI and 3D scenes
+  // Track mouse button state changes manually since ImGui::IsMouseClicked() 
+  // doesn't work when hovering over panels where ImGui wants capture
+  static bool last_mouse_state[3] = {false, false, false};
+  
   for (int button = 0; button < 3; ++button) {  // Left, Right, Middle
-    if (ImGui::IsMouseClicked(button)) {
+    bool current_state = ImGui::IsMouseDown(button);
+    bool last_state = last_mouse_state[button];
+    
+    // Detect press (transition from up to down)
+    if (current_state && !last_state) {
       events.push_back(CreateMouseEvent(InputEventType::kMousePress, button));
     }
-    if (ImGui::IsMouseReleased(button)) {
+    
+    // Detect release (transition from down to up)
+    if (!current_state && last_state) {
       events.push_back(CreateMouseEvent(InputEventType::kMouseRelease, button));
     }
+    
+    last_mouse_state[button] = current_state;
   }
   
-  // Mouse movement
-  ImGuiIO& io = ImGui::GetIO();
+  // Mouse wheel - Always allow wheel events 
+  if (io.MouseWheel != 0.0f || io.MouseWheelH != 0.0f) {
+    auto event = CreateMouseEvent(InputEventType::kMouseWheel, -1);
+    event.SetDelta(glm::vec2(io.MouseWheelH, io.MouseWheel));
+    events.push_back(event);
+  }
+  
+  // Mouse movement - Always allow movement events for camera control
   if (io.MouseDelta.x != 0.0f || io.MouseDelta.y != 0.0f) {
     // Check if any mouse button is held (drag vs move)
     bool is_dragging = false;
@@ -92,13 +114,6 @@ void ImGuiInputUtils::PollMouseEvents(std::vector<InputEvent>& events) {
     InputEventType move_type = is_dragging ? 
       InputEventType::kMouseDrag : InputEventType::kMouseMove;
     events.push_back(CreateMouseEvent(move_type, -1));
-  }
-  
-  // Mouse wheel
-  if (io.MouseWheel != 0.0f || io.MouseWheelH != 0.0f) {
-    auto event = CreateMouseEvent(InputEventType::kMouseWheel, -1);
-    event.SetDelta(glm::vec2(io.MouseWheelH, io.MouseWheel));
-    events.push_back(event);
   }
 }
 

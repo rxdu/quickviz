@@ -16,9 +16,10 @@
 
 #include "imview/interface/container.hpp"
 #include "imview/scene_object.hpp"
+#include "imview/input/input_dispatcher.hpp"
 
 namespace quickviz {
-class Box : public SceneObject, public Container {
+class Box : public SceneObject, public Container, public InputEventHandler {
  public:
   explicit Box(std::string name);
   virtual ~Box() = default;
@@ -37,6 +38,11 @@ class Box : public SceneObject, public Container {
 
   void OnResize(float width, float height) override;
   void OnRender() override;
+
+  // InputEventHandler interface
+  std::string GetName() const override { return name_; }
+  bool OnInputEvent(const InputEvent& event) override;
+  int GetPriority() const override { return 0; } // Default priority
 
  protected:
   std::unordered_map<std::string, std::shared_ptr<SceneObject>> children_;

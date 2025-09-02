@@ -263,10 +263,10 @@ bool Viewer::AddSceneObject(std::shared_ptr<SceneObject> obj) {
   }
   scene_objects_.push_back(obj);
   
-  // Register as input handler if it's a Panel (which implements InputEventHandler)
-  auto panel = std::dynamic_pointer_cast<Panel>(obj);
-  if (panel) {
-    GetInputManager().GetDispatcher().RegisterHandler(panel);
+  // Register as input handler if it implements InputEventHandler (Panel, Box, etc.)
+  auto input_handler = std::dynamic_pointer_cast<InputEventHandler>(obj);
+  if (input_handler) {
+    GetInputManager().GetDispatcher().RegisterHandler(input_handler);
   }
   
   return true;
@@ -280,10 +280,10 @@ bool Viewer::RemoveSceneObject(std::shared_ptr<SceneObject> obj) {
   // Find and remove from scene objects
   auto it = std::find(scene_objects_.begin(), scene_objects_.end(), obj);
   if (it != scene_objects_.end()) {
-    // Unregister as input handler if it's a Panel
-    auto panel = std::dynamic_pointer_cast<Panel>(obj);
-    if (panel) {
-      GetInputManager().GetDispatcher().UnregisterHandler(panel->GetName());
+    // Unregister as input handler if it implements InputEventHandler
+    auto input_handler = std::dynamic_pointer_cast<InputEventHandler>(obj);
+    if (input_handler) {
+      GetInputManager().GetDispatcher().UnregisterHandler(input_handler->GetName());
     }
     
     scene_objects_.erase(it);
