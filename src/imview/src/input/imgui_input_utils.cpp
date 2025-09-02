@@ -140,11 +140,7 @@ void ImGuiInputUtils::PollKeyboardEvents(std::vector<InputEvent>& events) {
   }
   
   if (ShouldCaptureKeyboardInput() && !bypass_imgui_capture) {
-    // DEBUG: Show when ImGui is capturing keyboard
-    static int capture_count = 0;
-    if (++capture_count % 120 == 0) { // Log every 2 seconds at 60fps
-      std::cout << "[DEBUG] ImGui capturing keyboard input. Press Ctrl+Shift+K to bypass for testing." << std::endl;
-    }
+    // ImGui is capturing keyboard input - no need to log this constantly
     return;
   }
   
