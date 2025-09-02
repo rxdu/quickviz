@@ -14,8 +14,10 @@
 
 #include <algorithm>
 #include <sstream>
+#include <iostream>
 
 #include "gldraw/scene_manager.hpp"
+#include "gldraw/renderable/sphere.hpp"
 
 namespace quickviz {
 
@@ -66,6 +68,14 @@ void ObjectFeedbackHandler::ShowObjectFeedback(const std::string& object_name,
     
     active_feedback_.push_back(new_state);
   }
+
+  // Immediately apply highlighting to the object
+  if (auto* object = scene_manager_->GetOpenGLObject(object_name)) {
+    bool should_highlight = (type == FeedbackType::kSelection || 
+                           type == FeedbackType::kHover ||
+                           type == FeedbackType::kPreSelection);
+    object->SetHighlighted(should_highlight);
+  }
 }
 
 void ObjectFeedbackHandler::RemoveObjectFeedback(const std::string& object_name,
@@ -74,6 +84,13 @@ void ObjectFeedbackHandler::RemoveObjectFeedback(const std::string& object_name,
     return;
   }
 
+  // Check if we're removing the last feedback for this object
+  auto feedbacks_for_object = std::count_if(active_feedback_.begin(), active_feedback_.end(),
+                                           [&object_name](const ObjectFeedbackState& state) {
+                                             return state.object_name == object_name;
+                                           });
+
+  // Remove the feedback
   active_feedback_.erase(
     std::remove_if(active_feedback_.begin(), active_feedback_.end(),
                   [&object_name, type](const ObjectFeedbackState& state) {
@@ -81,9 +98,34 @@ void ObjectFeedbackHandler::RemoveObjectFeedback(const std::string& object_name,
                   }),
     active_feedback_.end()
   );
+
+  // If this was the only feedback for this object, unhighlight it
+  if (feedbacks_for_object == 1) {
+    if (auto* object = scene_manager_->GetOpenGLObject(object_name)) {
+      object->SetHighlighted(false);
+    }
+  }
 }
 
 void ObjectFeedbackHandler::ClearFeedback(FeedbackType type) {
+  // Collect objects that will lose all feedback after this removal
+  std::vector<std::string> objects_to_unhighlight;
+  
+  for (const auto& state : active_feedback_) {
+    if (state.type == type) {
+      // Check if this object has any other feedback types
+      bool has_other_feedback = std::any_of(active_feedback_.begin(), active_feedback_.end(),
+                                           [&state](const ObjectFeedbackState& other) {
+                                             return other.object_name == state.object_name && 
+                                                    other.type != state.type;
+                                           });
+      
+      if (!has_other_feedback) {
+        objects_to_unhighlight.push_back(state.object_name);
+      }
+    }
+  }
+  
   // Remove all feedback of the specified type
   active_feedback_.erase(
     std::remove_if(active_feedback_.begin(), active_feedback_.end(),
@@ -92,9 +134,23 @@ void ObjectFeedbackHandler::ClearFeedback(FeedbackType type) {
                   }),
     active_feedback_.end()
   );
+  
+  // Unhighlight objects that no longer have any feedback
+  for (const auto& object_name : objects_to_unhighlight) {
+    if (auto* object = scene_manager_->GetOpenGLObject(object_name)) {
+      object->SetHighlighted(false);
+    }
+  }
 }
 
 void ObjectFeedbackHandler::ClearAllFeedback() {
+  // Unhighlight all objects that currently have feedback
+  for (const auto& state : active_feedback_) {
+    if (auto* object = scene_manager_->GetOpenGLObject(state.object_name)) {
+      object->SetHighlighted(false);
+    }
+  }
+  
   active_feedback_.clear();
 }
 
@@ -120,10 +176,13 @@ void ObjectFeedbackHandler::RenderFeedback(const glm::mat4& projection,
 
   // Render feedback for each active state
   for (const auto& state : active_feedback_) {
-    // Get the object from scene manager (placeholder - actual implementation depends on SceneManager interface)
-    // OpenGlObject* object = scene_manager_->GetObject(state.object_name);
-    // For now, we'll pass nullptr and implement placeholder rendering
-    OpenGlObject* object = nullptr;
+    // Get the object from scene manager
+    OpenGlObject* object = scene_manager_->GetOpenGLObject(state.object_name);
+    if (!object) {
+      std::cerr << "[ObjectFeedbackHandler] Warning: Object '" << state.object_name 
+                << "' not found in scene manager" << std::endl;
+      continue;  // Skip this object
+    }
     
     switch (state.style) {
       case FeedbackStyle::kOutline:
@@ -238,10 +297,13 @@ void ObjectFeedbackHandler::CleanupShaders() {
 
 void ObjectFeedbackHandler::RenderOutline(const ObjectFeedbackState& state, OpenGlObject* object,
                                          const glm::mat4& projection, const glm::mat4& view) {
-  // Placeholder: Would implement stencil-based or edge-detection outline
-  // 1. Render object to stencil buffer
-  // 2. Render slightly expanded version with feedback color
-  // 3. Use stencil test to only show the outline
+  // Use the proper SetHighlighted method from GeometricPrimitive
+  if (object) {
+    bool should_highlight = (state.type == FeedbackType::kSelection || 
+                           state.type == FeedbackType::kHover ||
+                           state.type == FeedbackType::kPreSelection);
+    object->SetHighlighted(should_highlight);
+  }
 }
 
 void ObjectFeedbackHandler::RenderSurfaceOverlay(const ObjectFeedbackState& state, OpenGlObject* object,

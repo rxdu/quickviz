@@ -79,6 +79,9 @@ class BoundingBox : public GeometricPrimitive {
   glm::vec3 GetMinPoint() const { return min_point_; }
   glm::vec3 GetMaxPoint() const { return max_point_; }
 
+  // === GPU ID-Buffer Selection System ===
+  bool SupportsSelection() const override { return true; }
+
 protected:
   // =================================================================
   // Template Method Implementation

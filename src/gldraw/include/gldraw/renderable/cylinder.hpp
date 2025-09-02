@@ -87,6 +87,9 @@ class Cylinder : public GeometricPrimitive {
   float GetHeight() const;
   glm::vec3 GetAxis() const;
 
+  // === GPU ID-Buffer Selection System ===
+  bool SupportsSelection() const override { return true; }
+
 protected:
   // =================================================================
   // Template Method Implementation

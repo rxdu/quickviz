@@ -228,21 +228,8 @@ SelectionTestApp::SelectionTestApp(const std::string& title) : title_(title) {
   info_panel_->SetFlexGrow(0.0f);
   info_panel_->SetFlexShrink(0.0f);
   
-  // Connect scene panel to info panel via callback (like original design)
-  // IMPORTANT: Also forward to visual feedback system
-  scene_panel_->SetSelectionCallback(
-      [info_panel_ptr = info_panel_.get(), scene_panel = scene_panel_.get()]
-      (const SelectionResult& result, const MultiSelection& multi) {
-        // Update info panel
-        info_panel_ptr->SetLastSelection(result);
-        info_panel_ptr->UpdateMultiSelection(multi);
-        
-        // Forward to visual feedback system
-        auto feedback_system = scene_panel->GetFeedbackSystem();
-        if (feedback_system) {
-          feedback_system->OnSelectionChanged(multi);
-        }
-      });
+  // Set up the base selection callback with visual feedback support
+  SetupBaseSelectionCallback();
   
   // Setup container layout
   main_container_->SetFlexDirection(Styling::FlexDirection::kRow);
@@ -250,6 +237,26 @@ SelectionTestApp::SelectionTestApp(const std::string& title) : title_(title) {
   main_container_->AddChild(scene_panel_);
   
   viewer_->AddSceneObject(main_container_);
+}
+
+void SelectionTestApp::SetupBaseSelectionCallback() {
+  // Set up the base callback that handles info panel updates, visual feedback, 
+  // and allows derived classes to add custom behavior
+  scene_panel_->SetSelectionCallback(
+      [this](const SelectionResult& result, const MultiSelection& multi) {
+        // Update info panel
+        info_panel_->SetLastSelection(result);
+        info_panel_->UpdateMultiSelection(multi);
+        
+        // Forward to visual feedback system
+        auto feedback_system = scene_panel_->GetFeedbackSystem();
+        if (feedback_system) {
+          feedback_system->OnSelectionChanged(multi);
+        }
+        
+        // Allow derived classes to add custom behavior
+        OnSelectionChanged(result, multi);
+      });
 }
 
 void SelectionTestApp::AddReferenceGrid(SceneManager* scene_manager, float size, float spacing) {

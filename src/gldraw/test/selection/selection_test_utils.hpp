@@ -104,6 +104,10 @@ class SelectionTestApp {
   int Run();
 
  protected:
+  // Setup methods for selection callbacks
+  void SetupBaseSelectionCallback();
+  virtual void OnSelectionChanged(const SelectionResult& result, const MultiSelection& multi) {}
+
   std::string title_;
   std::unique_ptr<Viewer> viewer_;
   std::shared_ptr<SelectionDemoPanel> scene_panel_;

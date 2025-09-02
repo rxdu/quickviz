@@ -96,7 +96,7 @@ VisualFeedbackSystem::VisualFeedbackSystem(SceneManager* scene_manager)
   point_cloud_handler_ = std::make_unique<PointCloudFeedbackHandler>();
   object_handler_ = std::make_unique<ObjectFeedbackHandler>(scene_manager_);
   
-  std::cout << "[VisualFeedbackSystem] Initialized with SceneManager" << std::endl;
+  // Visual feedback system initialized successfully
 }
 
 VisualFeedbackSystem::~VisualFeedbackSystem() {
@@ -161,8 +161,7 @@ void VisualFeedbackSystem::ClearFeedback(FeedbackType type) {
     }
   }
   
-  std::cout << "[VisualFeedbackSystem] Cleared all feedback of type " 
-            << static_cast<int>(type) << std::endl;
+  // Feedback cleared for type successfully
 }
 
 void VisualFeedbackSystem::ClearAllFeedback() {
@@ -178,15 +177,11 @@ void VisualFeedbackSystem::ClearAllFeedback() {
   active_feedback_.clear();
   currently_hovered_object_.clear();
   
-  std::cout << "[VisualFeedbackSystem] Cleared all feedback" << std::endl;
+  // All feedback cleared successfully
 }
 
 void VisualFeedbackSystem::OnSelectionChanged(const MultiSelection& selection) {
-  std::cout << "[VisualFeedbackSystem] OnSelectionChanged called with " 
-            << selection.GetSelections().size() << " selections" << std::endl;
-            
   if (!enabled_) {
-    std::cout << "[VisualFeedbackSystem] Feedback system disabled, skipping" << std::endl;
     return;
   }
 
@@ -216,8 +211,7 @@ void VisualFeedbackSystem::OnSelectionChanged(const MultiSelection& selection) {
     }
   }
   
-  std::cout << "[VisualFeedbackSystem] Updated selection feedback for " 
-            << selections.size() << " objects" << std::endl;
+  // Selection feedback updated successfully
 }
 
 void VisualFeedbackSystem::OnObjectHovered(const std::string& object_name) {
@@ -267,7 +261,7 @@ void VisualFeedbackSystem::SetTheme(const FeedbackTheme& theme) {
   
   // TODO: Apply theme changes to existing feedback
   // This would require re-applying current feedback with new theme
-  std::cout << "[VisualFeedbackSystem] Theme updated" << std::endl;
+  // Theme updated successfully
 }
 
 bool VisualFeedbackSystem::HasFeedback(const std::string& object_name, 
