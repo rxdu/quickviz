@@ -17,7 +17,7 @@
 
 using namespace quickviz;
 
-void SetupLineStripScene(GlSceneManager* scene_manager) {
+void SetupLineStripScene(SceneManager* scene_manager) {
     // 1. Straight line - Red
     std::vector<glm::vec3> straight_points = {
         glm::vec3(-4.0f, 0.0f, 0.0f),

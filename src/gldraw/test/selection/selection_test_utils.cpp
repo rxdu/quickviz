@@ -245,7 +245,7 @@ SelectionTestApp::SelectionTestApp(const std::string& title) : title_(title) {
   viewer_->AddSceneObject(main_container_);
 }
 
-void SelectionTestApp::AddReferenceGrid(GlSceneManager* scene_manager, float size, float spacing) {
+void SelectionTestApp::AddReferenceGrid(SceneManager* scene_manager, float size, float spacing) {
   auto grid = std::make_unique<Grid>(size, spacing, glm::vec3(0.3f, 0.3f, 0.3f));
   scene_manager->AddOpenGLObject("reference_grid", std::move(grid));
 }
@@ -292,7 +292,7 @@ int SelectionTestApp::Run() {
 
 namespace TestObjectFactory {
 
-void CreateSphereGrid(GlSceneManager* scene_manager,
+void CreateSphereGrid(SceneManager* scene_manager,
                      const std::vector<glm::vec3>& positions,
                      const std::string& prefix,
                      float radius) {
@@ -331,7 +331,7 @@ void CreateSphereGrid(GlSceneManager* scene_manager,
   }
 }
 
-void CreateTestPointClouds(GlSceneManager* scene_manager) {
+void CreateTestPointClouds(SceneManager* scene_manager) {
   // Create grid pattern point cloud
   std::vector<glm::vec3> grid_points;
   std::vector<glm::vec3> grid_colors;

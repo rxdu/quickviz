@@ -18,7 +18,7 @@ class PointCloudToolPanel;
 
 class InteractiveSceneManager : public GlScenePanel {
  public:
-  InteractiveSceneManager(const std::string& name, GlSceneManager::Mode mode = GlSceneManager::Mode::k3D)
+  InteractiveSceneManager(const std::string& name, SceneManager::Mode mode = SceneManager::Mode::k3D)
       : GlScenePanel(name, mode) {}
 
   void SetToolPanel(PointCloudToolPanel* panel) { tool_panel_ = panel; }

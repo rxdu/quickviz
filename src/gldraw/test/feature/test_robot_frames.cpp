@@ -45,14 +45,14 @@ int main(int argc, char* argv[]) {
 
   // Create a 3D OpenGL scene panel
   auto gl_sm_3d = std::make_shared<GlScenePanel>("3D Robot Frames",
-                                                GlSceneManager::Mode::k3D);
+                                                SceneManager::Mode::k3D);
   gl_sm_3d->SetAutoLayout(true);
   gl_sm_3d->SetFlexGrow(1.0f);
   gl_sm_3d->SetFlexShrink(0.0f);
 
   // Create a 2D OpenGL scene panel
   auto gl_sm_2d = std::make_shared<GlScenePanel>("2D Robot Frames",
-                                                GlSceneManager::Mode::k2D);
+                                                SceneManager::Mode::k2D);
   gl_sm_2d->SetAutoLayout(true);
   gl_sm_2d->SetFlexGrow(1.0f);
   gl_sm_2d->SetFlexShrink(0.0f);

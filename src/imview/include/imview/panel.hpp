@@ -85,12 +85,6 @@ class Panel : public SceneObject, public InputControlled, public InputEventHandl
   bool OnInputEvent(const InputEvent& event) override { return false; }
   int GetPriority() const override { return GetInputPolicy().priority; }
 
-  // Convenience methods for common input handling (optional)
-  virtual void OnMouseClick(const glm::vec2& position, int button) {}
-  virtual void OnMouseMove(const glm::vec2& position, const glm::vec2& delta) {}
-  virtual void OnKeyPress(int key, const ModifierKeys& modifiers) {}
-  virtual void OnGamepadButton(int button, int gamepad_id) {}
-
   // Input utilities for derived classes  
   glm::vec2 GetContentRelativeMousePos() const;
   bool IsMouseOverContent() const;

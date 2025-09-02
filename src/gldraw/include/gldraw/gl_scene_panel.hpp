@@ -17,15 +17,12 @@
 #include <glm/glm.hpp>
 
 #include "imview/panel.hpp"
-#include "gldraw/gl_scene_manager.hpp"
+#include "gldraw/scene_manager.hpp"
 #include "gldraw/interface/opengl_object.hpp"
 #include "gldraw/camera.hpp"
 #include "gldraw/camera_controller.hpp"
 #include "gldraw/selection_manager.hpp"
-#include "core/event/input_event.hpp"
-#include "core/event/event_dispatcher.hpp"
-#include "core/event/input_mapping.hpp"
-#include "gldraw/input/scene_input_handler.hpp"
+#include "scene_input_handler.hpp"
 
 // Forward declaration
 namespace quickviz {
@@ -49,11 +46,11 @@ class GlScenePanel : public Panel {
    * @param mode 2D or 3D rendering mode
    */
   GlScenePanel(const std::string& name,
-               GlSceneManager::Mode mode = GlSceneManager::Mode::k3D);
+               SceneManager::Mode mode = SceneManager::Mode::k3D);
 
   virtual ~GlScenePanel() = default;
 
-  // InputEventHandler interface  
+  // InputEventHandler interface
   std::string GetName() const override { return "GlScenePanel"; }
 
   // Panel interface
@@ -69,7 +66,7 @@ class GlScenePanel : public Panel {
    * @brief Get the underlying scene manager
    * @return Pointer to GlSceneManager for object management
    */
-  GlSceneManager* GetSceneManager() const { return scene_manager_.get(); }
+  SceneManager* GetSceneManager() const { return scene_manager_.get(); }
 
   /**
    * @brief Set whether to show rendering info overlay
@@ -87,7 +84,7 @@ class GlScenePanel : public Panel {
   void SetBackgroundColor(float r, float g, float b, float a);
 
   // Delegate common GlSceneManager methods
-  GlSceneManager::Mode GetMode() const;
+  SceneManager::Mode GetMode() const;
   void SetClippingPlanes(float z_near, float z_far);
 
   void AddOpenGLObject(const std::string& name,
@@ -96,7 +93,7 @@ class GlScenePanel : public Panel {
   OpenGlObject* GetOpenGLObject(const std::string& name);
   void ClearOpenGLObjects();
 
-  void SetPreDrawCallback(GlSceneManager::PreDrawCallback callback);
+  void SetPreDrawCallback(SceneManager::PreDrawCallback callback);
   void EnableCoordinateSystemTransformation(bool enable);
   bool IsCoordinateSystemTransformationEnabled() const;
 
@@ -159,42 +156,21 @@ class GlScenePanel : public Panel {
    */
   void ClearSelection();
 
-  // === Enhanced Input System ===
+  // === Modern Input System ===
   /**
-   * @brief Get the input dispatcher for registering custom handlers
-   * @return Reference to the input dispatcher
+   * @brief Get the scene input handler for configuration
+   * @return Shared pointer to the scene input handler
    */
-  EventDispatcher& GetInputDispatcher() { return input_dispatcher_; }
-  const EventDispatcher& GetInputDispatcher() const { return input_dispatcher_; }
-
-  /**
-   * @brief Get the input mapping for configuring key/mouse bindings
-   * @return Reference to the input mapping
-   */
-  InputMapping& GetInputMapping() { return input_mapping_; }
-  const InputMapping& GetInputMapping() const { return input_mapping_; }
-
-  /**
-   * @brief Enable/disable the enhanced input system
-   * @param enabled If true, uses the new input system; false for legacy
-   */
-  void SetEnhancedInputEnabled(bool enabled) { use_enhanced_input_ = enabled; }
-  bool IsEnhancedInputEnabled() const { return use_enhanced_input_; }
+  std::shared_ptr<SceneInputHandler> GetSceneInputHandler() {
+    return scene_input_handler_;
+  }
+  const std::shared_ptr<SceneInputHandler> GetSceneInputHandler() const {
+    return scene_input_handler_;
+  }
 
  protected:
   // Override Panel input methods for 3D scene interaction
   bool OnInputEvent(const InputEvent& event) override;
-  void OnMouseClick(const glm::vec2& position, int button) override;
-
-  /**
-   * @brief Handle ImGui input events and forward to scene manager (legacy)
-   */
-  void HandleInput();
-
-  /**
-   * @brief Enhanced input handling using the new input system (legacy)
-   */
-  void HandleInputEnhanced();
 
   /**
    * @brief Render FPS overlay if enabled
@@ -204,22 +180,12 @@ class GlScenePanel : public Panel {
   void RenderInfoOverlay(const ImVec2& content_size, const ImVec2& image_pos);
 
  private:
-  // Helper methods for input conversion
-  std::shared_ptr<InputEvent> CreateInputEvent(InputEventType type, int button_or_key = -1);
-  ModifierKeys GetCurrentModifiers();
-
- private:
-  std::unique_ptr<GlSceneManager> scene_manager_;
+  std::unique_ptr<SceneManager> scene_manager_;
 
   // UI state
   bool show_rendering_info_ = true;
-  
-  // Enhanced input system (legacy)
-  EventDispatcher input_dispatcher_;
-  InputMapping input_mapping_;
-  bool use_enhanced_input_ = false;  // Default to legacy for compatibility
 
-  // New imview-based input system
+  // Modern imview-based input system - all input goes through this handler
   std::shared_ptr<SceneInputHandler> scene_input_handler_;
 };
 

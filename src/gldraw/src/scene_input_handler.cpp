@@ -6,14 +6,14 @@
  * @copyright Copyright (c) 2025 Ruixiang Du (rdu)
  */
 
-#include "gldraw/input/scene_input_handler.hpp"
-#include "gldraw/gl_scene_manager.hpp"
+#include "gldraw/scene_input_handler.hpp"
+#include "gldraw/scene_manager.hpp"
 #include "imview/input/input_types.hpp"
 #include "core/event/input_mapping.hpp"
 
 namespace quickviz {
 
-SceneInputHandler::SceneInputHandler(GlSceneManager* scene_manager, int priority)
+SceneInputHandler::SceneInputHandler(SceneManager* scene_manager, int priority)
     : scene_manager_(scene_manager), priority_(priority) {
 }
 
@@ -196,7 +196,7 @@ glm::vec2 SceneInputHandler::WorldToScreen(const glm::vec3& world_pos) const {
 
 // Factory implementations
 std::shared_ptr<SceneInputHandler> SceneInputHandlerFactory::CreateStandard(
-    GlSceneManager* scene_manager, int priority) {
+    SceneManager* scene_manager, int priority) {
   auto handler = std::make_shared<SceneInputHandler>(scene_manager, priority);
   handler->SetCameraControlEnabled(true);
   handler->SetSelectionEnabled(true);
@@ -204,7 +204,7 @@ std::shared_ptr<SceneInputHandler> SceneInputHandlerFactory::CreateStandard(
 }
 
 std::shared_ptr<SceneInputHandler> SceneInputHandlerFactory::CreateCameraOnly(
-    GlSceneManager* scene_manager, int priority) {
+    SceneManager* scene_manager, int priority) {
   auto handler = std::make_shared<SceneInputHandler>(scene_manager, priority);
   handler->SetCameraControlEnabled(true);
   handler->SetSelectionEnabled(false);
@@ -212,7 +212,7 @@ std::shared_ptr<SceneInputHandler> SceneInputHandlerFactory::CreateCameraOnly(
 }
 
 std::shared_ptr<SceneInputHandler> SceneInputHandlerFactory::CreateSelectionOnly(
-    GlSceneManager* scene_manager, int priority) {
+    SceneManager* scene_manager, int priority) {
   auto handler = std::make_shared<SceneInputHandler>(scene_manager, priority);
   handler->SetCameraControlEnabled(false);
   handler->SetSelectionEnabled(true);

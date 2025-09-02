@@ -19,7 +19,7 @@
 
 using namespace quickviz;
 
-void SetupBoundingBoxScene(GlSceneManager* scene_manager) {
+void SetupBoundingBoxScene(SceneManager* scene_manager) {
     // 1. Medium red box - left front
     auto box1 = std::make_unique<BoundingBox>(glm::vec3(-3.0f, -1.0f, 2.0f), glm::vec3(-1.5f, 1.0f, 3.5f));
     box1->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));  // Pure red

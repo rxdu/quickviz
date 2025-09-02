@@ -1,5 +1,5 @@
 /*
- * gl_scene_manager.cpp
+ * scene_manager.cpp
  *
  * Created on 3/6/25 9:09 PM
  * Description:
@@ -7,7 +7,7 @@
  * Copyright (c) 2025 Ruixiang Du (rdu)
  */
 
-#include "gldraw/gl_scene_manager.hpp"
+#include "gldraw/scene_manager.hpp"
 
 #include <iostream>
 #include <stdexcept>
@@ -24,7 +24,7 @@
 #include "gldraw/renderable/geometric_primitive.hpp"
 
 namespace quickviz {
-GlSceneManager::GlSceneManager(const std::string& name, Mode mode)
+SceneManager::SceneManager(const std::string& name, Mode mode)
     : name_(name), mode_(mode) {
 
   camera_ = std::make_unique<Camera>();
@@ -47,7 +47,7 @@ GlSceneManager::GlSceneManager(const std::string& name, Mode mode)
   selection_manager_ = std::make_unique<SelectionManager>(this);
 }
 
-GlSceneManager::~GlSceneManager() {
+SceneManager::~SceneManager() {
   ClearOpenGLObjects();
   
   // Clean up static shaders from GeometricPrimitive before OpenGL context is destroyed
@@ -57,16 +57,16 @@ GlSceneManager::~GlSceneManager() {
   frame_buffer_.reset();
 }
 
-void GlSceneManager::SetBackgroundColor(float r, float g, float b, float a) {
+void SceneManager::SetBackgroundColor(float r, float g, float b, float a) {
   background_color_ = glm::vec4(r, g, b, a);
 }
 
-void GlSceneManager::SetClippingPlanes(float z_near, float z_far) {
+void SceneManager::SetClippingPlanes(float z_near, float z_far) {
   z_near_ = z_near;
   z_far_ = z_far;
 }
 
-void GlSceneManager::AddOpenGLObject(const std::string& name,
+void SceneManager::AddOpenGLObject(const std::string& name,
                                      std::unique_ptr<OpenGlObject> object) {
   if (object == nullptr) {
     throw std::invalid_argument("Object is nullptr");
@@ -80,7 +80,7 @@ void GlSceneManager::AddOpenGLObject(const std::string& name,
   drawable_objects_[name] = std::move(object);
 }
 
-void GlSceneManager::RemoveOpenGLObject(const std::string& name) {
+void SceneManager::RemoveOpenGLObject(const std::string& name) {
   if (drawable_objects_.find(name) != drawable_objects_.end()) {
     // Unregister from selection system before removing
     if (selection_manager_) {
@@ -91,22 +91,22 @@ void GlSceneManager::RemoveOpenGLObject(const std::string& name) {
   }
 }
 
-OpenGlObject* GlSceneManager::GetOpenGLObject(const std::string& name) {
+OpenGlObject* SceneManager::GetOpenGLObject(const std::string& name) {
   if (drawable_objects_.find(name) != drawable_objects_.end()) {
     return drawable_objects_[name].get();
   }
   return nullptr;
 }
 
-void GlSceneManager::ClearOpenGLObjects() { drawable_objects_.clear(); }
+void SceneManager::ClearOpenGLObjects() { drawable_objects_.clear(); }
 
-void GlSceneManager::UpdateView(const glm::mat4& projection,
+void SceneManager::UpdateView(const glm::mat4& projection,
                                 const glm::mat4& view) {
   projection_ = projection;
   view_ = view;
 }
 
-void GlSceneManager::RenderToFramebuffer(float width, float height) {
+void SceneManager::RenderToFramebuffer(float width, float height) {
   // Get view matrices from camera
   float aspect_ratio = width / height;
   glm::mat4 projection = camera_->GetProjectionMatrix(aspect_ratio, z_near_, z_far_);
@@ -142,28 +142,28 @@ void GlSceneManager::RenderToFramebuffer(float width, float height) {
 
 }
 
-uint32_t GlSceneManager::GetFramebufferTexture() const {
+uint32_t SceneManager::GetFramebufferTexture() const {
   return frame_buffer_ ? frame_buffer_->GetTextureId() : 0;
 }
 
 
 // === Selection System Implementation ===
 
-SelectionResult GlSceneManager::Select(float screen_x, float screen_y, const SelectionOptions& options) {
+SelectionResult SceneManager::Select(float screen_x, float screen_y, const SelectionOptions& options) {
   if (!selection_enabled_) {
     return SelectionResult{};
   }
   return selection_manager_->Select(screen_x, screen_y, options);
 }
 
-bool GlSceneManager::AddToSelection(float screen_x, float screen_y, const SelectionOptions& options) {
+bool SceneManager::AddToSelection(float screen_x, float screen_y, const SelectionOptions& options) {
   if (!selection_enabled_) {
     return false;
   }
   return selection_manager_->AddToSelection(screen_x, screen_y, options);
 }
 
-const MultiSelection& GlSceneManager::GetMultiSelection() const {
+const MultiSelection& SceneManager::GetMultiSelection() const {
   return selection_manager_->GetMultiSelection();
 }
 

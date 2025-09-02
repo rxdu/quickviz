@@ -10,20 +10,22 @@
  */
 
 #include "vscene/gl_render_backend.hpp"
-#include "gldraw/gl_scene_manager.hpp"
+
+#include <memory>
+
+#include "gldraw/scene_manager.hpp"
 #include "gldraw/renderable/sphere.hpp"
 #include "gldraw/interface/opengl_object.hpp"
-#include <memory>
 
 namespace quickviz {
 
 GlRenderBackend::GlRenderBackend() {
     // Create the underlying GlSceneManager
-    scene_manager_ = std::make_unique<GlSceneManager>("VirtualScene3D", GlSceneManager::Mode::k3D);
+    scene_manager_ = std::make_unique<SceneManager>("VirtualScene3D", SceneManager::Mode::k3D);
     owns_scene_manager_ = true;
 }
 
-GlRenderBackend::GlRenderBackend(GlSceneManager* external_scene_manager)
+GlRenderBackend::GlRenderBackend(SceneManager* external_scene_manager)
     : external_scene_manager_(external_scene_manager), owns_scene_manager_(false) {
     // Use the provided external scene manager
 }

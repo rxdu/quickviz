@@ -1,5 +1,5 @@
 /*
- * gl_scene_manager.hpp
+ * scene_manager.hpp
  *
  * Created on 3/6/25 9:09 PM
  * Description:
@@ -36,7 +36,7 @@ enum class SelectionMode;
 }  // namespace quickviz
 
 namespace quickviz {
-class GlSceneManager {
+class SceneManager {
   friend class SelectionManager;  // Allow SelectionManager to access private
                                   // members
  public:
@@ -46,12 +46,12 @@ class GlSceneManager {
 
   using PreDrawCallback = std::function<void()>;
 
-  GlSceneManager(const std::string& name, Mode mode = Mode::k3D);
-  ~GlSceneManager();
+  SceneManager(const std::string& name, Mode mode = Mode::k3D);
+  ~SceneManager();
 
   // do not allow copy
-  GlSceneManager(const GlSceneManager&) = delete;
-  GlSceneManager& operator=(const GlSceneManager&) = delete;
+  SceneManager(const SceneManager&) = delete;
+  SceneManager& operator=(const SceneManager&) = delete;
 
   // public methods
   Mode GetMode() const { return mode_; }
@@ -159,14 +159,14 @@ class GlSceneManager {
    * @return Multi-selection object with all selected items
    */
   const MultiSelection& GetMultiSelection() const;
-  
+
   /**
    * @brief Enable or disable selection functionality
    * @param enabled If false, selection operations will return empty results
    *                and no ID buffer rendering will occur
    */
   void SetSelectionEnabled(bool enabled) { selection_enabled_ = enabled; }
-  
+
   /**
    * @brief Check if selection functionality is enabled
    * @return true if selection is enabled, false otherwise

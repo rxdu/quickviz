@@ -25,7 +25,7 @@ class VirtualSceneDemo {
 public:
     VirtualSceneDemo() = default;
     
-    void SetupVirtualScene(GlSceneManager* gl_scene_manager) {
+    void SetupVirtualScene(SceneManager* gl_scene_manager) {
         // Create virtual scene with GlRenderBackend using the external scene manager
         scene_ = std::make_unique<VirtualScene>();
         backend_ = std::make_unique<GlRenderBackend>(gl_scene_manager);  // Use external scene manager
@@ -129,13 +129,13 @@ public:
 private:
     std::unique_ptr<VirtualScene> scene_;
     std::unique_ptr<GlRenderBackend> backend_;
-    GlSceneManager* gl_scene_manager_ = nullptr;
+    SceneManager* gl_scene_manager_ = nullptr;
 };
 
 // Global demo instance for callback access
 std::unique_ptr<VirtualSceneDemo> g_demo;
 
-void SetupVirtualSceneDemo(GlSceneManager* scene_manager) {
+void SetupVirtualSceneDemo(SceneManager* scene_manager) {
     g_demo = std::make_unique<VirtualSceneDemo>();
     g_demo->SetupVirtualScene(scene_manager);
 }

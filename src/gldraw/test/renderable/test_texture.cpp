@@ -103,7 +103,7 @@ void GenerateTextureData(const std::string& buffer_name, std::atomic<bool>& runn
     }
 }
 
-void SetupTextureScene(GlSceneManager* scene_manager) {
+void SetupTextureScene(SceneManager* scene_manager) {
     // Set up buffer
     auto& buffer_registry = BufferRegistry::GetInstance();
     std::shared_ptr<BufferInterface<std::vector<unsigned char>>> texture_buffer =
@@ -122,7 +122,7 @@ void SetupTextureScene(GlSceneManager* scene_manager) {
     texture_ptr->SetOrigin(glm::vec3(-2.5f, -2.5f, 0.0f), 0.01f);  // 1cm per pixel
 
     // Set up pre-draw callback to update texture from buffer
-    scene_manager->SetPreDrawCallback([texture_ptr, buffer_name]() {
+    scene_manager->SetPreDrawCallback([texture_ptr]() {
         auto& buffer_registry = BufferRegistry::GetInstance();
         auto texture_buffer_opt = buffer_registry.GetBuffer<std::vector<unsigned char>>(buffer_name);
         
@@ -147,7 +147,7 @@ int main(int argc, char* argv[]) {
         // Configure the view for 2D mode
         GlViewer::Config config;
         config.window_title = "Texture Rendering Test - 2D Mode";
-        config.scene_mode = GlSceneManager::Mode::k2D;
+        config.scene_mode = SceneManager::Mode::k2D;
         config.coordinate_frame_size = 2.0f;
         
         // Create the view

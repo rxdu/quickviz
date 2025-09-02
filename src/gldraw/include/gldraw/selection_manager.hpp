@@ -23,7 +23,7 @@
 namespace quickviz {
 
 // Forward declarations
-class GlSceneManager;
+class SceneManager;
 class PointCloud;
 class FrameBuffer;
 
@@ -157,7 +157,7 @@ struct SelectionRectangle {
  */
 class SelectionManager {
 public:
-  explicit SelectionManager(GlSceneManager* scene_manager);
+  explicit SelectionManager(SceneManager* scene_manager);
   ~SelectionManager() = default;
 
   // Disable copy/move for simplicity
@@ -335,7 +335,7 @@ private:
   void ClearVisualFeedback();
   
   // Internal state
-  GlSceneManager* scene_manager_;
+  SceneManager* scene_manager_;
   SelectionResult current_selection_;
   MultiSelection multi_selection_;
   SelectionMode default_mode_ = SelectionMode::kHybrid;

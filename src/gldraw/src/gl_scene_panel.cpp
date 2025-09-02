@@ -14,20 +14,20 @@
 
 #include "imgui.h"
 #include "imview/fonts.hpp"
-#include "imview/input/input_types.hpp"
 
 #include "gldraw/renderable/point_cloud.hpp"
 #include "gldraw/selection_manager.hpp"
 
 namespace quickviz {
 
-GlScenePanel::GlScenePanel(const std::string& name, GlSceneManager::Mode mode)
+GlScenePanel::GlScenePanel(const std::string& name, SceneManager::Mode mode)
     : Panel(name) {
-  scene_manager_ = std::make_unique<GlSceneManager>(name + "_manager", mode);
-  
+  scene_manager_ = std::make_unique<SceneManager>(name + "_manager", mode);
+
   // Create and register the 3D scene input handler
-  scene_input_handler_ = SceneInputHandlerFactory::CreateStandard(scene_manager_.get());
-  
+  scene_input_handler_ =
+      SceneInputHandlerFactory::CreateStandard(scene_manager_.get());
+
   // Register with panel's input manager when it becomes available
   // This will be done in SetInputManager or when the panel is added to a viewer
 }
@@ -73,7 +73,7 @@ void GlScenePanel::SetBackgroundColor(float r, float g, float b, float a) {
 }
 
 // Delegate GlSceneManager methods
-GlSceneManager::Mode GlScenePanel::GetMode() const {
+SceneManager::Mode GlScenePanel::GetMode() const {
   return scene_manager_->GetMode();
 }
 
@@ -99,7 +99,7 @@ void GlScenePanel::ClearOpenGLObjects() {
 }
 
 void GlScenePanel::SetPreDrawCallback(
-    GlSceneManager::PreDrawCallback callback) {
+    SceneManager::PreDrawCallback callback) {
   scene_manager_->SetPreDrawCallback(std::move(callback));
 }
 
@@ -166,64 +166,6 @@ bool GlScenePanel::IsSelectionEnabled() const {
   return scene_manager_->IsSelectionEnabled();
 }
 
-void GlScenePanel::HandleInput() {
-  // Only process input when window is hovered and has focus
-  if (!ImGui::IsWindowHovered()) {
-    // Reset mouse button state when mouse is outside the window
-    scene_manager_->GetCameraController()->SetActiveMouseButton(
-        MouseButton::kNone);
-    return;
-  }
-
-  ImGuiIO& io = ImGui::GetIO();
-
-  // Handle mouse clicks for selection (pass coordinates to scene manager)
-  if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-    ImVec2 mouse_pos = ImGui::GetMousePos();
-    ImVec2 window_pos = ImGui::GetWindowPos();
-    ImVec2 window_content_min = ImGui::GetWindowContentRegionMin();
-
-    // Convert to relative coordinates within the content area
-    float relative_x = mouse_pos.x - window_pos.x - window_content_min.x;
-    float relative_y = mouse_pos.y - window_pos.y - window_content_min.y;
-
-    // Track selection calls (removed debug output)
-
-    // Use new SelectionManager API for unified selection
-    scene_manager_->Select(relative_x, relative_y);
-  }
-
-  // Only process mouse delta when ImGui wants to capture mouse
-  if (ImGui::IsMousePosValid() && io.WantCaptureMouse) {
-    // Check for mouse buttons and update camera controller state
-    int active_button = MouseButton::kNone;
-
-    if (ImGui::IsMouseDown(MouseButton::kLeft)) {
-      active_button = MouseButton::kLeft;
-    } else if (ImGui::IsMouseDown(MouseButton::kMiddle)) {
-      active_button = MouseButton::kMiddle;
-    } else if (ImGui::IsMouseDown(MouseButton::kRight)) {
-      active_button = MouseButton::kRight;
-    }
-
-    // Set the active mouse button in the camera controller
-    scene_manager_->GetCameraController()->SetActiveMouseButton(active_button);
-
-    // Process mouse movement if any button is pressed
-    if (active_button != MouseButton::kNone) {
-      scene_manager_->GetCameraController()->ProcessMouseMovement(
-          io.MouseDelta.x, io.MouseDelta.y);
-    }
-
-    // Track mouse wheel scroll
-    scene_manager_->GetCameraController()->ProcessMouseScroll(io.MouseWheel);
-  } else {
-    // Reset mouse button state when not capturing mouse
-    scene_manager_->GetCameraController()->SetActiveMouseButton(
-        MouseButton::kNone);
-  }
-}
-
 void GlScenePanel::RenderInfoOverlay(const ImVec2& content_size,
                                      const ImVec2& image_pos) {
   // Get window draw list for overlay rendering
@@ -251,181 +193,19 @@ void GlScenePanel::RenderInfoOverlay(const ImVec2& content_size,
   draw_list->AddText(text_pos, text_color, fps_text);
 }
 
-void GlScenePanel::HandleInputEnhanced() {
-  // Only process input when window is hovered
-  if (!ImGui::IsWindowHovered()) {
-    scene_manager_->GetCameraController()->SetActiveMouseButton(
-        MouseButton::kNone);
-    return;
-  }
-
-  ImGuiIO& io = ImGui::GetIO();
-
-  // Handle mouse press events
-  for (int button = 0; button < 3; ++button) {
-    if (ImGui::IsMouseClicked(button)) {
-      auto event = CreateInputEvent(InputEventType::kMousePress, button);
-      
-      // Get mouse position relative to content area
-      ImVec2 mouse_pos = ImGui::GetMousePos();
-      ImVec2 window_pos = ImGui::GetWindowPos();
-      ImVec2 window_content_min = ImGui::GetWindowContentRegionMin();
-      float relative_x = mouse_pos.x - window_pos.x - window_content_min.x;
-      float relative_y = mouse_pos.y - window_pos.y - window_content_min.y;
-      event->SetScreenPosition(glm::vec2(relative_x, relative_y));
-      
-      // Dispatch through the enhanced system
-      if (!input_dispatcher_.DispatchEvent(event)) {
-        // If not consumed, check for mapped actions
-        auto actions = input_mapping_.GetActionsForEvent(*event);
-        for (const auto& action : actions) {
-          if (action == Actions::SELECT_SINGLE) {
-            scene_manager_->Select(relative_x, relative_y);
-          } else if (action == Actions::SELECT_ADD) {
-            scene_manager_->AddToSelection(relative_x, relative_y);
-          } else if (action == Actions::CAMERA_ROTATE && button == 1) {
-            scene_manager_->GetCameraController()->SetActiveMouseButton(
-                MouseButton::kRight);
-          } else if (action == Actions::CAMERA_PAN && button == 2) {
-            scene_manager_->GetCameraController()->SetActiveMouseButton(
-                MouseButton::kMiddle);
-          }
-        }
-        
-        // Legacy fallback for unmapped left click
-        if (actions.empty() && button == 0) {
-          scene_manager_->Select(relative_x, relative_y);
-        }
-      }
-    }
-    
-    if (ImGui::IsMouseReleased(button)) {
-      auto event = CreateInputEvent(InputEventType::kMouseRelease, button);
-      input_dispatcher_.DispatchEvent(event);
-    }
-  }
-
-  // Handle mouse movement and dragging
-  if (ImGui::IsMousePosValid() && io.WantCaptureMouse) {
-    static glm::vec2 last_mouse_pos;
-    glm::vec2 current_mouse_pos(io.MousePos.x, io.MousePos.y);
-    glm::vec2 delta(io.MouseDelta.x, io.MouseDelta.y);
-
-    // Check if any button is down for drag events
-    bool is_dragging = false;
-    int active_button = -1;
-    for (int button = 0; button < 3; ++button) {
-      if (ImGui::IsMouseDown(button)) {
-        is_dragging = true;
-        active_button = button;
-        break;
-      }
-    }
-
-    if (is_dragging) {
-      auto event = CreateInputEvent(InputEventType::kMouseDrag, active_button);
-      event->SetScreenPosition(current_mouse_pos);
-      event->SetDelta(delta);
-      
-      if (!input_dispatcher_.DispatchEvent(event)) {
-        // Legacy camera control
-        scene_manager_->GetCameraController()->SetActiveMouseButton(active_button);
-        scene_manager_->GetCameraController()->ProcessMouseMovement(
-            delta.x, delta.y);
-      }
-    } else {
-      // Just mouse move, no buttons down
-      auto event = CreateInputEvent(InputEventType::kMouseMove);
-      event->SetScreenPosition(current_mouse_pos);
-      event->SetDelta(delta);
-      input_dispatcher_.DispatchEvent(event);
-      
-      // Reset camera controller button state
-      scene_manager_->GetCameraController()->SetActiveMouseButton(
-          MouseButton::kNone);
-    }
-
-    last_mouse_pos = current_mouse_pos;
-  }
-
-  // Handle mouse wheel
-  if (io.MouseWheel != 0) {
-    auto event = CreateInputEvent(InputEventType::kMouseWheel);
-    event->SetDelta(glm::vec2(0, io.MouseWheel));
-    
-    if (!input_dispatcher_.DispatchEvent(event)) {
-      // Legacy zoom
-      scene_manager_->GetCameraController()->ProcessMouseScroll(io.MouseWheel);
-    }
-  }
-
-  // Handle keyboard events - only check for actual pressed keys
-  ImGuiIO& io_ref = ImGui::GetIO();
-  for (int key = 0; key < IM_ARRAYSIZE(io_ref.KeysDown); ++key) {
-    if (ImGui::IsKeyPressed(static_cast<ImGuiKey>(key))) {
-      auto event = CreateInputEvent(InputEventType::kKeyPress, key);
-      
-      if (!input_dispatcher_.DispatchEvent(event)) {
-        // Check for mapped keyboard actions
-        auto actions = input_mapping_.GetActionsForEvent(*event);
-        for (const auto& action : actions) {
-          if (action == Actions::CLEAR_SELECTION) {
-            this->ClearSelection();
-          }
-          // Add more keyboard action handlers as needed
-        }
-      }
-    }
-    
-    if (ImGui::IsKeyReleased(static_cast<ImGuiKey>(key))) {
-      auto event = CreateInputEvent(InputEventType::kKeyRelease, key);
-      input_dispatcher_.DispatchEvent(event);
-    }
-  }
-}
-
-std::shared_ptr<InputEvent> GlScenePanel::CreateInputEvent(InputEventType type, int button_or_key) {
-  auto event = std::make_shared<InputEvent>(type, button_or_key);
-  event->SetModifiers(GetCurrentModifiers());
-  return event;
-}
-
-ModifierKeys GlScenePanel::GetCurrentModifiers() {
-  ImGuiIO& io = ImGui::GetIO();
-  ModifierKeys mods;
-  mods.ctrl = io.KeyCtrl;
-  mods.shift = io.KeyShift;
-  mods.alt = io.KeyAlt;
-  mods.super = io.KeySuper;
-  return mods;
-}
-
 // New imview-based input handling methods
 bool GlScenePanel::OnInputEvent(const InputEvent& event) {
   // Update viewport size for coordinate transformations
   if (scene_input_handler_) {
     ImVec2 content_size = ImGui::GetContentRegionAvail();
-    scene_input_handler_->SetViewportSize(
-      static_cast<int>(content_size.x), 
-      static_cast<int>(content_size.y)
-    );
-    
+    scene_input_handler_->SetViewportSize(static_cast<int>(content_size.x),
+                                          static_cast<int>(content_size.y));
+
     // Forward event to scene input handler directly
     return scene_input_handler_->OnInputEvent(event);
   }
-  
+
   // No scene input handler - allow event to propagate
   return false;
 }
-
-void GlScenePanel::OnMouseClick(const glm::vec2& position, int button) {
-  // This is a fallback method if the scene input handler doesn't consume the event
-  // Convert position to content-relative coordinates for scene manager
-  
-  if (button == MouseButton::kLeft) {
-    // Perform selection
-    scene_manager_->Select(static_cast<int>(position.x), static_cast<int>(position.y));
-  }
-}
-
 }  // namespace quickviz

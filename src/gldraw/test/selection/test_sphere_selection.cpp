@@ -27,7 +27,7 @@ class SphereSelectionTest : public SelectionTestApp {
  public:
   SphereSelectionTest() : SelectionTestApp("Sphere Selection Test") {}
 
-  void SetupTestObjects(GlSceneManager* scene_manager) override {
+  void SetupTestObjects(SceneManager* scene_manager) override {
     // Create different sphere configurations for testing
     SetupBasicSphereGrid(scene_manager);
     SetupLayeredSpheres(scene_manager);
@@ -60,7 +60,7 @@ class SphereSelectionTest : public SelectionTestApp {
   }
 
  private:
-  void SetupBasicSphereGrid(GlSceneManager* scene_manager) {
+  void SetupBasicSphereGrid(SceneManager* scene_manager) {
     // Create a 3x3 grid of spheres at ground level
     auto positions = TestHelpers::GenerateGridPositions(
         glm::ivec3(3, 3, 1), 4.0f, glm::vec3(0, 0, 1));
@@ -70,7 +70,7 @@ class SphereSelectionTest : public SelectionTestApp {
     std::cout << "✓ Created basic sphere grid: 3x3 = " << positions.size() << " spheres" << std::endl;
   }
 
-  void SetupLayeredSpheres(GlSceneManager* scene_manager) {
+  void SetupLayeredSpheres(SceneManager* scene_manager) {
     // Create smaller spheres in multiple layers
     std::vector<glm::vec3> layer_positions;
     
@@ -111,7 +111,7 @@ class SphereSelectionTest : public SelectionTestApp {
     std::cout << "✓ Created layered spheres: " << layer_positions.size() << " spheres in 2 layers" << std::endl;
   }
 
-  void SetupPerformanceTestSpheres(GlSceneManager* scene_manager) {
+  void SetupPerformanceTestSpheres(SceneManager* scene_manager) {
     // Create many small spheres for performance testing
     std::vector<glm::vec3> perf_positions;
     

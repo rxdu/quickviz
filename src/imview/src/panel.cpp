@@ -15,7 +15,7 @@
 namespace quickviz {
 Panel::Panel(std::string name) : SceneObject(name) {
   // Initialize with default input policy allowing all input
-  SetInputPolicy(InputPolicy::AllowAll());
+  SetInputPolicy(InputPolicy::BlockAll());
 }
 
 void Panel::OnRender() {

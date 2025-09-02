@@ -149,7 +149,7 @@ std::unique_ptr<Mesh> CreatePlaneMesh(float width, float height, int segments_x,
     return mesh;
 }
 
-void SetupMeshScene(GlSceneManager* scene_manager) {
+void SetupMeshScene(SceneManager* scene_manager) {
     // 1. Simple Triangle - Red
     auto triangle = CreateTriangleMesh();
     triangle->SetColor(glm::vec3(0.9f, 0.1f, 0.1f));

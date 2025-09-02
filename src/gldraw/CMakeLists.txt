@@ -13,7 +13,9 @@ add_library(gldraw
     src/frame_buffer.cpp
     src/camera.cpp
     src/camera_controller.cpp
-    src/gl_scene_manager.cpp
+    src/scene_manager.cpp
+    src/selection_manager.cpp
+    src/scene_input_handler.cpp
     ## renderable objects
     src/renderable/grid.cpp
     src/renderable/triangle.cpp
@@ -42,10 +44,6 @@ add_library(gldraw
     src/renderable/plane.cpp
     src/renderable/pose.cpp
     src/renderable/path.cpp
-    ## Selection system
-    src/selection_manager.cpp
-    ## Input system
-    src/input/scene_input_handler.cpp
     )
 target_link_libraries(gldraw PUBLIC core imcore imview stb
     Threads::Threads

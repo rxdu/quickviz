@@ -20,7 +20,7 @@
 
 using namespace quickviz;
 
-void SetupArrowScene(GlSceneManager* scene_manager) {
+void SetupArrowScene(SceneManager* scene_manager) {
     // 1. X-axis arrow - Red
     auto x_arrow = std::make_unique<Arrow>(
         glm::vec3(0.0f, 0.0f, 0.0f),

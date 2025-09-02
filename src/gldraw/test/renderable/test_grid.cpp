@@ -17,7 +17,7 @@
 
 using namespace quickviz;
 
-void SetupGridScene(GlSceneManager* scene_manager) {
+void SetupGridScene(SceneManager* scene_manager) {
     // Main grid - standard gray
     auto main_grid = std::make_unique<Grid>(10.0f, 1.0f, glm::vec3(0.7f, 0.7f, 0.7f));
     scene_manager->AddOpenGLObject("main_grid", std::move(main_grid));

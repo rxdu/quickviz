@@ -20,7 +20,7 @@
 
 using namespace quickviz;
 
-void SetupTriangleScene(GlSceneManager* scene_manager) {
+void SetupTriangleScene(SceneManager* scene_manager) {
     // 1. Basic triangle - Orange
     auto basic_triangle = std::make_unique<Triangle>(1.0f);
     basic_triangle->SetColor(glm::vec3(1.0f, 0.5f, 0.2f));
@@ -87,7 +87,7 @@ int main(int argc, char* argv[]) {
         // Configure the view for 2D mode
         GlViewer::Config config;
         config.window_title = "Triangle Rendering Test - 2D Mode";
-        config.scene_mode = GlSceneManager::Mode::k2D;  // Set 2D mode
+        config.scene_mode = SceneManager::Mode::k2D;  // Set 2D mode
         config.show_grid = true;  // Disable grid for cleaner 2D view
         config.show_coordinate_frame = true;  // Disable 3D coordinate frame
         

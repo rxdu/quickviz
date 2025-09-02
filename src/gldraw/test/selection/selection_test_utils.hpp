@@ -93,12 +93,12 @@ class SelectionTestApp {
   virtual ~SelectionTestApp() = default;
 
   // Setup methods to be implemented by derived classes
-  virtual void SetupTestObjects(GlSceneManager* scene_manager) = 0;
+  virtual void SetupTestObjects(SceneManager* scene_manager) = 0;
   virtual std::string GetTestDescription() const = 0;
   virtual std::string GetInstructions() const = 0;
 
   // Common functionality
-  void AddReferenceGrid(GlSceneManager* scene_manager, float size = 10.0f, float spacing = 1.0f);
+  void AddReferenceGrid(SceneManager* scene_manager, float size = 10.0f, float spacing = 1.0f);
   void PrintTestHeader();
   void PrintInstructions();
   int Run();
@@ -123,7 +123,7 @@ namespace TestObjectFactory {
    * @param prefix Name prefix for sphere objects
    * @param radius Sphere radius
    */
-  void CreateSphereGrid(GlSceneManager* scene_manager,
+  void CreateSphereGrid(SceneManager* scene_manager,
                        const std::vector<glm::vec3>& positions,
                        const std::string& prefix = "sphere",
                        float radius = 1.0f);
@@ -132,25 +132,25 @@ namespace TestObjectFactory {
    * @brief Create test point clouds with different patterns
    * @param scene_manager Scene to add point clouds to
    */
-  void CreateTestPointClouds(GlSceneManager* scene_manager);
+  void CreateTestPointClouds(SceneManager* scene_manager);
   
   /**
    * @brief Create test line strips with various patterns
    * @param scene_manager Scene to add line strips to
    */
-  void CreateTestLineStrips(GlSceneManager* scene_manager);
+  void CreateTestLineStrips(SceneManager* scene_manager);
   
   /**
    * @brief Create test meshes for area selection
    * @param scene_manager Scene to add meshes to
    */
-  void CreateTestMeshes(GlSceneManager* scene_manager);
+  void CreateTestMeshes(SceneManager* scene_manager);
 
   /**
    * @brief Create test cylinders for connection visualization
    * @param scene_manager Scene to add cylinders to
    */
-  void CreateTestCylinders(GlSceneManager* scene_manager);
+  void CreateTestCylinders(SceneManager* scene_manager);
 }
 
 /**

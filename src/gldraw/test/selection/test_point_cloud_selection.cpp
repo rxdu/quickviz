@@ -28,7 +28,7 @@ class PointCloudSelectionTest : public SelectionTestApp {
  public:
   PointCloudSelectionTest() : SelectionTestApp("Point Cloud Selection Test") {}
 
-  void SetupTestObjects(GlSceneManager* scene_manager) override {
+  void SetupTestObjects(SceneManager* scene_manager) override {
     SetupGridPointCloud(scene_manager);
     SetupSpiralPointCloud(scene_manager);
     SetupDenseClusterPointCloud(scene_manager);
@@ -62,7 +62,7 @@ class PointCloudSelectionTest : public SelectionTestApp {
   }
 
  private:
-  void SetupGridPointCloud(GlSceneManager* scene_manager) {
+  void SetupGridPointCloud(SceneManager* scene_manager) {
     std::vector<glm::vec3> points;
     std::vector<glm::vec3> colors;
     
@@ -94,7 +94,7 @@ class PointCloudSelectionTest : public SelectionTestApp {
     std::cout << "✓ Created grid point cloud: " << points.size() << " points" << std::endl;
   }
 
-  void SetupSpiralPointCloud(GlSceneManager* scene_manager) {
+  void SetupSpiralPointCloud(SceneManager* scene_manager) {
     std::vector<glm::vec3> points;
     std::vector<glm::vec3> colors;
     
@@ -133,7 +133,7 @@ class PointCloudSelectionTest : public SelectionTestApp {
     std::cout << "✓ Created spiral point cloud: " << points.size() << " points" << std::endl;
   }
 
-  void SetupDenseClusterPointCloud(GlSceneManager* scene_manager) {
+  void SetupDenseClusterPointCloud(SceneManager* scene_manager) {
     std::vector<glm::vec3> points;
     std::vector<glm::vec3> colors;
     
@@ -169,7 +169,7 @@ class PointCloudSelectionTest : public SelectionTestApp {
     std::cout << "✓ Created dense cluster point cloud: " << points.size() << " points" << std::endl;
   }
 
-  void SetupColorGradientPointCloud(GlSceneManager* scene_manager) {
+  void SetupColorGradientPointCloud(SceneManager* scene_manager) {
     std::vector<glm::vec3> points;
     std::vector<glm::vec3> colors;
     

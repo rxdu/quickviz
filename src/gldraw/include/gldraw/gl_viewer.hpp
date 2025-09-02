@@ -52,7 +52,7 @@ public:
         float grid_step;
         glm::vec3 grid_color;
         float coordinate_frame_size;
-        GlSceneManager::Mode scene_mode;
+        SceneManager::Mode scene_mode;
         
         Config()
             : window_title("OpenGL Rendering Test")
@@ -62,7 +62,7 @@ public:
             , grid_step(1.0f)
             , grid_color(0.5f, 0.5f, 0.5f)
             , coordinate_frame_size(1.5f)
-            , scene_mode(GlSceneManager::Mode::k3D) {}
+            , scene_mode(SceneManager::Mode::k3D) {}
     };
 
     /**
@@ -71,7 +71,7 @@ public:
      * This function is called to populate the scene with renderable objects.
      * It receives a pointer to the scene manager for adding objects.
      */
-    using SceneSetupCallback = std::function<void(GlSceneManager*)>;
+    using SceneSetupCallback = std::function<void(SceneManager*)>;
 
     /**
      * @brief Constructor
@@ -121,7 +121,7 @@ public:
      * 
      * @return Pointer to the scene manager
      */
-    GlSceneManager* GetSceneManager() const;
+    SceneManager* GetSceneManager() const;
 
     /**
      * @brief Run the view (blocks until window is closed)

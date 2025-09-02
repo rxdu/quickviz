@@ -134,7 +134,7 @@ int main(int argc, char* argv[]) {
     AsyncEventEmitter emitter(dispatcher);
     
     // Register handler that throws an exception
-    dispatcher.RegisterHandler("exception_event",
+    [[maybe_unused]] auto token1 = dispatcher.RegisterHandler("exception_event",
         [](std::shared_ptr<BaseEvent> event) -> bool {
           std::cout << "Handler about to throw exception..." << std::endl;
           throw std::runtime_error("Test exception in handler");
@@ -142,7 +142,7 @@ int main(int argc, char* argv[]) {
         });
     
     // Register handler that should still run after exception
-    dispatcher.RegisterHandler("exception_event",
+    [[maybe_unused]] auto token2 = dispatcher.RegisterHandler("exception_event",
         [](std::shared_ptr<BaseEvent> event) -> bool {
           std::cout << "Handler running after exception handler" << std::endl;
           return false;
@@ -165,7 +165,7 @@ int main(int argc, char* argv[]) {
     AsyncEventEmitter emitter(dispatcher);
     std::atomic<int> processed_count{0};
     
-    dispatcher.RegisterHandler("perf_event",
+    [[maybe_unused]] auto token = dispatcher.RegisterHandler("perf_event",
         [&processed_count](std::shared_ptr<BaseEvent> event) -> bool {
           processed_count.fetch_add(1);
           return false;

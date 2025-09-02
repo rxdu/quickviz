@@ -21,7 +21,7 @@
 namespace quickviz {
 
 // Forward declarations
-class GlSceneManager;
+class SceneManager;
 
 /**
  * @brief Input handler bridge for 3D scene interactions
@@ -31,7 +31,7 @@ class GlSceneManager;
  */
 class SceneInputHandler : public InputEventHandler {
  public:
-  SceneInputHandler(GlSceneManager* scene_manager, int priority = 0);
+  SceneInputHandler(SceneManager* scene_manager, int priority = 0);
   ~SceneInputHandler() = default;
 
   // InputEventHandler interface
@@ -69,7 +69,7 @@ class SceneInputHandler : public InputEventHandler {
   bool IsSelectionButton(int button, const ModifierKeys& modifiers) const;
 
   // Member variables
-  GlSceneManager* scene_manager_;
+  SceneManager* scene_manager_;
   int priority_;
   bool enabled_ = true;
   bool camera_control_enabled_ = true;
@@ -95,7 +95,7 @@ class SceneInputHandlerFactory {
    * @param priority Handler priority (default: 50)
    */
   static std::shared_ptr<SceneInputHandler> CreateStandard(
-    GlSceneManager* scene_manager, int priority = 50);
+    SceneManager* scene_manager, int priority = 50);
 
   /**
    * @brief Create camera-only input handler
@@ -103,7 +103,7 @@ class SceneInputHandlerFactory {
    * @param priority Handler priority (default: 40)
    */
   static std::shared_ptr<SceneInputHandler> CreateCameraOnly(
-    GlSceneManager* scene_manager, int priority = 40);
+    SceneManager* scene_manager, int priority = 40);
 
   /**
    * @brief Create selection-only input handler
@@ -111,7 +111,7 @@ class SceneInputHandlerFactory {
    * @param priority Handler priority (default: 60)
    */
   static std::shared_ptr<SceneInputHandler> CreateSelectionOnly(
-    GlSceneManager* scene_manager, int priority = 60);
+    SceneManager* scene_manager, int priority = 60);
 };
 
 }  // namespace quickviz

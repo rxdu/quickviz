@@ -23,7 +23,7 @@
 #include "imview/viewer.hpp"
 #include "imview/panel.hpp"
 
-#include "gldraw/gl_scene_manager.hpp"
+#include "gldraw/scene_manager.hpp"
 #include "gldraw/renderable/grid.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 #include "pcl_bridge/pcl_loader.hpp"

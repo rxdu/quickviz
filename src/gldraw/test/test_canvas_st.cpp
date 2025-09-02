@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
 
   // create a OpenGL scene panel to manage the OpenGL objects
   auto gl_sm = std::make_shared<GlScenePanel>("OpenGL Scene (2D)",
-                                                GlSceneManager::Mode::k2D);
+                                                SceneManager::Mode::k2D);
   gl_sm->SetAutoLayout(true);
   gl_sm->SetNoTitleBar(true);
   gl_sm->SetFlexGrow(1.0f);

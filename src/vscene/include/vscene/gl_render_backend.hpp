@@ -26,7 +26,7 @@ namespace quickviz {
 
 // Forward declarations  
 class OpenGlObject;
-class GlSceneManager;
+class SceneManager;
 class Sphere;
 
 /**
@@ -39,7 +39,7 @@ class Sphere;
 class GlRenderBackend : public RenderInterface {
 public:
     GlRenderBackend();  // Creates its own GlSceneManager
-    explicit GlRenderBackend(GlSceneManager* external_scene_manager);  // Uses existing GlSceneManager
+    explicit GlRenderBackend(SceneManager* external_scene_manager);  // Uses existing GlSceneManager
     ~GlRenderBackend() override;
 
     // RenderInterface interface
@@ -57,18 +57,18 @@ public:
     void SetBackgroundColor(float r, float g, float b, float a) override;
 
     // Access to underlying scene manager (for camera control, etc.)
-    GlSceneManager* GetSceneManager() const { return GetActiveSceneManager(); }
+    SceneManager* GetSceneManager() const { return GetActiveSceneManager(); }
 
 private:
-    std::unique_ptr<GlSceneManager> scene_manager_;  // Owned scene manager (when owns_scene_manager_ = true)
-    GlSceneManager* external_scene_manager_ = nullptr;  // External scene manager (when owns_scene_manager_ = false)
+    std::unique_ptr<SceneManager> scene_manager_;  // Owned scene manager (when owns_scene_manager_ = true)
+    SceneManager* external_scene_manager_ = nullptr;  // External scene manager (when owns_scene_manager_ = false)
     bool owns_scene_manager_ = true;
     
     // Mapping from virtual object types to OpenGL objects
     std::map<std::string, std::string> virtual_to_gl_object_map_;  // virtual_id -> gl_object_name
     
     // Helper to get the active scene manager
-    GlSceneManager* GetActiveSceneManager() const {
+    SceneManager* GetActiveSceneManager() const {
         return owns_scene_manager_ ? scene_manager_.get() : external_scene_manager_;
     }
     

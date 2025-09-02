@@ -16,7 +16,7 @@
 
 using namespace quickviz;
 
-void SetupCylinderScene(GlSceneManager* scene_manager) {
+void SetupCylinderScene(SceneManager* scene_manager) {
     // 1. Basic cylinder - Red
     auto cylinder1 = std::make_unique<Cylinder>(glm::vec3(0.0f, 0.0f, 0.0f), 2.0f, 1.0f);
     cylinder1->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));

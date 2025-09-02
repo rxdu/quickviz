@@ -19,7 +19,7 @@
 
 using namespace quickviz;
 
-void SetupCoordinateFrameScene(GlSceneManager* scene_manager) {
+void SetupCoordinateFrameScene(SceneManager* scene_manager) {
     // Add a grid for reference
     auto grid = std::make_unique<Grid>(10.0f, 1.0f, glm::vec3(0.7f, 0.7f, 0.7f));
     scene_manager->AddOpenGLObject("grid", std::move(grid));

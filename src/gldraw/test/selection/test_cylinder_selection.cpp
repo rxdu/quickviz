@@ -29,7 +29,7 @@ class CylinderSelectionTest : public SelectionTestApp {
  public:
   CylinderSelectionTest() : SelectionTestApp("Cylinder Selection Test") {}
 
-  void SetupTestObjects(GlSceneManager* scene_manager) override {
+  void SetupTestObjects(SceneManager* scene_manager) override {
     SetupBasicCylinders(scene_manager);
     SetupGeometricVariations(scene_manager);
     SetupTransparentCylinders(scene_manager);
@@ -63,7 +63,7 @@ class CylinderSelectionTest : public SelectionTestApp {
   }
 
  private:
-  void SetupBasicCylinders(GlSceneManager* scene_manager) {
+  void SetupBasicCylinders(SceneManager* scene_manager) {
     // Standard upright cylinder
     auto standard_cylinder = std::make_unique<Cylinder>(
         glm::vec3(0.0f, 0.0f, 0.0f), 2.0f, 1.0f);
@@ -85,7 +85,7 @@ class CylinderSelectionTest : public SelectionTestApp {
     std::cout << "✓ Created basic cylinders: standard, wide, tall" << std::endl;
   }
 
-  void SetupGeometricVariations(GlSceneManager* scene_manager) {
+  void SetupGeometricVariations(SceneManager* scene_manager) {
     // Tilted cylinder using base and top centers
     auto tilted_cylinder = std::make_unique<Cylinder>();
     tilted_cylinder->SetBaseCenter(glm::vec3(-2.0f, -6.0f, 0.0f));
@@ -113,7 +113,7 @@ class CylinderSelectionTest : public SelectionTestApp {
     std::cout << "✓ Created geometric variations: tilted, horizontal, diagonal" << std::endl;
   }
 
-  void SetupTransparentCylinders(GlSceneManager* scene_manager) {
+  void SetupTransparentCylinders(SceneManager* scene_manager) {
     // Semi-transparent cylinder
     auto transparent_cylinder = std::make_unique<Cylinder>(
         glm::vec3(0.0f, 6.0f, 2.0f), 1.5f, 1.0f);
@@ -134,7 +134,7 @@ class CylinderSelectionTest : public SelectionTestApp {
     std::cout << "✓ Created transparent cylinders: semi-transparent, wireframe" << std::endl;
   }
 
-  void SetupComplexArrangements(GlSceneManager* scene_manager) {
+  void SetupComplexArrangements(SceneManager* scene_manager) {
     // Array of small cylinders for selection precision testing
     std::mt19937 rng(456);
     std::uniform_real_distribution<float> height_dist(0.5f, 2.0f);

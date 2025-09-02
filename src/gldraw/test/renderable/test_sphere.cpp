@@ -16,7 +16,7 @@
 
 using namespace quickviz;
 
-void SetupSphereScene(GlSceneManager* scene_manager) {
+void SetupSphereScene(SceneManager* scene_manager) {
     // 1. Basic sphere - Red
     auto sphere1 = std::make_unique<Sphere>(glm::vec3(0.0f, 0.0f, 0.0f), 1.0f);
     sphere1->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));

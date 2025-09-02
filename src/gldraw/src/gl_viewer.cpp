@@ -49,7 +49,7 @@ void GlViewer::SetupBasicScene() {
   if (config_.show_coordinate_frame) {
     auto frame = std::make_unique<CoordinateFrame>(
         config_.coordinate_frame_size,
-        config_.scene_mode == GlSceneManager::Mode::k2D);
+        config_.scene_mode == SceneManager::Mode::k2D);
     scene_panel_->AddOpenGLObject("coordinate_frame", std::move(frame));
   }
 }
@@ -67,7 +67,7 @@ void GlViewer::SetDescription(const std::string& description) {
   description_ = description;
 }
 
-GlSceneManager* GlViewer::GetSceneManager() const { return scene_panel_->GetSceneManager(); }
+SceneManager* GlViewer::GetSceneManager() const { return scene_panel_->GetSceneManager(); }
 
 void GlViewer::DisplayHelp() const {
   std::cout << "\n=== " << config_.window_title << " ===" << std::endl;

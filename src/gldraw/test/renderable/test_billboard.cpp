@@ -28,13 +28,13 @@
 using namespace quickviz;
 
 // Forward declarations
-void CreateAxisLabels(GlSceneManager* scene_manager);
-void CreateWaypointLabels(GlSceneManager* scene_manager);
-void CreateBillboardModes(GlSceneManager* scene_manager);
-void CreateTypographyDemo(GlSceneManager* scene_manager);
-void CreateSelectionDemo(GlSceneManager* scene_manager);
+void CreateAxisLabels(SceneManager* scene_manager);
+void CreateWaypointLabels(SceneManager* scene_manager);
+void CreateBillboardModes(SceneManager* scene_manager);
+void CreateTypographyDemo(SceneManager* scene_manager);
+void CreateSelectionDemo(SceneManager* scene_manager);
 
-void SetupBillboardScene(GlSceneManager* scene_manager) {
+void SetupBillboardScene(SceneManager* scene_manager) {
     std::cout << "=== Billboard Primitive Test ===" << std::endl;
     std::cout << "Modern Billboard primitive replacing primitive Text3D implementation" << std::endl;
     
@@ -63,7 +63,7 @@ void SetupBillboardScene(GlSceneManager* scene_manager) {
     std::cout << "✓ Features: ImGui fonts, Unicode support, selection, visual effects" << std::endl;
 }
 
-void CreateAxisLabels(GlSceneManager* scene_manager) {
+void CreateAxisLabels(SceneManager* scene_manager) {
     // X-axis label - Red
     auto x_label = std::make_unique<Billboard>("X-Axis");
     x_label->SetPosition(glm::vec3(2.5f, 0.0f, 0.0f));
@@ -94,7 +94,7 @@ void CreateAxisLabels(GlSceneManager* scene_manager) {
     std::cout << "✓ Created axis labels with professional typography" << std::endl;
 }
 
-void CreateWaypointLabels(GlSceneManager* scene_manager) {
+void CreateWaypointLabels(SceneManager* scene_manager) {
     struct Waypoint {
         std::string name;
         glm::vec3 position;
@@ -136,7 +136,7 @@ void CreateWaypointLabels(GlSceneManager* scene_manager) {
     std::cout << "✓ Created waypoint labels with selection support" << std::endl;
 }
 
-void CreateBillboardModes(GlSceneManager* scene_manager) {
+void CreateBillboardModes(SceneManager* scene_manager) {
     // Sphere mode - always face camera
     auto sphere_label = std::make_unique<Billboard>("Sphere Mode\n(Always faces camera)");
     sphere_label->SetPosition(glm::vec3(-8.0f, 5.0f, 0.0f));
@@ -173,7 +173,7 @@ void CreateBillboardModes(GlSceneManager* scene_manager) {
     std::cout << "✓ Created billboard mode demonstrations" << std::endl;
 }
 
-void CreateTypographyDemo(GlSceneManager* scene_manager) {
+void CreateTypographyDemo(SceneManager* scene_manager) {
     // Large title
     auto title = std::make_unique<Billboard>("Billboard Typography Demo");
     title->SetPosition(glm::vec3(0.0f, -6.0f, 2.0f));
@@ -220,7 +220,7 @@ void CreateTypographyDemo(GlSceneManager* scene_manager) {
     std::cout << "✓ Created typography and effects demonstrations" << std::endl;
 }
 
-void CreateSelectionDemo(GlSceneManager* scene_manager) {
+void CreateSelectionDemo(SceneManager* scene_manager) {
     // Create selectable billboards arranged in a grid
     for (int i = 0; i < 3; ++i) {
         for (int j = 0; j < 3; ++j) {

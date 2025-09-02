@@ -35,7 +35,7 @@ int main(int argc, char* argv[]) {
 
   // Create an OpenGL scene panel with coordinate system transformation enabled
   auto gl_sm_transformed = std::make_shared<GlScenePanel>("Standard Coordinate System (Z-up)",
-                                                GlSceneManager::Mode::k3D);
+                                                SceneManager::Mode::k3D);
   gl_sm_transformed->SetAutoLayout(true);
   gl_sm_transformed->SetNoTitleBar(true);
   gl_sm_transformed->SetFlexGrow(0.5f);
@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
 
   // Create a second OpenGL scene panel with coordinate system transformation disabled
   auto gl_sm_native = std::make_shared<GlScenePanel>("OpenGL Native (Y-up)",
-                                                GlSceneManager::Mode::k3D);
+                                                SceneManager::Mode::k3D);
   gl_sm_native->SetAutoLayout(true);
   gl_sm_native->SetNoTitleBar(true);
   gl_sm_native->SetFlexGrow(0.5f);

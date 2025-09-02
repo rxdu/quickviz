@@ -28,7 +28,7 @@ class MeshSelectionTest : public SelectionTestApp {
  public:
   MeshSelectionTest() : SelectionTestApp("Mesh Selection Test") {}
 
-  void SetupTestObjects(GlSceneManager* scene_manager) override {
+  void SetupTestObjects(SceneManager* scene_manager) override {
     SetupBasicMeshes(scene_manager);
     SetupGeometricShapes(scene_manager);
     SetupComplexMeshes(scene_manager);
@@ -62,7 +62,7 @@ class MeshSelectionTest : public SelectionTestApp {
   }
 
  private:
-  void SetupBasicMeshes(GlSceneManager* scene_manager) {
+  void SetupBasicMeshes(SceneManager* scene_manager) {
     // Simple quad mesh
     std::vector<glm::vec3> quad_vertices = {
         glm::vec3(-2.0f, -1.0f, 1.0f),  // Bottom left
@@ -98,7 +98,7 @@ class MeshSelectionTest : public SelectionTestApp {
     std::cout << "✓ Created basic meshes: quad, triangle" << std::endl;
   }
 
-  void SetupGeometricShapes(GlSceneManager* scene_manager) {
+  void SetupGeometricShapes(SceneManager* scene_manager) {
     // Hexagon mesh
     std::vector<glm::vec3> hex_vertices;
     std::vector<uint32_t> hex_indices;
@@ -172,7 +172,7 @@ class MeshSelectionTest : public SelectionTestApp {
     std::cout << "✓ Created geometric shapes: hexagon, star" << std::endl;
   }
 
-  void SetupComplexMeshes(GlSceneManager* scene_manager) {
+  void SetupComplexMeshes(SceneManager* scene_manager) {
     // Subdivided plane (grid mesh)
     std::vector<glm::vec3> grid_vertices;
     std::vector<uint32_t> grid_indices;
@@ -224,7 +224,7 @@ class MeshSelectionTest : public SelectionTestApp {
               << " vertices, " << grid_indices.size()/3 << " triangles)" << std::endl;
   }
 
-  void SetupTerrainPatches(GlSceneManager* scene_manager) {
+  void SetupTerrainPatches(SceneManager* scene_manager) {
     // Irregular terrain patch
     std::vector<glm::vec3> terrain_vertices;
     std::vector<uint32_t> terrain_indices;

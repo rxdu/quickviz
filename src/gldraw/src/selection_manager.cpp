@@ -14,7 +14,7 @@
 #include <cmath>
 
 #include <glad/glad.h>
-#include "gldraw/gl_scene_manager.hpp"
+#include "gldraw/scene_manager.hpp"
 #include "gldraw/renderable/point_cloud.hpp"
 #include "gldraw/frame_buffer.hpp"
 
@@ -99,7 +99,7 @@ std::vector<ObjectSelection> MultiSelection::GetObjects() const {
 
 // === SelectionManager Implementation ===
 
-SelectionManager::SelectionManager(GlSceneManager* scene_manager)
+SelectionManager::SelectionManager(SceneManager* scene_manager)
     : scene_manager_(scene_manager) {
   if (!scene_manager_) {
     throw std::invalid_argument("Scene manager cannot be null");

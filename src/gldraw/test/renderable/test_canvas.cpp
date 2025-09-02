@@ -67,7 +67,7 @@ void TestAllCanvasFunctions(Canvas* canvas) {
     canvas->AddPolygon(test_polygon, glm::vec4(1.0f, 0.0f, 1.0f, 1.0f), true, 3.0f);  // Bright magenta filled
 }
 
-void SetupCanvasScene(GlSceneManager* scene_manager) {
+void SetupCanvasScene(SceneManager* scene_manager) {
     // Add a triangle for reference
     auto triangle = std::make_unique<Triangle>(1.0f, glm::vec3(0.0f, 0.5f, 0.5f));
     scene_manager->AddOpenGLObject("triangle", std::move(triangle));
@@ -115,7 +115,7 @@ int main(int argc, char* argv[]) {
         // Configure the view for 2D mode (canvas works best in 2D)
         GlViewer::Config config;
         config.window_title = "Canvas Rendering Test - 2D Mode";
-        config.scene_mode = GlSceneManager::Mode::k2D;
+        config.scene_mode = SceneManager::Mode::k2D;
         config.coordinate_frame_size = 0.5f;
         
         // Create the view
@@ -171,7 +171,7 @@ int main(int argc, char* argv[]) {
         }
         
         // Set the scene setup callback
-        view.SetSceneSetup([performance_test](GlSceneManager* scene_manager) {
+        view.SetSceneSetup([performance_test](SceneManager* scene_manager) {
             SetupCanvasScene(scene_manager);
             
             // Add performance test objects if enabled

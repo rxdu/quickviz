@@ -22,7 +22,7 @@
 
 using namespace quickviz;
 
-void SetupPoseScene(GlSceneManager* scene_manager) {
+void SetupPoseScene(SceneManager* scene_manager) {
     // Add grid for reference
     auto grid = std::make_unique<Grid>(10.0f, 1.0f, glm::vec3(0.3f, 0.3f, 0.3f));
     scene_manager->AddOpenGLObject("grid", std::move(grid));

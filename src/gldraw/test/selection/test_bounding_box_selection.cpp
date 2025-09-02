@@ -29,7 +29,7 @@ class BoundingBoxSelectionTest : public SelectionTestApp {
  public:
   BoundingBoxSelectionTest() : SelectionTestApp("BoundingBox Selection Test") {}
 
-  void SetupTestObjects(GlSceneManager* scene_manager) override {
+  void SetupTestObjects(SceneManager* scene_manager) override {
     SetupBasicBoundingBoxes(scene_manager);
     SetupGeometricVariations(scene_manager);
     SetupTransformBoundingBoxes(scene_manager);
@@ -64,7 +64,7 @@ class BoundingBoxSelectionTest : public SelectionTestApp {
   }
 
  private:
-  void SetupBasicBoundingBoxes(GlSceneManager* scene_manager) {
+  void SetupBasicBoundingBoxes(SceneManager* scene_manager) {
     // Standard axis-aligned bounding box
     auto standard_box = std::make_unique<BoundingBox>(
         glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
@@ -89,7 +89,7 @@ class BoundingBoxSelectionTest : public SelectionTestApp {
     std::cout << "✓ Created basic bounding boxes: standard, wide, tall" << std::endl;
   }
 
-  void SetupGeometricVariations(GlSceneManager* scene_manager) {
+  void SetupGeometricVariations(SceneManager* scene_manager) {
     // Small cube
     auto small_cube = std::make_unique<BoundingBox>(
         glm::vec3(-0.5f, -6.0f, -0.5f), glm::vec3(0.5f, -5.0f, 0.5f));
@@ -114,7 +114,7 @@ class BoundingBoxSelectionTest : public SelectionTestApp {
     std::cout << "✓ Created geometric variations: small cube, large box, deep box" << std::endl;
   }
 
-  void SetupTransformBoundingBoxes(GlSceneManager* scene_manager) {
+  void SetupTransformBoundingBoxes(SceneManager* scene_manager) {
     // Wireframe box using SetCenter
     auto wireframe_box = std::make_unique<BoundingBox>();
     wireframe_box->SetCenter(glm::vec3(0.0f, 6.0f, 2.0f), glm::vec3(2.0f, 1.0f, 1.5f));
@@ -139,7 +139,7 @@ class BoundingBoxSelectionTest : public SelectionTestApp {
     std::cout << "✓ Created transform bounding boxes: wireframe with corners, transparent with edges" << std::endl;
   }
 
-  void SetupComplexArrangements(GlSceneManager* scene_manager) {
+  void SetupComplexArrangements(SceneManager* scene_manager) {
     // Array of small boxes for selection precision testing
     std::mt19937 rng(789);
     std::uniform_real_distribution<float> size_dist(0.3f, 1.2f);

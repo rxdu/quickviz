@@ -28,7 +28,7 @@ class LineStripSelectionTest : public SelectionTestApp {
  public:
   LineStripSelectionTest() : SelectionTestApp("LineStrip Selection Test") {}
 
-  void SetupTestObjects(GlSceneManager* scene_manager) override {
+  void SetupTestObjects(SceneManager* scene_manager) override {
     SetupBasicLineStrips(scene_manager);
     SetupMathematicalCurves(scene_manager);
     SetupRobotPaths(scene_manager);
@@ -62,7 +62,7 @@ class LineStripSelectionTest : public SelectionTestApp {
   }
 
  private:
-  void SetupBasicLineStrips(GlSceneManager* scene_manager) {
+  void SetupBasicLineStrips(SceneManager* scene_manager) {
     // Simple geometric patterns for basic selection testing
     
     // 1. Straight horizontal line
@@ -106,7 +106,7 @@ class LineStripSelectionTest : public SelectionTestApp {
     std::cout << "✓ Created basic line strips: horizontal, L-shape, triangle" << std::endl;
   }
 
-  void SetupMathematicalCurves(GlSceneManager* scene_manager) {
+  void SetupMathematicalCurves(SceneManager* scene_manager) {
     // 1. Sine wave
     std::vector<glm::vec3> sine_points;
     const int sine_segments = 60;
@@ -145,7 +145,7 @@ class LineStripSelectionTest : public SelectionTestApp {
     std::cout << "✓ Created mathematical curves: sine wave, spiral" << std::endl;
   }
 
-  void SetupRobotPaths(GlSceneManager* scene_manager) {
+  void SetupRobotPaths(SceneManager* scene_manager) {
     // Simulate realistic robot/vehicle paths
     
     // 1. Navigation waypoints
@@ -184,7 +184,7 @@ class LineStripSelectionTest : public SelectionTestApp {
     std::cout << "✓ Created robot paths: navigation waypoints, smooth trajectory" << std::endl;
   }
 
-  void SetupComplexPolylines(GlSceneManager* scene_manager) {
+  void SetupComplexPolylines(SceneManager* scene_manager) {
     // Complex multi-segment polylines for performance testing
     
     // 1. Random walk path

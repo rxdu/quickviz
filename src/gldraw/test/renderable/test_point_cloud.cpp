@@ -19,7 +19,7 @@
 
 using namespace quickviz;
 
-void SetupPointCloudScene(GlSceneManager* scene_manager) {
+void SetupPointCloudScene(SceneManager* scene_manager) {
     // Generate random point cloud data
     std::random_device rd;
     std::mt19937 gen(rd());
