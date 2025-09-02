@@ -32,7 +32,7 @@ PointSelectionTool::PointSelectionTool(const std::string& name, SceneManager* sc
     // Initialize hover state
     hover_state_ = HoverState{};
     
-    std::cout << "PointSelectionTool '" << name << "' created" << std::endl;
+    // Tool created - no debug output needed in production
 }
 
 void PointSelectionTool::DoActivate() {
@@ -41,7 +41,7 @@ void PointSelectionTool::DoActivate() {
     hover_state_.active = false;
     mouse_moved_since_click_ = false;
     
-    std::cout << "Point selection tool activated (radius: " << selection_radius_ << "px)" << std::endl;
+    // Tool activated
 }
 
 void PointSelectionTool::DoDeactivate() {
@@ -49,7 +49,10 @@ void PointSelectionTool::DoDeactivate() {
     hover_state_.active = false;
     current_hover_ = std::monostate{};
     
-    std::cout << "Point selection tool deactivated" << std::endl;
+    // Clear hover layer
+    UpdateHoverLayer();
+    
+    // Tool deactivated
 }
 
 bool PointSelectionTool::OnMouseEvent(const InputEvent& event) {
@@ -84,7 +87,7 @@ bool PointSelectionTool::OnKeyboardEvent(const InputEvent& event) {
             ctrl_mod.ctrl = true;
             if (HasModifiers(event, ctrl_mod)) {
                 // TODO: Implement select all functionality
-                std::cout << "Select all (not implemented yet)" << std::endl;
+                // For now, just consume the event without action
                 return true;
             }
         }
@@ -156,51 +159,62 @@ PointSelectionTool::SelectionMode PointSelectionTool::DetermineSelectionMode(con
 
 void PointSelectionTool::PerformSelection(float screen_x, float screen_y, SelectionMode mode) {
     
+    
     // Create selection options based on tool configuration
     SelectionOptions options;
     options.radius = selection_radius_;
     options.mode = quickviz::SelectionMode::kPoints;  // Force point-only selection
     options.target_object = target_point_cloud_;  // Filter to target point cloud if set
-    options.add_to_selection = (mode != SelectionMode::kSingle);
     
-    // Perform the selection using the scene manager's selection system
-    SelectionResult result = scene_manager_->Select(screen_x, screen_y, options);
+    SelectionResult result;
     
-    // Apply selection mode logic for multi-selection
-    if (mode == SelectionMode::kToggle && !IsEmpty(result)) {
-        // Toggle mode: add if not selected, remove if already selected
-        scene_manager_->GetSelection().ToggleSelection(screen_x, screen_y, options);
-    } else if (mode == SelectionMode::kAdd && !IsEmpty(result)) {
-        // Add mode: always add to selection
-        scene_manager_->AddToSelection(screen_x, screen_y, options);
-    } else if (mode == SelectionMode::kSubtract && !IsEmpty(result)) {
-        // Subtract mode: remove from selection
-        auto& multi_selection = scene_manager_->GetSelection().GetMultiSelection();
-        const_cast<MultiSelection&>(multi_selection).Remove(result);
-    } else if (mode == SelectionMode::kSingle || IsEmpty(result)) {
-        // Single mode or nothing selected: replace current selection
-        scene_manager_->GetSelection().ClearSelection();
-        if (!IsEmpty(result)) {
-            const_cast<MultiSelection&>(scene_manager_->GetSelection().GetMultiSelection()).Add(result);
+    // Use the appropriate SelectionManager method based on mode
+    switch (mode) {
+        case SelectionMode::kSingle:
+            // Single selection: replace current selection
+            options.add_to_selection = false;
+            result = scene_manager_->Select(screen_x, screen_y, options);
+            break;
+            
+        case SelectionMode::kAdd: {
+            // Add to selection 
+            bool added = scene_manager_->AddToSelection(screen_x, screen_y, options);
+            
+            // Don't call Select again - AddToSelection already updated the selection
+            // For callback notification, just use an empty result since AddToSelection already handled it
+            result = std::monostate{};
+            break;
         }
+            
+        case SelectionMode::kToggle:
+            // Toggle selection state
+            scene_manager_->GetSelection().ToggleSelection(screen_x, screen_y, options);
+            // Don't call Select again - ToggleSelection already updated the selection  
+            // For callback notification, just use an empty result since ToggleSelection already handled it
+            result = std::monostate{};
+            break;
+            
+        case SelectionMode::kSubtract:
+            // Find what would be selected and remove it
+            options.add_to_selection = false;
+            result = scene_manager_->Select(screen_x, screen_y, options);
+            if (!IsEmpty(result)) {
+                auto& multi_selection = scene_manager_->GetSelection().GetMultiSelection();
+                const_cast<MultiSelection&>(multi_selection).Remove(result);
+            }
+            break;
     }
     
     // Update visual feedback
     UpdateVisualFeedback();
     
-    // Notify callback
-    NotifySelectionChanged(result);
-    
-    // Debug output
-    if (!IsEmpty(result)) {
-        if (auto point_sel = std::get_if<PointSelection>(&result)) {
-            std::cout << "Selected point " << point_sel->point_index 
-                      << " in cloud '" << point_sel->cloud_name << "' "
-                      << "(mode: " << static_cast<int>(mode) << ")" << std::endl;
-        }
-    } else {
-        std::cout << "No point selected at (" << screen_x << ", " << screen_y << ")" << std::endl;
+    // Notify callback - but only for modes that don't handle their own notification
+    if (mode == SelectionMode::kSingle || mode == SelectionMode::kSubtract) {
+        NotifySelectionChanged(result);
     }
+    // Add and Toggle modes handle their own notifications via the SelectionManager
+    
+    // Selection completed - callback notification will handle any required logging
 }
 
 void PointSelectionTool::UpdateHoverFeedback(float screen_x, float screen_y) {
@@ -210,8 +224,9 @@ void PointSelectionTool::UpdateHoverFeedback(float screen_x, float screen_y) {
     options.mode = quickviz::SelectionMode::kPoints;
     options.target_object = target_point_cloud_;
     
-    // Check what's under the cursor
-    SelectionResult hover_result = scene_manager_->Select(screen_x, screen_y, options);
+    // Check what's under the cursor (without modifying selection state)
+    SelectionResult hover_result = scene_manager_->GetSelection().QuerySelection(screen_x, screen_y, options);
+    
     
     // Update hover state
     bool hover_changed = false;
@@ -238,6 +253,45 @@ void PointSelectionTool::UpdateHoverFeedback(float screen_x, float screen_y) {
     if (hover_changed) {
         current_hover_ = hover_result;
         NotifyHoverChanged(hover_result);
+        
+        // Update hover layer immediately when hover changes
+        UpdateHoverLayer();
+    }
+}
+
+void PointSelectionTool::UpdateHoverLayer() {
+    // Apply hover highlighting using point cloud layers
+    auto* point_cloud = dynamic_cast<PointCloud*>(scene_manager_->GetOpenGLObject("point_cloud"));
+    if (!point_cloud) {
+        return;
+    }
+    
+    // Get or create hover layer
+    auto hover_layer = point_cloud->GetLayer("tool_hover");
+    bool newly_created = false;
+    if (!hover_layer) {
+        hover_layer = point_cloud->CreateLayer("tool_hover", 400);  // Higher priority than selection (300)
+        newly_created = true;
+    }
+    
+    if (hover_state_.active) {
+        // Show hover for the current point
+        
+        // For newly created layers, we need to set initial properties
+        if (newly_created) {
+            hover_layer->SetColor(visual_feedback_.hover_color);
+            hover_layer->SetPointSizeMultiplier(visual_feedback_.hover_size_multiplier);
+            hover_layer->SetHighlightMode(quickviz::PointLayer::HighlightMode::kColorAndSize);
+        }
+        
+        // Update the point being hovered
+        std::vector<size_t> hover_points = {hover_state_.point_index};
+        hover_layer->SetPoints(hover_points);
+        hover_layer->SetVisible(true);
+    } else {
+        // Hide hover layer when not hovering
+        hover_layer->ClearPoints();
+        hover_layer->SetVisible(false);
     }
 }
 
@@ -324,34 +378,42 @@ void PointSelectionTool::OnRender(const glm::mat4& projection, const glm::mat4& 
 
 void PointSelectionTool::RenderHoverFeedback(const glm::mat4& projection, const glm::mat4& view) {
     // Apply hover highlighting using point cloud layers
-    if (!hover_state_.active) {
+    auto* point_cloud = dynamic_cast<PointCloud*>(scene_manager_->GetOpenGLObject("point_cloud"));
+    if (!point_cloud) {
         return;
     }
     
-    auto* point_cloud = dynamic_cast<PointCloud*>(scene_manager_->GetOpenGLObject(hover_state_.point_cloud_name));
-    if (point_cloud) {
-        // Create or update hover layer
-        auto hover_layer = point_cloud->GetLayer("tool_hover");
-        if (!hover_layer) {
-            hover_layer = point_cloud->CreateLayer("tool_hover", 200);  // Higher priority than selection
-        }
-        
+    // Get or create hover layer
+    auto hover_layer = point_cloud->GetLayer("tool_hover");
+    if (!hover_layer) {
+        hover_layer = point_cloud->CreateLayer("tool_hover", 400);  // Higher priority than selection (300)
+    }
+    
+    if (hover_state_.active) {
+        // Show hover for the current point
+        hover_layer->ClearPoints();  // Clear any previous hover points
         hover_layer->SetPoints({hover_state_.point_index});
         hover_layer->SetColor(visual_feedback_.hover_color);
         hover_layer->SetPointSizeMultiplier(visual_feedback_.hover_size_multiplier);
         hover_layer->SetHighlightMode(quickviz::PointLayer::HighlightMode::kColorAndSize);
         hover_layer->SetVisible(true);
+    } else {
+        // Hide hover layer when not hovering
+        hover_layer->ClearPoints();
+        hover_layer->SetVisible(false);
     }
 }
 
 void PointSelectionTool::RenderSelectionRadius(const glm::mat4& projection, const glm::mat4& view) {
     // TODO: Implement selection radius circle rendering
     // This would draw a circle at the current mouse position showing the selection tolerance
+    // Implementation would use immediate mode rendering similar to hover feedback
 }
 
 void PointSelectionTool::RenderSelectionCount(const glm::mat4& projection, const glm::mat4& view) {
-    // TODO: Implement selection count overlay rendering
+    // TODO: Implement selection count overlay rendering  
     // This would draw text showing "X points selected" in the corner
+    // Could be implemented using ImGui overlay or OpenGL text rendering
 }
 
 // === Public API Implementation ===
@@ -385,7 +447,7 @@ bool PointSelectionTool::SelectPointAt(float screen_x, float screen_y, Selection
 bool PointSelectionTool::SelectPointByIndex(const std::string& point_cloud_name, size_t point_index, SelectionMode mode) {
     // TODO: Implement direct point selection by index
     // This would need to work with the SelectionManager to create a PointSelection result
-    std::cout << "SelectPointByIndex not implemented yet" << std::endl;
+    // Could be useful for programmatic selection or selection restoration
     return false;
 }
 

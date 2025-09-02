@@ -51,8 +51,6 @@ void InteractionTool::OnActivate() {
     
     SetState(State::kActive);
     DoActivate();
-    
-    std::cout << "Tool '" << display_name_ << "' activated" << std::endl;
 }
 
 void InteractionTool::OnDeactivate() {
@@ -63,9 +61,6 @@ void InteractionTool::OnDeactivate() {
     State old_state = state_;
     SetState(State::kInactive);
     DoDeactivate();
-    
-    std::cout << "Tool '" << display_name_ << "' deactivated (was " 
-              << static_cast<int>(old_state) << ")" << std::endl;
 }
 
 void InteractionTool::SetState(State new_state) {
@@ -154,7 +149,6 @@ void ToolManager::RegisterTool(std::shared_ptr<InteractionTool> tool) {
     }
     
     tools_.push_back(tool);
-    std::cout << "Registered tool: " << tool->GetDisplayName() << std::endl;
 }
 
 void ToolManager::UnregisterTool(const std::string& name) {
@@ -167,7 +161,6 @@ void ToolManager::UnregisterTool(const std::string& name) {
             DeactivateCurrentTool();
         }
         
-        std::cout << "Unregistered tool: " << (*it)->GetDisplayName() << std::endl;
         tools_.erase(it);
     }
 }

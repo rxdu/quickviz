@@ -163,6 +163,68 @@ SelectionResult SelectionManager::Select(float screen_x, float screen_y, const S
   return result;
 }
 
+SelectionResult SelectionManager::QuerySelection(float screen_x, float screen_y, const SelectionOptions& options) {
+  // Same logic as Select() but without modifying selection state
+  
+  // Validate input coordinates
+  if (screen_x < 0 || screen_y < 0) {
+    return SelectionResult{}; // Invalid coordinates
+  }
+  
+  // We can only select if ID buffer exists and matches scene buffer size
+  // The reason is that selection is done in screen space, and the mouse coordinates 
+  // are relative to the main framebuffer, not the ID buffer. But for performance,
+  // ID buffer might be smaller than the main framebuffer. This can cause mismatch
+  // between mouse coordinates and ID buffer pixel coordinates. Currently we assume
+  // ID buffer matches main framebuffer size.
+  //
+  // TODO: If ID buffer != main buffer size, need coordinate transformation or scaling.
+  // For now we'll check size match and fail if they don't match, because the logic
+  // gets much more complex when accounting for different resolutions. We can assert
+  // but ID buffer matches the main framebuffer size. We need to ensure both use same size.
+  
+  if (!id_frame_buffer_ || !scene_manager_->frame_buffer_) {
+    return SelectionResult{}; // Can't select without buffers
+  }
+  
+  float id_buffer_width = id_frame_buffer_->GetWidth();
+  float id_buffer_height = id_frame_buffer_->GetHeight();
+  float main_buffer_width = scene_manager_->frame_buffer_->GetWidth();
+  float main_buffer_height = scene_manager_->frame_buffer_->GetHeight();
+  
+  // Screen coordinates should be relative to the same space as the rendered content
+  // If ID buffer matches main buffer, use direct mapping
+  int pixel_x = static_cast<int>(std::round(screen_x));
+  int pixel_y = static_cast<int>(std::round(screen_y));
+
+  // Read pixel ID (with radius tolerance if specified)
+  uint32_t selected_id = 0;
+  if (options.radius <= 0) {
+    selected_id = ReadPixelId(pixel_x, pixel_y);
+  } else {
+    // TODO: Implement radius-based selection
+    // For now, just use center pixel
+    selected_id = ReadPixelId(pixel_x, pixel_y);
+  }
+
+  if (selected_id == kBackgroundId) {
+    return SelectionResult{}; // No selection
+  }
+  
+  // Process the selection based on ID
+  SelectionResult result = ProcessSingleSelection(selected_id, screen_x, screen_y);
+  
+  // Apply filter if provided
+  if (options.filter && !IsEmpty(result)) {
+    if (!options.filter(result)) {
+      return SelectionResult{}; // Filtered out
+    }
+  }
+  
+  // DO NOT call UpdateSelectionState - this is query only
+  return result;
+}
+
 SelectionResult SelectionManager::SelectPoint(float screen_x, float screen_y, int radius) {
   SelectionOptions options;
   options.radius = radius;
@@ -390,6 +452,7 @@ void SelectionManager::UpdateSelectionState(const SelectionResult& new_selection
   if (IsEmpty(new_selection)) {
     return;
   }
+  
   
   current_selection_ = new_selection;
   

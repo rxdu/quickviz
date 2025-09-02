@@ -193,6 +193,7 @@ private:
     SelectionMode DetermineSelectionMode(const InputEvent& event) const;
     void PerformSelection(float screen_x, float screen_y, SelectionMode mode);
     void UpdateVisualFeedback();
+    void UpdateHoverLayer();
     void ClearSelectionLayers();
     void NotifySelectionChanged(const SelectionResult& result);
     void NotifyHoverChanged(const SelectionResult& result);

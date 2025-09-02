@@ -732,7 +732,8 @@ void PointCloud::UpdateLayerIndexBuffer(const std::string& layer_name,
   auto& buffer_info = layer_index_buffers_[layer_name];
   
   // Check if we need to update
-  if (!buffer_info.needs_update && buffer_info.count == indices.size()) {
+  if (!buffer_info.needs_update) {
+    // Buffer is up-to-date, no need to update
     return;
   }
   

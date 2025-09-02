@@ -177,6 +177,15 @@ public:
   SelectionResult Select(float screen_x, float screen_y, const SelectionOptions& options = {});
   
   /**
+   * @brief Query what would be selected without modifying selection state
+   * @param screen_x Screen X coordinate  
+   * @param screen_y Screen Y coordinate
+   * @param options Selection options
+   * @return Selection result (does not modify current selection)
+   */
+  SelectionResult QuerySelection(float screen_x, float screen_y, const SelectionOptions& options = {});
+  
+  /**
    * @brief Convenience method for simple point selection
    * @param screen_x Screen X coordinate
    * @param screen_y Screen Y coordinate  

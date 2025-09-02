@@ -56,8 +56,8 @@ void PointCloudToolPanel::Draw() {
     if (mouse_info_.valid) {
       ImGui::Text("Screen Position: (%.1f, %.1f)", mouse_info_.screen_pos.x,
                   mouse_info_.screen_pos.y);
-      ImGui::Text("World Position: (%.3f, %.3f, %.3f)", 
-                  mouse_info_.world_pos.x, mouse_info_.world_pos.y, mouse_info_.world_pos.z);
+      // ImGui::Text("World Position: (%.3f, %.3f, %.3f)",
+      //             mouse_info_.world_pos.x, mouse_info_.world_pos.y, mouse_info_.world_pos.z);
     } else {
       ImGui::Text("Mouse not in scene");
     }

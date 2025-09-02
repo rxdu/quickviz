@@ -49,10 +49,20 @@ public:
     void SetChangeCallback(ChangeCallback callback) { change_callback_ = callback; }
 
     // Layer properties
-    void SetName(const std::string& name) { name_ = name; }
+    void SetName(const std::string& name) { 
+        if (name_ != name) {
+            name_ = name;
+            NotifyChange();
+        }
+    }
     const std::string& GetName() const { return name_; }
     
-    void SetPriority(int priority) { priority_ = priority; }
+    void SetPriority(int priority) { 
+        if (priority_ != priority) {
+            priority_ = priority;
+            NotifyChange();
+        }
+    }
     int GetPriority() const { return priority_; }
     
     void SetVisible(bool visible) { 
@@ -84,26 +94,61 @@ public:
     bool ContainsPoint(size_t index) const { return point_indices_.count(index) > 0; }
 
     // Visual properties
-    void SetColor(const glm::vec3& color) { color_ = color; }
+    void SetColor(const glm::vec3& color) { 
+        if (color_ != color) {
+            color_ = color;
+            NotifyChange();
+        }
+    }
     const glm::vec3& GetColor() const { return color_; }
     
-    void SetPointSizeMultiplier(float multiplier) { point_size_multiplier_ = multiplier; }
+    void SetPointSizeMultiplier(float multiplier) { 
+        if (point_size_multiplier_ != multiplier) {
+            point_size_multiplier_ = multiplier;
+            NotifyChange();
+        }
+    }
     float GetPointSizeMultiplier() const { return point_size_multiplier_; }
     
-    void SetBlendMode(BlendMode mode) { blend_mode_ = mode; }
+    void SetBlendMode(BlendMode mode) { 
+        if (blend_mode_ != mode) {
+            blend_mode_ = mode;
+            NotifyChange();
+        }
+    }
     BlendMode GetBlendMode() const { return blend_mode_; }
     
-    void SetHighlightMode(HighlightMode mode) { highlight_mode_ = mode; }
+    void SetHighlightMode(HighlightMode mode) { 
+        if (highlight_mode_ != mode) {
+            highlight_mode_ = mode;
+            NotifyChange();
+        }
+    }
     HighlightMode GetHighlightMode() const { return highlight_mode_; }
 
     // Outline/glow effects
-    void SetOutlineWidth(float width) { outline_width_ = width; }
+    void SetOutlineWidth(float width) { 
+        if (outline_width_ != width) {
+            outline_width_ = width;
+            NotifyChange();
+        }
+    }
     float GetOutlineWidth() const { return outline_width_; }
     
-    void SetOutlineColor(const glm::vec3& color) { outline_color_ = color; }
+    void SetOutlineColor(const glm::vec3& color) { 
+        if (outline_color_ != color) {
+            outline_color_ = color;
+            NotifyChange();
+        }
+    }
     const glm::vec3& GetOutlineColor() const { return outline_color_; }
     
-    void SetGlowIntensity(float intensity) { glow_intensity_ = intensity; }
+    void SetGlowIntensity(float intensity) { 
+        if (glow_intensity_ != intensity) {
+            glow_intensity_ = intensity;
+            NotifyChange();
+        }
+    }
     float GetGlowIntensity() const { return glow_intensity_; }
 
 private:

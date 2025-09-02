@@ -76,7 +76,7 @@ PointLayerManager::PointLayerManager()
 std::shared_ptr<PointLayer> PointLayerManager::CreateLayer(const std::string& name, int priority) {
     // Check if layer already exists
     if (HasLayer(name)) {
-        std::cout << "Warning: Layer '" << name << "' already exists. Returning existing layer." << std::endl;
+        // Note: Layer already exists - returning existing layer instead of creating duplicate
         return GetLayer(name);
     }
     
