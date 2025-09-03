@@ -162,8 +162,99 @@ class OpenGlObject {
    */
   virtual bool SupportsIdRendering() const { return false; }
 
+  // === Transform and Visibility State Management ===
+  
+  /**
+   * @brief Set object transform matrix (position, rotation, scale)
+   * @param transform 4x4 transformation matrix in local-to-world space
+   * @note This is the primary interface for state management integration
+   */
+  virtual void SetTransform(const glm::mat4& transform) { 
+    transform_ = transform; 
+    MarkTransformDirty();
+  }
+  
+  /**
+   * @brief Get current object transform matrix
+   * @return Current transformation matrix
+   */
+  virtual glm::mat4 GetTransform() const { 
+    return transform_; 
+  }
+  
+  /**
+   * @brief Set object visibility state
+   * @param visible True to show object, false to hide
+   * @note Hidden objects should skip rendering entirely
+   */
+  virtual void SetVisible(bool visible) { 
+    visible_ = visible; 
+  }
+  
+  /**
+   * @brief Check if object is visible
+   * @return True if object should be rendered
+   */
+  virtual bool IsVisible() const { 
+    return visible_; 
+  }
+  
+  /**
+   * @brief Get object bounding box in world space
+   * @return Pair of {min_corner, max_corner} in world coordinates
+   * @note Default implementation transforms local bounds by current transform
+   */
+  virtual std::pair<glm::vec3, glm::vec3> GetWorldBounds() const {
+    auto local_bounds = GetBoundingBox();
+    if (local_bounds.first == glm::vec3(0.0f) && local_bounds.second == glm::vec3(0.0f)) {
+      return local_bounds; // No bounds available
+    }
+    
+    // Transform bounding box corners by current transform
+    glm::vec3 corners[8] = {
+      {local_bounds.first.x, local_bounds.first.y, local_bounds.first.z},
+      {local_bounds.second.x, local_bounds.first.y, local_bounds.first.z},
+      {local_bounds.first.x, local_bounds.second.y, local_bounds.first.z},
+      {local_bounds.second.x, local_bounds.second.y, local_bounds.first.z},
+      {local_bounds.first.x, local_bounds.first.y, local_bounds.second.z},
+      {local_bounds.second.x, local_bounds.first.y, local_bounds.second.z},
+      {local_bounds.first.x, local_bounds.second.y, local_bounds.second.z},
+      {local_bounds.second.x, local_bounds.second.y, local_bounds.second.z}
+    };
+    
+    glm::vec3 min_world(std::numeric_limits<float>::max());
+    glm::vec3 max_world(std::numeric_limits<float>::lowest());
+    
+    for (const auto& corner : corners) {
+      glm::vec4 world_corner = transform_ * glm::vec4(corner, 1.0f);
+      glm::vec3 world_pos = glm::vec3(world_corner);
+      
+      min_world = glm::min(min_world, world_pos);
+      max_world = glm::max(max_world, world_pos);
+    }
+    
+    return {min_world, max_world};
+  }
+
  protected:
   OpenGlObject() = default;
+  
+  /**
+   * @brief Mark transform as dirty for lazy update patterns
+   * 
+   * Called automatically when transform changes. Subclasses can override
+   * to implement efficient update strategies (e.g., only recalculate
+   * world-space data when actually needed for rendering).
+   */
+  virtual void MarkTransformDirty() {
+    // Default implementation does nothing
+    // Subclasses can override for lazy evaluation
+  }
+
+private:
+  // Core state that all objects should have
+  glm::mat4 transform_ = glm::mat4(1.0f);  ///< Local-to-world transform
+  bool visible_ = true;                     ///< Visibility state
 };
 }  // namespace quickviz
 

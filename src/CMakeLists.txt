@@ -1,9 +1,9 @@
 # core modules
 add_subdirectory(core)
+add_subdirectory(scenegraph)
 add_subdirectory(imview)
 add_subdirectory(widget)
 add_subdirectory(gldraw)
-add_subdirectory(vscene)
 add_subdirectory(pcl_bridge)
 
 find_package(OpenCV QUIET)
