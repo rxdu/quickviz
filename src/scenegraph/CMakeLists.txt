@@ -12,6 +12,9 @@ add_library(scenegraph
     
     # Scene state management
     src/state/scene_state.cpp
+    
+    # Integration bridge
+    src/integration/scene_manager_bridge.cpp
 )
 
 # Link dependencies
