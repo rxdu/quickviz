@@ -16,7 +16,7 @@
 
 #include <glm/glm.hpp>
 
-#include "imview/panel.hpp"
+#include "viewer/panel.hpp"
 #include "gldraw/scene_manager.hpp"
 #include "gldraw/interface/opengl_object.hpp"
 #include "gldraw/camera.hpp"
@@ -195,7 +195,7 @@ class GlScenePanel : public Panel {
   // UI state
   bool show_rendering_info_ = true;
 
-  // Modern imview-based input system - all input goes through this handler
+  // Modern viewer-based input system - all input goes through this handler
   std::shared_ptr<SceneInputHandler> scene_input_handler_;
   
   // Cached content position and size for coordinate conversion

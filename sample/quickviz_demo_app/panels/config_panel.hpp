@@ -9,7 +9,7 @@
 #ifndef QUICKVIZ_CONFIG_PANEL_HPP
 #define QUICKVIZ_CONFIG_PANEL_HPP
 
-#include "imview/panel.hpp"
+#include "viewer/panel.hpp"
 
 namespace quickviz {
 class ConfigPanel : public Panel {

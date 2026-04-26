@@ -9,7 +9,7 @@
 
 #include "gldraw/renderable/mesh.hpp"
 
-#ifdef IMVIEW_WITH_GLAD
+#ifdef VIEWER_WITH_GLAD
 #include <glad/glad.h>
 #else
 #include <GL/gl.h>

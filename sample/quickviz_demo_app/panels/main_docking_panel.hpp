@@ -9,7 +9,7 @@
 #ifndef QUICKVIZ_MAIN_DOCKING_PANEL_HPP
 #define QUICKVIZ_MAIN_DOCKING_PANEL_HPP
 
-#include "imview/panel.hpp"
+#include "viewer/panel.hpp"
 
 #include "panels/menu_bar.hpp"
 #include "panels/config_panel.hpp"

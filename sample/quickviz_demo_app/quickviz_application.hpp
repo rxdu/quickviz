@@ -9,8 +9,8 @@
 #ifndef QUICKVIZ_QUICKVIZ_APPLICATION_HPP
 #define QUICKVIZ_QUICKVIZ_APPLICATION_HPP
 
-#include "imview/viewer.hpp"
-#include "imview/box.hpp"
+#include "viewer/viewer.hpp"
+#include "viewer/box.hpp"
 #include "panels/main_docking_panel.hpp"
 #include "data_reader.hpp"
 

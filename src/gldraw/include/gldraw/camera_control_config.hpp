@@ -9,7 +9,7 @@
 #ifndef GLDRAW_CAMERA_CONTROL_CONFIG_HPP
 #define GLDRAW_CAMERA_CONTROL_CONFIG_HPP
 
-#include "imview/input/input_types.hpp"
+#include "viewer/input/input_types.hpp"
 #include "core/event/input_event.hpp"
 
 namespace quickviz {

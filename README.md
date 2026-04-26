@@ -4,10 +4,10 @@
 
 This repository provides a collection of C++ libraries for creating data visualization and basic UI applications, primarily focused on use cases in robotics.
 
-* For UI design, `imview` includes automatic layout management and widgets such as buttons, sliders, and text boxes.
-* For data visualization, `imview` and `renderer` provide a set of API functions to easily plot 2D time-series data, draw 2D primitives and render 3D objects in real-time.
+* For UI design, `viewer` includes automatic layout management and widgets such as buttons, sliders, and text boxes.
+* For data visualization, `viewer` and `renderer` provide a set of API functions to easily plot 2D time-series data, draw 2D primitives and render 3D objects in real-time.
 
-The design of the libraries is documented in [docs/imview_design.md](docs/imview_design.md) and [docs/renderer_design.md](docs/renderer_design.md). If you are interested in using the libraries in your own project, it's recommended to read the design documents first. Additionally, an app named "quickviz" is included with commonly used data visualization functions (to support development of [libxmotion](https://github.com/rxdu/libxmotion)). It also serves as an example to demonstrate the usage of the `imview` library.
+The design of the libraries is documented in [docs/viewer_design.md](docs/viewer_design.md) and [docs/renderer_design.md](docs/renderer_design.md). If you are interested in using the libraries in your own project, it's recommended to read the design documents first. Additionally, an app named "quickviz" is included with commonly used data visualization functions (to support development of [libxmotion](https://github.com/rxdu/libxmotion)). It also serves as an example to demonstrate the usage of the `viewer` library.
 
 <table>
   <tr>

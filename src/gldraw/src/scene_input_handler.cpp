@@ -10,7 +10,7 @@
 #include "gldraw/scene_manager.hpp"
 #include "gldraw/camera_control_config.hpp"
 #include "gldraw/tools/interaction_tool.hpp"
-#include "imview/input/input_types.hpp"
+#include "viewer/input/input_types.hpp"
 #include "core/event/input_mapping.hpp"
 
 namespace quickviz {

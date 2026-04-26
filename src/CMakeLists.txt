@@ -1,6 +1,6 @@
 # core modules
 add_subdirectory(core)
-add_subdirectory(imview)
+add_subdirectory(viewer)
 add_subdirectory(widget)
 add_subdirectory(gldraw)
 add_subdirectory(pcl_bridge)

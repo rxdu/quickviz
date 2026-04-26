@@ -20,7 +20,7 @@
 
 #include "imgui.h"
 
-#include "imview/panel.hpp"
+#include "viewer/panel.hpp"
 #include "widget/details/cairo_context.hpp"
 #include "widget/details/cairo_draw.hpp"
 

@@ -9,8 +9,8 @@
 
 #include <iostream>
 
-#include "imview/viewer.hpp"
-#include "imview/data_buffer.hpp"
+#include "viewer/viewer.hpp"
+#include "viewer/data_buffer.hpp"
 
 using namespace quickviz::swviz;
 

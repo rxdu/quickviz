@@ -9,8 +9,8 @@
 
 #include <memory>
 
-#include "imview/viewer.hpp"
-#include "imview/cairo_widget.hpp"
+#include "viewer/viewer.hpp"
+#include "viewer/cairo_widget.hpp"
 
 using namespace quickviz::swviz;
 

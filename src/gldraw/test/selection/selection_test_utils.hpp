@@ -21,10 +21,10 @@
 #include <string>
 #include <functional>
 
-#include "imview/viewer.hpp"
-#include "imview/box.hpp"
-#include "imview/panel.hpp"
-#include "imview/styling.hpp"
+#include "viewer/viewer.hpp"
+#include "viewer/box.hpp"
+#include "viewer/panel.hpp"
+#include "viewer/styling.hpp"
 
 #include "gldraw/gl_scene_panel.hpp"
 #include "gldraw/selection_manager.hpp"

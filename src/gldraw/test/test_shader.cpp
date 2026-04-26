@@ -8,7 +8,7 @@
 
 #include <iostream>
 
-#include "imview/window.hpp"
+#include "viewer/window.hpp"
 #include "gldraw/shader.hpp"
 #include "gldraw/shader_program.hpp"
 

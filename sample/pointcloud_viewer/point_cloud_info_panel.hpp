@@ -9,7 +9,7 @@
 #ifndef QUICKVIZ_POINT_CLOUD_INFO_PANEL_HPP
 #define QUICKVIZ_POINT_CLOUD_INFO_PANEL_HPP
 
-#include "imview/panel.hpp"
+#include "viewer/panel.hpp"
 #include "pcl_bridge/pcl_loader.hpp"
 
 namespace quickviz {

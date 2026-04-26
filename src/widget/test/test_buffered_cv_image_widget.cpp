@@ -16,8 +16,8 @@
 #include "core/buffer/ring_buffer.hpp"
 #include "core/buffer/double_buffer.hpp"
 
-#include "imview/viewer.hpp"
-#include "imview/box.hpp"
+#include "viewer/viewer.hpp"
+#include "viewer/box.hpp"
 
 // #include "scene_objects/gl_triangle_scene_object.hpp"
 #include "widget/buffered_cv_image_widget.hpp"

@@ -42,7 +42,7 @@ Comprehensive review of GLDraw module and design of enhanced input handling syst
 **DECISION: Use Core Module (Option 1)**
 - Extend existing `core` module with InputEvent classes
 - Leverage existing EventDispatcher and thread-safe infrastructure
-- Clean dependency: core → imview → gldraw
+- Clean dependency: core → viewer → gldraw
 
 **Rationale**:
 - Reuses robust event system already in core
@@ -106,7 +106,7 @@ SelectionManager::Select()
 ```
 InputEvent (core) → InputDispatcher (core)
   ↓
-InputMapping (imview/gldraw)
+InputMapping (viewer/gldraw)
   ↓
 SelectionManager handlers (gldraw)
   ↓

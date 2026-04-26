@@ -12,7 +12,7 @@
 
 #include <opencv2/opencv.hpp>
 
-#include "imview/viewer.hpp"
+#include "viewer/viewer.hpp"
 #include "widget/cv_image_widget.hpp"
 
 // #include "scene_objects/gl_triangle_scene_object.hpp"

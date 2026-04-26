@@ -52,12 +52,12 @@ add_library(gldraw
     src/tools/interaction_tool.cpp
     src/tools/point_selection_tool.cpp
     )
-target_link_libraries(gldraw PUBLIC core imcore imview stb
+target_link_libraries(gldraw PUBLIC core imcore viewer stb
     Threads::Threads
     OpenGL::GL)
-if (IMVIEW_WITH_GLAD)
+if (VIEWER_WITH_GLAD)
   target_link_libraries(gldraw PUBLIC glad)
-  target_compile_definitions(gldraw PUBLIC IMVIEW_WITH_GLAD)
+  target_compile_definitions(gldraw PUBLIC VIEWER_WITH_GLAD)
 endif ()
 target_include_directories(gldraw PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

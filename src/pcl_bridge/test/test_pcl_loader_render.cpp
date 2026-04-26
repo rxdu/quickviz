@@ -18,9 +18,9 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
-#include "imview/box.hpp"
-#include "imview/viewer.hpp"
-#include "imview/panel.hpp"
+#include "viewer/box.hpp"
+#include "viewer/viewer.hpp"
+#include "viewer/panel.hpp"
 
 #include "gldraw/gl_scene_panel.hpp"
 #include "gldraw/renderable/grid.hpp"

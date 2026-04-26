@@ -40,5 +40,5 @@ cmake --build build -j
 ## Boundary rule
 
 This directory **may** include from the library's public headers
-(`gldraw/`, `imview/`, `pcl_bridge/`, `core/`). It must never be included
+(`gldraw/`, `viewer/`, `pcl_bridge/`, `core/`). It must never be included
 *by* anything in `src/`. The `boundary-check` CI job enforces this.

@@ -16,8 +16,8 @@
 #include <memory>
 #include <string>
 
-#include "imview/box.hpp"
-#include "imview/viewer.hpp"
+#include "viewer/box.hpp"
+#include "viewer/viewer.hpp"
 
 #include "gldraw/gl_scene_panel.hpp"
 #include "gldraw/renderable/grid.hpp"

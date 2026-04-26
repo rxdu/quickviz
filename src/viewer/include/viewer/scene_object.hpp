@@ -1,0 +1,102 @@
+/*
+ * @file scene_object.hpp
+ * @date 9/30/24
+ * @brief
+ *
+ * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
+ */
+
+#ifndef QUICKVIZ_SCENE_OBJECT_HPP
+#define QUICKVIZ_SCENE_OBJECT_HPP
+
+#include <cstddef>
+#include <string>
+#include <stdexcept>
+
+#include "viewer/interface/resizable.hpp"
+#include "viewer/interface/renderable.hpp"
+
+#ifdef ENABLE_AUTO_LAYOUT
+struct YGNode;
+typedef struct YGNode* YGNodeRef;
+#endif
+
+namespace quickviz {
+class SceneObject : public Resizable, public Renderable {
+ public:
+  explicit SceneObject(std::string name);
+  virtual ~SceneObject();
+
+  // Disable copy construction and assignment for safety
+  SceneObject(const SceneObject&) = delete;
+  SceneObject& operator=(const SceneObject&) = delete;
+
+  // Enable move construction and assignment
+  SceneObject(SceneObject&&) = default;
+  SceneObject& operator=(SceneObject&&) = default;
+
+  /****** public methods ******/
+  // functions to be (re)implemented by derived classes
+  virtual void SetPosition(float x, float y);
+  virtual void OnResize(float width, float height);
+  virtual void OnRender() = 0;
+
+  // common methods
+  const std::string& GetName() const noexcept { return name_; }
+  void SetVisibility(bool visible) noexcept { visible_ = visible; }
+  bool IsVisible() const noexcept override { return visible_; }
+
+  // Position and size getters
+  float GetX() const noexcept { return x_; }
+  float GetY() const noexcept { return y_; }
+  float GetWidth() const noexcept { return width_; }
+  float GetHeight() const noexcept { return height_; }
+
+  // used for automatic layout only
+#ifdef ENABLE_AUTO_LAYOUT
+  YGNodeRef GetYogaNode() { return yg_node_; }
+  void SetAlignContent(Styling::AlignContent content) override;
+  void SetAlignItems(Styling::AlignItems alignment) override;
+  void SetAlignSelf(Styling::AlignSelf alignment) override;
+  void SetAspectRatio(float aspect_ratio) override;
+  void SetDisplay(Styling::Display display) override;
+  void SetFlexBasis(float basis) override;
+  void SetFlexGrow(float grow) override;
+  void SetFlexShrink(float shrink) override;
+  void SetFlexDirection(Styling::FlexDirection direction) override;
+  void SetFlexWrap(Styling::FlexWrap wrap) override;
+  void SetGap(Styling::Edge edge, float gap) override;
+  void SetEdgeInset(Styling::Edge edge, float inset) override;
+  void SetJustifyContent(Styling::JustifyContent content) override;
+  void SetLayoutDirection(Styling::LayoutDirection direction) override;
+  void SetMargin(Styling::Edge edge, float margin) override;
+  void SetPadding(Styling::Edge edge, float padding) override;
+  void SetBorder(Styling::Edge edge, float border) override;
+  void SetPositionType(Styling::PositionType type) override;
+  void SetHeight(float height) override;
+  void SetWidth(float width) override;
+  void SetHeightPercent(float height) override;
+  void SetWidthPercent(float width) override;
+  void SetMinWidth(float width) override;
+  void SetMinHeight(float height) override;
+  void SetMaxWidth(float width) override;
+  void SetMaxHeight(float height) override;
+#endif
+
+ protected:
+  std::string name_;
+  bool visible_ = true;
+
+  float x_ = 0.0f;
+  float y_ = 0.0f;
+  float width_ = 0.0f;
+  float height_ = 0.0f;
+
+#ifdef ENABLE_AUTO_LAYOUT
+  YGNodeRef yg_node_;
+  size_t child_count_ = 0;
+#endif
+};
+}  // namespace quickviz
+
+#endif  // QUICKVIZ_SCENE_OBJECT_HPP

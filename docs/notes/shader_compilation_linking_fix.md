@@ -392,9 +392,9 @@ The fixes are implemented across multiple files:
 - **Grid Renderer**: `src/renderer/src/renderable/grid.cpp` (lines 96-118)
 - **Coordinate Frame**: `src/renderer/src/renderable/coordinate_frame.cpp` (lines 160-182)
 - **Canvas Background**: `src/renderer/src/renderable/canvas.cpp` (lines 340-364)
-- **OpenGL Detection**: `src/imview/src/viewer.cpp` (lines 90-91, 418-451)
-- **Capability Checker**: `src/imview/include/imview/opengl_capability_checker.hpp`
-- **Window Fallbacks**: `src/imview/src/window.cpp` (lines 35-60)
+- **OpenGL Detection**: `src/viewer/src/viewer.cpp` (lines 90-91, 418-451)
+- **Capability Checker**: `src/viewer/include/viewer/opengl_capability_checker.hpp`
+- **Window Fallbacks**: `src/viewer/src/window.cpp` (lines 35-60)
 
 ## References
 

@@ -144,19 +144,19 @@ Input Source → ImGuiInputUtils → InputEvent → InputDispatcher → InputEve
 
 ### Actual Implementation
 
-1. **GamepadManager** (src/imview/input/gamepad_manager.hpp)
+1. **GamepadManager** (src/viewer/input/gamepad_manager.hpp)
    - Meyer's Singleton pattern for thread-safe initialization
    - Direct GLFW polling for multiple gamepad support
    - Connection/disconnection monitoring with callbacks
    - Hardware state caching with GamepadState struct
 
-2. **ImGuiInputUtils::PollGamepadEvents()** (src/imview/input/imgui_input_utils.cpp)
+2. **ImGuiInputUtils::PollGamepadEvents()** (src/viewer/input/imgui_input_utils.cpp)
    - Uses GamepadManager instead of ImGui's gamepad system
    - Proper state tracking with static map (OUTSIDE loop - critical bug fix)
    - Handles button count changes for hot-plug support
    - Generates InputEvent objects for unified processing
 
-3. **Viewer Integration** (src/imview/viewer.cpp)
+3. **Viewer Integration** (src/viewer/viewer.cpp)
    - Polls events AFTER CreateNewImGuiFrame() for valid context
    - One-time handler registration in AddSceneObject()
    - Proper cleanup in RemoveSceneObject() and destructor

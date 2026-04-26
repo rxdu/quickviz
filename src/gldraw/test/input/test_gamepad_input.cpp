@@ -12,9 +12,9 @@
 
 #include "core/event/input_event.hpp"
 #include "core/event/input_mapping.hpp"
-#include "imview/input/imgui_input_utils.hpp"
+#include "viewer/input/imgui_input_utils.hpp"
 #include "gldraw/input/scene_input_handler.hpp"
-#include "imview/input/input_dispatcher.hpp"
+#include "viewer/input/input_dispatcher.hpp"
 
 using namespace quickviz;
 

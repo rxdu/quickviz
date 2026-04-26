@@ -11,7 +11,7 @@
 
 #include <functional>
 
-#include "imview/panel.hpp"
+#include "viewer/panel.hpp"
 
 namespace quickviz {
 class MenuBar : public Panel {

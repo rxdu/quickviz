@@ -11,8 +11,8 @@
 #include <vector>
 #include <glm/glm.hpp>
 
-#include "imview/viewer.hpp"
-#include "imview/box.hpp"
+#include "viewer/viewer.hpp"
+#include "viewer/box.hpp"
 #include "gldraw/gl_scene_panel.hpp"
 #include "gldraw/renderable/grid.hpp"
 #include "gldraw/renderable/point_cloud.hpp"

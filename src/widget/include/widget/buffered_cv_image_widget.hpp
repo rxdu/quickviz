@@ -17,7 +17,7 @@
 
 #include "glad/glad.h"
 
-#include "imview/panel.hpp"
+#include "viewer/panel.hpp"
 
 namespace quickviz {
 class BufferedCvImageWidget : public Panel {

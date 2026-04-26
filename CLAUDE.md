@@ -5,7 +5,7 @@ This document provides comprehensive guidance for working with the QuickViz C++ 
 ## Project Overview
 
 QuickViz is a C++ visualization library for robotics applications, providing:
-- **imview**: Automatic layout management and UI widgets (buttons, sliders, text boxes)
+- **viewer**: Automatic layout management and UI widgets (buttons, sliders, text boxes)
 - **gldraw**: 2D/3D real-time rendering with OpenGL
 - **widget**: Cairo-based drawing and plotting widgets
 - **core**: Event system, buffers, and shared utilities
@@ -70,7 +70,7 @@ Create (or split) a module when:
 ```
 src/
 ├── core/          # Event system, buffers, utilities (depends on nothing)
-├── imview/        # GLFW window management, ImGui integration
+├── viewer/        # GLFW window management, ImGui integration
 ├── widget/        # Cairo drawing, image widgets, plotting
 ├── gldraw/        # OpenGL 3D rendering, point clouds, textures
 ├── pcl_bridge/    # Optional PCL adapter (file loading, conversions)
@@ -105,7 +105,7 @@ operations) live in `sample/` and consume the library, never the reverse.
 
 ### Key Design Patterns
 
-#### 1. Scene Object Hierarchy (imview)
+#### 1. Scene Object Hierarchy (viewer)
 - `Window` → `Viewer` → `SceneObject`
 - `SceneObject` implements: `Renderable`, `Resizable`, `InputHandler`
 - `Panel` extends `SceneObject` for ImGui panels
@@ -153,7 +153,7 @@ make -j8
 - `QUICKVIZ_DEV_MODE`: Development mode, forces tests (OFF by default)
 - `ENABLE_AUTO_LAYOUT`: Enable Yoga-based automatic layout (ON by default, requires C++20)
 - `BUILD_QUICKVIZ_APP`: Build the quickviz application (OFF by default)
-- `IMVIEW_WITH_GLAD`: Integrate GLAD for OpenGL loading (ON by default)
+- `VIEWER_WITH_GLAD`: Integrate GLAD for OpenGL loading (ON by default)
 - `STATIC_CHECK`: Enable cppcheck static analysis (OFF by default)
 
 ### Dependencies
@@ -388,7 +388,7 @@ ctest --output-on-failure
 4. Add to `GlSceneManager` in application
 
 **Create Custom UI Panel**:
-1. Inherit from `Panel` in `src/imview/`
+1. Inherit from `Panel` in `src/viewer/`
 2. Override `Begin()` and `End()` methods with ImGui calls
 3. Add panel to `Viewer` or `Box` container
 

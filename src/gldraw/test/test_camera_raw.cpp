@@ -13,7 +13,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "glad/glad.h"
-#include "imview/window.hpp"
+#include "viewer/window.hpp"
 
 #include "gldraw/renderable/grid.hpp"
 #include "gldraw/camera.hpp"

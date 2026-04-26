@@ -14,7 +14,7 @@
 
 #include "core/buffer/buffer_registry.hpp"
 
-#include "imview/panel.hpp"
+#include "viewer/panel.hpp"
 
 #include "widget/details/scrolling_plot_buffer.hpp"
 

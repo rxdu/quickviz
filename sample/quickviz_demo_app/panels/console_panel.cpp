@@ -8,8 +8,8 @@
 
 #include "panels/console_panel.hpp"
 
-#include "imview/fonts.hpp"
-#include "imview/logging/app_log_handler.hpp"
+#include "viewer/fonts.hpp"
+#include "viewer/logging/app_log_handler.hpp"
 
 namespace quickviz {
 ConsolePanel::ConsolePanel(std::string name) : Panel(name) {

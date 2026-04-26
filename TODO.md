@@ -97,7 +97,7 @@ a visualization-justified hook.
 is in place)
 **Focus**: Re-anchor the library on visualization, then build the editor
 sample as the API check.
-**Architecture**: Library = `core` + `imview` + `widget` + `gldraw` +
+**Architecture**: Library = `core` + `viewer` + `widget` + `gldraw` +
 `pcl_bridge` + `cvdraw` (optional). Apps live in `sample/`.
 
 ---

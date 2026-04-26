@@ -13,7 +13,7 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "imview/viewer.hpp"
+#include "viewer/viewer.hpp"
 #include "gldraw/gl_scene_panel.hpp"
 #include "gldraw/renderable/triangle.hpp"
 #include "gldraw/renderable/point_cloud.hpp"

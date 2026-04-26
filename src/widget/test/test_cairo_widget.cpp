@@ -10,7 +10,7 @@
 #include <iostream>
 #include <thread>
 
-#include "imview/viewer.hpp"
+#include "viewer/viewer.hpp"
 #include "widget/cairo_widget.hpp"
 
 #ifndef M_PI

@@ -31,7 +31,7 @@ add_library(widget
     ${OPENCV_COMP_SRC})
 target_link_libraries(widget PUBLIC
     core
-    imcore imview
+    imcore viewer
     stb
     PkgConfig::Cairo PkgConfig::Fontconfig
     Threads::Threads

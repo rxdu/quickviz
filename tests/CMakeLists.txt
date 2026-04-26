@@ -78,7 +78,7 @@ add_executable(test_renderer_pipeline
 target_link_libraries(test_renderer_pipeline
     PRIVATE
     gtest_main
-    imview
+    viewer
     gldraw
     test_utils
 )
@@ -87,16 +87,16 @@ gtest_discover_tests(test_renderer_pipeline
 )
 
 # ImView integration tests
-add_executable(test_imview_integration
-    integration/test_imview_integration.cpp
+add_executable(test_viewer_integration
+    integration/test_viewer_integration.cpp
 )
-target_link_libraries(test_imview_integration
+target_link_libraries(test_viewer_integration
     PRIVATE
     gtest_main
-    imview
+    viewer
     test_utils
 )
-gtest_discover_tests(test_imview_integration
+gtest_discover_tests(test_viewer_integration
     PROPERTIES LABELS "integration"
 )
 
@@ -111,7 +111,7 @@ add_executable(test_memory_leaks
 target_link_libraries(test_memory_leaks
     PRIVATE
     gtest_main
-    imview
+    viewer
     gldraw
     test_utils
 )
@@ -131,7 +131,7 @@ if(benchmark_FOUND)
     target_link_libraries(benchmark_rendering
         PRIVATE
         benchmark::benchmark
-        imview
+        viewer
         gldraw
         core
     )
@@ -214,8 +214,8 @@ if(ENABLE_COVERAGE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
         target_compile_options(test_renderer_pipeline PRIVATE --coverage)
         target_link_options(test_renderer_pipeline PRIVATE --coverage)
         
-        target_compile_options(test_imview_integration PRIVATE --coverage)
-        target_link_options(test_imview_integration PRIVATE --coverage)
+        target_compile_options(test_viewer_integration PRIVATE --coverage)
+        target_link_options(test_viewer_integration PRIVATE --coverage)
         
         target_compile_options(test_memory_leaks PRIVATE --coverage)
         target_link_options(test_memory_leaks PRIVATE --coverage)

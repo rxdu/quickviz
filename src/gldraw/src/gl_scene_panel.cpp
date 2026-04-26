@@ -13,8 +13,8 @@
 #include <iostream>
 
 #include "imgui.h"
-#include "imview/fonts.hpp"
-#include "imview/input/input_policy.hpp"
+#include "viewer/fonts.hpp"
+#include "viewer/input/input_policy.hpp"
 
 #include "gldraw/renderable/point_cloud.hpp"
 #include "gldraw/selection_manager.hpp"
@@ -221,7 +221,7 @@ void GlScenePanel::RenderInfoOverlay(const ImVec2& content_size,
   draw_list->AddText(text_pos, text_color, fps_text);
 }
 
-// New imview-based input handling methods
+// New viewer-based input handling methods
 bool GlScenePanel::OnInputEvent(const InputEvent& event) {
   if (scene_input_handler_) {
     // Update viewport size for the handler

@@ -1,7 +1,7 @@
 /*
  * @file scene_input_handler.hpp
  * @date 9/1/25
- * @brief Bridge between imview input system and gldraw 3D interactions
+ * @brief Bridge between viewer input system and gldraw 3D interactions
  *
  * @copyright Copyright (c) 2025 Ruixiang Du (rdu)
  */
@@ -12,7 +12,7 @@
 #include <memory>
 #include <string>
 
-#include "imview/input/input_dispatcher.hpp"
+#include "viewer/input/input_dispatcher.hpp"
 #include "core/event/input_event.hpp"
 #include "gldraw/camera.hpp"
 #include "gldraw/camera_controller.hpp"
@@ -27,7 +27,7 @@ class SceneManager;
 /**
  * @brief Input handler bridge for 3D scene interactions
  * 
- * Bridges imview's InputEventHandler system with gldraw's 3D-specific
+ * Bridges viewer's InputEventHandler system with gldraw's 3D-specific
  * functionality like camera control and object selection.
  */
 class SceneInputHandler : public InputEventHandler {

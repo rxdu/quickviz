@@ -14,7 +14,7 @@
 #include <functional>
 
 #include <glm/glm.hpp>
-#include "imview/input/input_dispatcher.hpp"
+#include "viewer/input/input_dispatcher.hpp"
 #include "core/event/input_event.hpp"
 
 namespace quickviz {

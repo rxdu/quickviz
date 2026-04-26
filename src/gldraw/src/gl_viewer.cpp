@@ -13,7 +13,7 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "imview/styling.hpp"
+#include "viewer/styling.hpp"
 
 namespace quickviz {
 

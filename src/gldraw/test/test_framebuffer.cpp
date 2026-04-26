@@ -10,7 +10,7 @@
 #include <memory>
 
 #include "glad/glad.h"
-#include "imview/window.hpp"
+#include "viewer/window.hpp"
 #include "gldraw/frame_buffer.hpp"
 
 using namespace quickviz;

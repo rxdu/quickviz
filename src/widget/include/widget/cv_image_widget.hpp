@@ -14,7 +14,7 @@
 
 #include <opencv2/opencv.hpp>
 
-#include "imview/panel.hpp"
+#include "viewer/panel.hpp"
 
 namespace quickviz {
 class CvImageWidget : public Panel {
