@@ -45,6 +45,7 @@ add_library(scene
     src/renderable/plane.cpp
     src/renderable/pose.cpp
     src/renderable/path.cpp
+    src/renderable/tf_frame_tree.cpp
     ## feedback system
     src/feedback/visual_feedback_system.cpp
     src/feedback/point_cloud_feedback_handler.cpp

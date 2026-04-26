@@ -49,9 +49,10 @@ Pick one and ship it cleanly before the next. Don't backlog all three.
       scene. ROS-style int8 input (`-1` unknown, `0..100` occupancy
       percent). R8 texture + custom colormap shader. Visual test
       fixture in `scene/test/renderable/test_occupancy_grid.cpp`.
-- [ ] `TfFrameTree` renderable — animated transform tree with named
-      frames and parent/child relationships. Likely composes multiple
-      `CoordinateFrame` instances. Companion to tf2.
+- [x] `TfFrameTree` renderable — named frames with parent/child
+      transforms; renders RGB axes per frame plus optional gray
+      connection lines. Walks parent chains at draw time; cycles +
+      broken parent references handled defensively.
 - [ ] `Trajectory` extensions on the existing `Path` renderable —
       timestamp coloring, velocity coloring, animated growth. `Path`
       already covers "render a 3D motion path"; this milestone adds the
@@ -170,6 +171,12 @@ visualization concern?" before merging.
 
 ### April 2026
 
+- ✅ **`TfFrameTree` renderable** — tree of named coordinate frames with
+  parent/child transforms, ROS tf2-style. Each frame renders as RGB
+  axes; gray lines connect parents to children when enabled. World
+  transforms computed by walking parent chains; cycles and broken
+  parent references handled defensively. Visual test fixture animates
+  a 6-frame robot kinematics tree.
 - ✅ **`OccupancyGrid` renderable** — 2D probabilistic grid as a
   textured quad in the XY plane. ROS-style API
   (`SetGrid(width, height, resolution, origin, vector<int8_t>)`,

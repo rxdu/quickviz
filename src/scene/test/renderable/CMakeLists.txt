@@ -25,6 +25,9 @@ target_link_libraries(test_grid PRIVATE scene)
 add_executable(test_occupancy_grid test_occupancy_grid.cpp)
 target_link_libraries(test_occupancy_grid PRIVATE scene)
 
+add_executable(test_tf_frame_tree test_tf_frame_tree.cpp)
+target_link_libraries(test_tf_frame_tree PRIVATE scene)
+
 add_executable(test_line_strip test_line_strip.cpp)
 target_link_libraries(test_line_strip PRIVATE scene)
 
