@@ -1,6 +1,5 @@
 # core modules
 add_subdirectory(core)
-add_subdirectory(scenegraph)
 add_subdirectory(imview)
 add_subdirectory(widget)
 add_subdirectory(gldraw)

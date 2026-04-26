@@ -1,9 +1,6 @@
 # applications
 if (ENABLE_AUTO_LAYOUT)
   add_subdirectory(quickviz_demo_app)
-  
-  # SceneManagerBridge test application
-  add_subdirectory(object_management)
 
   # Silence PCL-era policy warnings, but keep modern behavior where safe
   if (POLICY CMP0144)
