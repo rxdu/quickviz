@@ -24,9 +24,12 @@ a visualization-justified hook.
 - [x] Delete `sample/object_management/` (demo of the deleted bridge)
 - [x] CI `boundary-check` job: `src/` may not include from `sample/`
 - [x] Update CLAUDE.md, archive stale design docs
-- [ ] Build `sample/editor/` MVP as the API completeness check
+- [x] Build `sample/editor/` MVP as the API completeness check
       (load PCD/PLY → render → select → DeleteSelectedPoints → undo/redo
       via app-side `CommandStack` → minimal history panel)
+- [x] Module reorg: imview→viewer, gldraw→scene; widget split into
+      canvas/plot/image; cvdraw merged into image; new plot module hosts
+      ImPlot + ImPlot3D
 - [ ] Add library hooks discovered while building the sample (additive only).
       Logged candidates from sample/editor MVP:
       - `SceneManager::GetObjectId(name) / GetObjectName(id)` so editors can
@@ -62,6 +65,17 @@ a visualization-justified hook.
 ## ✅ Recently Completed
 
 ### April 2026
+- ✅ **Module reorg by intent** — Final library layout:
+  `core, viewer, scene, plot, canvas, image, pcl_bridge`. One job per
+  module, named after what users want to do (not which backend it uses).
+  Renamed `imview→viewer`, `gldraw→scene`. Dissolved `widget` into
+  `canvas` (Cairo) + `plot` (ImPlot widgets). Merged `cvdraw` into
+  `image` along with the cv_image widgets from `widget`. New `plot`
+  module also hosts ImPlot3D.
+- ✅ **`sample/editor/` MVP** — vis+editing reference app on top of
+  the library, built without any `src/` modifications. Acts as the
+  dogfood check on library completeness. Load PCD/PLY → select →
+  DeletePoints with full undo/redo via a sample-private CommandStack.
 - ✅ **Reshape: visualization-first re-anchor** — Removed the in-library
   state management module (`scenegraph`) and its sample (`object_management`).
   Locked the `src/ ↛ sample/` boundary in CI and CLAUDE.md. Editor concerns
@@ -97,8 +111,9 @@ a visualization-justified hook.
 is in place)
 **Focus**: Re-anchor the library on visualization, then build the editor
 sample as the API check.
-**Architecture**: Library = `core` + `viewer` + `widget` + `scene` +
-`pcl_bridge` + `cvdraw` (optional). Apps live in `sample/`.
+**Architecture**: Library = `core, viewer, scene, plot, canvas, image,
+pcl_bridge` — one job per module, named by user intent. Apps live in
+`sample/`.
 
 ---
 

@@ -4,11 +4,20 @@ This document provides comprehensive guidance for working with the QuickViz C++ 
 
 ## Project Overview
 
-QuickViz is a C++ visualization library for robotics applications, providing:
-- **viewer**: Automatic layout management and UI widgets (buttons, sliders, text boxes)
-- **scene**: 2D/3D real-time rendering with OpenGL
-- **widget**: Cairo-based drawing and plotting widgets
-- **core**: Event system, buffers, and shared utilities
+QuickViz is a C++ visualization library for robotics applications.
+Each module has one job:
+
+- **viewer**: window + panels + layout (GLFW + ImGui + Yoga)
+- **scene**: interactive 3D scene rendering (OpenGL)
+- **plot**: data charts, 2D and 3D (ImPlot + ImPlot3D)
+- **canvas**: 2D vector drawing (Cairo)
+- **image**: image display & annotation (OpenCV, optional)
+- **pcl_bridge**: PCL adapter (optional)
+- **core**: shared infrastructure (events, buffers, threading helpers)
+
+Editor frameworks (undo/redo, history, project files) are **not** in
+the library — they live in `sample/` on top of it. CI enforces the
+`src/ ↛ sample/` boundary.
 
 ## Core Development Principles
 
@@ -69,16 +78,34 @@ Create (or split) a module when:
 ### Module Structure
 ```
 src/
-├── core/          # Event system, buffers, utilities (depends on nothing)
-├── viewer/        # GLFW window management, ImGui integration
-├── widget/        # Cairo drawing, image widgets, plotting
-├── scene/        # OpenGL 3D rendering, point clouds, textures
-├── pcl_bridge/    # Optional PCL adapter (file loading, conversions)
-├── cvdraw/        # OpenCV-based drawing utilities (optional bridge)
-└── third_party/   # imgui, implot, stb, yoga, googletest
+├── core/          # events, buffers, threading helpers
+├── viewer/        # window + panels + layout (GLFW + ImGui + Yoga)
+├── scene/         # interactive 3D scene rendering (OpenGL)
+├── plot/          # data charts (ImPlot 2D + ImPlot3D)
+├── canvas/        # 2D vector drawing (Cairo)
+├── image/         # image display & annotation (OpenCV, optional)
+└── pcl_bridge/    # PCL adapter (optional)
 
+third_party/       # imgui, implot, implot3d, stb, yoga, googletest
 sample/            # Reference applications built ON TOP of the library
 ```
+
+Pick the module by what you want to do:
+
+| I want to…                                    | Module        |
+| --------------------------------------------- | ------------- |
+| Open a window with panels                     | `viewer`      |
+| Show a 3D scene (robots, point clouds, mesh)  | `scene`       |
+| Plot a chart of data (2D or 3D)               | `plot`        |
+| Draw a custom 2D figure                       | `canvas`      |
+| Display or annotate camera images             | `image`       |
+| Load PCL data                                 | `pcl_bridge`  |
+| Use shared infrastructure (events, buffers)   | `core`        |
+
+Naming convention: backends that may grow alternatives keep an
+implementation prefix on internal types (`Gl*` in `scene`, `Cv*` in
+`image`). Domain modules themselves stay tech-neutral so a future
+Vulkan-backed `scene` or libpng-backed `image` slot in without churn.
 
 ### Dependency Rules
 - **Core** (math, logging, utilities) depends on nothing else
@@ -158,7 +185,7 @@ make -j8
 
 ### Dependencies
 **Required**: OpenGL 3.3+, GLFW3, GLM, Cairo
-**Optional**: OpenCV (cvdraw), PCL (point cloud bridge), Google Benchmark, Valgrind
+**Optional**: OpenCV (`image` module), PCL (`pcl_bridge`), Google Benchmark, Valgrind
 **Bundled**: Dear ImGui & ImPlot, STB libraries, Yoga, GoogleTest, GLAD
 
 ## API Design Standards
