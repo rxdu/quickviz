@@ -6,7 +6,7 @@
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
-#include "widget/rt_line_plot_widget.hpp"
+#include "plot/rt_line_plot_widget.hpp"
 
 #include <cmath>
 #include <iostream>

@@ -16,7 +16,7 @@
 
 #include "viewer/panel.hpp"
 
-#include "widget/details/scrolling_plot_buffer.hpp"
+#include "plot/details/scrolling_plot_buffer.hpp"
 
 namespace quickviz {
 class RtLinePlotWidget : public Panel {

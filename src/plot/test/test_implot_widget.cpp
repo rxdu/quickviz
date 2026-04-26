@@ -15,7 +15,7 @@
 #include "core/buffer/ring_buffer.hpp"
 
 #include "viewer/viewer.hpp"
-#include "widget/rt_line_plot_widget.hpp"
+#include "plot/rt_line_plot_widget.hpp"
 // #include "scene_objects/imtext_panel.hpp"
 // #include "scene_objects/gl_triangle_scene_object.hpp"
 

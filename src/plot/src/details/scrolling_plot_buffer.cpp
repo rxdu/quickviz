@@ -7,7 +7,7 @@
  * Copyright (c) 2021 Ruixiang Du (rdu)
  */
 
-#include "widget/details/scrolling_plot_buffer.hpp"
+#include "plot/details/scrolling_plot_buffer.hpp"
 
 #include <cmath>
 

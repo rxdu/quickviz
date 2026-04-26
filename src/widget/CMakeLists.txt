@@ -25,9 +25,7 @@ add_library(widget
     # widgets
     src/details/cairo_context.cpp
     src/details/cairo_draw.cpp
-    src/details/scrolling_plot_buffer.cpp
     src/cairo_widget.cpp
-    src/rt_line_plot_widget.cpp
     ${OPENCV_COMP_SRC})
 target_link_libraries(widget PUBLIC
     core
