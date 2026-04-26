@@ -1,0 +1,20 @@
+add_executable(test_gl_scene_panel test_gl_scene_panel.cpp)
+target_link_libraries(test_gl_scene_panel PRIVATE scene)
+
+add_executable(test_robot_frames test_robot_frames.cpp)
+target_link_libraries(test_robot_frames PRIVATE scene)
+
+add_executable(test_camera test_camera.cpp)
+target_link_libraries(test_camera PRIVATE scene)
+
+add_executable(test_layer_system test_layer_system.cpp)
+target_link_libraries(test_layer_system PRIVATE scene)
+
+add_executable(test_camera_control_mappings test_camera_control_mappings.cpp)
+target_link_libraries(test_camera_control_mappings PRIVATE scene)
+
+add_executable(test_camera_configuration test_camera_configuration.cpp)
+target_link_libraries(test_camera_configuration PRIVATE scene)
+
+add_executable(test_visual_feedback_system test_visual_feedback_system.cpp)
+target_link_libraries(test_visual_feedback_system PRIVATE scene)

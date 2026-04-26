@@ -19,8 +19,8 @@ else()
     message(STATUS "PCL not found - PCL bridge utilities will not be available")
 endif()
 
-# Link with gldraw for rendering capabilities
-target_link_libraries(pcl_bridge PUBLIC gldraw)
+# Link with scene for rendering capabilities
+target_link_libraries(pcl_bridge PUBLIC scene)
 
 # Include directories
 target_include_directories(pcl_bridge PUBLIC

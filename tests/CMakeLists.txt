@@ -60,7 +60,7 @@ add_executable(test_geometric_primitive_types
 target_link_libraries(test_geometric_primitive_types
     PRIVATE
     gtest_main
-    gldraw
+    scene
     test_utils
 )
 gtest_discover_tests(test_geometric_primitive_types
@@ -79,7 +79,7 @@ target_link_libraries(test_renderer_pipeline
     PRIVATE
     gtest_main
     viewer
-    gldraw
+    scene
     test_utils
 )
 gtest_discover_tests(test_renderer_pipeline
@@ -112,7 +112,7 @@ target_link_libraries(test_memory_leaks
     PRIVATE
     gtest_main
     viewer
-    gldraw
+    scene
     test_utils
 )
 gtest_discover_tests(test_memory_leaks
@@ -132,7 +132,7 @@ if(benchmark_FOUND)
         PRIVATE
         benchmark::benchmark
         viewer
-        gldraw
+        scene
         core
     )
     

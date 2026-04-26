@@ -52,7 +52,7 @@ a visualization-justified hook.
       lightweight logger (also audit for leftover noise after the deletions)
 
 ### Smaller cleanups
-- [ ] `src/gldraw/src/renderable/canvas.cpp` is 2069 LOC; split into
+- [ ] `src/scene/src/renderable/canvas.cpp` is 2069 LOC; split into
       cohesive sub-files (~500 LOC target per CLAUDE.md)
 - [ ] Audit `interactive_scene_manager.cpp` for disabled/legacy paths left
       over from the editor migration; either finish or remove
@@ -97,7 +97,7 @@ a visualization-justified hook.
 is in place)
 **Focus**: Re-anchor the library on visualization, then build the editor
 sample as the API check.
-**Architecture**: Library = `core` + `viewer` + `widget` + `gldraw` +
+**Architecture**: Library = `core` + `viewer` + `widget` + `scene` +
 `pcl_bridge` + `cvdraw` (optional). Apps live in `sample/`.
 
 ---

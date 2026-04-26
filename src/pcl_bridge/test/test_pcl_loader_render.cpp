@@ -22,9 +22,9 @@
 #include "viewer/viewer.hpp"
 #include "viewer/panel.hpp"
 
-#include "gldraw/gl_scene_panel.hpp"
-#include "gldraw/renderable/grid.hpp"
-#include "gldraw/renderable/point_cloud.hpp"
+#include "scene/gl_scene_panel.hpp"
+#include "scene/renderable/grid.hpp"
+#include "scene/renderable/point_cloud.hpp"
 #include "pcl_bridge/pcl_loader.hpp"
 
 using namespace quickviz;

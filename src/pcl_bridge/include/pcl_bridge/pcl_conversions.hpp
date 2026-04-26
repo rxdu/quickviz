@@ -13,7 +13,7 @@
 #include <functional>
 #include <string>
 #include <glm/glm.hpp>
-#include "gldraw/renderable/point_cloud.hpp"
+#include "scene/renderable/point_cloud.hpp"
 
 // Forward declarations for PCL types to avoid requiring PCL headers in this file
 namespace pcl {

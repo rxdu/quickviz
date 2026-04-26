@@ -153,7 +153,7 @@ endforeach ()
 
 # targets to install defined in each module
 add_library(quickviz INTERFACE)
-target_link_libraries(quickviz INTERFACE core viewer widget gldraw visualization) 
+target_link_libraries(quickviz INTERFACE core viewer widget scene visualization) 
 
 # export target configuration 
 include(CMakePackageConfigHelpers)

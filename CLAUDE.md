@@ -6,7 +6,7 @@ This document provides comprehensive guidance for working with the QuickViz C++ 
 
 QuickViz is a C++ visualization library for robotics applications, providing:
 - **viewer**: Automatic layout management and UI widgets (buttons, sliders, text boxes)
-- **gldraw**: 2D/3D real-time rendering with OpenGL
+- **scene**: 2D/3D real-time rendering with OpenGL
 - **widget**: Cairo-based drawing and plotting widgets
 - **core**: Event system, buffers, and shared utilities
 
@@ -72,7 +72,7 @@ src/
 ├── core/          # Event system, buffers, utilities (depends on nothing)
 ├── viewer/        # GLFW window management, ImGui integration
 ├── widget/        # Cairo drawing, image widgets, plotting
-├── gldraw/        # OpenGL 3D rendering, point clouds, textures
+├── scene/        # OpenGL 3D rendering, point clouds, textures
 ├── pcl_bridge/    # Optional PCL adapter (file loading, conversions)
 ├── cvdraw/        # OpenCV-based drawing utilities (optional bridge)
 └── third_party/   # imgui, implot, stb, yoga, googletest
@@ -111,7 +111,7 @@ operations) live in `sample/` and consume the library, never the reverse.
 - `Panel` extends `SceneObject` for ImGui panels
 - `Box` provides container with automatic layout via Yoga
 
-#### 2. OpenGL Rendering Pipeline (gldraw)
+#### 2. OpenGL Rendering Pipeline (scene)
 - `GlSceneManager` manages OpenGL objects and framebuffer
 - `OpenGlObject` interface for all renderable 3D objects
 - Render-to-texture approach with `FrameBuffer`
@@ -382,7 +382,7 @@ ctest --output-on-failure
 ### Common Tasks
 
 **Add New Renderable Object**:
-1. Inherit from `OpenGlObject` in `src/gldraw/renderable/`
+1. Inherit from `OpenGlObject` in `src/scene/renderable/`
 2. Implement shader loading and VAO/VBO setup
 3. Override `OnDraw()` with OpenGL render calls
 4. Add to `GlSceneManager` in application

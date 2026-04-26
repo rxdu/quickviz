@@ -8,7 +8,7 @@
 
 #include "pcl_bridge/pcl_loader.hpp"
 #include "pcl_bridge/pcl_conversions.hpp"
-#include "gldraw/renderable/point_cloud.hpp"
+#include "scene/renderable/point_cloud.hpp"
 
 #include <algorithm>
 #include <fstream>

@@ -23,9 +23,9 @@
 #include "viewer/viewer.hpp"
 #include "viewer/panel.hpp"
 
-#include "gldraw/scene_manager.hpp"
-#include "gldraw/renderable/grid.hpp"
-#include "gldraw/renderable/point_cloud.hpp"
+#include "scene/scene_manager.hpp"
+#include "scene/renderable/grid.hpp"
+#include "scene/renderable/point_cloud.hpp"
 #include "pcl_bridge/pcl_loader.hpp"
 
 #include "point_cloud_info_panel.hpp"

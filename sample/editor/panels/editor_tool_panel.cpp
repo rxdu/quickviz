@@ -10,7 +10,7 @@
 
 #include <imgui.h>
 
-#include "gldraw/tools/point_selection_tool.hpp"
+#include "scene/tools/point_selection_tool.hpp"
 
 #include "../commands/delete_points_command.hpp"
 #include "../editor_state.hpp"

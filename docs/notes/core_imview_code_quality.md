@@ -109,6 +109,6 @@ This document captures targeted, high‑impact improvements for the `core` and `
 
 ## Notes
 - Related references in-tree:
-  - BufferRegistry usages: search for `BufferRegistry::GetInstance()` across `widget/` and `gldraw/`.
+  - BufferRegistry usages: search for `BufferRegistry::GetInstance()` across `widget/` and `scene/`.
   - Existing design notes: `docs/notes/core_module_review_2025-01-28.md`.
 

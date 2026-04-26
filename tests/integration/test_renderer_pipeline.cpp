@@ -14,12 +14,12 @@
 #include <cstring>
 
 #include "viewer/viewer.hpp"
-#include "gldraw/gl_scene_panel.hpp"
-#include "gldraw/renderable/triangle.hpp"
-#include "gldraw/renderable/point_cloud.hpp"
-#include "gldraw/renderable/grid.hpp"
-#include "gldraw/camera.hpp"
-#include "gldraw/camera_controller.hpp"
+#include "scene/gl_scene_panel.hpp"
+#include "scene/renderable/triangle.hpp"
+#include "scene/renderable/point_cloud.hpp"
+#include "scene/renderable/grid.hpp"
+#include "scene/camera.hpp"
+#include "scene/camera_controller.hpp"
 
 using namespace quickviz;
 
