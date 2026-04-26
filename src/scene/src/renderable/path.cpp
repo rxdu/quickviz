@@ -140,6 +140,20 @@ void Path::AddPoint(const glm::vec3& point) {
   needs_arrow_update_ = true;
 }
 
+void Path::AddPoint(const glm::vec3& point, float scalar) {
+  control_points_.push_back(point);
+  // Keep scalar_values_ aligned with control_points_. If scalar_values_
+  // is shorter (e.g. user previously called AddPoint without scalar),
+  // pad with the new scalar so we don't introduce a tail of stale data.
+  if (scalar_values_.size() < control_points_.size() - 1) {
+    scalar_values_.resize(control_points_.size() - 1, scalar);
+  }
+  scalar_values_.push_back(scalar);
+  needs_geometry_update_ = true;
+  needs_color_update_ = true;
+  needs_arrow_update_ = true;
+}
+
 void Path::InsertPoint(size_t index, const glm::vec3& point) {
   if (index <= control_points_.size()) {
     control_points_.insert(control_points_.begin() + index, point);
@@ -160,6 +174,7 @@ void Path::RemovePoint(size_t index) {
 
 void Path::ClearPath() {
   control_points_.clear();
+  scalar_values_.clear();
   path_vertices_.clear();
   path_colors_.clear();
   path_indices_.clear();
@@ -235,6 +250,17 @@ void Path::SetScalarValues(const std::vector<float>& values) {
   scalar_values_ = values;
   if (color_mode_ == ColorMode::kVelocity || color_mode_ == ColorMode::kTime || color_mode_ == ColorMode::kCost) {
     needs_color_update_ = true;
+  }
+}
+
+void Path::EnableAutoColorRange(bool enable) {
+  if (auto_color_range_ != enable) {
+    auto_color_range_ = enable;
+    if (color_mode_ == ColorMode::kVelocity ||
+        color_mode_ == ColorMode::kTime ||
+        color_mode_ == ColorMode::kCost) {
+      needs_color_update_ = true;
+    }
   }
 }
 
@@ -545,13 +571,44 @@ void Path::ComputePathColors() {
     case ColorMode::kVelocity:
     case ColorMode::kTime:
     case ColorMode::kCost: {
-      for (size_t i = 0; i < path_vertices_.size(); ++i) {
+      // Auto-fit color range from current scalar_values_ if requested.
+      // Lets streaming trajectories adjust their color mapping as new
+      // samples arrive without the caller managing the range manually.
+      if (auto_color_range_ && !scalar_values_.empty()) {
+        float lo = scalar_values_.front();
+        float hi = scalar_values_.front();
+        for (float v : scalar_values_) {
+          if (v < lo) lo = v;
+          if (v > hi) hi = v;
+        }
+        // Avoid degenerate range when all samples are equal.
+        if (hi <= lo) hi = lo + 1.0f;
+        color_range_ = glm::vec2(lo, hi);
+      }
+
+      // Map each path vertex to a fractional control-point index, then
+      // interpolate scalar_values_ at that fraction. This is correct
+      // for both line-segment paths (path_vertices_.size() ==
+      // control_points_.size()) and subdivided smooth paths
+      // (path_vertices_.size() > control_points_.size()), where the
+      // previous "scalar_values_[i]" indexing produced misaligned
+      // colors.
+      const size_t v_count = path_vertices_.size();
+      const size_t s_count = scalar_values_.size();
+      for (size_t i = 0; i < v_count; ++i) {
         float value = 0.0f;
-        if (i < scalar_values_.size()) {
-          value = scalar_values_[i];
-        } else if (!scalar_values_.empty()) {
-          // Use last available value
-          value = scalar_values_.back();
+        if (s_count >= 2) {
+          const float t =
+              (v_count <= 1) ? 0.0f
+                             : (static_cast<float>(i) /
+                                static_cast<float>(v_count - 1)) *
+                                   static_cast<float>(s_count - 1);
+          const size_t lo = static_cast<size_t>(t);
+          const size_t hi = std::min(lo + 1, s_count - 1);
+          const float frac = t - static_cast<float>(lo);
+          value = glm::mix(scalar_values_[lo], scalar_values_[hi], frac);
+        } else if (s_count == 1) {
+          value = scalar_values_[0];
         }
         path_colors_.push_back(ColorFromScalar(value));
       }

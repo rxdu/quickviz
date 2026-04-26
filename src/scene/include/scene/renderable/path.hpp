@@ -69,6 +69,10 @@ public:
   // Path definition
   void SetPoints(const std::vector<glm::vec3>& points);
   void AddPoint(const glm::vec3& point);
+  /// Streaming overload: append a point together with its scalar value
+  /// (used by kVelocity / kTime / kCost color modes). Keeps scalar_values_
+  /// aligned with control_points_ for live-trajectory use cases.
+  void AddPoint(const glm::vec3& point, float scalar);
   void InsertPoint(size_t index, const glm::vec3& point);
   void RemovePoint(size_t index);
   void ClearPath();
@@ -95,6 +99,13 @@ public:
 
   ColorMode GetColorMode() const { return color_mode_; }
   glm::vec3 GetColor() const { return base_color_; }
+
+  /// When enabled, the color range used for kVelocity/kTime/kCost is
+  /// computed from `scalar_values_` (min/max) before each color update.
+  /// Off by default; enable for streaming trajectories so the color
+  /// mapping adapts as new samples arrive.
+  void EnableAutoColorRange(bool enable);
+  bool IsAutoColorRangeEnabled() const { return auto_color_range_; }
 
   // Directional arrows
   void SetArrowMode(ArrowMode mode);
@@ -165,6 +176,7 @@ private:
   std::vector<glm::vec3> custom_colors_;
   std::vector<float> scalar_values_;
   glm::vec2 color_range_;
+  bool auto_color_range_ = false;
 
   // Arrow properties
   ArrowMode arrow_mode_;

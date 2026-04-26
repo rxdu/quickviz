@@ -62,11 +62,12 @@ Pick one and ship it cleanly before the next. Don't backlog all three.
       transforms; renders RGB axes per frame plus optional gray
       connection lines. Walks parent chains at draw time; cycles +
       broken parent references handled defensively.
-- [ ] `Trajectory` extensions on the existing `Path` renderable —
-      timestamp coloring, velocity coloring, animated growth. `Path`
-      already covers "render a 3D motion path"; this milestone adds the
-      streaming/time-aware behaviors. (Don't create a new renderable —
-      extend `Path`.)
+- [x] `Trajectory` extensions on the existing `Path` renderable —
+      streaming-friendly `AddPoint(point, scalar)` overload,
+      `EnableAutoColorRange()` for live trajectories, and a correctness
+      fix for per-vertex scalar→color mapping under subdivided paths.
+      (Pre-existing color modes `kVelocity` / `kTime` / `kCost` and
+      `SetAnimationProgress` already covered the rest.)
 
 ### After ROS2 lands — diagnostics
 - [ ] **HUD overlay**: frame time, draw call count, GPU memory, active
@@ -185,6 +186,16 @@ visualization concern?" before merging.
 
 ### April 2026
 
+- ✅ **Path: trajectory streaming extensions** — `AddPoint(point, scalar)`
+  overload pushes positions and scalar samples in lockstep for live
+  trajectory feeds. `EnableAutoColorRange()` auto-fits the velocity /
+  time / cost color range to the current `scalar_values_` so the
+  mapping adapts as samples arrive. Fixed a long-standing bug where
+  scalar-encoded colors on subdivided paths (smooth curve / Bezier /
+  spline) misaligned because the per-vertex mapping indexed
+  `scalar_values_` by raw vertex index; now uses fractional
+  control-point parameter and lerps. Closes the third item under the
+  "first standard robotics renderable" milestone.
 - ✅ **Triangle moved to `scene/test/test_utils/`** — accidentally-public
   test scaffold removed from the public renderable API. New
   `scene_test_utils` library hosts test-only helpers; the 8 tests that
