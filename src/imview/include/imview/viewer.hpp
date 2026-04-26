@@ -45,15 +45,10 @@ class Viewer : public Window {
   void EnableKeyboardNav(bool enable);
   void EnableGamepadNav(bool enable);
 
-  // user input handling
-  void EnableJoystickInput(bool enable);
-  std::vector<JoystickDevice> GetListOfJoysticks();
-  bool StartJoystickInputMonitoring(int id);
-  void StopJoystickInputMonitoring();
-  bool IsJoystickInputMonitoringActive() const;
-
   // window content rendering
   bool AddSceneObject(std::shared_ptr<SceneObject> obj);
+  bool RemoveSceneObject(std::shared_ptr<SceneObject> obj);
+  void ClearSceneObjects();
 
   // start the rendering loop (blocking)
   void Show();
@@ -64,20 +59,11 @@ class Viewer : public Window {
   void CreateNewImGuiFrame();
   void RenderImGuiFrame();
   void RenderSceneObjects();
-  void HandleJoystickInput();
 
  private:
   void LoadDefaultStyle();
   void OnResize(GLFWwindow* window, int width, int height);
   void CheckOpenGLCapabilities();
-
-  void EnumerateJoysticks();
-  void OnJoystickEvent(int id, int event);
-  bool GetJoystickInput(int id, JoystickInput& input);
-
-  bool handle_joystick_input_ = false;
-  std::unordered_map<int, JoystickDevice> joysticks_;
-  JoystickInput current_joystick_input_;
 
   std::vector<std::shared_ptr<SceneObject>> scene_objects_;
   float bg_color_[4];

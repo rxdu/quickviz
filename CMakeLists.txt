@@ -107,6 +107,14 @@ if (((NOT BUILD_AS_MODULE) AND BUILD_TESTING) OR QUICKVIZ_DEV_MODE)
   enable_testing()
   include(GoogleTest)
   message(STATUS "quickviz tests will be built")
+  # Google tests
+  message(STATUS "Build unit tests with Google Test.")
+  # reference: https://cliutils.gitlab.io/modern-cmake/chapters/testing/googletest.html
+  mark_as_advanced(
+      BUILD_GMOCK BUILD_GTEST BUILD_SHARED_LIBS
+      gmock_build_tests gtest_build_samples gtest_build_tests
+      gtest_disable_pthreads gtest_force_shared_crt gtest_hide_internal_symbols
+  )
 else ()
   set(BUILD_TESTING OFF)
   message(STATUS "quickviz test will not be built")
@@ -114,6 +122,8 @@ endif ()
 
 ## Add source directory
 add_subdirectory(src)
+add_subdirectory(sample)
+add_subdirectory(third_party)
 
 ## Add comprehensive test directory
 if(BUILD_TESTING)
@@ -143,7 +153,7 @@ endforeach ()
 
 # targets to install defined in each module
 add_library(quickviz INTERFACE)
-target_link_libraries(quickviz INTERFACE core imview widget renderer) 
+target_link_libraries(quickviz INTERFACE core imview widget gldraw visualization) 
 
 # export target configuration 
 include(CMakePackageConfigHelpers)

@@ -26,6 +26,8 @@ class ImGuiFixedPanel : public Panel {
     // this->SetNoBackground(true);
   }
 
+  std::string GetName() const override { return "ImGuiFixedPanel"; }
+
   void Draw() override {
     Begin();
     {

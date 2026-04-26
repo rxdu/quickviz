@@ -13,11 +13,16 @@
 namespace quickviz {
 class EventEmitter {
  public:
+  EventEmitter(EventDispatcher& dispatcher) : dispatcher_(dispatcher) {}
+  
   template <typename EventT, typename... Args>
   void Emit(EventSource type, const std::string& event_name, Args... args) {
     auto event = std::make_shared<EventT>(type, event_name, args...);
-    EventDispatcher::GetInstance().Dispatch(event);
+    dispatcher_.DispatchEvent(event);
   }
+  
+ private:
+  EventDispatcher& dispatcher_;
 };
 }  // namespace quickviz
 

@@ -11,6 +11,7 @@
 #include <iostream>
 
 #include <yoga/Yoga.h>
+#include "imview/input/input_dispatcher.hpp"
 
 namespace quickviz {
 namespace {
@@ -92,32 +93,21 @@ void Box::OnRender() {
   }
 }
 
-void Box::OnJoystickDeviceChange(const std::vector<JoystickDevice>& devices) {
-  joysticks_ = devices;
-
-  auto strategy = input_handling_strategies_[InputHandler::Type::kJoystick];
-  if (strategy == Strategy::kPropagateOnly ||
-      strategy == Strategy::kProcessAndPropagate) {
-    // Send the event to child handlers
-    for (auto child : children_) {
-      child.second->OnJoystickDeviceChange(devices);
+bool Box::OnInputEvent(const InputEvent& event) {
+  // Propagate input events to children that implement InputEventHandler
+  for (const auto& [name, child] : children_) {
+    // Try to cast child to InputEventHandler
+    auto input_handler = std::dynamic_pointer_cast<InputEventHandler>(child);
+    if (input_handler) {
+      // Forward the event to the child
+      if (input_handler->OnInputEvent(event)) {
+        // Child consumed the event, stop propagation
+        return true;
+      }
     }
   }
+  
+  return false;
 }
 
-void Box::OnJoystickUpdate(const JoystickInput& input) {
-  auto strategy = input_handling_strategies_[InputHandler::Type::kJoystick];
-  if (strategy == Strategy::kProcessOnly ||
-      strategy == Strategy::kProcessAndPropagate) {
-    // Handle the key press in this handler
-    ProcessJoystickInput(input);
-  }
-  if (strategy == Strategy::kPropagateOnly ||
-      strategy == Strategy::kProcessAndPropagate) {
-    // Send the event to child handlers
-    for (auto child : children_) {
-      child.second->OnJoystickUpdate(input);
-    }
-  }
-}
 }  // namespace quickviz

@@ -14,12 +14,12 @@
 #include <cstring>
 
 #include "imview/viewer.hpp"
-#include "renderer/gl_scene_manager.hpp"
-#include "renderer/renderable/triangle.hpp"
-#include "renderer/renderable/point_cloud.hpp"
-#include "renderer/renderable/grid.hpp"
-#include "renderer/camera.hpp"
-#include "renderer/camera_controller.hpp"
+#include "gldraw/gl_scene_panel.hpp"
+#include "gldraw/renderable/triangle.hpp"
+#include "gldraw/renderable/point_cloud.hpp"
+#include "gldraw/renderable/grid.hpp"
+#include "gldraw/camera.hpp"
+#include "gldraw/camera_controller.hpp"
 
 using namespace quickviz;
 
@@ -34,7 +34,7 @@ protected:
         try {
             // Create a viewer for testing
             viewer_ = std::make_unique<Viewer>("Test Viewer", 800, 600);
-            scene_manager_ = std::make_shared<GlSceneManager>("TestScene");
+            scene_manager_ = std::make_shared<GlScenePanel>("TestScene");
             viewer_->AddSceneObject(scene_manager_);
         } catch (const std::runtime_error& e) {
             GTEST_SKIP() << "Skipping graphics test: " << e.what();
@@ -47,7 +47,7 @@ protected:
     }
 
     std::unique_ptr<Viewer> viewer_;
-    std::shared_ptr<GlSceneManager> scene_manager_;
+    std::shared_ptr<GlScenePanel> scene_manager_;
 
 private:
     bool IsDisplayAvailable() {
@@ -119,7 +119,7 @@ TEST_F(RendererPipelineTest, CameraController) {
     
     // Test camera operations
     controller.ProcessKeyboard(Camera::Movement::kForward, 0.016f);
-    controller.ProcessMouseMovement(1.0f, 1.0f);
+    controller.ProcessOrbitMovement(1.0f, 1.0f);
     
     SUCCEED();
 }

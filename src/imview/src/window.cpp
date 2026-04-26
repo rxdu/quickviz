@@ -11,10 +11,14 @@
 
 #include <stdexcept>
 #include <iostream>
+#include <algorithm>
+
+#include "imview/panel.hpp"
+#include "imview/input/gamepad_manager.hpp"
 
 namespace quickviz {
 namespace {
-void HandleGlfwError(int error, const char *description) {
+void HandleGlfwError(int error, const char* description) {
   fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 }  // namespace
@@ -35,13 +39,14 @@ Window::Window(std::string title, uint32_t width, uint32_t height,
   // create GLFW window
   win_ = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
   if (win_ == NULL) {
-    std::cerr << "Failed to create GLFW window with requested OpenGL version" << std::endl;
-    
+    std::cerr << "Failed to create GLFW window with requested OpenGL version"
+              << std::endl;
+
     // Try fallback to compatibility profile
     std::cerr << "Attempting fallback to compatibility profile..." << std::endl;
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
     win_ = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
-    
+
     if (win_ == NULL) {
       // Try even lower OpenGL version
       std::cerr << "Attempting fallback to OpenGL 3.0..." << std::endl;
@@ -49,14 +54,18 @@ Window::Window(std::string title, uint32_t width, uint32_t height,
       glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
       glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
       win_ = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
-      
+
       if (win_ == NULL) {
-        throw std::runtime_error("Failed to create GLFW window even with fallback options");
+        throw std::runtime_error(
+            "Failed to create GLFW window even with fallback options");
       } else {
-        std::cerr << "Successfully created window with OpenGL 3.0 compatibility profile" << std::endl;
+        std::cerr << "Successfully created window with OpenGL 3.0 "
+                     "compatibility profile"
+                  << std::endl;
       }
     } else {
-      std::cerr << "Successfully created window with compatibility profile" << std::endl;
+      std::cerr << "Successfully created window with compatibility profile"
+                << std::endl;
     }
   }
   glfwMakeContextCurrent(win_);
@@ -68,9 +77,15 @@ Window::Window(std::string title, uint32_t width, uint32_t height,
     throw std::runtime_error("Failed to initialize GLAD");
   }
 #endif
+
+  // Initialize input management
+  input_manager_ = std::make_unique<InputManager>();
 }
 
 Window::~Window() {
+  // Shutdown GamepadManager before terminating GLFW to prevent segfaults
+  GamepadManager::GetInstance().Shutdown();
+  
   glfwDestroyWindow(win_);
   glfwTerminate();
 }
@@ -148,16 +163,56 @@ void Window::PollEvents() {
   glfwPollEvents();
 
   // exit if ESC is pressed
-  if (glfwGetKey(win_, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+  if (exit_on_esc_ && glfwGetKey(win_, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
     CloseWindow();
   }
 }
 
 void Window::SwapBuffers() { glfwSwapBuffers(win_); }
 
+void Window::DisableExitOnEsc() { exit_on_esc_ = false; }
+
 void Window::CloseWindow() { glfwSetWindowShouldClose(win_, 1); }
 
 bool Window::ShouldClose() const { return glfwWindowShouldClose(win_); }
 
-GLFWwindow *Window::GetWindowObject() { return win_; }
+GLFWwindow* Window::GetWindowObject() { return win_; }
+
+void Window::RegisterPanel(std::shared_ptr<Panel> panel) {
+  if (!panel) return;
+
+  // Add to our tracking list
+  registered_panels_.push_back(panel);
+
+  // Register panel as input event handler with the centralized input manager
+  input_manager_->RegisterHandler(panel);
+}
+
+void Window::UnregisterPanel(const std::string& panel_name) {
+  // Remove from input manager
+  input_manager_->UnregisterHandler(panel_name);
+
+  // Remove from tracking list (clean up weak_ptrs)
+  registered_panels_.erase(
+      std::remove_if(registered_panels_.begin(), registered_panels_.end(),
+                     [&panel_name](const std::weak_ptr<Panel>& weak_panel) {
+                       if (auto panel = weak_panel.lock()) {
+                         return panel->GetName() == panel_name;
+                       }
+                       return true;  // Remove expired weak_ptrs too
+                     }),
+      registered_panels_.end());
+}
+
+void Window::ClearPanels() {
+  // Unregister all panels from input manager
+  for (auto& weak_panel : registered_panels_) {
+    if (auto panel = weak_panel.lock()) {
+      input_manager_->UnregisterHandler(panel->GetName());
+    }
+  }
+
+  // Clear tracking list
+  registered_panels_.clear();
+}
 }  // namespace quickviz

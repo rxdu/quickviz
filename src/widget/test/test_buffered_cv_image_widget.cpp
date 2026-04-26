@@ -34,7 +34,14 @@ void CaptureVideo(std::string buffer_name) {
   }
 
   auto& buffer_registry = BufferRegistry::GetInstance();
-  auto cv_buffer = buffer_registry.GetBuffer<cv::Mat>(buffer_name);
+  auto cv_buffer_opt = buffer_registry.GetBuffer<cv::Mat>(buffer_name);
+  
+  if (!cv_buffer_opt) {
+    std::cerr << "Failed to get CV buffer: " << buffer_name << std::endl;
+    return;
+  }
+  
+  auto cv_buffer = *cv_buffer_opt;
 
   while (keep_running) {
     cv::Mat frame;

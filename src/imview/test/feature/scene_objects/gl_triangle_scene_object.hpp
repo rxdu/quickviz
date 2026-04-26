@@ -18,6 +18,8 @@ class GLTriangleSceneObject : public Panel {
  public:
   GLTriangleSceneObject() : Panel("GLTrianglePanel") {};
 
+  std::string GetName() const override { return "GLTriangleSceneObject"; }
+
   void Draw() override {
     glEnable(GL_SCISSOR_TEST);
     glViewport(x_, y_, width_, height_);

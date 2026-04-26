@@ -10,9 +10,13 @@
 #include "imview/panel.hpp"
 
 #include "imgui_internal.h"
+#include "imview/window.hpp"
 
 namespace quickviz {
-Panel::Panel(std::string name) : SceneObject(name) {}
+Panel::Panel(std::string name) : SceneObject(name) {
+  // Initialize with default input policy allowing all input
+  SetInputPolicy(InputPolicy::BlockAll());
+}
 
 void Panel::OnRender() {
   if (auto_layout_) {
@@ -216,7 +220,43 @@ void Panel::SetWindowNoCloseButton() {
   window_class_.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoCloseButton;
 }
 
-void Panel::OnJoystickUpdate(const JoystickInput& input) {
-  // do nothing by default
+
+glm::vec2 Panel::GetContentRelativeMousePos() const {
+  return ImGuiInputUtils::GetContentRelativeMousePos();
+}
+
+bool Panel::IsMouseOverContent() const {
+  return ImGuiInputUtils::IsMouseOverContent();
+}
+
+bool Panel::IsWindowFocused() const {
+  return ImGui::IsWindowFocused();
+}
+
+bool Panel::IsWindowHovered() const {
+  return ImGui::IsWindowHovered();
+}
+
+void Panel::AttachToWindow(Window& window) {
+  // Detach from previous window if any
+  if (attached_window_) {
+    DetachFromWindow();
+  }
+  
+  // Attach to new window
+  attached_window_ = &window;
+  
+  // Register with window's centralized input manager
+  // Note: We need to create a shared_ptr for this panel to register it
+  // This requires the panel to be managed by shared_ptr in the calling code
+  // For now, we'll handle this in the application layer
+}
+
+void Panel::DetachFromWindow() {
+  if (attached_window_) {
+    // Unregister from window's input manager
+    attached_window_->UnregisterPanel(GetName());
+    attached_window_ = nullptr;
+  }
 }
 }  // namespace quickviz

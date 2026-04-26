@@ -27,8 +27,9 @@ int main(int argc, char* argv[]) {
   std::cout << "Retrieved a = " << a << ", b = " << b << ", c = " << c
             << std::endl;
 
-  EventDispatcher::GetInstance().RegisterHandler(
-      "test_event", [](std::shared_ptr<BaseEvent> event) {
+  EventDispatcher dispatcher;
+  dispatcher.RegisterHandler("test_event", 
+      [](std::shared_ptr<BaseEvent> event) -> bool {
         auto data =
             std::static_pointer_cast<Event<int, double, std::string>>(event)
                 ->GetData();
@@ -37,9 +38,10 @@ int main(int argc, char* argv[]) {
         auto c = std::get<2>(data);
         std::cout << "Received event: a = " << a << ", b = " << b
                   << ", c = " << c << std::endl;
-      });
+        return false;  // Don't consume
+      }, "test_handler", 0);
 
-  EventEmitter emitter;
+  EventEmitter emitter(dispatcher);
   emitter.Emit<Event<int, double, std::string>>(
       EventSource::kApplicaton, "test_event", 42, 3.14, "hello");
 

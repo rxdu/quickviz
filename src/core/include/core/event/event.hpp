@@ -19,8 +19,12 @@ enum class EventSource : int {
   kKeyboard,
   kMouse,
   kMouseButton,
+  kMouseWheel,
+  kMouseDrag,
   kUiElement,
   kApplicaton,
+  kInput,           // General input events
+  kSelection,       // Selection-specific events
   kCustomEvent
 };
 

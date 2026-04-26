@@ -11,21 +11,30 @@
 #define ROBOSW_SRC_VISUALIZATION_IMVIEW_INCLUDE_IMVIEW_PANEL_HPP
 
 #include <string>
+#include <vector>
+#include <memory>
 
 #include "imgui.h"
 #include "imview/scene_object.hpp"
+#include "imview/input/imgui_input_utils.hpp"
+#include "imview/input/input_policy.hpp"
+#include "imview/input/input_dispatcher.hpp"
 
 namespace quickviz {
-class Panel : public SceneObject {
+class Window;  // Forward declaration
+
+class Panel : public SceneObject, public InputControlled, public InputEventHandler {
  public:
   Panel(std::string name);
   virtual ~Panel() = default;
+
+  // InputEventHandler interface
+  std::string GetName() const override { return name_; }
 
   // public API
   void SetAutoLayout(bool value);
   bool IsAutoLayout() const;
   void OnRender() override;
-  void OnJoystickUpdate(const JoystickInput& input) override;
 
   void SetNoTitleBar(bool value);
   void SetNoResize(bool value);
@@ -55,18 +64,42 @@ class Panel : public SceneObject {
   void SetWindowNoTabBar();
   void SetWindowHiddenTabBar();
   void SetWindowNoCloseButton();
+  
+  // Window position and size access
+  ImVec2 GetWindowPos() const { return ImGui::GetWindowPos(); }
+  ImVec2 GetWindowSize() const { return ImGui::GetWindowSize(); }
 
   virtual void Draw() = 0;
 
+  // Window attachment for centralized input
+  void AttachToWindow(Window& window);
+  void DetachFromWindow();
+  bool IsAttachedToWindow() const { return attached_window_ != nullptr; }
+  
  protected:
   // for derived classes
   void Begin(bool* p_open = NULL);
   void End();
 
+  // InputEventHandler interface - override in derived classes for input handling
+  bool OnInputEvent(const InputEvent& event) override { return false; }
+  int GetPriority() const override { return GetInputPolicy().priority; }
+
+  // Input utilities for derived classes  
+  glm::vec2 GetContentRelativeMousePos() const;
+  bool IsMouseOverContent() const;
+  
+  // InputControlled overrides for ImGui context awareness
+  bool IsWindowFocused() const override;
+  bool IsWindowHovered() const override;
+
  private:
   bool auto_layout_ = false;
   ImGuiWindowFlags flags_ = ImGuiWindowFlags_None;
   ImGuiWindowClass window_class_;
+  
+  // Centralized input management
+  Window* attached_window_ = nullptr;
 };
 }  // namespace quickviz
 

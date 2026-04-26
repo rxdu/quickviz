@@ -28,10 +28,17 @@ std::string pt_buffer_sin_name = "sin_data_buffer";
 
 void DataGenerator() {
   auto& buffer_registry = BufferRegistry::GetInstance();
-  auto pt_buffer =
-      buffer_registry.GetBuffer<RtLinePlotWidget::DataPoint>(pt_buffer_name);
-  auto pt_buffer_sin = buffer_registry.GetBuffer<RtLinePlotWidget::DataPoint>(
-      pt_buffer_sin_name);
+  
+  auto pt_buffer_opt = buffer_registry.GetBuffer<RtLinePlotWidget::DataPoint>(pt_buffer_name);
+  auto pt_buffer_sin_opt = buffer_registry.GetBuffer<RtLinePlotWidget::DataPoint>(pt_buffer_sin_name);
+  
+  if (!pt_buffer_opt || !pt_buffer_sin_opt) {
+    std::cerr << "Failed to get plot buffers" << std::endl;
+    return;
+  }
+  
+  auto pt_buffer = *pt_buffer_opt;
+  auto pt_buffer_sin = *pt_buffer_sin_opt;
 
   static float t = 0;
   int period_ms = 1000 / 60;

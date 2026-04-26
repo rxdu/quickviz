@@ -35,6 +35,8 @@ class MyPanel : public Panel {
           }
         });
   }
+  
+  std::string GetName() const override { return "MyPanel"; }
 
   void Draw() override {
     Begin();

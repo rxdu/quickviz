@@ -18,6 +18,8 @@ class OpenGLSceneObject : public Panel {
                     float b = 0.0)
       : Panel(name), r(r), g(g), b(b) {};
 
+  std::string GetName() const override { return "OpenGLSceneObject"; }
+
   void Draw() override {
     glEnable(GL_SCISSOR_TEST);
     glViewport(x_, y_, width_, height_);

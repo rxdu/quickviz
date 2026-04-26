@@ -18,6 +18,8 @@ class ImTextPanel : public Panel {
     this->SetAutoLayout(false);
   }
 
+  std::string GetName() const override { return "ImTextPanel"; }
+
   void Draw() override {
     Begin();
     {

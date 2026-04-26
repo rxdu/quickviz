@@ -1,0 +1,253 @@
+/*
+ * @file point_layer_manager.hpp
+ * @date Dec 2024
+ * @brief Multi-layer rendering system for point cloud highlighting and visualization
+ *
+ * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
+ */
+
+#ifndef QUICKVIZ_POINT_LAYER_MANAGER_HPP
+#define QUICKVIZ_POINT_LAYER_MANAGER_HPP
+
+#include <vector>
+#include <unordered_map>
+#include <unordered_set>
+#include <string>
+#include <memory>
+#include <algorithm>
+#include <functional>
+#include <glm/glm.hpp>
+
+namespace quickviz {
+
+/**
+ * @brief Point rendering layer for organizing and highlighting different point groups
+ */
+class PointLayer {
+public:
+    enum class BlendMode {
+        kReplace,     // Replace base colors completely
+        kMultiply,    // Multiply with base colors
+        kOverlay,     // Overlay on top of base colors
+        kAdditive     // Additive blending
+    };
+
+    enum class HighlightMode {
+        kColorOnly,        // Only change color
+        kSizeIncrease,     // Increase point size
+        kOutline,          // Add outline effect
+        kGlow,             // Add glow effect
+        kColorAndSize,     // Change both color and size
+        kSphereSurface     // Color visible sphere surface (for 3D sphere mode)
+    };
+
+    PointLayer(const std::string& name, int priority = 0);
+    ~PointLayer() = default;
+
+    // Change notification callback
+    using ChangeCallback = std::function<void(const std::string& layer_name)>;
+    void SetChangeCallback(ChangeCallback callback) { change_callback_ = callback; }
+
+    // Layer properties
+    void SetName(const std::string& name) { 
+        if (name_ != name) {
+            name_ = name;
+            NotifyChange();
+        }
+    }
+    const std::string& GetName() const { return name_; }
+    
+    void SetPriority(int priority) { 
+        if (priority_ != priority) {
+            priority_ = priority;
+            NotifyChange();
+        }
+    }
+    int GetPriority() const { return priority_; }
+    
+    void SetVisible(bool visible) { 
+        if (visible_ != visible) {
+            visible_ = visible; 
+            NotifyChange();
+        }
+    }
+    bool IsVisible() const { return visible_; }
+    
+    void SetOpacity(float opacity) { 
+        float new_opacity = std::max(0.0f, std::min(opacity, 1.0f));
+        if (opacity_ != new_opacity) {
+            opacity_ = new_opacity;
+            NotifyChange();
+        }
+    }
+    float GetOpacity() const { return opacity_; }
+
+    // Point management
+    void SetPoints(const std::vector<size_t>& point_indices);
+    void SetPoints(std::vector<size_t>&& point_indices);
+    void AddPoints(const std::vector<size_t>& point_indices);
+    void RemovePoints(const std::vector<size_t>& point_indices);
+    void ClearPoints();
+    
+    const std::unordered_set<size_t>& GetPointIndices() const { return point_indices_; }
+    size_t GetPointCount() const { return point_indices_.size(); }
+    bool ContainsPoint(size_t index) const { return point_indices_.count(index) > 0; }
+
+    // Visual properties
+    void SetColor(const glm::vec3& color) { 
+        if (color_ != color) {
+            color_ = color;
+            NotifyChange();
+        }
+    }
+    const glm::vec3& GetColor() const { return color_; }
+    
+    void SetPointSizeMultiplier(float multiplier) { 
+        if (point_size_multiplier_ != multiplier) {
+            point_size_multiplier_ = multiplier;
+            NotifyChange();
+        }
+    }
+    float GetPointSizeMultiplier() const { return point_size_multiplier_; }
+    
+    void SetBlendMode(BlendMode mode) { 
+        if (blend_mode_ != mode) {
+            blend_mode_ = mode;
+            NotifyChange();
+        }
+    }
+    BlendMode GetBlendMode() const { return blend_mode_; }
+    
+    void SetHighlightMode(HighlightMode mode) { 
+        if (highlight_mode_ != mode) {
+            highlight_mode_ = mode;
+            NotifyChange();
+        }
+    }
+    HighlightMode GetHighlightMode() const { return highlight_mode_; }
+
+    // Outline/glow effects
+    void SetOutlineWidth(float width) { 
+        if (outline_width_ != width) {
+            outline_width_ = width;
+            NotifyChange();
+        }
+    }
+    float GetOutlineWidth() const { return outline_width_; }
+    
+    void SetOutlineColor(const glm::vec3& color) { 
+        if (outline_color_ != color) {
+            outline_color_ = color;
+            NotifyChange();
+        }
+    }
+    const glm::vec3& GetOutlineColor() const { return outline_color_; }
+    
+    void SetGlowIntensity(float intensity) { 
+        if (glow_intensity_ != intensity) {
+            glow_intensity_ = intensity;
+            NotifyChange();
+        }
+    }
+    float GetGlowIntensity() const { return glow_intensity_; }
+
+private:
+    std::string name_;
+    int priority_;
+    bool visible_;
+    float opacity_;
+    
+    std::unordered_set<size_t> point_indices_;
+    
+    glm::vec3 color_;
+    float point_size_multiplier_;
+    BlendMode blend_mode_;
+    HighlightMode highlight_mode_;
+    
+    // Effect properties
+    float outline_width_;
+    glm::vec3 outline_color_;
+    float glow_intensity_;
+    
+    // Change notification
+    ChangeCallback change_callback_;
+    void NotifyChange() { if (change_callback_) change_callback_(name_); }
+};
+
+/**
+ * @brief Manages multiple rendering layers for point clouds
+ */
+class PointLayerManager {
+public:
+    PointLayerManager();
+    ~PointLayerManager() = default;
+
+    // Layer management
+    std::shared_ptr<PointLayer> CreateLayer(const std::string& name, int priority = 0);
+    bool RemoveLayer(const std::string& name);
+    bool RemoveLayer(std::shared_ptr<PointLayer> layer);
+    void ClearAllLayers();
+    
+    std::shared_ptr<PointLayer> GetLayer(const std::string& name);
+    const std::shared_ptr<PointLayer> GetLayer(const std::string& name) const;
+    
+    std::vector<std::shared_ptr<PointLayer>> GetAllLayers() const;
+    std::vector<std::shared_ptr<PointLayer>> GetVisibleLayers() const;
+    std::vector<std::shared_ptr<PointLayer>> GetLayersByPriority() const;
+    
+    size_t GetLayerCount() const { return layers_.size(); }
+    bool HasLayer(const std::string& name) const;
+
+    // Global layer controls
+    void SetGlobalOpacity(float opacity) { global_opacity_ = std::max(0.0f, std::min(opacity, 1.0f)); }
+    float GetGlobalOpacity() const { return global_opacity_; }
+    
+    void SetAllLayersVisible(bool visible);
+    void SetLayerVisibility(const std::string& name, bool visible);
+
+    // Point queries across layers
+    std::vector<std::string> GetLayersContainingPoint(size_t point_index) const;
+    std::shared_ptr<PointLayer> GetTopLayerContainingPoint(size_t point_index) const;
+    bool IsPointInAnyLayer(size_t point_index) const;
+
+    // Rendering data generation
+    struct LayerRenderData {
+        std::vector<size_t> point_indices;
+        glm::vec3 color;
+        float point_size_multiplier;
+        float opacity;
+        PointLayer::BlendMode blend_mode;
+        PointLayer::HighlightMode highlight_mode;
+        
+        // Effect properties
+        float outline_width;
+        glm::vec3 outline_color;
+        float glow_intensity;
+    };
+
+    std::vector<LayerRenderData> GenerateRenderData() const;
+    
+    // Statistics and debugging
+    struct LayerStats {
+        size_t total_layers;
+        size_t visible_layers;
+        size_t total_points_in_layers;
+        size_t unique_points_in_layers;
+        std::unordered_map<std::string, size_t> layer_point_counts;
+    };
+    
+    LayerStats GetStatistics() const;
+    void PrintLayerInfo() const;
+
+private:
+    void SortLayersByPriority();
+    
+    std::vector<std::shared_ptr<PointLayer>> layers_;
+    std::unordered_map<std::string, std::shared_ptr<PointLayer>> layer_map_;
+    float global_opacity_;
+    bool needs_sorting_;
+};
+
+} // namespace quickviz
+
+#endif // QUICKVIZ_POINT_LAYER_MANAGER_HPP

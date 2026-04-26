@@ -5,13 +5,15 @@ find_package(Threads REQUIRED)
 add_library(core
     # widgets
     src/buffer/buffer_registry.cpp
-    src/event/event_dispatcher.cpp
-    src/event/async_event_dispatcher.cpp)
-target_link_libraries(core PUBLIC Threads::Threads)
+    src/event/async_event_dispatcher.cpp
+    src/event/input_mapping.cpp)
+target_link_libraries(core PUBLIC Threads::Threads imcore)
 target_include_directories(core PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
+
+add_executable(binary_to_compressed_c src/fonts/binary_to_compressed_c.cpp)
 
 if(BUILD_TESTING)
   add_subdirectory(test)

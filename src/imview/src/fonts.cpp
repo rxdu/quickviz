@@ -12,9 +12,9 @@
 
 #include <unordered_map>
 
-#include "fonts/opensans_regular.hpp"
-#include "fonts/opensans_semibold.hpp"
-#include "fonts/opensans_bold.hpp"
+#include "core/fonts/opensans_regular.hpp"
+#include "core/fonts/opensans_semibold.hpp"
+#include "core/fonts/opensans_bold.hpp"
 
 namespace quickviz {
 namespace {

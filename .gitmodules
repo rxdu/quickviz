@@ -1,15 +1,15 @@
-[submodule "src/third_party/imcore/imgui"]
-	path = src/third_party/imcore/imgui
+[submodule "third_party/imcore/imgui"]
+	path = third_party/imcore/imgui
 	url = https://github.com/ocornut/imgui.git
-[submodule "src/third_party/imcore/implot"]
-	path = src/third_party/imcore/implot
+[submodule "third_party/imcore/implot"]
+	path = third_party/imcore/implot
 	url = https://github.com/epezent/implot.git
-[submodule "src/third_party/yoga"]
-	path = src/third_party/yoga
+[submodule "third_party/yoga"]
+	path = third_party/yoga
 	url = https://github.com/rxdu/yoga.git
-[submodule "src/third_party/googletest"]
-	path = src/third_party/googletest
+[submodule "third_party/googletest"]
+	path = third_party/googletest
 	url = https://github.com/google/googletest.git
-[submodule "src/third_party/stb"]
-	path = src/third_party/stb
+[submodule "third_party/stb"]
+	path = third_party/stb
 	url = https://github.com/rxdu/stb.git
