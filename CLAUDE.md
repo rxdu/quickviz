@@ -67,9 +67,12 @@ src/
 ├── core/          # Event system, buffers, utilities (depends on nothing)
 ├── imview/        # GLFW window management, ImGui integration
 ├── widget/        # Cairo drawing, image widgets, plotting
-├── gldraw/      # OpenGL 3D rendering, point clouds, textures
+├── gldraw/        # OpenGL 3D rendering, point clouds, textures
+├── pcl_bridge/    # Optional PCL adapter (file loading, conversions)
 ├── cvdraw/        # OpenCV-based drawing utilities (optional bridge)
 └── third_party/   # imgui, implot, stb, yoga, googletest
+
+sample/            # Reference applications built ON TOP of the library
 ```
 
 ### Dependency Rules
@@ -81,6 +84,19 @@ src/
 - **Bridges/Adapters** (OpenCV/PCL/etc.) depend outward; nothing core depends on them
 
 > **Rule**: Lower layers never include headers from higher layers
+
+### Library Boundary: `src/` is visualization-only
+QuickViz is a visualization library. Editor / app-level concerns
+(undo/redo, command history, scene serialization, project files, editing
+operations) live in `sample/` and consume the library, never the reverse.
+
+- `sample/*` may include from `src/*/include/` and link against library targets.
+- `src/*` must not include from `sample/`. Enforced by CI (`boundary-check`).
+- If a sample needs something from the library, add it as an additive,
+  visualization-justified hook to the library — do not pull sample code in.
+- Sample applications also serve as a dogfood check: if a fully-featured
+  vis+editing app cannot be built on top of `src/` without modifying `src/`,
+  the library is missing a hook and we evaluate the gap deliberately.
 
 ### Key Design Patterns
 

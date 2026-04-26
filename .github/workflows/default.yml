@@ -10,6 +10,28 @@ env:
   BUILD_TYPE: Release
 
 jobs:
+  boundary-check:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: Library must not depend on sample code
+      shell: bash
+      run: |
+        # The library (src/) is visualization-only. Editor / app-level code
+        # lives in sample/ and depends on src/, never the other way around.
+        if grep -RIn --include='*.hpp' --include='*.cpp' --include='*.h' --include='*.cc' \
+            -e '#include[[:space:]]*[<"]sample/' \
+            -e '#include[[:space:]]*[<"]\.\./\.\./sample/' \
+            src/; then
+          echo "::error::src/ must not include from sample/. See CLAUDE.md."
+          exit 1
+        fi
+        if grep -RIn 'add_subdirectory[[:space:]]*([[:space:]]*\.\./sample' src/ ; then
+          echo "::error::src/ CMake must not pull in sample/ subdirectories."
+          exit 1
+        fi
+        echo "Library boundary OK."
+
   build:
     runs-on: ${{ matrix.os }}
     strategy:
