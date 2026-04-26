@@ -1,7 +1,6 @@
-# find dependency
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(Cairo REQUIRED IMPORTED_TARGET cairo)
-pkg_check_modules(Fontconfig REQUIRED IMPORTED_TARGET fontconfig)
+# NOTE: this module is being dissolved. Cairo bits moved to src/canvas/;
+# OpenCV bits will move to src/image/ in a follow-up commit. After that
+# this entire directory will be removed.
 
 find_package(Threads REQUIRED)
 find_package(OpenGL REQUIRED)
@@ -20,18 +19,17 @@ else()
   message(STATUS "OpenCV not found")
 endif()
 
+if(NOT OpenCV_FOUND)
+  return()  # nothing left to build in widget/ when OpenCV is absent
+endif()
+
 # add library
 add_library(widget
-    # widgets
-    src/details/cairo_context.cpp
-    src/details/cairo_draw.cpp
-    src/cairo_widget.cpp
     ${OPENCV_COMP_SRC})
 target_link_libraries(widget PUBLIC
     core
     imcore viewer
     stb
-    PkgConfig::Cairo PkgConfig::Fontconfig
     Threads::Threads
     OpenGL::GL
     ${OPENCV_COMP_LIBS})

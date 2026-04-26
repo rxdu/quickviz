@@ -11,7 +11,7 @@
 #include <thread>
 
 #include "viewer/viewer.hpp"
-#include "widget/cairo_widget.hpp"
+#include "canvas/cairo_widget.hpp"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846

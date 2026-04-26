@@ -4,6 +4,7 @@ add_subdirectory(viewer)
 add_subdirectory(widget)
 add_subdirectory(scene)
 add_subdirectory(plot)
+add_subdirectory(canvas)
 add_subdirectory(pcl_bridge)
 
 find_package(OpenCV QUIET)

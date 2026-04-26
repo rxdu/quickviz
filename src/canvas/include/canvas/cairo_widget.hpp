@@ -21,8 +21,8 @@
 #include "imgui.h"
 
 #include "viewer/panel.hpp"
-#include "widget/details/cairo_context.hpp"
-#include "widget/details/cairo_draw.hpp"
+#include "canvas/details/cairo_context.hpp"
+#include "canvas/details/cairo_draw.hpp"
 
 namespace quickviz {
 class CairoWidget : public Panel {
