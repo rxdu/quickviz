@@ -113,6 +113,26 @@ When tempted to add a cross-module dependency, ask: is this concept truly
 shared, or am I leaking implementation? Prefer to widen the public API of
 the lower module than to reach across at the same level.
 
+### Optional external dependencies
+
+Any module or component that depends on a heavyweight external SDK
+(ROS2, PCL, OpenCV, vendor sensor SDKs) **must** be CMake-gated so the
+library compiles cleanly without that SDK installed. The pattern:
+
+- Use `find_package(<dep> QUIET)`. If absent, `return()` early from the
+  module's `CMakeLists.txt`.
+- Do not reference the optional dep's headers, types, or functions
+  outside the gated module's source files.
+- Document the dep in §5 Build System under "Optional".
+- Library users without the dep get a working library with that
+  feature missing, not a build failure.
+
+This applies specifically to ROS2: any current or future module that
+consumes ROS messages — `bridges/ros2/`, downstream converters,
+sample apps that use them — must be optional. A user who has never
+installed ROS must still be able to clone, configure, build, and run
+the rest of the library.
+
 ---
 
 ## 5. Build System

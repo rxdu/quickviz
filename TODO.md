@@ -31,17 +31,26 @@ Ordered by what unblocks the most downstream work.
 ### Milestone — ROS2 integration (`bridges/ros2/`)
 The single biggest user-facing gap. Without this QuickViz is a general
 C++ vis library; with it, it's the robotics vis library.
+
+**Hard rule for this and any ROS-dependent module**: ROS2 is an
+**optional** CMake dep. The library must compile, link, and run
+cleanly on systems where ROS2 is not installed — just without ROS
+support. Use `find_package(... QUIET)` + early `return()` from the
+module's CMakeLists when absent. No ROS headers / types may leak into
+non-gated code paths. (See CLAUDE.md §4 "Optional external dependencies".)
 - [ ] Stand up `bridges/` umbrella with `bridges/ros2/` as the first
       child (deferred from the earlier reorg — now justified by a real
-      occupant).
+      occupant). CMake-gated; absent ROS = silent skip.
 - [ ] `sensor_msgs::PointCloud2` ↔ `PointCloud` renderable converter
 - [ ] `geometry_msgs::PoseStamped` / `PoseArray` ↔ pose / trajectory
-- [ ] `nav_msgs::OccupancyGrid` ↔ grid renderable
-- [ ] `tf2_msgs::TFMessage` ↔ frame-tree visualization
+- [ ] `nav_msgs::OccupancyGrid` ↔ `OccupancyGrid` renderable (the
+      renderable already exists as of April 2026)
+- [ ] `tf2_msgs::TFMessage` ↔ `TfFrameTree` renderable (the renderable
+      already exists as of April 2026)
 - [ ] `visualization_msgs::Marker` / `MarkerArray` ↔ generic
       primitives passthrough
-- [ ] CMake gating: ROS2 dep is optional; library still builds without
-      it
+- [ ] Sample app demonstrating ROS2 streaming end-to-end. **Also
+      CMake-gated** — must not be built when ROS2 is absent.
 
 ### Milestone — first standard robotics renderable
 Pick one and ship it cleanly before the next. Don't backlog all three.
