@@ -14,5 +14,6 @@ if (ENABLE_AUTO_LAYOUT)
     message(STATUS "Found PCL: ${PCL_VERSION}")
 
     add_subdirectory(pointcloud_viewer)
+    add_subdirectory(editor)
   endif ()
 endif ()

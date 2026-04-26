@@ -27,9 +27,20 @@ a visualization-justified hook.
 - [ ] Build `sample/editor/` MVP as the API completeness check
       (load PCD/PLY → render → select → DeleteSelectedPoints → undo/redo
       via app-side `CommandStack` → minimal history panel)
-- [ ] Add library hooks discovered while building the sample (additive only;
-      candidates: stable `ObjectId`-based access on `SceneManager`, object
-      enumeration API, change-event for renderables)
+- [ ] Add library hooks discovered while building the sample (additive only).
+      Logged candidates from sample/editor MVP:
+      - `SceneManager::GetObjectId(name) / GetObjectName(id)` so editors can
+        avoid relying on stringly-typed cloud names.
+      - `PointSelection::object_id` so selection callbacks don't need
+        string-equality on cloud_name.
+      - `PointCloud::SetActiveMask(span<bool>)` or `SetActiveIndices(...)` so
+        editing a point cloud doesn't require rebuilding the full vertex
+        buffer on every command (current MVP rewrites all visible points).
+      - Stable point-identity for selection persistence across cloud
+        mutations (today the editor must `ClearSelection()` on every
+        rebuild because the tool tracks visible indices).
+      Re-evaluate each one against the "is this a visualization concern?"
+      bar before merging to src/.
 
 ### Known visualization gaps
 - [ ] Selection support for Arrow, Plane, Path, Triangle, Pose primitives
