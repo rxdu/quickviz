@@ -5,7 +5,8 @@ add_executable(core_unit_tests
     test_input_event.cpp
     test_event_system.cpp
     test_thread_safe_queue.cpp
-    test_buffer_registry.cpp)
+    test_buffer_registry.cpp
+    test_demo.cpp)
 target_link_libraries(core_unit_tests PRIVATE gtest_main gmock viewer)
 # get_target_property(PRIVATE_HEADERS viewer INCLUDE_DIRECTORIES)
 target_include_directories(core_unit_tests PRIVATE ${PRIVATE_HEADERS})
