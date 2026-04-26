@@ -44,19 +44,27 @@ C++ vis library; with it, it's the robotics vis library.
 
 ### Milestone — first standard robotics renderable
 Pick one and ship it cleanly before the next. Don't backlog all three.
-- [ ] **`Trajectory`** renderable — 3D path with timestamps, optional
-      velocity coloring. Strong companion to `PoseStamped` streaming.
-- [ ] `OccupancyGrid` renderable — 2D map projected into the 3D scene.
-      Strong companion to `nav_msgs::OccupancyGrid`.
+- [ ] **`OccupancyGrid`** renderable — 2D map projected into the 3D
+      scene. Strong companion to `nav_msgs::OccupancyGrid`. *Recommended
+      first*: single-purpose, no existing partial implementation, lines
+      up cleanly with ROS2 work.
 - [ ] `TfFrameTree` renderable — animated transform tree with named
-      frames and optional fixed/moving distinction. Companion to tf2.
+      frames and parent/child relationships. Likely composes multiple
+      `CoordinateFrame` instances. Companion to tf2.
+- [ ] `Trajectory` extensions on the existing `Path` renderable —
+      timestamp coloring, velocity coloring, animated growth. `Path`
+      already covers "render a 3D motion path"; this milestone adds the
+      streaming/time-aware behaviors. (Don't create a new renderable —
+      extend `Path`.)
 
 ### After ROS2 lands — diagnostics
 - [ ] **HUD overlay**: frame time, draw call count, GPU memory, active
       tool, scene object count. Toggled by hotkey. ~1 day.
 - [ ] **Structured logger** to replace the scattered `std::cerr` /
-      `std::cout` calls in library code (long-standing TODO; promote
-      now). Lightweight; ~100 LOC + a level/category enum.
+      `std::cout` calls in library code. Audit count (April 2026):
+      ~232 occurrences in `src/`, concentrated in `scene` (179) and
+      `viewer` (43). Lightweight implementation: ~100 LOC + a
+      level/category enum, then a sed migration.
 - [ ] Visible UI surface for shader/asset load failures (today these
       print to console and the user sees a black scene).
 
@@ -145,11 +153,15 @@ visualization concern?" before merging.
 
 - [ ] `src/scene/src/renderable/canvas.cpp` is 2069 LOC; split into
       cohesive sub-files (~500 LOC target per CLAUDE.md).
-- [ ] Audit `sample/pointcloud_viewer/interactive_scene_manager.cpp`
-      for disabled / legacy paths from the deleted-editor migration;
-      either finish or remove.
-- [ ] Audit `sample/quickviz_demo_app/` for boilerplate that could
-      now use `SceneApp` and the layout presets when those land.
+- [ ] Clean `sample/pointcloud_viewer/interactive_scene_manager.cpp`
+      — confirmed leftovers from the deleted-editor migration:
+      `HandleMouseInput()` is `return;` only (line 141-144), a
+      "Legacy SelectionManager callback disabled" block (line 113-124),
+      and a stale TODO at line 107. Either finish or remove each.
+- [ ] Audit `sample/quickviz_demo_app/` after layout presets land.
+      It uses `Viewer` directly (a multi-panel app — likely correct).
+      The audit may conclude "no change"; the question is whether the
+      layout setup could be tightened with the upcoming presets.
 
 ---
 
