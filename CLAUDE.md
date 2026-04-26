@@ -42,11 +42,16 @@ QuickViz is designed as a toolkit of building blocks for robotics visualization 
 - Specialized data visualization widgets
 - Custom file format adapters
 
-**Build-Upon Components** (Frameworks for complex applications):
-- Scene graph architecture
-- Command/undo system
-- Threading and job systems
-- Plugin and extension mechanisms
+**Build-Upon Components** (Library hooks apps compose into bigger frameworks):
+- Scene composition (`SceneManager` + `OpenGlObject` registration)
+- Tool registration (`InteractionTool` interface + `ToolManager`)
+- Threading and job hand-off boundaries
+- Custom data adapters (e.g., `pcl_bridge` pattern)
+
+> Editor-shaped frameworks — command/undo stacks, scene graphs with parent/child
+> hierarchies, project-file persistence, history panels — are **not** part of the
+> library. They live in consuming apps (see `sample/editor/` for a reference
+> implementation) and are built on top of the hooks above.
 
 > **Design Rule**: Generic robotics and graphics terminology should be preferred over domain-specific names. For example, use "Mesh", "PointCloud", "Camera" rather than "Map", "Scan", "Observer". This ensures the library remains broadly applicable across different robotics applications.
 
@@ -297,37 +302,22 @@ selection_layer->SetHighlightMode(PointLayer::HighlightMode::kSphereSurface);
 selection_layer->SetVisible(true);
 ```
 
-## Interaction & Editing Patterns
+## Interaction & Tool Patterns
+
+These patterns are in scope for the library — they support inspection,
+selection, and visual feedback. Editing semantics (undoable mutations,
+project files, history) are an app-side concern; see `sample/editor/`.
 
 ### Two-Stage Picking
 1. **GPU ID buffer** → object ID
 2. **CPU raycast** → precise hit/feature (BVH/KD-tree)
 
 ### Tool State Machine
-- One active tool at a time
-- Tools consume input and emit **commands** (for undo/redo)
+- One active tool at a time, registered via `SceneManager::RegisterTool`
+- Tools consume input and emit selection / hover / measurement events
 - Gizmos drawn as overlay with selective depth testing
-
-### Command Pattern (Undo/Redo)
-```cpp
-class Command {
- public:
-  virtual ~Command() = default;
-  virtual void Do() = 0;
-  virtual void Undo() = 0;
-};
-
-class CommandStack {
- public:
-  void Exec(std::unique_ptr<Command> cmd);
-  bool CanUndo() const;
-  bool CanRedo() const;
-  void Undo();
-  void Redo();
- private:
-  std::vector<std::unique_ptr<Command>> done_, undone_;
-};
-```
+- Editor apps may layer their own command-based mutations on top of these
+  events; the library tools themselves do not record history
 
 ## Threading Model
 
