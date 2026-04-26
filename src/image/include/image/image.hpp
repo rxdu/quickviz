@@ -10,9 +10,9 @@
 #ifndef CV_DRAW_HPP
 #define CV_DRAW_HPP
 
-#include "cvdraw/cv_io.hpp"
-#include "cvdraw/cv_canvas.hpp"
-#include "cvdraw/cv_colors.hpp"
-#include "cvdraw/color_maps.hpp"
+#include "image/cv_io.hpp"
+#include "image/cv_canvas.hpp"
+#include "image/cv_colors.hpp"
+#include "image/color_maps.hpp"
 
 #endif /* CV_DRAW_HPP */

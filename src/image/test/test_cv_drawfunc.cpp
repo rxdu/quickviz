@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "cvdraw/cvdraw.hpp"
+#include "image/image.hpp"
 
 using namespace quickviz;
 

@@ -1,5 +1,5 @@
 /*
- * test_buffered_cv_image_widget.cpp
+ * test_cv_image_widget.cpp
  *
  * Created on: Jul 27, 2021 09:07
  * Description:
@@ -12,36 +12,22 @@
 
 #include <opencv2/opencv.hpp>
 
-#include "core/buffer/buffer_registry.hpp"
-#include "core/buffer/ring_buffer.hpp"
-#include "core/buffer/double_buffer.hpp"
-
 #include "viewer/viewer.hpp"
-#include "viewer/box.hpp"
+#include "image/cv_image_widget.hpp"
 
 // #include "scene_objects/gl_triangle_scene_object.hpp"
-#include "widget/buffered_cv_image_widget.hpp"
 
 using namespace quickviz;
 
 bool keep_running = true;
+std::shared_ptr<CvImageWidget> image_widget;
 
-void CaptureVideo(std::string buffer_name) {
+void CaptureVideo() {
   cv::VideoCapture cap(0);  // Open the default camera
   if (!cap.isOpened()) {
     std::cerr << "Error: Could not open video capture device." << std::endl;
     return;
   }
-
-  auto& buffer_registry = BufferRegistry::GetInstance();
-  auto cv_buffer_opt = buffer_registry.GetBuffer<cv::Mat>(buffer_name);
-  
-  if (!cv_buffer_opt) {
-    std::cerr << "Failed to get CV buffer: " << buffer_name << std::endl;
-    return;
-  }
-  
-  auto cv_buffer = *cv_buffer_opt;
 
   while (keep_running) {
     cv::Mat frame;
@@ -50,31 +36,22 @@ void CaptureVideo(std::string buffer_name) {
       break;  // End of video stream
     }
 
-    cv_buffer->Write(frame);  // Write frame to double buffer
+    if (image_widget != nullptr) image_widget->UpdateImage(frame);
     std::this_thread::sleep_for(
         std::chrono::milliseconds(30));  // Simulate frame rate
   }
 }
 
 int main(int argc, char* argv[]) {
-  // set up buffer first
-  std::string buffer_name = "video_buffer";
-  auto& buffer_registry = BufferRegistry::GetInstance();
-  std::shared_ptr<BufferInterface<cv::Mat>> cv_buffer =
-      //      std::make_shared<RingBuffer<cv::Mat, 8>>();
-      std::make_shared<DoubleBuffer<cv::Mat>>();
-  buffer_registry.AddBuffer(buffer_name, cv_buffer);
-
   // set up video capture thread --> producer
-  std::thread capture_thread(CaptureVideo, buffer_name);
+  std::thread capture_thread(CaptureVideo);
 
   // set up viewer --> consumer
   Viewer viewer;
   // auto gl_triangle = std::make_shared<GLTriangleSceneObject>();
   // viewer.AddSceneObject(gl_triangle);
 
-  auto image_widget =
-      std::make_shared<BufferedCvImageWidget>("camera", buffer_name);
+  image_widget = std::make_shared<CvImageWidget>("camera");
   image_widget->OnResize(300, 200);
   image_widget->SetPosition(0, 0);
   viewer.AddSceneObject(image_widget);

@@ -7,7 +7,7 @@
  * Copyright (c) 2019 Ruixiang Du (rdu)
  */
 
-#include "cvdraw/color_maps.hpp"
+#include "image/color_maps.hpp"
 
 using namespace cv;
 

@@ -6,7 +6,7 @@
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
-#include "widget/details/image_utils.hpp"
+#include "image/details/image_utils.hpp"
 
 namespace quickviz {
 cv::Mat GenerateRandomMat(int width, int height) {

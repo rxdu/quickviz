@@ -1,18 +1,18 @@
 /*
- * @file buffered_cv_image_widget.cpp
+ * @file cv_image_widget.cpp
  * @date 10/25/24
  * @brief
  *
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
-#include "widget/buffered_cv_image_widget.hpp"
+#include "image/cv_image_widget.hpp"
 
-#include "widget/details/image_utils.hpp"
+#include "glad/glad.h"
+#include "image/details/image_utils.hpp"
 
 namespace quickviz {
-BufferedCvImageWidget::BufferedCvImageWidget(const std::string& widget_name,
-                                             const std::string& buffer_name)
+CvImageWidget::CvImageWidget(const std::string& widget_name)
     : Panel(widget_name) {
   this->SetAutoLayout(false);
   //  this->SetNoResize(true);
@@ -20,26 +20,19 @@ BufferedCvImageWidget::BufferedCvImageWidget(const std::string& widget_name,
   this->SetWindowNoMenuButton();
   this->SetNoBackground(true);
 
-  auto& buffer_registry = BufferRegistry::GetInstance();
-  if (auto buffer = buffer_registry.GetBuffer<cv::Mat>(buffer_name)) {
-    buffer_ = *buffer;
-  } else {
-    std::cerr << "Warning: Buffer '" << buffer_name << "' not found for image widget" << std::endl;
-    buffer_ = nullptr;
-  }
-
   glGenTextures(1, &image_texture_);
 }
 
-BufferedCvImageWidget::~BufferedCvImageWidget() {
-  glDeleteTextures(1, &image_texture_);
+CvImageWidget::~CvImageWidget() { glDeleteTextures(1, &image_texture_); }
+
+void CvImageWidget::SetKeepAspectRatio(bool keep) { keep_aspect_ratio_ = keep; }
+
+void CvImageWidget::UpdateImage(const cv::Mat& image) {
+  std::lock_guard<std::mutex> lock(image_mutex_);
+  image_mat_ = image.clone();
 }
 
-void BufferedCvImageWidget::SetKeepAspectRatio(bool keep) {
-  keep_aspect_ratio_ = keep;
-}
-
-void BufferedCvImageWidget::Draw() {
+void CvImageWidget::Draw() {
   Begin();
   {
     ImVec2 contentSize = ImGui::GetContentRegionAvail();
@@ -47,7 +40,10 @@ void BufferedCvImageWidget::Draw() {
     float height = contentSize.y;
 
     cv::Mat mat;
-    buffer_->Read(mat);
+    {
+      std::lock_guard<std::mutex> lock(image_mutex_);
+      mat = image_mat_.clone();
+    }
 
     if (!mat.empty()) {
       if (keep_aspect_ratio_) {

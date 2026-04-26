@@ -7,7 +7,7 @@
  * Copyright (c) 2019 Ruixiang Du (rdu)
  */
 
-#include "cvdraw/cv_canvas.hpp"
+#include "image/cv_canvas.hpp"
 
 #include <cmath>
 #include <cassert>

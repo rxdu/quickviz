@@ -1,18 +1,18 @@
 /*
- * @file cv_image_widget.cpp
+ * @file buffered_cv_image_widget.cpp
  * @date 10/25/24
  * @brief
  *
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
-#include "widget/cv_image_widget.hpp"
+#include "image/buffered_cv_image_widget.hpp"
 
-#include "glad/glad.h"
-#include "widget/details/image_utils.hpp"
+#include "image/details/image_utils.hpp"
 
 namespace quickviz {
-CvImageWidget::CvImageWidget(const std::string& widget_name)
+BufferedCvImageWidget::BufferedCvImageWidget(const std::string& widget_name,
+                                             const std::string& buffer_name)
     : Panel(widget_name) {
   this->SetAutoLayout(false);
   //  this->SetNoResize(true);
@@ -20,19 +20,26 @@ CvImageWidget::CvImageWidget(const std::string& widget_name)
   this->SetWindowNoMenuButton();
   this->SetNoBackground(true);
 
+  auto& buffer_registry = BufferRegistry::GetInstance();
+  if (auto buffer = buffer_registry.GetBuffer<cv::Mat>(buffer_name)) {
+    buffer_ = *buffer;
+  } else {
+    std::cerr << "Warning: Buffer '" << buffer_name << "' not found for image widget" << std::endl;
+    buffer_ = nullptr;
+  }
+
   glGenTextures(1, &image_texture_);
 }
 
-CvImageWidget::~CvImageWidget() { glDeleteTextures(1, &image_texture_); }
-
-void CvImageWidget::SetKeepAspectRatio(bool keep) { keep_aspect_ratio_ = keep; }
-
-void CvImageWidget::UpdateImage(const cv::Mat& image) {
-  std::lock_guard<std::mutex> lock(image_mutex_);
-  image_mat_ = image.clone();
+BufferedCvImageWidget::~BufferedCvImageWidget() {
+  glDeleteTextures(1, &image_texture_);
 }
 
-void CvImageWidget::Draw() {
+void BufferedCvImageWidget::SetKeepAspectRatio(bool keep) {
+  keep_aspect_ratio_ = keep;
+}
+
+void BufferedCvImageWidget::Draw() {
   Begin();
   {
     ImVec2 contentSize = ImGui::GetContentRegionAvail();
@@ -40,10 +47,7 @@ void CvImageWidget::Draw() {
     float height = contentSize.y;
 
     cv::Mat mat;
-    {
-      std::lock_guard<std::mutex> lock(image_mutex_);
-      mat = image_mat_.clone();
-    }
+    buffer_->Read(mat);
 
     if (!mat.empty()) {
       if (keep_aspect_ratio_) {

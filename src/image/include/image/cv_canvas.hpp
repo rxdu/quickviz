@@ -18,7 +18,7 @@
 
 #include <opencv2/opencv.hpp>
 
-#include "cvdraw/cv_colors.hpp"
+#include "image/cv_colors.hpp"
 
 namespace quickviz {
 struct CPoint {

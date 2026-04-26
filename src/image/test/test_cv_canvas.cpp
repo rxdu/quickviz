@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "cvdraw/cv_canvas.hpp"
+#include "image/cv_canvas.hpp"
 
 using namespace quickviz;
 

@@ -7,7 +7,7 @@
  * Copyright (c) 2019 Ruixiang Du (rdu)
  */
 
-#include "cvdraw/cv_colors.hpp"
+#include "image/cv_colors.hpp"
 
 using namespace quickviz;
 using namespace cv;

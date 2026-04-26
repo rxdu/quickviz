@@ -1,0 +1,17 @@
+add_executable(test_image_rw test_image_rw.cpp)
+target_link_libraries(test_image_rw PUBLIC image)
+
+add_executable(test_cv_canvas test_cv_canvas.cpp)
+target_link_libraries(test_cv_canvas PUBLIC image)
+
+add_executable(test_cv_drawmode test_cv_drawmode.cpp)
+target_link_libraries(test_cv_drawmode PUBLIC image)
+
+add_executable(test_cv_drawfunc test_cv_drawfunc.cpp)
+target_link_libraries(test_cv_drawfunc PUBLIC image)
+
+add_executable(test_cv_image_widget test_cv_image_widget.cpp)
+target_link_libraries(test_cv_image_widget PUBLIC image)
+
+add_executable(test_buffered_cv_image_widget test_buffered_cv_image_widget.cpp)
+target_link_libraries(test_buffered_cv_image_widget PUBLIC image)

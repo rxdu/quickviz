@@ -14,9 +14,9 @@
 
 #include <opencv2/opencv.hpp>
 
-#include "cvdraw/cv_colors.hpp"
-#include "cvdraw/color_maps.hpp"
-#include "cvdraw/cv_canvas.hpp"
+#include "image/cv_colors.hpp"
+#include "image/color_maps.hpp"
+#include "image/cv_canvas.hpp"
 
 namespace quickviz {
 namespace CvIO {
