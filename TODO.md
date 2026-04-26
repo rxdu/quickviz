@@ -45,10 +45,10 @@ C++ vis library; with it, it's the robotics vis library.
 
 ### Milestone — first standard robotics renderable
 Pick one and ship it cleanly before the next. Don't backlog all three.
-- [ ] **`OccupancyGrid`** renderable — 2D map projected into the 3D
-      scene. Strong companion to `nav_msgs::OccupancyGrid`. *Recommended
-      first*: single-purpose, no existing partial implementation, lines
-      up cleanly with ROS2 work.
+- [x] **`OccupancyGrid`** renderable — 2D map projected into the 3D
+      scene. ROS-style int8 input (`-1` unknown, `0..100` occupancy
+      percent). R8 texture + custom colormap shader. Visual test
+      fixture in `scene/test/renderable/test_occupancy_grid.cpp`.
 - [ ] `TfFrameTree` renderable — animated transform tree with named
       frames and parent/child relationships. Likely composes multiple
       `CoordinateFrame` instances. Companion to tf2.
@@ -170,6 +170,13 @@ visualization concern?" before merging.
 
 ### April 2026
 
+- ✅ **`OccupancyGrid` renderable** — 2D probabilistic grid as a
+  textured quad in the XY plane. ROS-style API
+  (`SetGrid(width, height, resolution, origin, vector<int8_t>)`,
+  values: `-1` unknown / `0..100` occupancy). R8 texture with sentinel
+  encoding (`byte 0 = unknown`, `byte 1..255 = free→occupied`); custom
+  shader colormaps to configurable free/occupied/unknown colors.
+  Manual visual test fixture in `scene/test/renderable/`.
 - ✅ **`sample/streaming_demo/`** — canonical sensor-streaming pattern.
   Background producer rotates a 2000-point spiral around Z and pushes
   to `DataStream<PointCloudData>` at 30 Hz; render thread pulls in a
