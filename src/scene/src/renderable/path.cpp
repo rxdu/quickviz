@@ -154,6 +154,46 @@ void Path::AddPoint(const glm::vec3& point, float scalar) {
   needs_arrow_update_ = true;
 }
 
+void Path::AddPoint(const glm::vec3& point, const glm::quat& orientation) {
+  control_points_.push_back(point);
+  // Pad orientations_ similarly to AddPoint(point, scalar): if the user
+  // started with no-orientation AddPoints, back-fill with the new
+  // orientation so alignment is preserved.
+  if (orientations_.size() < control_points_.size() - 1) {
+    orientations_.resize(control_points_.size() - 1, orientation);
+  }
+  orientations_.push_back(orientation);
+  needs_geometry_update_ = true;
+  needs_color_update_ = true;
+  needs_arrow_update_ = true;
+}
+
+void Path::AddPoint(const glm::vec3& point, const glm::quat& orientation,
+                    float scalar) {
+  control_points_.push_back(point);
+  if (scalar_values_.size() < control_points_.size() - 1) {
+    scalar_values_.resize(control_points_.size() - 1, scalar);
+  }
+  scalar_values_.push_back(scalar);
+  if (orientations_.size() < control_points_.size() - 1) {
+    orientations_.resize(control_points_.size() - 1, orientation);
+  }
+  orientations_.push_back(orientation);
+  needs_geometry_update_ = true;
+  needs_color_update_ = true;
+  needs_arrow_update_ = true;
+}
+
+void Path::SetOrientations(const std::vector<glm::quat>& orientations) {
+  orientations_ = orientations;
+  needs_arrow_update_ = true;
+}
+
+void Path::ClearOrientations() {
+  orientations_.clear();
+  needs_arrow_update_ = true;
+}
+
 void Path::InsertPoint(size_t index, const glm::vec3& point) {
   if (index <= control_points_.size()) {
     control_points_.insert(control_points_.begin() + index, point);
@@ -175,6 +215,7 @@ void Path::RemovePoint(size_t index) {
 void Path::ClearPath() {
   control_points_.clear();
   scalar_values_.clear();
+  orientations_.clear();
   path_vertices_.clear();
   path_colors_.clear();
   path_indices_.clear();
@@ -424,12 +465,69 @@ void Path::GenerateSplineCurve() {
   }
 }
 
+namespace {
+
+// Append a pyramid arrow at `position` oriented by the given basis
+// vectors (forward, right, up — assumed orthonormal). `arrow_size`
+// controls the overall scale. Pushes 5 vertices and 18 indices into
+// the supplied buffers, plus 5 color entries.
+void EmitPyramidArrow(std::vector<glm::vec3>& vertices,
+                      std::vector<glm::vec3>& colors,
+                      std::vector<uint32_t>& indices,
+                      const glm::vec3& position, const glm::vec3& forward,
+                      const glm::vec3& right, const glm::vec3& up,
+                      const glm::vec3& color, float arrow_size) {
+  const glm::vec3 fwd = forward * arrow_size;
+  const glm::vec3 r = right * (arrow_size * 0.4f);
+  const glm::vec3 u = up * (arrow_size * 0.4f);
+
+  const uint32_t base_idx = static_cast<uint32_t>(vertices.size());
+  vertices.push_back(position + fwd);          // 0: tip
+  vertices.push_back(position + r + u);        // 1: top-right
+  vertices.push_back(position - r + u);        // 2: top-left
+  vertices.push_back(position - r - u);        // 3: bottom-left
+  vertices.push_back(position + r - u);        // 4: bottom-right
+  for (int i = 0; i < 5; ++i) colors.push_back(color);
+
+  const uint32_t tip = base_idx;
+  const uint32_t tr = base_idx + 1;
+  const uint32_t tl = base_idx + 2;
+  const uint32_t bl = base_idx + 3;
+  const uint32_t br = base_idx + 4;
+  // Side faces (tip → base edges).
+  indices.insert(indices.end(),
+                 {tip, tr, br, tip, tl, tr, tip, bl, tl, tip, br, bl});
+  // Base square (two triangles).
+  indices.insert(indices.end(), {tr, tl, bl, tr, bl, br});
+}
+
+}  // namespace
+
 void Path::GenerateArrows() {
   arrow_vertices_.clear();
   arrow_colors_.clear();
   arrow_indices_.clear();
 
   if (arrow_mode_ == ArrowMode::kNone || path_vertices_.size() < 2) {
+    return;
+  }
+
+  // Pose-oriented arrows iterate control_points_ (not path_vertices_)
+  // and use stored orientations rather than path tangents. Missing
+  // orientations fall back to identity, which renders as a +X-aligned
+  // arrow — a sensible default for ROS-style "X is forward".
+  if (arrow_mode_ == ArrowMode::kPoseArrows) {
+    for (size_t i = 0; i < control_points_.size(); ++i) {
+      const glm::quat q = (i < orientations_.size())
+                              ? orientations_[i]
+                              : glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+      const glm::mat3 R = glm::mat3_cast(q);
+      // Columns of R are the rotated unit axes (X-forward, Y-right,
+      // Z-up convention).
+      EmitPyramidArrow(arrow_vertices_, arrow_colors_, arrow_indices_,
+                       control_points_[i], R[0], R[1], R[2], arrow_color_,
+                       arrow_size_);
+    }
     return;
   }
 

@@ -13,6 +13,7 @@
 #include <vector>
 #include <deque>
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 #include "scene/interface/opengl_object.hpp"
 #include "../shader_program.hpp"
@@ -59,7 +60,11 @@ public:
     kEndpoints,       // Arrows at start and end only
     kRegular,         // Arrows at regular intervals
     kCurvature,       // Arrows at high curvature points
-    kAll              // Arrow at every path point
+    kAll,             // Arrow at every path point (path tangent)
+    kPoseArrows       // Arrow at every control point oriented by
+                      // orientations_[i]; falls back to tangent when
+                      // orientations_ is empty or shorter than
+                      // control_points_.
   };
 
   Path();
@@ -73,9 +78,31 @@ public:
   /// (used by kVelocity / kTime / kCost color modes). Keeps scalar_values_
   /// aligned with control_points_ for live-trajectory use cases.
   void AddPoint(const glm::vec3& point, float scalar);
+  /// Streaming overload: append a pose. Keeps orientations_ aligned
+  /// with control_points_ for live oriented-trajectory feeds (ROS2
+  /// `geometry_msgs::PoseStamped` / `nav_msgs::Path`).
+  void AddPoint(const glm::vec3& point, const glm::quat& orientation);
+  /// Append a full pose with a scalar sample.
+  void AddPoint(const glm::vec3& point, const glm::quat& orientation,
+                float scalar);
   void InsertPoint(size_t index, const glm::vec3& point);
   void RemovePoint(size_t index);
   void ClearPath();
+
+  // === Per-point orientation (optional) ===
+
+  /// Set per-control-point orientations. `orientations.size()` should
+  /// match the current `control_points_` size; shorter or empty input
+  /// is allowed (missing orientations fall back to identity when
+  /// drawing pose arrows).
+  void SetOrientations(const std::vector<glm::quat>& orientations);
+  /// True if any orientations are stored.
+  bool HasOrientations() const { return !orientations_.empty(); }
+  /// Remove all stored orientations. Position data is unchanged.
+  void ClearOrientations();
+  const std::vector<glm::quat>& GetOrientations() const {
+    return orientations_;
+  }
 
   const std::vector<glm::vec3>& GetPoints() const { return control_points_; }
   size_t GetPointCount() const { return control_points_.size(); }
@@ -156,6 +183,11 @@ private:
 
   // Control points
   std::vector<glm::vec3> control_points_;
+
+  // Optional per-control-point orientations. Empty means "no
+  // orientation data"; size mismatched with control_points_ is
+  // tolerated (missing entries treated as identity at draw time).
+  std::vector<glm::quat> orientations_;
   
   // Path properties
   PathType path_type_;

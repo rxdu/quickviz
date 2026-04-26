@@ -14,6 +14,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 #include "scene/scene_app.hpp"
 #include "scene/renderable/path.hpp"
@@ -183,6 +184,31 @@ void SetupPathScene(SceneManager* scene_manager) {
     path8->SetTransparency(0.4f);  // Semi-transparent
     path8->SetGlowEffect(true, 0.8f);
     scene_manager->AddOpenGLObject("path_transparent", std::move(path8));
+
+    // 9. Oriented trajectory (pose-aware): same shape as a path but
+    //    each waypoint carries a full quaternion. Arrows are oriented
+    //    by the per-point pose, not the path tangent — useful when the
+    //    object's heading differs from its travel direction (parallel
+    //    parking, drone yaw, manipulator end-effector).
+    auto path9 = std::make_unique<Path>();
+    path9->SetPathType(Path::PathType::kLineSegments);
+    path9->SetLineWidth(2.0f);
+    path9->SetColor(glm::vec3(0.7f, 0.85f, 1.0f));
+    path9->SetArrowMode(Path::ArrowMode::kPoseArrows);
+    path9->SetArrowSize(0.3f);
+    path9->SetArrowColor(glm::vec3(0.9f, 0.5f, 0.1f));
+
+    // 6 poses along an arc; orientations sweep the heading from +X
+    // (yaw=0) to roughly +Y (yaw=90°) so the arrows fan out.
+    const int n = 6;
+    for (int i = 0; i < n; ++i) {
+        const float t = static_cast<float>(i) / static_cast<float>(n - 1);
+        const glm::vec3 pos(-3.0f + 6.0f * t, -4.0f, 2.0f);
+        const float yaw = glm::radians(t * 90.0f);
+        const glm::quat q = glm::angleAxis(yaw, glm::vec3(0, 0, 1));
+        path9->AddPoint(pos, q);
+    }
+    scene_manager->AddOpenGLObject("path_oriented_trajectory", std::move(path9));
 }
 
 int main(int argc, char* argv[]) {

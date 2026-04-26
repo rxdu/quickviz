@@ -186,6 +186,17 @@ visualization concern?" before merging.
 
 ### April 2026
 
+- ✅ **Path: per-pose orientation + `kPoseArrows`** — closes the gap
+  between "path of positions" and "trajectory of poses". Optional
+  `vector<glm::quat> orientations_` alongside `control_points_`,
+  streaming-friendly `AddPoint(point, quat)` and
+  `AddPoint(point, quat, scalar)` overloads, `SetOrientations` /
+  `ClearOrientations` / `HasOrientations`. New `ArrowMode::kPoseArrows`
+  draws arrows oriented by the per-pose quaternion (X-forward
+  convention, ROS-style) rather than the path tangent — for use cases
+  where heading differs from travel direction (parallel parking,
+  drone yaw, manipulator end-effector). Maps cleanly onto the upcoming
+  ROS2 `geometry_msgs::PoseArray` and `nav_msgs::Path` converters.
 - ✅ **Path: trajectory streaming extensions** — `AddPoint(point, scalar)`
   overload pushes positions and scalar samples in lockstep for live
   trajectory feeds. `EnableAutoColorRange()` auto-fits the velocity /
