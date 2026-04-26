@@ -1,5 +1,6 @@
 # applications
 if (ENABLE_AUTO_LAYOUT)
+  add_subdirectory(quickstart)
   add_subdirectory(quickviz_demo_app)
 
   # Silence PCL-era policy warnings, but keep modern behavior where safe
