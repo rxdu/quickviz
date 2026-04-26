@@ -1,95 +1,198 @@
 # QuickViz Implementation Tracker
 
 *Last Updated: April 26, 2026*
-*Purpose: Track implementation status and priorities*
+*Purpose: Track active work and concrete priorities. Terse and factual;
+no marketing language. One bullet per outcome.*
 
 ## Mission
 
-QuickViz is a **visualization-first** C++ library for robotics. The library
-provides building blocks (rendering, UI, selection, tools) that consuming
-applications compose. Editor / app-level concerns (commands, undo/redo,
-project files, history) live in `sample/` or downstream apps, never in `src/`.
+Visualization-first C++ library for robotics. The library renders,
+displays, and interacts; apps built on top handle editor-style concerns
+(undo/redo, project files, etc.). `sample/editor/` is the dogfood check
+on library completeness.
 
-`sample/editor/` (planned) is the dogfood check: if a vis+editing app cannot
-be built on top of `src/` without modifying `src/`, the library is missing
-a visualization-justified hook.
+The next chapter — turn this into a *robotics* visualization library
+(not a general C++ one) by closing the gap to standard robotics
+workflows: ROS2 streams, common primitives, live data, diagnostics.
 
 ---
 
-## 🎯 Active Work
+## 🎯 Active priorities
 
-### Reshape — bring the codebase back to visualization-first
-- [x] Delete `src/scenegraph/` (state mgmt + command pattern + bridge that
-      fabricated data — see commit `af77ad4`)
-- [x] Delete `sample/object_management/` (demo of the deleted bridge)
-- [x] CI `boundary-check` job: `src/` may not include from `sample/`
-- [x] Update CLAUDE.md, archive stale design docs
-- [x] Build `sample/editor/` MVP as the API completeness check
-      (load PCD/PLY → render → select → DeleteSelectedPoints → undo/redo
-      via app-side `CommandStack` → minimal history panel)
-- [x] Module reorg: imview→viewer, gldraw→scene; widget split into
-      canvas/plot/image; cvdraw merged into image; new plot module hosts
-      ImPlot + ImPlot3D
-- [ ] Add library hooks discovered while building the sample (additive only).
-      Logged candidates from sample/editor MVP:
-      - `SceneManager::GetObjectId(name) / GetObjectName(id)` so editors can
-        avoid relying on stringly-typed cloud names.
-      - `PointSelection::object_id` so selection callbacks don't need
-        string-equality on cloud_name.
-      - `PointCloud::SetActiveMask(span<bool>)` or `SetActiveIndices(...)` so
-        editing a point cloud doesn't require rebuilding the full vertex
-        buffer on every command (current MVP rewrites all visible points).
-      - Stable point-identity for selection persistence across cloud
-        mutations (today the editor must `ClearSelection()` on every
-        rebuild because the tool tracks visible indices).
-      Re-evaluate each one against the "is this a visualization concern?"
-      bar before merging to src/.
+Ordered by what unblocks the most downstream work.
 
-### Known visualization gaps
-- [ ] Selection support for Arrow, Plane, Path, Triangle, Pose primitives
-- [ ] LOD system for >1M point scenes
-- [ ] `PCLLoaderTest.InvalidFileError` is failing — modern PCL no longer
-      throws on corrupt PCDs; rewrite the test to match current behavior
-- [ ] Move bundled fonts from `core/include` to `resources/`
-- [ ] Replace `std::cerr` / `std::cout` debug spew in library code with a
-      lightweight logger (also audit for leftover noise after the deletions)
+### Next up — close the streaming-data loop
+- [ ] **`sample/streaming_demo/`** — moving point cloud pushed from a
+      background thread, rendered live via `DataStream<T>`. ~50 LOC.
+      Validates the API shape and serves as the canonical streaming
+      example before ROS2 work starts.
 
-### Smaller cleanups
+### Milestone — ROS2 integration (`bridges/ros2/`)
+The single biggest user-facing gap. Without this QuickViz is a general
+C++ vis library; with it, it's the robotics vis library.
+- [ ] Stand up `bridges/` umbrella with `bridges/ros2/` as the first
+      child (deferred from the earlier reorg — now justified by a real
+      occupant).
+- [ ] `sensor_msgs::PointCloud2` ↔ `PointCloud` renderable converter
+- [ ] `geometry_msgs::PoseStamped` / `PoseArray` ↔ pose / trajectory
+- [ ] `nav_msgs::OccupancyGrid` ↔ grid renderable
+- [ ] `tf2_msgs::TFMessage` ↔ frame-tree visualization
+- [ ] `visualization_msgs::Marker` / `MarkerArray` ↔ generic
+      primitives passthrough
+- [ ] CMake gating: ROS2 dep is optional; library still builds without
+      it
+
+### Milestone — first standard robotics renderable
+Pick one and ship it cleanly before the next. Don't backlog all three.
+- [ ] **`Trajectory`** renderable — 3D path with timestamps, optional
+      velocity coloring. Strong companion to `PoseStamped` streaming.
+- [ ] `OccupancyGrid` renderable — 2D map projected into the 3D scene.
+      Strong companion to `nav_msgs::OccupancyGrid`.
+- [ ] `TfFrameTree` renderable — animated transform tree with named
+      frames and optional fixed/moving distinction. Companion to tf2.
+
+### After ROS2 lands — diagnostics
+- [ ] **HUD overlay**: frame time, draw call count, GPU memory, active
+      tool, scene object count. Toggled by hotkey. ~1 day.
+- [ ] **Structured logger** to replace the scattered `std::cerr` /
+      `std::cout` calls in library code (long-standing TODO; promote
+      now). Lightweight; ~100 LOC + a level/category enum.
+- [ ] Visible UI surface for shader/asset load failures (today these
+      print to console and the user sees a black scene).
+
+### After diagnostics — documentation site
+- [ ] Doxygen API reference, generated and published via GitHub Pages
+      from the same repo. ~1 day to set up.
+- [ ] `docs/tutorial/01-quickstart.md` — walk through `sample/quickstart/`
+- [ ] `docs/tutorial/02-editor.md` — walk through `sample/editor/`
+- [ ] `docs/tutorial/03-streaming.md` — walk through `sample/streaming_demo/`
+- [ ] `docs/tutorial/04-custom-renderable.md` — extension story
+- [ ] `docs/tutorial/05-ros2.md` — once the bridge lands
+
+---
+
+## 📋 Backlog (deliberately deferred)
+
+These are good ideas with concrete value but aren't on the critical
+path right now. Promote one when there's a user pulling for it.
+
+### Onramp / ergonomics
+- [ ] **Layout presets** — `viewer::layout::SidebarLeft(width)`,
+      `BottomDock(height)`, `Split(ratio)` returning configured `Box`
+      trees. Removes the FlexGrow/FlexShrink magic-number incantation
+      from samples. ~3 hours.
+- [ ] **`viewer::AppState`** — saves window position, last camera
+      viewpoint per scene, last-opened files, panel sizes beyond what
+      `imgui.ini` covers. Loads on startup, saves on shutdown.
+      ~1 day + a TOML/JSON dep.
+
+### Tools / data lifecycle
+- [ ] **Recording + replay** for `DataStream`s — `core/Record<T>` and
+      `core/Replay<T>` capture / play back stream traffic to disk.
+      Critical for deterministic testing and offline analysis. ~2-3
+      days. Picks a binary format (raw, msgpack, capnproto).
+
+### Performance
+- [ ] **LOD system** for >1M point scenes (existing TODO, larger).
+      Likely octree-based with per-tile streaming.
+
+### Scaling / extension
+- [ ] **Plugin / extension system** — runtime loading of renderables
+      and tools via shared library + small C ABI registration. Heavy
+      lift (~2-3 weeks); defer until a concrete user appears.
+
+### Robotics gold demo
+- [ ] **Compose** the items above into a single sample that looks
+      impressive: robot driving through an occupancy grid with a
+      streaming point cloud, trajectory, sensor frustum, and small
+      dashboard. Doubles as a marketing screenshot and a
+      feature-completeness check.
+
+---
+
+## 🔧 Library hooks (driven by `sample/editor`)
+
+Additive only. Each one was logged when the editor sample wanted it
+but worked around the absence. Re-evaluate against "is this a
+visualization concern?" before merging.
+
+- [ ] `SceneManager::GetObjectId(name)` / `GetObjectName(id)` — drop
+      the stringly-typed name lookup the editor currently uses.
+- [ ] `PointSelection::object_id` — selection callbacks no longer
+      need string-equality on cloud_name.
+- [ ] `PointCloud::SetActiveMask(span<bool>)` or
+      `SetActiveIndices(...)` — editing a point cloud no longer
+      requires rebuilding the full vertex buffer per command.
+- [ ] Stable point identity so selections survive cloud mutations
+      (today the editor must `ClearSelection()` after every rebuild
+      because the tool tracks visible indices).
+
+---
+
+## 🐛 Known visualization gaps
+
+- [ ] Selection support for `Arrow`, `Plane`, `Path`, `Triangle`,
+      `Pose` primitives.
+- [ ] `PCLLoaderTest.InvalidFileError` is failing — modern PCL no
+      longer throws on corrupt PCDs; rewrite the test against current
+      behavior.
+- [ ] Move bundled fonts from `core/include/` to a top-level
+      `resources/` directory (they're not a public-API concern).
+
+---
+
+## 🧹 Smaller cleanups
+
 - [ ] `src/scene/src/renderable/canvas.cpp` is 2069 LOC; split into
-      cohesive sub-files (~500 LOC target per CLAUDE.md)
-- [ ] Audit `interactive_scene_manager.cpp` for disabled/legacy paths left
-      over from the editor migration; either finish or remove
+      cohesive sub-files (~500 LOC target per CLAUDE.md).
+- [ ] Audit `sample/pointcloud_viewer/interactive_scene_manager.cpp`
+      for disabled / legacy paths from the deleted-editor migration;
+      either finish or remove.
+- [ ] Audit `sample/quickviz_demo_app/` for boilerplate that could
+      now use `SceneApp` and the layout presets when those land.
 
 ---
 
 ## ✅ Recently Completed
 
 ### April 2026
-- ✅ **Module reorg by intent** — Final library layout:
-  `core, viewer, scene, plot, canvas, image, pcl_bridge`. One job per
-  module, named after what users want to do (not which backend it uses).
-  Renamed `imview→viewer`, `gldraw→scene`. Dissolved `widget` into
-  `canvas` (Cairo) + `plot` (ImPlot widgets). Merged `cvdraw` into
-  `image` along with the cv_image widgets from `widget`. New `plot`
-  module also hosts ImPlot3D.
-- ✅ **`sample/editor/` MVP** — vis+editing reference app on top of
-  the library, built without any `src/` modifications. Acts as the
-  dogfood check on library completeness. Load PCD/PLY → select →
-  DeletePoints with full undo/redo via a sample-private CommandStack.
-- ✅ **Reshape: visualization-first re-anchor** — Removed the in-library
-  state management module (`scenegraph`) and its sample (`object_management`).
-  Locked the `src/ ↛ sample/` boundary in CI and CLAUDE.md. Editor concerns
-  are now built on top of the library, not inside it. Stale architecture and
-  design docs archived. (commits `af77ad4`, `079eb2b`)
+
+- ✅ **CLAUDE.md rewrite** — tighter project contract, 470 → 308 lines.
+  Final module map, library boundary rule, code style, threading model,
+  decision heuristics. (commit `e637b8d`)
+- ✅ **`quickviz::DataStream<T>`** — latest-only producer/consumer
+  channel for streaming sensor data, header-only over `DoubleBuffer<T>`.
+  7 unit tests including a threaded smoke test. (commit `22ef647`)
+- ✅ **`sample/quickstart/`** — 18-line app demonstrating `SceneApp` +
+  synthetic data; the "first 5 minutes" proof point. (commit `c6b9a2a`)
+- ✅ **`quickviz::demo::*` synthetic data generators** — SpiralCloud,
+  PlanarPointGrid, NoiseCloud, CubeMesh, Trajectory. 8 unit tests.
+  (commit `135070a`)
+- ✅ **`GlViewer` → `SceneApp` rename + reframe** as the 5-line
+  quickstart facade. 17 renderable tests updated. (commit `557a27a`)
+- ✅ **Module reorg by intent** — final layout `core, viewer, scene,
+  plot, canvas, image, pcl_bridge`. One job per module, named after
+  what users want to do (not which backend). Renames `imview→viewer`,
+  `gldraw→scene`. Dissolved `widget` into `canvas` (Cairo) + `plot`
+  (ImPlot widgets). Merged `cvdraw` into `image` along with cv_image
+  widgets from `widget`. New `plot` module hosts ImPlot3D as well.
+- ✅ **`sample/editor/` MVP** — vis+editing reference app on top of the
+  library, built without any `src/` modifications. Acts as the dogfood
+  check on library completeness.
+- ✅ **Reshape: visualization-first re-anchor** — Removed the
+  in-library state management module (`scenegraph`) and its sample
+  (`object_management`). Locked the `src/ ↛ sample/` boundary in CI
+  and CLAUDE.md.
 
 ### September 2025
-- ✅ CameraController refactor (Strategy pattern, configurable parameters,
-  utility methods)
+- ✅ CameraController refactor (Strategy pattern, configurable
+  parameters, utility methods)
 - ✅ Input debug message cleanup
 - ✅ GLDraw architecture review
 
 ### December 2024
-- ✅ ThreadSafeQueue, BufferRegistry, AsyncEventDispatcher modernization
+- ✅ ThreadSafeQueue, BufferRegistry, AsyncEventDispatcher
+  modernization
 
 ### September 2024
 - ✅ Configurable camera controls (Modeling/FPS/CAD/Scientific styles)
@@ -107,19 +210,20 @@ a visualization-justified hook.
 
 ## 📊 Status Summary
 
-**Branch**: `feature-pointcloud_editing` (will rename once the editor sample
-is in place)
-**Focus**: Re-anchor the library on visualization, then build the editor
-sample as the API check.
+**Branch**: `main` (post-PR-#28).
 **Architecture**: Library = `core, viewer, scene, plot, canvas, image,
-pcl_bridge` — one job per module, named by user intent. Apps live in
-`sample/`.
+pcl_bridge`. Apps live in `sample/`. Editor / ROS-style frameworks live
+above the library, never inside.
+**Current focus**: Close the streaming loop with `sample/streaming_demo`,
+then the ROS2 bridge milestone.
 
 ---
 
 ## 📝 Notes
 
-- See `docs/notes/` for design deep-dives (rendering, picking, input)
-- See `CLAUDE.md` for project guidelines and module boundaries
-- Update this file after finishing tasks; keep entries terse, factual,
-  and one bullet per outcome
+- See `docs/notes/` for design deep-dives (rendering, picking, input).
+- See `CLAUDE.md` for project guidelines and module boundaries.
+- Update this file in the same change as the work itself; keep entries
+  terse, factual, one bullet per outcome. No marketing language.
+- An item moves from Active → Recently Completed only when the work is
+  actually merged and tests pass — not "started" or "in flight."
