@@ -22,10 +22,11 @@ workflows: ROS2 streams, common primitives, live data, diagnostics.
 Ordered by what unblocks the most downstream work.
 
 ### Next up — close the streaming-data loop
-- [ ] **`sample/streaming_demo/`** — moving point cloud pushed from a
-      background thread, rendered live via `DataStream<T>`. ~50 LOC.
-      Validates the API shape and serves as the canonical streaming
-      example before ROS2 work starts.
+- [x] **`sample/streaming_demo/`** — rotating spiral pushed from a
+      background thread at ~30 Hz, rendered via `DataStream<T>` and
+      `SceneManager::SetPreDrawCallback`. Annotated README explains
+      the threading model and DataStream-vs-RingBuffer choice. The
+      reference users will copy when wiring sensor streams.
 
 ### Milestone — ROS2 integration (`bridges/ros2/`)
 The single biggest user-facing gap. Without this QuickViz is a general
@@ -169,6 +170,11 @@ visualization concern?" before merging.
 
 ### April 2026
 
+- ✅ **`sample/streaming_demo/`** — canonical sensor-streaming pattern.
+  Background producer rotates a 2000-point spiral around Z and pushes
+  to `DataStream<PointCloudData>` at 30 Hz; render thread pulls in a
+  `SetPreDrawCallback` and updates the renderable. ~50 LOC + a 60-line
+  README on threading model and DataStream-vs-RingBuffer guidance.
 - ✅ **CLAUDE.md rewrite** — tighter project contract, 470 → 308 lines.
   Final module map, library boundary rule, code style, threading model,
   decision heuristics. (commit `e637b8d`)
