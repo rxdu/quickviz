@@ -18,7 +18,7 @@
 
 #include "scene/scene_app.hpp"
 #include "scene/renderable/canvas.hpp"
-#include "scene/renderable/triangle.hpp"
+#include "test_utils/triangle.hpp"
 
 using namespace quickviz;
 namespace fs = std::filesystem;

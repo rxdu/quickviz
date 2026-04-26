@@ -8,7 +8,7 @@ add_executable(test_bounding_box test_bounding_box.cpp)
 target_link_libraries(test_bounding_box PRIVATE scene)
 
 add_executable(test_canvas test_canvas.cpp)
-target_link_libraries(test_canvas PRIVATE scene)
+target_link_libraries(test_canvas PRIVATE scene_test_utils)
 
 add_executable(test_coordinate_frame test_coordinate_frame.cpp)
 target_link_libraries(test_coordinate_frame PRIVATE scene)
@@ -54,5 +54,5 @@ add_executable(test_texture test_texture.cpp)
 target_link_libraries(test_texture PRIVATE scene)
 
 add_executable(test_triangle test_triangle.cpp)
-target_link_libraries(test_triangle PRIVATE scene)
+target_link_libraries(test_triangle PRIVATE scene_test_utils)
 

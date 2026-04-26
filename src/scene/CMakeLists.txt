@@ -27,7 +27,6 @@ add_library(scene
     src/renderable/details/point_layer_manager.cpp
     src/renderable/grid.cpp
     src/renderable/occupancy_grid.cpp
-    src/renderable/triangle.cpp
     src/renderable/point_cloud.cpp
     src/renderable/canvas.cpp
     src/renderable/coordinate_frame.cpp

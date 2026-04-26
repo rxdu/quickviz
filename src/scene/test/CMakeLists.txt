@@ -1,3 +1,4 @@
+add_subdirectory(test_utils)
 add_subdirectory(feature)
 add_subdirectory(renderable)
 add_subdirectory(selection)
@@ -24,14 +25,14 @@ add_executable(test_coordinate_system test_coordinate_system.cpp)
 target_link_libraries(test_coordinate_system PRIVATE scene)
 
 add_executable(test_primitive_drawing test_primitive_drawing.cpp)
-target_link_libraries(test_primitive_drawing PRIVATE scene)
+target_link_libraries(test_primitive_drawing PRIVATE scene_test_utils)
 
 
 add_executable(test_canvas_st test_canvas_st.cpp)
-target_link_libraries(test_canvas_st PRIVATE scene)
+target_link_libraries(test_canvas_st PRIVATE scene_test_utils)
 
 add_executable(test_nav_map_rendering test_nav_map_rendering.cpp)
-target_link_libraries(test_nav_map_rendering PRIVATE scene)
+target_link_libraries(test_nav_map_rendering PRIVATE scene_test_utils)
 
 add_executable(test_layer_system_box test_layer_system_box.cpp)
 target_link_libraries(test_layer_system_box PRIVATE scene)

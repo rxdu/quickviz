@@ -7,13 +7,13 @@
  * Copyright (c) 2025 Ruixiang Du (rdu)
  */
 
-#ifndef COMPONENT_OPENGL_TRIANGLE_HPP
-#define COMPONENT_OPENGL_TRIANGLE_HPP
+#ifndef QUICKVIZ_TEST_UTILS_TRIANGLE_HPP
+#define QUICKVIZ_TEST_UTILS_TRIANGLE_HPP
 
 #include <glm/glm.hpp>
 
 #include "scene/interface/opengl_object.hpp"
-#include "../shader_program.hpp"
+#include "scene/shader_program.hpp"
 
 namespace quickviz {
 class Triangle : public OpenGlObject {
@@ -42,4 +42,4 @@ class Triangle : public OpenGlObject {
 };
 }  // namespace quickviz
 
-#endif /* COMPONENT_OPENGL_TRIANGLE_HPP */
+#endif /* QUICKVIZ_TEST_UTILS_TRIANGLE_HPP */

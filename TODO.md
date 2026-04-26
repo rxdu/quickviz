@@ -162,6 +162,11 @@ visualization concern?" before merging.
 
 ## 🧹 Smaller cleanups
 
+- [ ] Audit `GeometricPrimitive` base class (405-LOC header) — it
+      bundles material system, render modes, and selection state for
+      `Sphere`/`Cylinder`/`BoundingBox`. The header is overly large
+      and possibly does too much. A real design review, not a quick
+      rewrite — likely API-breaking.
 - [ ] `src/scene/src/renderable/canvas.cpp` is 2069 LOC; split into
       cohesive sub-files (~500 LOC target per CLAUDE.md).
 - [ ] Clean `sample/pointcloud_viewer/interactive_scene_manager.cpp`
@@ -180,6 +185,15 @@ visualization concern?" before merging.
 
 ### April 2026
 
+- ✅ **Triangle moved to `scene/test/test_utils/`** — accidentally-public
+  test scaffold removed from the public renderable API. New
+  `scene_test_utils` library hosts test-only helpers; the 8 tests that
+  used `Triangle` link against it instead of the main `scene` target.
+  Headed off a related axis-vertex-generator refactor after closer
+  inspection: the three axis-rendering classes (`CoordinateFrame`,
+  `Pose`, `TfFrameTree`) draw genuinely different shapes (cone-arrowed
+  vs. plain lines) in different coordinate frames; a shared helper
+  would force a worse abstraction.
 - ✅ **`TfFrameTree` renderable** — tree of named coordinate frames with
   parent/child transforms, ROS tf2-style. Each frame renders as RGB
   axes; gray lines connect parents to children when enabled. World

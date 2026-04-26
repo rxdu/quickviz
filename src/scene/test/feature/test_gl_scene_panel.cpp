@@ -18,7 +18,7 @@
 
 #include "scene/gl_scene_panel.hpp"
 #include "scene/renderable/grid.hpp"
-#include "scene/renderable/triangle.hpp"
+#include "test_utils/triangle.hpp"
 
 using namespace quickviz;
 

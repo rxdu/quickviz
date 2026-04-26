@@ -79,7 +79,7 @@ target_link_libraries(test_renderer_pipeline
     PRIVATE
     gtest_main
     viewer
-    scene
+    scene_test_utils
     test_utils
 )
 gtest_discover_tests(test_renderer_pipeline

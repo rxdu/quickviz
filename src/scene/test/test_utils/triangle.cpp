@@ -7,7 +7,7 @@
  * Copyright (c) 2025 Ruixiang Du (rdu)
  */
 
-#include "scene/renderable/triangle.hpp"
+#include "test_utils/triangle.hpp"
 
 #include <iostream>
 
