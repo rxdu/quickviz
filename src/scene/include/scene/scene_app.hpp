@@ -1,17 +1,33 @@
 /*
- * @file gl_viewer.hpp
+ * @file scene_app.hpp
  * @author Ruixiang Du (ruixiang.du@gmail.com)
  * @date 2025-08-23
- * @brief Reusable OpenGL view class for testing renderable objects
+ * @brief Five-line quickstart for a 3D viewer
  *
- * This class handles the common boilerplate code for setting up OpenGL rendering tests,
- * allowing test cases to focus on creating and configuring renderable objects.
+ * `SceneApp` is the smallest entry point QuickViz offers for building a
+ * 3D viewer. It wraps a `Viewer` and a `GlScenePanel`, sets up sensible
+ * defaults (grid + coordinate frame), and runs the event loop. The
+ * scene is populated through a callback the caller provides.
+ *
+ * Typical use:
+ *
+ *     quickviz::SceneApp app({.window_title = "My Tool"});
+ *     app.SetSceneSetup([](SceneManager* scene) {
+ *       scene->AddOpenGLObject("cloud", std::make_unique<PointCloud>(...));
+ *     });
+ *     app.Run();
+ *
+ * For more control (multiple panels, side widgets, plot/canvas/image
+ * panels alongside the 3D scene) drop down to `Viewer` directly. SceneApp
+ * is the path of least resistance, not the only door.
+ *
+ * Internally also used by the renderable unit tests in scene/test/.
  *
  * Copyright (c) 2025 Ruixiang Du (rdu)
  */
 
-#ifndef QUICKVIZ_GLVIEW_HPP
-#define QUICKVIZ_GLVIEW_HPP
+#ifndef QUICKVIZ_SCENE_APP_HPP
+#define QUICKVIZ_SCENE_APP_HPP
 
 #include <memory>
 #include <string>
@@ -29,20 +45,23 @@
 namespace quickviz {
 
 /**
- * @brief Reusable OpenGL viewer for testing renderable objects
- * 
- * This class encapsulates the common setup and management code needed for
- * OpenGL rendering tests. It provides:
- * - Automatic viewer and scene manager setup
- * - Optional grid and coordinate frame
- * - Scene population callback system
- * - Standard camera controls and help text
- * - Exception handling and error reporting
+ * @brief Quickstart facade for building a 3D viewer in a few lines
+ *
+ * Provides:
+ * - `Viewer` + `GlScenePanel` set up with sane defaults
+ * - Optional reference grid and coordinate frame
+ * - A `SceneSetupCallback` for populating the scene
+ * - Standard camera controls (inherited from `GlScenePanel`)
+ * - Optional help-text overlay
+ *
+ * For applications that need multiple panels (plots, image views, custom
+ * UI) compose `Viewer` and the panel classes directly — `SceneApp` is a
+ * convenience layer, not a base class to extend.
  */
-class GlViewer {
+class SceneApp {
 public:
     /**
-     * @brief Configuration structure for GlView
+     * @brief Configuration for the SceneApp
      */
     struct Config {
         std::string window_title;
@@ -78,20 +97,20 @@ public:
      * 
      * @param config Configuration for the view
      */
-    explicit GlViewer(const Config& config = Config{});
+    explicit SceneApp(const Config& config = Config{});
 
     /**
      * @brief Destructor
      */
-    ~GlViewer() = default;
+    ~SceneApp() = default;
 
     // Disable copy construction and assignment
-    GlViewer(const GlViewer&) = delete;
-    GlViewer& operator=(const GlViewer&) = delete;
+    SceneApp(const SceneApp&) = delete;
+    SceneApp& operator=(const SceneApp&) = delete;
 
     // Enable move construction and assignment
-    GlViewer(GlViewer&&) = default;
-    GlViewer& operator=(GlViewer&&) = default;
+    SceneApp(SceneApp&&) = default;
+    SceneApp& operator=(SceneApp&&) = default;
 
     /**
      * @brief Set the scene setup callback
@@ -158,4 +177,4 @@ private:
 
 } // namespace quickviz
 
-#endif // QUICKVIZ_GLVIEW_HPP
+#endif // QUICKVIZ_SCENE_APP_HPP

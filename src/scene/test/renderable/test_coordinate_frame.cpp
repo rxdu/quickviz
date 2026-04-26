@@ -13,7 +13,7 @@
 #include <iostream>
 #include <memory>
 
-#include "scene/gl_viewer.hpp"
+#include "scene/scene_app.hpp"
 #include "scene/renderable/coordinate_frame.hpp"
 #include "scene/renderable/grid.hpp"
 
@@ -64,13 +64,13 @@ void SetupCoordinateFrameScene(SceneManager* scene_manager) {
 int main(int argc, char* argv[]) {
     try {
         // Configure the view for 3D mode
-        GlViewer::Config config;
+        SceneApp::Config config;
         config.window_title = "Coordinate Frame Rendering Test";
         config.coordinate_frame_size = 2.0f;
         config.show_coordinate_frame = false;  // We'll add our own coordinate frames
         
         // Create the view
-        GlViewer view(config);
+        SceneApp view(config);
         
         // Set up description and help sections
         view.SetDescription("Testing coordinate frame rendering with various orientations and scales");

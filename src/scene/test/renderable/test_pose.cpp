@@ -16,7 +16,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-#include "scene/gl_viewer.hpp"
+#include "scene/scene_app.hpp"
 #include "scene/renderable/pose.hpp"
 #include "scene/renderable/grid.hpp"
 
@@ -136,12 +136,12 @@ void SetupPoseScene(SceneManager* scene_manager) {
 int main(int argc, char* argv[]) {
     try {
         // Configure the view for 3D mode
-        GlViewer::Config config;
+        SceneApp::Config config;
         config.window_title = "Pose Rendering Test";
         config.coordinate_frame_size = 2.0f;
         
         // Create the view
-        GlViewer view(config);
+        SceneApp view(config);
         
         // Set up description and help sections
         view.SetDescription("Testing 6-DOF pose visualization with coordinate frames and history trails");

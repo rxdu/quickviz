@@ -15,7 +15,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "scene/gl_viewer.hpp"
+#include "scene/scene_app.hpp"
 #include "scene/renderable/plane.hpp"
 #include "scene/renderable/grid.hpp"
 #include "scene/renderable/coordinate_frame.hpp"
@@ -142,12 +142,12 @@ void SetupPlaneScene(SceneManager* scene_manager) {
 int main(int argc, char* argv[]) {
     try {
         // Configure the view for 3D mode
-        GlViewer::Config config;
+        SceneApp::Config config;
         config.window_title = "Plane Rendering Test";
         config.coordinate_frame_size = 2.0f;
         
         // Create the view
-        GlViewer view(config);
+        SceneApp view(config);
         
         // Set up description and help sections
         view.SetDescription("Testing plane rendering with various orientations and visualization modes");

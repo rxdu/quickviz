@@ -14,7 +14,7 @@
 #include <vector>
 #include <random>
 
-#include "scene/gl_viewer.hpp"
+#include "scene/scene_app.hpp"
 #include "scene/renderable/point_cloud.hpp"
 
 using namespace quickviz;
@@ -86,12 +86,12 @@ void SetupPointCloudScene(SceneManager* scene_manager) {
 int main(int argc, char* argv[]) {
     try {
         // Configure the view for 3D mode
-        GlViewer::Config config;
+        SceneApp::Config config;
         config.window_title = "PointCloud Rendering Test";
         config.coordinate_frame_size = 2.0f;
         
         // Create the view
-        GlViewer view(config);
+        SceneApp view(config);
         
         // Set up description and help sections
         view.SetDescription("Testing point cloud rendering with various patterns and coloring schemes");

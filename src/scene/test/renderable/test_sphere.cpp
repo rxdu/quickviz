@@ -11,7 +11,7 @@
 #include <memory>
 #include <vector>
 
-#include "scene/gl_viewer.hpp"
+#include "scene/scene_app.hpp"
 #include "scene/renderable/sphere.hpp"
 
 using namespace quickviz;
@@ -52,12 +52,12 @@ void SetupSphereScene(SceneManager* scene_manager) {
 int main(int argc, char* argv[]) {
     try {
         // Configure the view for 3D mode
-        GlViewer::Config config;
+        SceneApp::Config config;
         config.window_title = "Sphere Rendering Test";
         config.coordinate_frame_size = 2.0f;
         
         // Create the view
-        GlViewer view(config);
+        SceneApp view(config);
         
         // Set up description and help sections
         view.SetDescription("Testing sphere rendering with various sizes, colors, and rendering modes");

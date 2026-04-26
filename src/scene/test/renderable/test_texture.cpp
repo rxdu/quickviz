@@ -19,7 +19,7 @@
 #include <thread>
 #include <cmath>
 
-#include "scene/gl_viewer.hpp"
+#include "scene/scene_app.hpp"
 #include "scene/renderable/texture.hpp"
 #include "core/buffer/buffer_registry.hpp"
 #include "core/buffer/ring_buffer.hpp"
@@ -145,13 +145,13 @@ void SetupTextureScene(SceneManager* scene_manager) {
 int main(int argc, char* argv[]) {
     try {
         // Configure the view for 2D mode
-        GlViewer::Config config;
+        SceneApp::Config config;
         config.window_title = "Texture Rendering Test - 2D Mode";
         config.scene_mode = SceneManager::Mode::k2D;
         config.coordinate_frame_size = 2.0f;
         
         // Create the view
-        GlViewer view(config);
+        SceneApp view(config);
         
         // Set up description and help sections
         view.SetDescription("Testing dynamic texture rendering with animated patterns");

@@ -15,7 +15,7 @@
 #include <vector>
 #include <cmath>
 
-#include "scene/gl_viewer.hpp"
+#include "scene/scene_app.hpp"
 #include "scene/renderable/triangle.hpp"
 
 using namespace quickviz;
@@ -85,14 +85,14 @@ void SetupTriangleScene(SceneManager* scene_manager) {
 int main(int argc, char* argv[]) {
     try {
         // Configure the view for 2D mode
-        GlViewer::Config config;
+        SceneApp::Config config;
         config.window_title = "Triangle Rendering Test - 2D Mode";
         config.scene_mode = SceneManager::Mode::k2D;  // Set 2D mode
         config.show_grid = true;  // Disable grid for cleaner 2D view
         config.show_coordinate_frame = true;  // Disable 3D coordinate frame
         
         // Create the view
-        GlViewer view(config);
+        SceneApp view(config);
         
         // Set up description and help sections
         view.SetDescription("Testing triangle rendering in 2D mode for shapes and UI elements");

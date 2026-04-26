@@ -12,7 +12,7 @@
 #include <iostream>
 #include <memory>
 
-#include "scene/gl_viewer.hpp"
+#include "scene/scene_app.hpp"
 #include "scene/renderable/grid.hpp"
 
 using namespace quickviz;
@@ -46,13 +46,13 @@ void SetupGridScene(SceneManager* scene_manager) {
 int main(int argc, char* argv[]) {
     try {
         // Configure the view for 3D mode
-        GlViewer::Config config;
+        SceneApp::Config config;
         config.window_title = "Grid Rendering Test";
         config.coordinate_frame_size = 2.0f;
         config.show_grid = false;  // We'll add our own grids
         
         // Create the view
-        GlViewer view(config);
+        SceneApp view(config);
         
         // Set up description and help sections
         view.SetDescription("Testing grid rendering with various sizes, steps, and colors");

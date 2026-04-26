@@ -8,7 +8,7 @@
  * Copyright (c) 2025 Ruixiang Du (rdu)
  */
 
-#include "scene/gl_viewer.hpp"
+#include "scene/scene_app.hpp"
 
 #include <iostream>
 #include <stdexcept>
@@ -17,9 +17,9 @@
 
 namespace quickviz {
 
-GlViewer::GlViewer(const Config& config) : config_(config) { SetupViewer(); }
+SceneApp::SceneApp(const Config& config) : config_(config) { SetupViewer(); }
 
-void GlViewer::SetupViewer() {
+void SceneApp::SetupViewer() {
   // Create box container for layout
   auto box = std::make_shared<Box>("main_box");
   box->SetFlexDirection(Styling::FlexDirection::kRow);
@@ -37,7 +37,7 @@ void GlViewer::SetupViewer() {
   viewer_.AddSceneObject(box);
 }
 
-void GlViewer::SetupBasicScene() {
+void SceneApp::SetupBasicScene() {
   // Add grid if requested
   if (config_.show_grid) {
     auto grid = std::make_unique<Grid>(config_.grid_size, config_.grid_step,
@@ -54,22 +54,22 @@ void GlViewer::SetupBasicScene() {
   }
 }
 
-void GlViewer::SetSceneSetup(SceneSetupCallback callback) {
+void SceneApp::SetSceneSetup(SceneSetupCallback callback) {
   scene_setup_callback_ = std::move(callback);
 }
 
-void GlViewer::AddHelpSection(const std::string& section_title,
+void SceneApp::AddHelpSection(const std::string& section_title,
                             const std::vector<std::string>& help_lines) {
   help_sections_.emplace_back(section_title, help_lines);
 }
 
-void GlViewer::SetDescription(const std::string& description) {
+void SceneApp::SetDescription(const std::string& description) {
   description_ = description;
 }
 
-SceneManager* GlViewer::GetSceneManager() const { return scene_panel_->GetSceneManager(); }
+SceneManager* SceneApp::GetSceneManager() const { return scene_panel_->GetSceneManager(); }
 
-void GlViewer::DisplayHelp() const {
+void SceneApp::DisplayHelp() const {
   std::cout << "\n=== " << config_.window_title << " ===" << std::endl;
 
   if (!description_.empty()) {
@@ -94,7 +94,7 @@ void GlViewer::DisplayHelp() const {
   std::cout << std::endl;
 }
 
-void GlViewer::Run() {
+void SceneApp::Run() {
   try {
     // Set up basic scene elements
     SetupBasicScene();

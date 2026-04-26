@@ -6,7 +6,7 @@ find_package(OpenGL REQUIRED)
 add_library(scene
     ## gui integration
     src/gl_scene_panel.cpp
-    src/gl_viewer.cpp
+    src/scene_app.cpp
     ## core rendering components
     src/shader.cpp
     src/shader_program.cpp

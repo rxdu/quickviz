@@ -19,7 +19,7 @@
 #include <memory>
 #include <vector>
 
-#include "scene/gl_viewer.hpp"
+#include "scene/scene_app.hpp"
 #include "scene/renderable/billboard.hpp"
 #include "scene/renderable/sphere.hpp"
 #include "scene/renderable/arrow.hpp"
@@ -249,12 +249,12 @@ int main(int argc, char* argv[]) {
         std::cout << std::endl;
         
         // Configure the viewer
-        GlViewer::Config config;
+        SceneApp::Config config;
         config.window_title = "Billboard Primitive Test";
         config.coordinate_frame_size = 2.0f;
         
         // Create viewer
-        GlViewer viewer(config);
+        SceneApp viewer(config);
         
         // Set up description and help sections
         viewer.SetDescription("Testing Billboard primitive with ImGui font integration as Text3D replacement");
