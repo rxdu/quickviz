@@ -56,7 +56,7 @@ struct ModifierKeys {
   bool IsEmpty() const { return !ctrl && !shift && !alt && !super; }
 };
 
-// Use existing MouseButton enum from imview/input/mouse.hpp
+// Use existing MouseButton enum from viewer/input/mouse.hpp
 // No need to redefine it here
 
 class InputEvent : public BaseEvent {

@@ -8,7 +8,7 @@
 
 #include <iostream>
 
-#include "imview/viewer.hpp"
+#include "viewer/viewer.hpp"
 
 #include "quickviz_application.hpp"
 

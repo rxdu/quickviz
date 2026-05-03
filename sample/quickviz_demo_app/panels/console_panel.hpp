@@ -9,7 +9,7 @@
 #ifndef QUICKVIZ_CONSOLE_PANEL_HPP
 #define QUICKVIZ_CONSOLE_PANEL_HPP
 
-#include "imview/panel.hpp"
+#include "viewer/panel.hpp"
 
 namespace quickviz {
 class ConsolePanel : public Panel {

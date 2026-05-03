@@ -8,7 +8,7 @@
 
 #include "panels/config_panel.hpp"
 
-#include "imview/fonts.hpp"
+#include "viewer/fonts.hpp"
 
 namespace quickviz {
 ConfigPanel::ConfigPanel(std::string name) : Panel(name) {

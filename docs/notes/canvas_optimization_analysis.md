@@ -13,7 +13,7 @@ Canvas implements a **production-grade optimization architecture** with sophisti
 
 ### 1. **Advanced Batching System** ✅ **ALREADY IMPLEMENTED**
 
-**Files**: `src/gldraw/include/gldraw/renderable/details/canvas_batching.hpp`
+**Files**: `src/scene/include/scene/renderable/details/canvas_batching.hpp`
 
 **Architecture**:
 - **Multi-tier batching system** with separate batches for different primitive types:
@@ -49,7 +49,7 @@ struct BatchOrderTracker {
 
 ### 2. **Comprehensive Performance Monitoring** ✅ **ALREADY IMPLEMENTED**
 
-**Files**: `src/gldraw/include/gldraw/renderable/details/canvas_performance.hpp`
+**Files**: `src/scene/include/scene/renderable/details/canvas_performance.hpp`
 
 **Features**:
 - **Real-time rendering statistics** with detailed metrics:
@@ -92,7 +92,7 @@ struct PerformanceConfig {
 
 ### 3. **Thread-Safe Data Management** ✅ **ALREADY IMPLEMENTED**
 
-**Files**: `src/gldraw/src/renderable/details/canvas_data_manager.hpp/.cpp`
+**Files**: `src/scene/src/renderable/details/canvas_data_manager.hpp/.cpp`
 
 **Architecture**:
 - **Complete thread-safe operation** with mutex protection on all data access
@@ -132,7 +132,7 @@ public:
 
 ### 4. **GPU Resource Pool Management** ✅ **ALREADY IMPLEMENTED**
 
-**Files**: `src/gldraw/src/renderable/details/opengl_resource_pool.hpp`
+**Files**: `src/scene/src/renderable/details/opengl_resource_pool.hpp`
 
 **Features**:
 - **VAO/VBO pooling system** to eliminate per-frame OpenGL resource allocation
@@ -169,8 +169,8 @@ public:
 ### 5. **Dual Render Strategy System** ✅ **ALREADY IMPLEMENTED**
 
 **Files**: 
-- `src/gldraw/src/renderable/details/batched_render_strategy.hpp`
-- `src/gldraw/src/renderable/details/individual_render_strategy.hpp`
+- `src/scene/src/renderable/details/batched_render_strategy.hpp`
+- `src/scene/src/renderable/details/individual_render_strategy.hpp`
 
 **Architecture**:
 - **Strategy pattern implementation** with runtime switching:

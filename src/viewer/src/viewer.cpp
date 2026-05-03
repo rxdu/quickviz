@@ -1,0 +1,400 @@
+/*
+ * viewer_base.cpp
+ *
+ * Created on: Jul 27, 2021 08:59
+ * Description:
+ *
+ * Note: how to generate compressed data from ttf file
+ *  $ cd src/fonts && g++ binary_to_compressed_c.cpp
+ *  $ ./a.out OpenSans-Regular.ttf OpenSansRegular > opensans_regular.hpp
+ *
+ * In the above command, "xxx.ttf" is the original ttf file, "OpenSansRegular"
+ * will be part of the variable name, e.g. OpenSansRegular_compressed_data,
+ * "xxx.hpp" will be the source file you can include to load compressed data
+ *
+ * Copyright (c) 2021 Ruixiang Du (rdu)
+ */
+
+#include "viewer/viewer.hpp"
+
+#include <iostream>
+#include <functional>
+#include <algorithm>
+
+#include "implot/implot.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+#include "opengl_capability_checker.hpp"
+#include "viewer/panel.hpp"
+#include "viewer/input/imgui_input_utils.hpp"
+
+namespace quickviz {
+namespace {
+template <typename T>
+struct FramebufferSizeCallback;
+
+template <typename Ret, typename... Params>
+struct FramebufferSizeCallback<Ret(Params...)> {
+  template <typename... Args>
+  static Ret callback(Args... args) {
+    return func(args...);
+  }
+  static std::function<Ret(Params...)> func;
+};
+
+// Initialize the static member.
+template <typename Ret, typename... Params>
+std::function<Ret(Params...)> FramebufferSizeCallback<Ret(Params...)>::func;
+
+}  // namespace
+
+Viewer::Viewer(std::string title, uint32_t width, uint32_t height,
+               uint32_t window_hints)
+    : Window(title, width, height, window_hints) {
+  // setup Dear ImGui context
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+  ImPlot::CreateContext();
+
+  // setup Platform/Renderer backends
+  ImGui_ImplGlfw_InitForOpenGL(win_, true);
+#ifdef __EMSCRIPTEN__
+  ImGui_ImplGlfw_InstallEmscriptenCallbacks(window, "#canvas");
+#endif
+
+  // decide GL+GLSL versions
+#if defined(IMGUI_IMPL_OPENGL_ES2)
+  // GL ES 2.0 + GLSL 100
+  const char *glsl_version = "#version 100";
+#elif defined(__APPLE__)
+  // GL 3.2 + GLSL 150
+  const char *glsl_version = "#version 150";
+#else
+  // GL 3.0 + GLSL 130
+  const char *glsl_version = "#version 130";
+#endif
+  ImGui_ImplOpenGL3_Init(glsl_version);
+
+  // Check OpenGL capabilities after context creation
+  CheckOpenGLCapabilities();
+
+  // set up callbacks
+  // convert callback-function to c-pointer first
+  FramebufferSizeCallback<void(GLFWwindow *, int, int)>::func =
+      std::bind(&Viewer::OnResize, this, std::placeholders::_1,
+                std::placeholders::_2, std::placeholders::_3);
+  void (*resize_callback_func)(GLFWwindow *, int, int) =
+      static_cast<decltype(resize_callback_func)>(
+          FramebufferSizeCallback<void(GLFWwindow *, int, int)>::callback);
+  glfwSetFramebufferSizeCallback(win_, resize_callback_func);
+
+  // load fonts
+  Fonts::LoadFonts();
+
+  // load default style
+  LoadDefaultStyle();
+  ApplyDarkColorScheme();
+
+  // enable/disable features
+  EnableDocking(true);
+  EnableKeyboardNav(true);
+  EnableGamepadNav(false);
+}
+
+Viewer::~Viewer() {
+  // Properly unregister all input handlers before clearing
+  ClearSceneObjects();
+
+  Fonts::UnloadFonts();
+  ImGui_ImplOpenGL3_Shutdown();
+  ImGui_ImplGlfw_Shutdown();
+  ImPlot::DestroyContext();
+  ImGui::DestroyContext();
+}
+
+void Viewer::LoadDefaultStyle() {
+  // additional variable initialization
+  SetBackgroundColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+  // disable roundings
+  ImGui::GetStyle().WindowRounding = 0.0f;
+  ImGui::GetStyle().ChildRounding = 0.0f;
+  ImGui::GetStyle().FrameRounding = 0.0f;
+  ImGui::GetStyle().GrabRounding = 0.0f;
+  ImGui::GetStyle().PopupRounding = 0.0f;
+  ImGui::GetStyle().ScrollbarRounding = 0.0f;
+  ImGui::GetStyle().WindowPadding = {0.0f, 0.0f};
+}
+
+void Viewer::ApplyDarkColorScheme() {
+  ImGui::StyleColorsDark();
+
+  SetBackgroundColor(0.31f, 0.31f, 0.31f, 1.0f);
+
+  auto &colors = ImGui::GetStyle().Colors;
+  colors[ImGuiCol_WindowBg] = ImVec4{0.1f, 0.105f, 0.11f, 1.0f};
+
+  // Headers
+  colors[ImGuiCol_Header] = ImVec4{0.2f, 0.205f, 0.21f, 1.0f};
+  colors[ImGuiCol_HeaderHovered] = ImVec4{0.3f, 0.305f, 0.31f, 1.0f};
+  colors[ImGuiCol_HeaderActive] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
+
+  // Buttons
+  colors[ImGuiCol_Button] = ImVec4{0.2f, 0.205f, 0.21f, 1.0f};
+  colors[ImGuiCol_ButtonHovered] = ImVec4{0.3f, 0.305f, 0.31f, 1.0f};
+  colors[ImGuiCol_ButtonActive] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
+
+  // Frame BG
+  colors[ImGuiCol_FrameBg] = ImVec4{0.2f, 0.205f, 0.21f, 1.0f};
+  colors[ImGuiCol_FrameBgHovered] = ImVec4{0.3f, 0.305f, 0.31f, 1.0f};
+  colors[ImGuiCol_FrameBgActive] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
+
+  // Tabs
+  colors[ImGuiCol_Tab] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
+  colors[ImGuiCol_TabHovered] = ImVec4{0.38f, 0.3805f, 0.381f, 1.0f};
+  colors[ImGuiCol_TabActive] = ImVec4{0.28f, 0.2805f, 0.281f, 1.0f};
+  colors[ImGuiCol_TabUnfocused] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
+  colors[ImGuiCol_TabUnfocusedActive] = ImVec4{0.2f, 0.205f, 0.21f, 1.0f};
+
+  // Title
+  colors[ImGuiCol_TitleBg] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
+  colors[ImGuiCol_TitleBgActive] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
+  colors[ImGuiCol_TitleBgCollapsed] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
+}
+
+void Viewer::ApplyLightColorScheme() {
+  ImGui::StyleColorsClassic();
+  SetBackgroundColor(1.0f, 1.0f, 1.0f, 1.0f);
+}
+
+void Viewer::SetBackgroundColor(float r, float g, float b, float a) {
+  bg_color_[0] = r;
+  bg_color_[1] = g;
+  bg_color_[2] = b;
+  bg_color_[3] = a;
+}
+
+void Viewer::SetWindowSizeLimits(int min_x, int min_y, int max_x, int max_y) {
+  int minx = min_x == -1 ? GLFW_DONT_CARE : min_x;
+  int miny = min_y == -1 ? GLFW_DONT_CARE : min_y;
+  int maxx = max_x == -1 ? GLFW_DONT_CARE : max_x;
+  int maxy = max_y == -1 ? GLFW_DONT_CARE : max_y;
+  glfwSetWindowSizeLimits(win_, minx, miny, maxx, maxy);
+}
+
+void Viewer::EnableDocking(bool enable) {
+  if (enable) {
+    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    // enable docking with shift key
+    ImGui::GetIO().ConfigDockingWithShift = true;
+  } else {
+    ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_DockingEnable;
+  }
+}
+
+void Viewer::EnableKeyboardNav(bool enable) {
+  ImGuiIO &io = ImGui::GetIO();
+  if (enable) {
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+  } else {
+    io.ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
+  }
+}
+
+void Viewer::EnableGamepadNav(bool enable) {
+  ImGuiIO &io = ImGui::GetIO();
+  if (enable) {
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+  } else {
+    io.ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
+  }
+}
+
+
+
+
+
+
+
+
+
+void Viewer::SetWindowShouldClose() {
+  glfwSetWindowShouldClose(win_, GLFW_TRUE);
+}
+
+void Viewer::SetupOpenGL() {
+  glEnable(GL_MULTISAMPLE);
+  glEnable(GL_DEPTH_TEST);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+void Viewer::ClearBackground() {
+  int display_w, display_h;
+  glfwGetFramebufferSize(win_, &display_w, &display_h);
+  glViewport(0, 0, display_w, display_h);
+  glClearColor(bg_color_[0], bg_color_[1], bg_color_[2], bg_color_[3]);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void Viewer::CreateNewImGuiFrame() {
+  ImGui_ImplOpenGL3_NewFrame();
+  ImGui_ImplGlfw_NewFrame();
+  ImGui::NewFrame();
+}
+
+void Viewer::RenderImGuiFrame() {
+  ImGui::Render();
+  ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+void Viewer::RenderSceneObjects() {
+  for (auto &obj : scene_objects_) {
+    if (obj->IsVisible()) obj->OnRender();
+  }
+}
+
+
+bool Viewer::AddSceneObject(std::shared_ptr<SceneObject> obj) {
+  if (obj == nullptr) {
+    std::cerr << "[ERROR] Viewer::AddSceneObject(): object is nullptr"
+              << std::endl;
+    return false;
+  }
+  scene_objects_.push_back(obj);
+  
+  // Register as input handler if it implements InputEventHandler (Panel, Box, etc.)
+  auto input_handler = std::dynamic_pointer_cast<InputEventHandler>(obj);
+  if (input_handler) {
+    GetInputManager().GetDispatcher().RegisterHandler(input_handler);
+  }
+  
+  return true;
+}
+
+bool Viewer::RemoveSceneObject(std::shared_ptr<SceneObject> obj) {
+  if (obj == nullptr) {
+    return false;
+  }
+  
+  // Find and remove from scene objects
+  auto it = std::find(scene_objects_.begin(), scene_objects_.end(), obj);
+  if (it != scene_objects_.end()) {
+    // Unregister as input handler if it implements InputEventHandler
+    auto input_handler = std::dynamic_pointer_cast<InputEventHandler>(obj);
+    if (input_handler) {
+      GetInputManager().GetDispatcher().UnregisterHandler(input_handler->GetName());
+    }
+    
+    scene_objects_.erase(it);
+    return true;
+  }
+  
+  return false;
+}
+
+void Viewer::ClearSceneObjects() {
+  // Unregister all panels from input dispatcher
+  for (auto& obj : scene_objects_) {
+    auto panel = std::dynamic_pointer_cast<Panel>(obj);
+    if (panel) {
+      GetInputManager().GetDispatcher().UnregisterHandler(panel->GetName());
+    }
+  }
+  
+  scene_objects_.clear();
+}
+
+void Viewer::OnResize(GLFWwindow *window, int width, int height) {
+  //  std::cout << "-- Viewer::OnResize: " << width << "x" << height <<
+  //  std::endl;
+  for (auto &obj : scene_objects_) {
+    obj->OnResize(width, height);
+  }
+}
+
+void Viewer::CheckOpenGLCapabilities() {
+  // Check OpenGL capabilities and validate requirements
+  auto capabilities = OpenGLCapabilityChecker::CheckCapabilities(3, 3);
+  
+  if (!capabilities.error_message.empty()) {
+    std::cerr << "[ERROR] OpenGL Capability Check Failed: " << capabilities.error_message << std::endl;
+    OpenGLCapabilityChecker::PrintCapabilities(capabilities);
+    
+    // Try to provide helpful error messages
+    if (!capabilities.supports_required_version) {
+      std::cerr << std::endl << "=== TROUBLESHOOTING ===" << std::endl;
+      std::cerr << "This application requires OpenGL 3.3 or higher." << std::endl;
+      std::cerr << "Your system only supports OpenGL " << capabilities.major_version 
+                << "." << capabilities.minor_version << std::endl;
+      std::cerr << "Possible solutions:" << std::endl;
+      std::cerr << "1. Update your graphics drivers" << std::endl;
+      std::cerr << "2. Check if your GPU supports OpenGL 3.3+" << std::endl;
+      std::cerr << "3. For Intel GPUs, ensure you have the latest drivers" << std::endl;
+      std::cerr << "4. Try running with software rendering (slower performance)" << std::endl;
+      std::cerr << "===========================================" << std::endl;
+    }
+    
+    throw std::runtime_error("OpenGL capability check failed: " + capabilities.error_message);
+  }
+  
+  // Print capabilities for debugging
+  std::cout << "[INFO] OpenGL capabilities validated successfully" << std::endl;
+  OpenGLCapabilityChecker::PrintCapabilities(capabilities);
+  
+  // Validate required features
+  if (!OpenGLCapabilityChecker::ValidateRequiredFeatures(capabilities)) {
+    std::cerr << "[WARNING] Some required OpenGL features may not be fully supported" << std::endl;
+  }
+}
+
+void Viewer::Show() {
+  // initialize layers
+  int display_w, display_h;
+  glfwGetFramebufferSize(win_, &display_w, &display_h);
+  OnResize(win_, display_w, display_h);
+
+  SetupOpenGL();
+
+  // Main rendering loop with unified input system
+  // 
+  // INPUT HANDLER REGISTRATION:
+  // - Handlers are registered ONCE when objects are added via AddSceneObject()
+  // - Panels that implement InputEventHandler are automatically registered
+  // - Handlers are properly unregistered when removed via RemoveSceneObject()
+  // - This avoids the overhead of checking/registering every frame
+  //
+  // INPUT EVENT FLOW:
+  // 1. PollEvents() - handles GLFW window events (resize, close, etc.)
+  // 2. CreateNewImGuiFrame() - establishes ImGui context for the frame
+  // 3. ImGuiInputUtils::PollAllEvents() - polls mouse/keyboard/gamepad state
+  // 4. ProcessEvents() - dispatches events to registered handlers by priority
+  // 5. RenderSceneObjects() - handlers can use input state for rendering
+  
+  while (!ShouldClose()) {
+    // handle events
+    PollEvents();
+    
+    // draw stuff
+    ClearBackground();
+    CreateNewImGuiFrame();
+    
+    // Poll and dispatch input events through the unified input system
+    // Must be done AFTER CreateNewImGuiFrame() so ImGui context is active
+    {
+      std::vector<InputEvent> events;
+      ImGuiInputUtils::PollAllEvents(events);
+      
+      // Dispatch events to all registered handlers
+      // (Handlers are registered once when added via AddSceneObject)
+      GetInputManager().ProcessEvents(events);
+    }
+    
+    RenderSceneObjects();
+    RenderImGuiFrame();
+
+    // swap buffers
+    SwapBuffers();
+  }
+}
+}  // namespace quickviz

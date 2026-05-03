@@ -228,7 +228,7 @@ class InputMapping {
 
  private:
   void SetupDefaultMappings() {
-    // Mouse button constants (from imview/input/mouse.hpp)
+    // Mouse button constants (from viewer/input/mouse.hpp)
     const int kLeft = 0;
     const int kRight = 1; 
     const int kMiddle = 2;

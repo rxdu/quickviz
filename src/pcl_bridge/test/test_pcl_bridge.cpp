@@ -11,11 +11,11 @@
 #include <vector>
 #include <glm/glm.hpp>
 
-#include "imview/viewer.hpp"
-#include "imview/box.hpp"
-#include "gldraw/gl_scene_panel.hpp"
-#include "gldraw/renderable/grid.hpp"
-#include "gldraw/renderable/point_cloud.hpp"
+#include "viewer/viewer.hpp"
+#include "viewer/box.hpp"
+#include "scene/gl_scene_panel.hpp"
+#include "scene/renderable/grid.hpp"
+#include "scene/renderable/point_cloud.hpp"
 
 #ifdef QUICKVIZ_WITH_PCL
 #include <pcl/point_cloud.h>

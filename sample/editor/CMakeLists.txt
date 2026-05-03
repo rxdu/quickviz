@@ -9,7 +9,7 @@ add_executable(quickviz_editor
 
 target_compile_definitions(quickviz_editor PRIVATE ${PCL_DEFINITIONS})
 target_link_libraries(quickviz_editor PRIVATE
-    gldraw
+    scene
     pcl_bridge
     ${PCL_LIBRARIES})
 target_include_directories(quickviz_editor PRIVATE

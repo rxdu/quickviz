@@ -23,7 +23,13 @@ set(IMPLOT_SRC
     implot/implot_items.cpp
     implot/implot_demo.cpp
 )
-add_library(imcore ${IMGUI_CORE_SRC} ${IMGUI_BACKEND_SRC} ${IMPLOT_SRC})
+set(IMPLOT3D_SRC
+    implot3d/implot3d.cpp
+    implot3d/implot3d_items.cpp
+    implot3d/implot3d_meshes.cpp
+    implot3d/implot3d_demo.cpp
+)
+add_library(imcore ${IMGUI_CORE_SRC} ${IMGUI_BACKEND_SRC} ${IMPLOT_SRC} ${IMPLOT3D_SRC})
 target_link_libraries(imcore PUBLIC glfw OpenGL::GL ${GLFW3_LIBRARY} ${CMAKE_DL_LIBS})
 target_compile_definitions(imcore PUBLIC "-DIMGUI_IMPL_OPENGL_LOADER_GL3W")
 target_include_directories(imcore PUBLIC
@@ -42,6 +48,6 @@ install(TARGETS imcore
     RUNTIME DESTINATION bin
     INCLUDES DESTINATION include)
 
-install(DIRECTORY imgui implot
+install(DIRECTORY imgui implot implot3d
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     PATTERN "*.h*")

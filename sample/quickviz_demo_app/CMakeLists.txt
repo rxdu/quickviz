@@ -8,7 +8,7 @@ if (BUILD_QUICKVIZ_APP)
       panels/scene_panel.cpp
       panels/config_panel.cpp
       panels/console_panel.cpp)
-  target_link_libraries(quickviz_demo_app PRIVATE imview gldraw pcl_bridge)
+  target_link_libraries(quickviz_demo_app PRIVATE viewer scene pcl_bridge)
   target_include_directories(quickviz_demo_app PRIVATE .)
 
   install(TARGETS quickviz_demo_app

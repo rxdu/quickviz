@@ -19,11 +19,11 @@
 
 #include <glm/glm.hpp>
 
-#include "imview/box.hpp"
-#include "imview/viewer.hpp"
+#include "viewer/box.hpp"
+#include "viewer/viewer.hpp"
 
-#include "gldraw/renderable/grid.hpp"
-#include "gldraw/renderable/point_cloud.hpp"
+#include "scene/renderable/grid.hpp"
+#include "scene/renderable/point_cloud.hpp"
 #include "pcl_bridge/pcl_loader.hpp"
 
 #include "editor_state.hpp"

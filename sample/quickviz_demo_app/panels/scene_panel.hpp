@@ -11,8 +11,8 @@
 
 #include <memory>
 
-#include "imview/component/opengl/renderer/grid.hpp"
-#include "imview/component/opengl/gl_scene_manager.hpp"
+#include "viewer/component/opengl/renderer/grid.hpp"
+#include "viewer/component/opengl/gl_scene_manager.hpp"
 
 namespace quickviz {
 class ScenePanel : public GlSceneManager {

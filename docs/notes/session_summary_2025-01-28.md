@@ -14,10 +14,10 @@ Comprehensive review of GLDraw module and design of enhanced input handling syst
 - ⚠️ Selection support needed for other renderables (mesh, cylinder, box, etc.)
 
 **Key Files Reviewed**:
-- `src/gldraw/include/gldraw/selection_manager.hpp` - Main selection system
-- `src/gldraw/include/gldraw/gl_scene_manager.hpp` - Scene management
-- `src/gldraw/include/gldraw/renderable/point_cloud.hpp` - Point cloud with layers
-- `src/gldraw/include/gldraw/renderable/layer_manager.hpp` - Layer system
+- `src/scene/include/scene/selection_manager.hpp` - Main selection system
+- `src/scene/include/scene/gl_scene_manager.hpp` - Scene management
+- `src/scene/include/scene/renderable/point_cloud.hpp` - Point cloud with layers
+- `src/scene/include/scene/renderable/layer_manager.hpp` - Layer system
 
 ### 2. Input Handling System Design
 
@@ -42,7 +42,7 @@ Comprehensive review of GLDraw module and design of enhanced input handling syst
 **DECISION: Use Core Module (Option 1)**
 - Extend existing `core` module with InputEvent classes
 - Leverage existing EventDispatcher and thread-safe infrastructure
-- Clean dependency: core → imview → gldraw
+- Clean dependency: core → viewer → scene
 
 **Rationale**:
 - Reuses robust event system already in core
@@ -106,9 +106,9 @@ SelectionManager::Select()
 ```
 InputEvent (core) → InputDispatcher (core)
   ↓
-InputMapping (imview/gldraw)
+InputMapping (viewer/scene)
   ↓
-SelectionManager handlers (gldraw)
+SelectionManager handlers (scene)
   ↓
 Visual feedback via LayerManager
 ```
@@ -122,8 +122,8 @@ Visual feedback via LayerManager
 
 ### 5. Files to Modify
 - `src/core/CMakeLists.txt` - Add new input files
-- `src/gldraw/src/gl_scene_panel.cpp` - Update HandleInput()
-- `src/gldraw/src/selection_manager.cpp` - Add multiple handlers
+- `src/scene/src/gl_scene_panel.cpp` - Update HandleInput()
+- `src/scene/src/selection_manager.cpp` - Add multiple handlers
 
 ## Session Metrics
 - Files reviewed: 15+

@@ -1,452 +1,328 @@
 # QuickViz Project Guidelines
 
-This document provides comprehensive guidance for working with the QuickViz C++ visualization library for robotics applications.
+QuickViz is a C++ visualization library for robotics. Its goal is to let
+users build a working UI/visualization tool with minimal boilerplate, then
+keep growing the tool from there. This document is the contract for how the
+codebase is organized and the rules contributors (human or agent) must
+follow.
 
-## Project Overview
+If anything in this file conflicts with code on disk, the code wins —
+update this file in the same change.
 
-QuickViz is a C++ visualization library for robotics applications, providing:
-- **imview**: Automatic layout management and UI widgets (buttons, sliders, text boxes)
-- **gldraw**: 2D/3D real-time rendering with OpenGL
-- **widget**: Cairo-based drawing and plotting widgets
-- **core**: Event system, buffers, and shared utilities
+---
 
-## Core Development Principles
+## 1. Mission
 
-### Design Philosophy
-- **Small surface, strong contracts**: Keep public APIs minimal and explicit; hide implementation details
-- **Seams before abstractions**: Extract clear boundaries first; abstract later if duplication persists
-- **Single responsibility**: Each module/file does one thing well (target ~500 LOC per file)
-- **Local reasoning**: Callers shouldn't need global state knowledge to use an API
-- **Performance by design**: Favor data-oriented layouts, predictable memory, and measured hot paths
-- **Determinism over cleverness**: Prefer simple, reproducible behavior to smart but fragile logic
-- **Building blocks philosophy**: Provide generic, composable components that users can combine to build domain-specific applications. Use generic terms (geometry, mesh, camera, viewport) rather than application-specific terminology (map, terrain, navigation)
+- **Visualization first.** The library renders, displays, and interacts.
+  It does not run editors, manage projects, persist documents, or model
+  application state. Those belong in apps built *on top* of the library.
+- **Building blocks, not a framework.** Provide composable pieces; let
+  apps decide the architecture. No global state, no singletons exposed in
+  public headers, no hidden lifecycles.
+- **Generic over domain-specific.** Use graphics/robotics terms (`Mesh`,
+  `PointCloud`, `Camera`) rather than app terms (`Map`, `Scan`,
+  `Observer`). Keeps the library reusable across robotics applications.
 
-### Library Interface Boundaries
-QuickViz is designed as a toolkit of building blocks for robotics visualization applications. The interface design clearly distinguishes between different levels of user interaction:
+---
 
-**Direct Use Components** (Ready-to-use, minimal configuration):
-- Core rendering primitives (points, lines, meshes, textures)
-- Standard UI widgets (buttons, sliders, text inputs)
-- Camera controllers and viewport management
-- File I/O utilities (image, mesh formats)
+## 2. Module Map
 
-**Configurable Components** (Parameters and settings exposed):
-- Rendering passes and shaders (lighting models, post-processing)
-- Layout managers and containers
-- Event handling and input mapping
-- Color schemes and visual styling
-
-**Extensible Components** (Virtual interfaces for inheritance):
-- `Renderable`, `InputHandler`, `SceneObject` interfaces
-- Custom drawing and interaction tools
-- Specialized data visualization widgets
-- Custom file format adapters
-
-**Build-Upon Components** (Library hooks apps compose into bigger frameworks):
-- Scene composition (`SceneManager` + `OpenGlObject` registration)
-- Tool registration (`InteractionTool` interface + `ToolManager`)
-- Threading and job hand-off boundaries
-- Custom data adapters (e.g., `pcl_bridge` pattern)
-
-> Editor-shaped frameworks — command/undo stacks, scene graphs with parent/child
-> hierarchies, project-file persistence, history panels — are **not** part of the
-> library. They live in consuming apps (see `sample/editor/` for a reference
-> implementation) and are built on top of the hooks above.
-
-> **Design Rule**: Generic robotics and graphics terminology should be preferred over domain-specific names. For example, use "Mesh", "PointCloud", "Camera" rather than "Map", "Scan", "Observer". This ensures the library remains broadly applicable across different robotics applications.
-
-### When to Create or Split Modules
-Create (or split) a module when:
-- **Two or more** other modules depend on a concept
-- The code has **distinct lifecycles** (e.g., GPU resources vs. CPU parsing)
-- You need to **swap implementations** behind an interface
-- You want **separate testability** (unit tests without GL context)
-
-**Do not** create a module if it only wraps 1-2 functions without clear benefit.
-
-## Architecture & Dependencies
-
-### Module Structure
 ```
 src/
-├── core/          # Event system, buffers, utilities (depends on nothing)
-├── imview/        # GLFW window management, ImGui integration
-├── widget/        # Cairo drawing, image widgets, plotting
-├── gldraw/        # OpenGL 3D rendering, point clouds, textures
-├── pcl_bridge/    # Optional PCL adapter (file loading, conversions)
-├── cvdraw/        # OpenCV-based drawing utilities (optional bridge)
-└── third_party/   # imgui, implot, stb, yoga, googletest
+├── core/          # events, buffers, threading helpers
+├── viewer/        # window + panels + layout (GLFW + ImGui + Yoga)
+├── scene/         # interactive 3D scene rendering (OpenGL)
+├── plot/          # data charts (ImPlot 2D + ImPlot3D)
+├── canvas/        # 2D vector drawing (Cairo)
+├── image/         # image display & annotation (OpenCV, optional)
+└── pcl_bridge/    # PCL adapter (optional)
 
-sample/            # Reference applications built ON TOP of the library
+third_party/       # imgui, implot, implot3d, stb, yoga, googletest
+sample/            # reference applications built on top of the library
+tests/             # cross-module integration tests
+docs/              # design notes, architecture references
 ```
 
-### Dependency Rules
-- **Core** (math, logging, utilities) depends on nothing else
-- **Model** (scene/data types, transforms, selection) may depend on Core
-- **Graphics** (GL wrappers, passes, shaders) may depend on Core and Model
-- **Tools/Interaction** (picking, gizmos, measure) may depend on Graphics + Model
-- **UI** (ImGui panels, docking) can depend on everything but is never depended on
-- **Bridges/Adapters** (OpenCV/PCL/etc.) depend outward; nothing core depends on them
+Pick a module by **what you want to do**, not by which backend it uses:
 
-> **Rule**: Lower layers never include headers from higher layers
+| I want to…                                    | Module        |
+| --------------------------------------------- | ------------- |
+| Open a window with panels                     | `viewer`      |
+| Show a 3D scene (robots, point clouds, mesh)  | `scene`       |
+| Plot a chart of data (2D or 3D)               | `plot`        |
+| Draw a custom 2D figure                       | `canvas`      |
+| Display or annotate camera images             | `image`       |
+| Load PCL data                                 | `pcl_bridge`  |
+| Use shared infrastructure                     | `core`        |
 
-### Library Boundary: `src/` is visualization-only
-QuickViz is a visualization library. Editor / app-level concerns
-(undo/redo, command history, scene serialization, project files, editing
-operations) live in `sample/` and consume the library, never the reverse.
+Domain modules stay tech-neutral so a future Vulkan-backed `scene` or
+libpng-backed `image` slot in without churn. Inside each module,
+implementation-specific types keep an explicit prefix (`Gl*` in `scene`,
+`Cv*` in `image`).
 
-- `sample/*` may include from `src/*/include/` and link against library targets.
-- `src/*` must not include from `sample/`. Enforced by CI (`boundary-check`).
-- If a sample needs something from the library, add it as an additive,
-  visualization-justified hook to the library — do not pull sample code in.
-- Sample applications also serve as a dogfood check: if a fully-featured
-  vis+editing app cannot be built on top of `src/` without modifying `src/`,
-  the library is missing a hook and we evaluate the gap deliberately.
+### Quickstart classes worth knowing
 
-### Key Design Patterns
+- **`quickviz::Viewer`** (`viewer/viewer.hpp`) — the GLFW window + ImGui
+  app shell. The fundamental primitive every QuickViz app starts from.
+- **`quickviz::SceneApp`** (`scene/scene_app.hpp`) — five-line
+  quickstart for a 3D viewer. Wraps `Viewer + GlScenePanel + grid +
+  coordinate frame`. Use this when you want to display a scene fast;
+  drop down to `Viewer` directly when you need richer layouts.
 
-#### 1. Scene Object Hierarchy (imview)
-- `Window` → `Viewer` → `SceneObject`
-- `SceneObject` implements: `Renderable`, `Resizable`, `InputHandler`
-- `Panel` extends `SceneObject` for ImGui panels
-- `Box` provides container with automatic layout via Yoga
+---
 
-#### 2. OpenGL Rendering Pipeline (gldraw)
-- `GlSceneManager` manages OpenGL objects and framebuffer
-- `OpenGlObject` interface for all renderable 3D objects
-- Render-to-texture approach with `FrameBuffer`
-- `Camera` + `CameraController` for 3D navigation
+## 3. Library Boundary
 
-#### 3. Multi-Layer Point Cloud System
-- `LayerManager` handles multiple rendering layers with priorities
-- `PointLayer` for subset rendering with custom colors/sizes
-- PCL bridge utilities for integration with Point Cloud Library
+`src/` is visualization-only. Editor / app-level concerns — undo/redo,
+command stacks, project files, scene serialization, history panels, full
+application frameworks — live in `sample/` or downstream apps and consume
+the library, never the reverse.
 
-## Build System & Dependencies
+- `sample/*` may include from `src/*/include/`.
+- `src/*` must not include from `sample/`. Enforced by the
+  `boundary-check` CI job.
+- If a sample wants something from the library, add it as a small,
+  visualization-justified hook to `src/` — never pull sample code in.
 
-### Initial Setup
+`sample/editor/` is the canonical example: a working point-cloud editor
+built entirely on top of the library. It's also the dogfood check — if a
+fully-featured vis+editing app cannot be built without modifying `src/`,
+the library is missing a hook and we evaluate the gap deliberately.
+
+---
+
+## 4. Dependency Direction
+
+Modules form a layered DAG. Lower layers never include from higher ones.
+
+```
+core ─► viewer ─► (scene | plot | canvas | image) ─► samples
+                              │
+pcl_bridge ◄──── scene ───────┘   (optional adapters depend outward)
+```
+
+- `core` depends on nothing else in the library.
+- `viewer` depends on `core` (and ImGui/GLFW/Yoga from third_party).
+- Visualization modules (`scene`, `plot`, `canvas`, `image`) depend on
+  `core` + `viewer`. They do **not** depend on each other unless there
+  is a concrete need (currently none do).
+- Adapters (`pcl_bridge`, optional OpenCV in `image`) depend outward;
+  no in-library code depends on them.
+
+When tempted to add a cross-module dependency, ask: is this concept truly
+shared, or am I leaking implementation? Prefer to widen the public API of
+the lower module than to reach across at the same level.
+
+### Optional external dependencies
+
+Any module or component that depends on a heavyweight external SDK
+(ROS2, PCL, OpenCV, vendor sensor SDKs) **must** be CMake-gated so the
+library compiles cleanly without that SDK installed. The pattern:
+
+- Use `find_package(<dep> QUIET)`. If absent, `return()` early from the
+  module's `CMakeLists.txt`.
+- Do not reference the optional dep's headers, types, or functions
+  outside the gated module's source files.
+- Document the dep in §5 Build System under "Optional".
+- Library users without the dep get a working library with that
+  feature missing, not a build failure.
+
+This applies specifically to ROS2: any current or future module that
+consumes ROS messages — `bridges/ros2/`, downstream converters,
+sample apps that use them — must be optional. A user who has never
+installed ROS must still be able to clone, configure, build, and run
+the rest of the library.
+
+---
+
+## 5. Build System
+
+Required: OpenGL 3.3+, GLFW3, GLM, Cairo.
+Optional: OpenCV (enables `image`), PCL (enables `pcl_bridge`),
+Google Benchmark, Valgrind, lcov.
+Bundled in `third_party/`: ImGui, ImPlot, ImPlot3D, STB, Yoga, GoogleTest, GLAD.
+
 ```bash
-# Clone with submodules
-git clone --recursive https://github.com/rxdu/quickviz.git
+git clone --recursive <repo>
 git submodule update --init --recursive
-
-# Install dependencies (Ubuntu 22.04/24.04)
-sudo apt-get install libgl1-mesa-dev libglfw3-dev libcairo2-dev \
-                     libopencv-dev libglm-dev libncurses-dev
-
-# Optional: Install PCL for point cloud features
-sudo apt-get install libpcl-dev
-
-# Optional: Development tools
-sudo apt-get install valgrind libbenchmark-dev lcov
-```
-
-### Build Configuration
-```bash
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
-make -j8
-```
-
-### CMake Options
-- `BUILD_TESTING`: Enable tests (OFF by default)
-- `QUICKVIZ_DEV_MODE`: Development mode, forces tests (OFF by default)
-- `ENABLE_AUTO_LAYOUT`: Enable Yoga-based automatic layout (ON by default, requires C++20)
-- `BUILD_QUICKVIZ_APP`: Build the quickviz application (OFF by default)
-- `IMVIEW_WITH_GLAD`: Integrate GLAD for OpenGL loading (ON by default)
-- `STATIC_CHECK`: Enable cppcheck static analysis (OFF by default)
-
-### Dependencies
-**Required**: OpenGL 3.3+, GLFW3, GLM, Cairo
-**Optional**: OpenCV (cvdraw), PCL (point cloud bridge), Google Benchmark, Valgrind
-**Bundled**: Dear ImGui & ImPlot, STB libraries, Yoga, GoogleTest, GLAD
-
-## API Design Standards
-
-### Public API Requirements
-- **Explicit inputs**: Functions take `projection`, `view`, sizes, IDs; avoid hidden globals
-- **Return handles or IDs**: Use opaque 32-bit IDs for user-visible resources; RAII classes for GL internals
-- **Clear ownership**: Prefer `std::unique_ptr` in APIs; only use `std::shared_ptr` for true sharing
-- **Narrow types**: Use `span<T const>` for read-only bulk data; avoid exposing STL containers
-- **Unit awareness**: Document meters/seconds/radians; never assume degrees or "pixels" for world scale
-- **Generic terminology**: Use standard robotics/graphics terms (Geometry, Transform, Viewport) over application-specific names (Map, World, Scene). This ensures broad applicability across different domains
-
-### Interface Design Patterns
-
-#### Extensibility Levels
-Design APIs with clear extensibility boundaries:
-
-```cpp
-// Direct Use: Simple, concrete functions
-void DrawPoints(span<const glm::vec3> points, glm::vec3 color, float size);
-void DrawMesh(const MeshData& mesh, const Transform& transform);
-
-// Configurable: Parameter objects for complex configurations  
-struct RenderConfig {
-  LightingModel lighting = LightingModel::kPhong;
-  bool wireframe = false;
-  float point_size = 1.0f;
-};
-void DrawMesh(const MeshData& mesh, const Transform& transform, const RenderConfig& config);
-
-// Extensible: Virtual interfaces for custom behavior
-class Renderable {
-public:
-  virtual void OnRender(const RenderContext& context) = 0;
-  virtual BoundingBox GetBounds() const = 0;
-};
-
-// Build-Upon: Framework classes with protected extension points
-class InteractionTool {
-public:
-  void HandleInput(const InputEvent& event);  // final
-protected:
-  virtual bool OnMouseDown(int x, int y) { return false; }  // override points
-  virtual bool OnMouseDrag(int x, int y) { return false; }
-  virtual void OnToolActivated() {}
-};
-```
-
-### API Pattern Examples
-
-#### Opaque Handles + Narrow Interface
-```cpp
-using ObjectId = uint32_t;  // 0 reserved as "none"
-
-struct View {
-  glm::mat4 projection;  // float
-  glm::mat4 view;        // float
-  int width, height;
-};
-
-ObjectId CreateMesh(span<const Vertex> vertices, span<const uint32_t> indices);
-void     SetTransform(ObjectId id, const glm::dmat4& world_from_object);
-void     DrawView(const View& view);
-ObjectId PickAt(const View& view, int x, int y);
-```
-
-#### Core Interfaces
-```cpp
-class Renderable {
-    virtual bool IsVisible() = 0;
-    virtual void OnRender() = 0;
-};
-
-class OpenGlObject {
-    virtual void OnDraw(const glm::mat4& projection, const glm::mat4& view) = 0;
-};
-```
-
-## Rendering Pipeline Best Practices
-
-### OpenGL 3.3+ Guidelines
-- **Isolate passes**: Each pass sets all required GL state (program, VAO, FBO, depth, blend, cull)
-- **Shared camera block**: Put `proj`/`view` in UBO; bind once per pass
-- **Per-draw data**: Prefer small UBO/SSBO structs over many `glUniform*` calls
-- **Debug output**: Enable `GL_KHR_debug` in debug builds
-
-### GPU Resource Management
-- **RAII GL objects**: Thin wrappers for VAO/VBO/EBO/FBO/Program; no naked GLuints
-- **Buffer usage**:
-   - Static: `glBufferData` or `glBufferStorage`
-   - Dynamic: `glMapBufferRange` with appropriate flags
-- **Batching**: Sort by program → material → geometry
-- **Minimize readbacks**: Only read pixels for picking; never read large buffers per frame
-
-### GL Pass Pattern
-```cpp
-class Pass {
- public:
-  void Execute(const View& view) {
-    BindFbo();
-    ConfigureState();     // depth/blend/cull
-    UseProgram();         // bind UBOs/textures
-    DrawAll();            // VAO binds and draw calls
-  }
- private:
-  void BindFbo();
-  void ConfigureState();
-  void UseProgram();
-  void DrawAll();
-};
-```
-
-## Coordinate System & Precision
-
-- **CPU double, GPU float**: Keep CPU transforms in `double`; upload as `float` to shaders
-- **Consistent "up" direction**: Support Z-up or Y-up at boundary; convert once internally
-- **Camera sanity**: Warn if far/near > 1e6 to avoid z-fighting
-
-## Point Cloud Enhancement Features
-
-### PCL Integration
-- Import/export between PCL and renderer formats
-- Visualization of PCL algorithm results (clusters, surfaces)
-- Template-based conversions for all PCL point types
-
-### Multi-Layer Rendering System
-**Core Features**:
-- Priority-based layer composition (higher priority renders on top)
-- Multiple highlight modes: surface fill, outline, size increase
-- Index buffer optimization for efficient batch rendering (60-100x improvement)
-- 3D sphere rendering with Phong lighting
-
-**Usage Example**:
-```cpp
-// Create selection layer
-auto selection_layer = point_cloud->CreateLayer("selection", 100);
-selection_layer->SetPoints(selected_indices);
-selection_layer->SetColor(glm::vec3(1.0f, 1.0f, 0.0f)); // Yellow
-selection_layer->SetPointSizeMultiplier(1.5f);
-selection_layer->SetHighlightMode(PointLayer::HighlightMode::kSphereSurface);
-selection_layer->SetVisible(true);
-```
-
-## Interaction & Tool Patterns
-
-These patterns are in scope for the library — they support inspection,
-selection, and visual feedback. Editing semantics (undoable mutations,
-project files, history) are an app-side concern; see `sample/editor/`.
-
-### Two-Stage Picking
-1. **GPU ID buffer** → object ID
-2. **CPU raycast** → precise hit/feature (BVH/KD-tree)
-
-### Tool State Machine
-- One active tool at a time, registered via `SceneManager::RegisterTool`
-- Tools consume input and emit selection / hover / measurement events
-- Gizmos drawn as overlay with selective depth testing
-- Editor apps may layer their own command-based mutations on top of these
-  events; the library tools themselves do not record history
-
-## Threading Model
-
-- **GL main-thread only**: All GL calls and ImGui rendering on render thread
-- **Background stages**: File I/O, decoding, normal generation, BVH builds
-- **Handoff boundary**: Jobs produce immutable CPU buffers; enqueue main-thread task for GL resources
-- **No frame stalls**: Never wait on background jobs in frame loop
-
-## Code Quality Standards
-
-### Style Guide
-- **C++ Standard**: C++17 (C++14 minimum for Ubuntu 20.04)
-- **File Extensions**: `.cpp` for source, `.hpp` for headers
-- **Style**: Google C++ style guide, clang-format
-- **Line Length**: 100 characters
-
-### Testing Strategy
-- **Unit Tests**: Core functionality (`tests/unit/`)
-- **Integration Tests**: Module interactions (`tests/integration/`)
-- **Memory Tests**: Leak detection (`tests/memory/`)
-- **Benchmarks**: Performance testing (`tests/benchmarks/`)
-
-### Test Execution
-```bash
-# Basic tests
+make -j$(nproc)
 ctest --output-on-failure
-
-# Comprehensive test suite
-../scripts/run_tests.sh
-
-# With Valgrind and coverage
-../scripts/run_tests.sh -v -c
 ```
 
-### Performance Hygiene
-- Avoid per-frame heap churn: pre-allocate vectors, reuse temporaries
-- Prefer SoA (structure-of-arrays) for large numeric datasets
-- Keep shader branches simple; use separate passes for complex modes
-- Profile both CPU and GPU; log slowest draw calls in debug
+Common CMake options:
 
-## Error Handling & Robustness
+- `BUILD_TESTING` (default OFF) — build unit + integration tests
+- `ENABLE_AUTO_LAYOUT` (default ON, requires C++20) — Yoga flexbox layout
+- `VIEWER_WITH_GLAD` (default ON) — bundle GLAD as the GL loader
+- `STATIC_CHECK` (default OFF) — run cppcheck during build
 
-- **Structured logs**: Include frame number, pass name, object ID
-- **Graceful degradation**: Render fallback (magenta material) on shader/asset failure
-- **Debug assertions**: `DCHECK` invariants in debug builds only
-- **GL debug context**: Enable in debug builds; treat high severity as test failures
+CI runs the `boundary-check` job before the full build matrix; failing it
+blocks the rest of the pipeline.
 
-## External Dependencies & Bridges
+---
 
-- Put adapters to heavy dependencies behind **small interfaces**
-- Keep core build working when optional dependencies are **absent**
-- No upstream types in public headers (don't leak `pcl::PointXYZ`)
+## 6. Code Style
 
-## Development Workflow
+- **Standard**: C++17 (some C++20 features behind `ENABLE_AUTO_LAYOUT`).
+- **Files**: `.cpp` for source, `.hpp` for headers. Snake_case filenames.
+- **Style**: Google C++ Style; clang-format applied. Line length 100.
+- **Naming**:
+  - Types: `PascalCase`. Methods: `PascalCase()`. Members: `snake_case_`.
+  - Implementation prefixes are deliberate signals: `Gl*` means "wraps an
+    OpenGL handle"; `Cv*` means "uses OpenCV". Don't strip them when a
+    type genuinely couples to that backend.
+  - Module directories are snake_case; namespaces are `quickviz::*` (or
+    a sub-namespace in samples).
+- **No `using namespace` in headers.** Inside `.cpp` files, `using
+  namespace quickviz` is acceptable.
+- **Include order**: own header → standard library → third-party →
+  project headers, separated by blank lines. Each block alphabetized.
+- **Header guards**: `QUICKVIZ_<MODULE>_<NAME>_HPP` form is preferred; do
+  not use `#pragma once` in public headers.
+- **File size**: aim for ~500 LOC. Files significantly above that are
+  candidates for splitting along internal seams.
 
-### Feature Development
-1. Create feature branch from `devel`
-2. Implement with tests using established patterns
-3. Run `scripts/run_tests.sh` before committing
-4. PR to `devel` for review
+---
 
-### Common Tasks
+## 7. Architecture Patterns
 
-**Add New Renderable Object**:
-1. Inherit from `OpenGlObject` in `src/gldraw/renderable/`
-2. Implement shader loading and VAO/VBO setup
-3. Override `OnDraw()` with OpenGL render calls
-4. Add to `GlSceneManager` in application
+### Scene rendering
+- `OpenGlObject` (`scene/interface/opengl_object.hpp`) is the base for
+  anything rendered in 3D. Subclasses own GPU resources via RAII.
+- `SceneManager` owns OpenGL objects keyed by name; `GlScenePanel` hosts
+  the scene inside an ImGui window via render-to-texture.
+- Per-pass: each draw path explicitly sets program, VAOs, depth, blend,
+  and cull state — never inherit it from the previous pass.
 
-**Create Custom UI Panel**:
-1. Inherit from `Panel` in `src/imview/`
-2. Override `Begin()` and `End()` methods with ImGui calls
-3. Add panel to `Viewer` or `Box` container
+### Selection
+- Two-stage picking: GPU ID-buffer for object/point ID → CPU raycast for
+  precise hit. Pick reads exactly one pixel; never large readbacks.
+- `SelectionManager` and `PointSelectionTool` provide ready-made
+  selection without an editor. Selection events are visualization
+  events; if you want them to be undoable, layer a Command pattern on
+  top in your app (`sample/editor/` shows how).
 
-### Refactor Playbook
-1. **Define boundary** (what belongs inside vs. outside)
-2. **Write tiny interface** (2-5 functions, minimal templates)
-3. **Add facade** that forwards to existing code
-4. **Add tests** around facade
-5. **Move code** under facade into new module
-6. **Delete old paths** once coverage passes
-7. **Measure performance** to ensure no regression
+### Tools
+- `InteractionTool` registers with `SceneManager`. One active tool at a
+  time. Tools emit selection / hover / measurement events; they do not
+  record history.
 
-## Decision Heuristics
+### Panels and layout
+- `Panel` (in `viewer`) is the ImGui-based base for any UI panel.
+- `Box` provides flexbox layout via Yoga (when `ENABLE_AUTO_LAYOUT`).
+- For "give me a 3D viewer, fast", use `SceneApp`; for richer layouts,
+  compose `Viewer` + panels + `Box` directly.
 
-- **Expose or hide?** If type couples callers to OpenGL/third-party, **hide** it
-- **Template or runtime?** If callers won't benefit from compile-time polymorphism, **prefer runtime**
-- **One pass or two?** If branch toggles many states, **split into passes**
-- **CPU or GPU?** Precision/topology → **CPU** (BVH/KD); per-pixel labeling → **GPU** (ID buffer)
-- **Immediate or queued?** GPU resource allocation should be **queued** to render thread
-- **Generic or specific?** Prefer generic robotics/graphics terms over application-specific names to maximize reusability
-- **Direct use or extensible?** Simple, common operations should be directly callable; complex customization should use virtual interfaces
-- **Framework or library?** Provide building blocks that users compose rather than frameworks that dictate application structure
+---
 
-## PR Review Checklist
+## 8. Threading Model
 
-- [ ] No GL calls off render thread
-- [ ] Functions have explicit inputs; no new hidden globals
-- [ ] Render paths set depth/blend/cull/program/VAO/FBO explicitly
-- [ ] CPU uses double for geometry; GPU uniforms are float
-- [ ] Picking reads exactly one pixel; ray logic has tests
-- [ ] No raw GL handles in public headers
-- [ ] No per-frame allocations on hot paths
-- [ ] clang-format/clang-tidy clean; zero new warnings
-- [ ] Documentation for non-obvious decisions
-- [ ] Generic terminology used (avoid application-specific names)
-- [ ] Interface boundaries clearly defined (direct use vs. extensible vs. build-upon)
-- [ ] Building blocks remain composable and reusable across different applications
+- **GL main-thread only.** All OpenGL calls and ImGui rendering happen
+  on the render thread. Never make GL calls from background threads.
+- **Background work** (file I/O, decoding, BVH builds, normal generation)
+  produces immutable CPU buffers and queues a main-thread task to upload
+  to GPU.
+- **No frame stalls.** The render loop must never block on a background
+  job. Use `core/buffer` (RingBuffer, DoubleBuffer) for handoff.
+- `core/event/AsyncEventDispatcher` provides bounded async event delivery
+  if the app needs it; do not roll a new threading framework into the
+  library without explicit decision.
 
-## Development Rules
+---
 
-- Remember to update TODO.md after getting approval for new tasks
-- Always update TODO.md after finishing tasks
-- Document architectural decisions with brief "Why this way?" notes
-- Maintain backwards compatibility within major versions
-- Prefer measured optimization over premature optimization
+## 9. API Design Principles
 
-## Platform Support
+- **Small surface, strong contracts.** Every public function should have
+  a clear precondition, postcondition, and ownership story.
+- **Explicit inputs.** Functions take `projection`, `view`, sizes, IDs;
+  no hidden globals.
+- **Clear ownership.** Prefer `std::unique_ptr` in APIs; use
+  `std::shared_ptr` only for true sharing. Return raw pointers/refs only
+  when ownership is documented as remaining elsewhere.
+- **Narrow types.** Prefer `std::span<T const>` for read-only bulk data.
+  Avoid leaking STL container choices in public headers.
+- **Unit awareness.** Document meters, seconds, radians. Never assume
+  degrees or "pixels" for world-scale values.
+- **CPU double, GPU float.** Keep CPU transforms in `double`; upload as
+  `float` to shaders. Caller-visible math is `double` unless documented
+  otherwise.
+- **No upstream types in public headers.** `pcl::*` and `cv::*` types are
+  hidden behind the bridges/adapters.
 
-- **Linux**: Primary platform (Ubuntu 20.04/22.04/24.04)
-- **Windows**: Experimental via vcpkg
-- **macOS**: Not officially supported
+---
 
-## Current Development Focus
+## 10. Error Handling
 
-Active areas of development:
-- Interactive selection tools
-- PCL algorithm result visualization
-- Measurement and annotation overlays
-- Level-of-detail system for large datasets
+- **Validate at boundaries.** Library entry points check their inputs
+  and report failures precisely. Internal helpers may trust callers.
+- **Fail loud, fail early.** Throw on contract violations; do not return
+  silently corrupt data. `std::runtime_error` is the default; project
+  may add specific types where that helps.
+- **Graceful rendering degradation.** On shader/asset load failure, log
+  the error and render a fallback (magenta material) so the rest of the
+  scene stays visible.
+- **No silent error suppression.** `catch(...) {}` requires a comment
+  explaining why and what's lost. The deleted `SceneManagerBridge` is
+  the cautionary tale: silent fallbacks that fabricated data hid real
+  failures.
 
-See `TODO.md` for detailed roadmap and implementation status.
+---
+
+## 11. Decision Heuristics
+
+When designing or reviewing changes, prefer:
+
+- **Hide if it leaks.** If a type couples callers to OpenGL or third-party
+  details, hide it behind an interface.
+- **Runtime over compile-time.** Templates earn their keep with concrete
+  performance or type-safety wins. Otherwise, prefer runtime polymorphism.
+- **More passes over more state.** If a render path branches heavily on
+  state, split it into separate passes.
+- **CPU for precision/topology, GPU for per-pixel.** BVH/KD on CPU; ID
+  buffers and shading on GPU.
+- **Queued over immediate** for GPU-resource creation off the main thread.
+- **Generic over specific.** Robotics/graphics vocabulary, not
+  application vocabulary.
+- **Library stays a library.** When in doubt, push the feature to
+  `sample/` and let it prove it belongs in `src/`.
+
+---
+
+## 12. Tests
+
+- Unit tests live next to the module: `src/<module>/test/`.
+- Cross-module integration tests live in `tests/integration/`.
+- GoogleTest is the framework; new tests follow the patterns of the
+  existing ones.
+- Renderable tests use `SceneApp` as their harness.
+- Aim for 80% coverage overall. Designated hot paths should aim for 100%.
+
+---
+
+## 13. Commits & Documentation
+
+- Commit messages: `type(scope): subject` form. Explain *why* in the
+  body, not what the diff already shows. One logical change per commit.
+- Don't amend pushed commits. Force-push to `main` is forbidden without
+  explicit approval.
+- `TODO.md` tracks active and recent work — keep it terse, factual,
+  one-bullet-per-outcome. No marketing language.
+- `docs/notes/` holds longer design references and historical decisions.
+- After completing work, update `TODO.md` in the same change.
+
+---
+
+## 14. Where Things Live
+
+- **Code by mission**: `src/<module>/`, see Module Map above.
+- **Reference apps**: `sample/quickstart/` (smallest possible),
+  `sample/pointcloud_viewer/` (file → render with selection),
+  `sample/editor/` (vis+editing dogfood check),
+  `sample/quickviz_demo_app/` (broader app shell demo).
+- **Active TODOs**: `TODO.md` (root).
+- **Architecture deep-dives**: `docs/notes/`.
+- **Build / install**: `README.md`.
+- **CI**: `.github/workflows/default.yml` (note: includes a
+  `boundary-check` job that gates the build matrix).

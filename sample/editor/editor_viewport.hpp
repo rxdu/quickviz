@@ -15,8 +15,8 @@
 #include <memory>
 #include <string>
 
-#include "gldraw/gl_scene_panel.hpp"
-#include "gldraw/tools/point_selection_tool.hpp"
+#include "scene/gl_scene_panel.hpp"
+#include "scene/tools/point_selection_tool.hpp"
 
 namespace quickviz::editor {
 

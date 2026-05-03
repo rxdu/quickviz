@@ -1,0 +1,2 @@
+add_executable(test_cairo_widget test_cairo_widget.cpp)
+target_link_libraries(test_cairo_widget PRIVATE canvas)

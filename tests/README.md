@@ -26,7 +26,7 @@ tests/
 ### 2. Integration Tests (`integration/`)
 
 - **Renderer Pipeline Tests** (`test_renderer_pipeline.cpp`): End-to-end rendering pipeline testing
-- **ImView Integration Tests** (`test_imview_integration.cpp`): GUI component integration testing
+- **ImView Integration Tests** (`test_viewer_integration.cpp`): GUI component integration testing
 
 ### 3. Performance Benchmarks (`benchmarks/`)
 

@@ -13,7 +13,7 @@ This document shows how to migrate the existing Sphere class to inherit from Geo
 
 ```cpp
 // sphere.hpp - Updated to inherit from GeometricPrimitive
-#include "gldraw/renderable/geometric_primitive.hpp"
+#include "scene/renderable/geometric_primitive.hpp"
 
 namespace quickviz {
 

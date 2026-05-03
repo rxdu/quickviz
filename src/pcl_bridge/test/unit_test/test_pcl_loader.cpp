@@ -12,7 +12,7 @@
 #include <memory>
 
 #include "pcl_bridge/pcl_loader.hpp"
-#include "gldraw/renderable/point_cloud.hpp"
+#include "scene/renderable/point_cloud.hpp"
 
 #ifdef QUICKVIZ_WITH_PCL
 #include <pcl/point_cloud.h>

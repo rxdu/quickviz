@@ -1,20 +1,20 @@
 # ImView Design
 
-For GUI applications, imview provides automatic layout management and commonly used UI widgets such as buttons, sliders, and text boxes.
+For GUI applications, viewer provides automatic layout management and commonly used UI widgets such as buttons, sliders, and text boxes.
 
 ## Implementation
 
 ### Core Components
 
-* **Window management**: imview uses GLFW for window management. GLFW is a lightweight library that provides a simple API for creating windows and handling input events. GLFW is cross-platform and supports Windows, macOS, and Linux.
-* **UI**: imview uses `Dear ImGui`, a lightweight GUI library that provides a simple API for creating UI elements.
-* **2D plotting**: imview uses `ImPlot` for 2D plotting. ImPlot is a lightweight plotting library built on top of `Dear ImGui`.
+* **Window management**: viewer uses GLFW for window management. GLFW is a lightweight library that provides a simple API for creating windows and handling input events. GLFW is cross-platform and supports Windows, macOS, and Linux.
+* **UI**: viewer uses `Dear ImGui`, a lightweight GUI library that provides a simple API for creating UI elements.
+* **2D plotting**: viewer uses `ImPlot` for 2D plotting. ImPlot is a lightweight plotting library built on top of `Dear ImGui`.
 
-The class diagram below shows the main classes in the imview library:
+The class diagram below shows the main classes in the viewer library:
 
 ```mermaid
 ---
-title: imview core components
+title: viewer core components
 ---
 classDiagram
     Window <|-- Viewer

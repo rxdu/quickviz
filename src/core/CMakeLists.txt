@@ -3,10 +3,10 @@ find_package(Threads REQUIRED)
 
 # add library
 add_library(core
-    # widgets
     src/buffer/buffer_registry.cpp
     src/event/async_event_dispatcher.cpp
-    src/event/input_mapping.cpp)
+    src/event/input_mapping.cpp
+    src/demo.cpp)
 target_link_libraries(core PUBLIC Threads::Threads imcore)
 target_include_directories(core PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

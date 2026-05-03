@@ -19,7 +19,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "gldraw/renderable/canvas.hpp"
+#include "scene/renderable/canvas.hpp"
 
 using namespace quickviz;
 using namespace std::chrono;

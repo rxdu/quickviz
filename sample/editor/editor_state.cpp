@@ -8,9 +8,9 @@
 
 #include <algorithm>
 
-#include "gldraw/renderable/point_cloud.hpp"
-#include "gldraw/selection_manager.hpp"
-#include "gldraw/tools/point_selection_tool.hpp"
+#include "scene/renderable/point_cloud.hpp"
+#include "scene/selection_manager.hpp"
+#include "scene/tools/point_selection_tool.hpp"
 
 namespace quickviz::editor {
 

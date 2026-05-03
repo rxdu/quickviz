@@ -13,7 +13,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "gldraw/renderable/geometric_primitive.hpp"
+#include "scene/renderable/geometric_primitive.hpp"
 
 using namespace quickviz;
 

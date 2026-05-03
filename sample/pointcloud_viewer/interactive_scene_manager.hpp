@@ -9,9 +9,9 @@
 #ifndef QUICKVIZ_INTERACTIVE_SCENE_MANAGER_HPP
 #define QUICKVIZ_INTERACTIVE_SCENE_MANAGER_HPP
 
-#include "gldraw/gl_scene_panel.hpp"
-#include "gldraw/renderable/point_cloud.hpp"
-#include "gldraw/tools/point_selection_tool.hpp"
+#include "scene/gl_scene_panel.hpp"
+#include "scene/renderable/point_cloud.hpp"
+#include "scene/tools/point_selection_tool.hpp"
 #include <memory>
 
 namespace quickviz {

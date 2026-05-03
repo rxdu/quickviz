@@ -13,3 +13,6 @@
 [submodule "third_party/stb"]
 	path = third_party/stb
 	url = https://github.com/rxdu/stb.git
+[submodule "third_party/imcore/implot3d"]
+	path = third_party/imcore/implot3d
+	url = https://github.com/brenocq/implot3d

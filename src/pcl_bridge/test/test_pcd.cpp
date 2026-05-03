@@ -16,12 +16,12 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 
-#include "imview/box.hpp"
-#include "imview/viewer.hpp"
+#include "viewer/box.hpp"
+#include "viewer/viewer.hpp"
 
-#include "gldraw/gl_scene_panel.hpp"
-#include "gldraw/renderable/grid.hpp"
-#include "gldraw/renderable/point_cloud.hpp"
+#include "scene/gl_scene_panel.hpp"
+#include "scene/renderable/grid.hpp"
+#include "scene/renderable/point_cloud.hpp"
 
 using namespace quickviz;
  

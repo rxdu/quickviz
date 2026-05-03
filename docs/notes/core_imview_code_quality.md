@@ -2,7 +2,7 @@
 
 Date: 2025-09-01
 
-This document captures targeted, high‑impact improvements for the `core` and `imview` modules. Items are grouped by module with concrete actions and file pointers.
+This document captures targeted, high‑impact improvements for the `core` and `viewer` modules. Items are grouped by module with concrete actions and file pointers.
 
 ## Core
 
@@ -49,20 +49,20 @@ This document captures targeted, high‑impact improvements for the `core` and `
 
 ### Centralize input: single InputManager per Window
 - Problem: `Panel` keeps its own `InputManager` and polls ImGui state; `Window` also owns an `InputManager`.
-  - Files: `src/imview/include/imview/panel.hpp`, `src/imview/src/panel.cpp`, `src/imview/include/imview/window.hpp`, `src/imview/src/window.cpp`
+  - Files: `src/viewer/include/viewer/panel.hpp`, `src/viewer/src/panel.cpp`, `src/viewer/include/viewer/window.hpp`, `src/viewer/src/window.cpp`
 - Improve:
   - Panels should register as `InputEventHandler`s on the Window’s single `InputManager`; provide `AttachTo(Window&)` or inject via ctor.
   - Poll ImGui once per frame at the Window and dispatch through the centralized `InputDispatcher`.
 
 ### ImGui capture and debug output
 - Problem: Hidden Ctrl+Shift+K bypass and periodic `std::cout` noise in release.
-  - File: `src/imview/src/input/imgui_input_utils.cpp`
+  - File: `src/viewer/src/input/imgui_input_utils.cpp`
 - Improve: Gate with `#ifdef QUICKVIZ_INPUT_DEBUG` or a runtime flag; route through logger. Make bypass behavior configurable via `InputManager`/Window settings.
 
 ### GamepadManager: state ownership, singleton removal path
 - Problems:
   - `GamepadManager` is a singleton; `ImGuiInputUtils` uses a static `previous_states` map outside the manager.
-  - Files: `src/imview/include/imview/input/gamepad_manager.hpp`, `src/imview/src/input/gamepad_manager.cpp`, `src/imview/src/input/imgui_input_utils.cpp`
+  - Files: `src/viewer/include/viewer/input/gamepad_manager.hpp`, `src/viewer/src/input/gamepad_manager.cpp`, `src/viewer/src/input/imgui_input_utils.cpp`
 - Improve:
   - Move previous-state tracking into `GamepadManager` per device and expose delta-friendly queries.
   - Long term: make `GamepadManager` instance-owned by `Window` (align with `InputManager`).
@@ -73,13 +73,13 @@ This document captures targeted, high‑impact improvements for the `core` and `
 
 ### Window lifecycle: GLFW ownership
 - Problem: `Window::~Window()` calls `glfwTerminate()` unconditionally; breaks multi-window use.
-  - File: `src/imview/src/window.cpp`
+  - File: `src/viewer/src/window.cpp`
 - Improve: Centralize GLFW init/term in an `Application`-level owner or use ref-counting; windows only destroy their own contexts.
 
 ### CMake options and link scopes
-- Add `option(ENABLE_AUTO_LAYOUT ...)`, `option(ENABLE_TUI_SUPPORT ...)`, `option(IMVIEW_WITH_GLAD ...)` with defaults and help strings.
+- Add `option(ENABLE_AUTO_LAYOUT ...)`, `option(ENABLE_TUI_SUPPORT ...)`, `option(VIEWER_WITH_GLAD ...)` with defaults and help strings.
 - Use proper scope for compile definitions and link interfaces; minimize PUBLIC exposure.
-  - Files: `src/imview/CMakeLists.txt`, `src/core/CMakeLists.txt`
+  - Files: `src/viewer/CMakeLists.txt`, `src/core/CMakeLists.txt`
 
 ## Cross‑Cutting
 
@@ -109,6 +109,6 @@ This document captures targeted, high‑impact improvements for the `core` and `
 
 ## Notes
 - Related references in-tree:
-  - BufferRegistry usages: search for `BufferRegistry::GetInstance()` across `widget/` and `gldraw/`.
+  - BufferRegistry usages: search for `BufferRegistry::GetInstance()` across `widget/` and `scene/`.
   - Existing design notes: `docs/notes/core_module_review_2025-01-28.md`.
 

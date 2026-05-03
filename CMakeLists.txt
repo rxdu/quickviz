@@ -20,7 +20,7 @@ message(STATUS "------------------------------------------------")
 
 ## Project Options
 option(ENABLE_AUTO_LAYOUT "Enable autolayout" ON)
-option(IMVIEW_WITH_GLAD "Integrate glad into imview" ON)
+option(VIEWER_WITH_GLAD "Integrate glad into viewer" ON)
 option(BUILD_QUICKVIZ_APP "Build quickviz app" OFF)
 option(BUILD_TESTING "Build tests" OFF)
 option(QUICKVIZ_DEV_MODE "Development mode forces building tests" OFF)
@@ -153,7 +153,7 @@ endforeach ()
 
 # targets to install defined in each module
 add_library(quickviz INTERFACE)
-target_link_libraries(quickviz INTERFACE core imview widget gldraw visualization) 
+target_link_libraries(quickviz INTERFACE core viewer widget scene visualization) 
 
 # export target configuration 
 include(CMakePackageConfigHelpers)

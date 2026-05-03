@@ -10,7 +10,7 @@
 
 #include <string>
 
-#include "imview/panel.hpp"
+#include "viewer/panel.hpp"
 
 namespace quickviz::editor {
 
