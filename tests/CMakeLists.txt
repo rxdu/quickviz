@@ -147,6 +147,31 @@ else()
 endif()
 
 # ==============================================================================
+# Ingestion Contract Benchmarks (docs/ingestion_contract.md)
+# ==============================================================================
+
+# Hand-rolled harness (no google-benchmark): tails + alloc probe + JSON
+# report with hardware context, matching the family methodology
+# (xmTelemetry S1 gate, xmMessaging M9 suite). Uses the public library API
+# only. Run via scripts/bench_ingestion.sh (wraps xvfb-run when headless).
+add_executable(bench_ingestion
+    benchmarks/ingestion/ingestion_bench.cpp
+)
+target_link_libraries(bench_ingestion
+    PRIVATE
+    plot
+)
+target_compile_options(bench_ingestion PRIVATE -Wall -Wextra)
+
+# Smoke run as a ctest entry (needs a display or xvfb, like the other GL
+# tests). Kept out of the default label set via the "benchmark" label.
+add_test(NAME bench_ingestion_smoke
+    COMMAND bench_ingestion --smoke
+        --out=${CMAKE_CURRENT_BINARY_DIR}/ingestion_bench_smoke.json
+)
+set_tests_properties(bench_ingestion_smoke PROPERTIES LABELS "benchmark")
+
+# ==============================================================================
 # Valgrind Memory Testing
 # ==============================================================================
 
