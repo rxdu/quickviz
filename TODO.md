@@ -48,6 +48,14 @@ it (CLAUDE.md §4 "Optional external dependencies").
 ### Performance
 - [ ] LOD system for >1M point scenes (octree-based)
 
+### Ingestion contract (`docs/ingestion_contract.md`, landed 2026-07-11)
+- [x] Normative viz-plane ingestion contract + budget table (I1–I7)
+- [x] Benchmark suite `tests/benchmarks/ingestion/` + `scripts/bench_ingestion.sh`
+- [ ] I3 gap: overflow/overwrite/refusal counters on `RingBuffer` / `DoubleBuffer`
+- [ ] I7 gap: CI regression gate against the pinned reference report
+- [ ] I2 gap: slot pre-sizing for `DataStream`/`DoubleBuffer` (heap-owning payloads)
+- [ ] I5: re-run observer A/B on a hardware-GL host to pin the invisibility number
+
 ### Extension
 - [ ] Plugin system (defer until concrete user)
 
