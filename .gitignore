@@ -50,3 +50,7 @@ CMakeSettings.json
 *.exe
 *.out
 *.app
+
+# bench run artifacts (canonical copies live in tests/benchmarks/ingestion/results/)
+imgui.ini
+/*.json

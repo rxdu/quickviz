@@ -1,0 +1,9 @@
+{
+  "schema": "quickviz-ingestion-bench-v1", "generated_at_utc": "2026-07-11T13:43:15Z", "smoke": false,
+  "hardware": { "cpu_model": "Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz", "nproc": 12, "governor": "powersave", "kernel": "5.15.0-185-generic", "preempt_rt": false, "display": ":99", "gl_renderer": "unknown", "load_avg_1m": 0.2, "load_avg_5m": 0.1, "load_avg_15m": 0.1 },
+  "alloc_gate": { "passed": true, "failures": [] },
+  "benchmarks": [
+    { "name": "observer/noop_headless", "group": "observer", "mode": "headless", "unit": "ns", "rate_hz": 1000.0, "batch": 1, "samples": 9999, "p50": 1825.0, "p99": 65874.0, "p999": 152861.0, "max": 652900.0, "mean": 7545.3, "allocations": 0, "alloc_gated": true, "achieved_fps": -1.0, "notes": "loop period jitter |period - 1ms|; ingestion compiled out" },
+    { "name": "observer/attached_render60", "group": "observer", "mode": "windowed", "unit": "ns", "rate_hz": 1000.0, "batch": 1, "samples": 9999, "p50": 8482.0, "p99": 65688.0, "p999": 171305.0, "max": 426223.0, "mean": 18585.2, "allocations": 0, "alloc_gated": true, "achieved_fps": 59.9, "notes": "loop period jitter |period - 1ms|; scalar+pose ingestion at 1 kHz, plot + stream drain rendering" }
+  ]
+}
