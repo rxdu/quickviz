@@ -27,6 +27,32 @@
 namespace quickviz {
 namespace pcl_bridge {
 
+namespace {
+
+// PCL's readers do not reliably signal a malformed file through their return
+// code. A file with no recognisable header parses into an empty cloud and
+// still returns success (PCL 1.15 logs "number of points is zero", defaults
+// HEIGHT, reports that fields x/y/z were not matched, and returns 0), so
+// checking only for -1 lets arbitrary non-point-cloud data through as an
+// empty cloud.
+//
+// The header is the reliable signal: every PCD/PLY that can be read into a
+// PCL point type declares x, y and z, and that stays true for a legitimately
+// empty cloud (POINTS 0 with a full FIELDS line), which must keep loading.
+// Their absence means the file is not a point cloud.
+void RequirePointCloudHeader(const PointCloudFields& fields,
+                             const std::string& format,
+                             const std::string& filename) {
+  if (!fields.HasXYZ()) {
+    throw CorruptedFileException(
+        format + " header declares no x/y/z fields, so the file is not a "
+                 "point cloud: " + filename);
+  }
+}
+
+}  // namespace
+
+
 // PointCloudMetadata implementation
 std::string PointCloudMetadata::GetRecommendedPCLType() const {
   if (fields.HasRGBAColor()) {
@@ -68,6 +94,7 @@ PointCloudMetadata PointCloudLoader::LoadPCD(const std::string& filename,
   }
   
   PointCloudFields fields = DetectPCDFields(filename);
+  RequirePointCloudHeader(fields, "PCD", filename);
   
   if (progress_callback) {
     progress_callback(0.2f, "Loading point cloud data...");
@@ -84,6 +111,7 @@ PointCloudMetadata PointCloudLoader::LoadPLY(const std::string& filename,
   }
   
   PointCloudFields fields = DetectPLYFields(filename);
+  RequirePointCloudHeader(fields, "PLY", filename);
   
   if (progress_callback) {
     progress_callback(0.2f, "Loading point cloud data...");
@@ -236,11 +264,12 @@ PointCloudLoader::LoadPCDInternal(const std::string& filename, ProgressCallback 
     throw CorruptedFileException("Failed to load PCD file: " + filename);
   }
   
+  PointCloudFields fields = DetectPCDFields(filename);
+  RequirePointCloudHeader(fields, "PCD", filename);
+  
   if (progress_callback) {
     progress_callback(0.7f, "Calculating metadata...");
   }
-  
-  PointCloudFields fields = DetectPCDFields(filename);
   PointCloudMetadata metadata = CalculateMetadata(filename, "PCD", *cloud, fields);
   
   return {cloud, metadata};
@@ -255,11 +284,12 @@ PointCloudLoader::LoadPLYInternal(const std::string& filename, ProgressCallback 
     throw CorruptedFileException("Failed to load PLY file: " + filename);
   }
   
+  PointCloudFields fields = DetectPLYFields(filename);
+  RequirePointCloudHeader(fields, "PLY", filename);
+  
   if (progress_callback) {
     progress_callback(0.7f, "Calculating metadata...");
   }
-  
-  PointCloudFields fields = DetectPLYFields(filename);
   PointCloudMetadata metadata = CalculateMetadata(filename, "PLY", *cloud, fields);
   
   return {cloud, metadata};

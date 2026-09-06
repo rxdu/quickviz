@@ -81,11 +81,9 @@ jobs:
   # shaders, under the 4.1 cap macOS enforces); this lane keeps it that way.
   # The GUI itself is not exercised -- the samples need a display.
   #
-  # KNOWN FAILURE: PCLLoaderTest.InvalidFileError. PCL 1.15 (what Homebrew
-  # ships) parses a garbage .pcd into a zero-point cloud and returns success,
-  # so LoadPCDInternal's `== -1` check never fires and no CorruptedFileException
-  # is thrown. This is a loader robustness gap rather than a platform issue and
-  # will reach the Ubuntu lanes when they move past PCL 1.14.
+  # This lane is also what first exercised the loader against PCL 1.15, whose
+  # readers accept a malformed file and return an empty cloud rather than an
+  # error; the loader now validates the header instead of only the return code.
   macos:
     name: macOS (arm64)
     runs-on: macos-14
