@@ -101,8 +101,14 @@ TEST_F(ThreadSafeQueueTest, PopTimeout) {
   auto duration = std::chrono::steady_clock::now() - start;
   
   EXPECT_FALSE(result.has_value());
+  // The lower bound is the contract: PopFor must wait at least its timeout.
   EXPECT_GE(duration, std::chrono::milliseconds(45)); // Allow some variance
-  EXPECT_LE(duration, std::chrono::milliseconds(100));
+  // The upper bound only guards against waiting forever. It deliberately has
+  // a wide margin: how promptly a blocked thread is rescheduled is up to the
+  // OS, and a loaded CI runner can overshoot a 50 ms wait severalfold (this
+  // fired at 143 ms against the old 100 ms bound), which says nothing about
+  // the queue.
+  EXPECT_LE(duration, std::chrono::seconds(2));
 }
 
 TEST_F(ThreadSafeQueueTest, MoveConstructor) {
