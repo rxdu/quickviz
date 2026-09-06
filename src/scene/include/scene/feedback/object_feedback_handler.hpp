@@ -19,7 +19,14 @@
 #include <memory>
 
 #include <glm/glm.hpp>
+#ifdef VIEWER_WITH_GLAD
+#include <glad/glad.h>
+#elif defined(__APPLE__)
+// macOS ships OpenGL as a framework; there is no GL/ include directory.
+#include <OpenGL/gl.h>
+#else
 #include <GL/gl.h>
+#endif
 
 #include "scene/feedback/visual_feedback_system.hpp"
 

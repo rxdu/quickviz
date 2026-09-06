@@ -120,6 +120,27 @@ else ()
   message(STATUS "quickviz test will not be built")
 endif ()
 
+## glm (header-only)
+# Previously found implicitly: Ubuntu's libglm-dev installs into /usr/include,
+# which is on the default search path. Other prefixes (Homebrew, vcpkg, a local
+# install) are not, so locate it properly. Kept at directory scope because that
+# is how it was already consumed -- no target export signatures change.
+find_package(glm QUIET)
+if (glm_FOUND)
+  get_target_property(QUICKVIZ_GLM_INCLUDE_DIRS glm::glm INTERFACE_INCLUDE_DIRECTORIES)
+  if (QUICKVIZ_GLM_INCLUDE_DIRS)
+    include_directories(SYSTEM ${QUICKVIZ_GLM_INCLUDE_DIRS})
+  endif ()
+  message(STATUS "quickviz: glm found (${glm_VERSION})")
+else ()
+  message(STATUS "quickviz: glm not found via find_package -- relying on the "
+                 "default include path")
+endif ()
+# The renderables use GTX extensions (vector_angle, quaternion, transform,
+# norm, component_wise, rotate_vector). glm >= 1.0 hard-errors on these unless
+# the caller opts in.
+add_compile_definitions(GLM_ENABLE_EXPERIMENTAL)
+
 ## Add source directory
 add_subdirectory(src)
 add_subdirectory(sample)
