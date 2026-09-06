@@ -76,6 +76,40 @@ jobs:
         name: test-results-${{ matrix.os }}
         path: ${{runner.workspace}}/build/test_results.xml
 
+  # macOS coverage: AppleClang + libc++ on arm64. The GL usage is already
+  # portable (a 3.2 core + forward-compatible context on Apple, #version 330
+  # shaders, under the 4.1 cap macOS enforces); this lane keeps it that way.
+  # The GUI itself is not exercised -- the samples need a display.
+  #
+  # KNOWN FAILURE: PCLLoaderTest.InvalidFileError. PCL 1.15 (what Homebrew
+  # ships) parses a garbage .pcd into a zero-point cloud and returns success,
+  # so LoadPCDInternal's `== -1` check never fires and no CorruptedFileException
+  # is thrown. This is a loader robustness gap rather than a platform issue and
+  # will reach the Ubuntu lanes when they move past PCL 1.14.
+  macos:
+    name: macOS (arm64)
+    runs-on: macos-14
+    steps:
+    - uses: actions/checkout@v4
+    - name: Checkout submodules
+      run: git submodule update --init --recursive
+    - name: Install Dependencies
+      # eigen@3 and opencv@4 are keg-only: Homebrew defaults to Eigen 5 and
+      # OpenCV 5, and this project targets the 3.x/4.x APIs.
+      run: brew install glfw cairo fontconfig glm opencv@4 pcl eigen@3 abseil re2 ncurses
+    - name: Configure CMake
+      shell: bash
+      run: >
+        cmake -S . -B build -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=ON
+        -DCMAKE_PREFIX_PATH="$(brew --prefix eigen@3);$(brew --prefix opencv@4)"
+    - name: Build
+      shell: bash
+      run: cmake --build build -j"$(sysctl -n hw.ncpu)" --config $BUILD_TYPE
+    - name: Test
+      working-directory: build
+      shell: bash
+      run: ctest -C $BUILD_TYPE --output-on-failure
+
   minimal-build:
     runs-on: ${{ matrix.os }}
     strategy:
