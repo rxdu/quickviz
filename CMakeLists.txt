@@ -120,6 +120,55 @@ else ()
   message(STATUS "quickviz test will not be built")
 endif ()
 
+## Test discovery mode
+# gtest_discover_tests defaults to running each test binary at BUILD time to
+# enumerate its cases, with a 5 s timeout. These binaries link GL, cairo and
+# (optionally) OpenCV/PCL, and where those ship as many small shared libraries
+# the dynamic loader alone can exceed that -- discovery then times out and
+# CMake DELETES the executable, which surfaces later as a confusing
+# <target>_NOT_BUILT failure. Enumerating at test time instead removes the
+# build-time dependency on process startup entirely.
+# (CMake >= 3.22; older versions ignore this and keep the previous behaviour.)
+set(CMAKE_GTEST_DISCOVER_TESTS_DISCOVERY_MODE PRE_TEST)
+
+## glm (header-only)
+# Previously found implicitly: Ubuntu's libglm-dev installs into /usr/include,
+# which is on the default search path. Other prefixes (Homebrew, vcpkg, a local
+# install) are not, so locate it properly. Kept at directory scope because that
+# is how it was already consumed -- no target export signatures change.
+find_package(glm QUIET)
+if (glm_FOUND)
+  get_target_property(QUICKVIZ_GLM_INCLUDE_DIRS glm::glm INTERFACE_INCLUDE_DIRECTORIES)
+  if (QUICKVIZ_GLM_INCLUDE_DIRS)
+    include_directories(SYSTEM ${QUICKVIZ_GLM_INCLUDE_DIRS})
+  endif ()
+  message(STATUS "quickviz: glm found (${glm_VERSION})")
+else ()
+  message(STATUS "quickviz: glm not found via find_package -- relying on the "
+                 "default include path")
+endif ()
+# The renderables use GTX extensions (vector_angle, quaternion, transform,
+# norm, component_wise, rotate_vector). glm >= 1.0 hard-errors on these unless
+# the caller opts in.
+add_compile_definitions(GLM_ENABLE_EXPERIMENTAL)
+
+## Vendored googletest must win the include search
+# OpenCV and PCL export their whole dependency prefix (Homebrew's
+# /opt/homebrew/include, say). If a different googletest is installed there,
+# its headers are found ahead of the vendored copy while the vendored
+# libgtest.a is still what links -- an ABI mismatch that appears only as
+# undefined testing::internal symbols. Prepending keeps the vendored headers
+# in front of anything a dependency drags in.
+#
+# Stated here rather than after add_subdirectory(third_party) because that
+# comes last, and a directory-scope include only reaches targets defined
+# after it -- so guard on the path rather than on the gtest target.
+if (BUILD_TESTING AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/googletest/googletest/include")
+  include_directories(BEFORE SYSTEM
+      ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googletest/googletest/include
+      ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googletest/googlemock/include)
+endif ()
+
 ## Add source directory
 add_subdirectory(src)
 add_subdirectory(sample)

@@ -11,6 +11,9 @@
 
 #ifdef VIEWER_WITH_GLAD
 #include <glad/glad.h>
+#elif defined(__APPLE__)
+#include <OpenGL/gl.h>
+#include <OpenGL/glext.h>
 #else
 #include <GL/gl.h>
 #include <GL/glext.h>

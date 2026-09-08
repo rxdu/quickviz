@@ -365,6 +365,40 @@ TEST_F(PCLLoaderTest, InvalidFileError) {
                CorruptedFileException);
 }
 
+// The PLY reader is as permissive as the PCD one about malformed input, and
+// the fixture already produced a garbage .ply that nothing asserted on.
+TEST_F(PCLLoaderTest, InvalidPLYFileError) {
+  EXPECT_THROW(PointCloudLoader::LoadToPCL<pcl::PointXYZ>(test_invalid_ply_),
+               CorruptedFileException);
+}
+
+// Counterpart to the two above: rejecting a malformed file must not also
+// reject a well-formed empty one. Both end up as a zero-point cloud, so the
+// header is the only thing separating them -- this pins that the check keys
+// on the header and not on the point count.
+TEST_F(PCLLoaderTest, EmptyButValidPCDLoads) {
+  std::string filename = test_dir_ / "empty_valid.pcd";
+  {
+    std::ofstream file(filename);
+    file << "# .PCD v0.7 - Point Cloud Data file format\n"
+         << "VERSION 0.7\n"
+         << "FIELDS x y z\n"
+         << "SIZE 4 4 4\n"
+         << "TYPE F F F\n"
+         << "COUNT 1 1 1\n"
+         << "WIDTH 0\n"
+         << "HEIGHT 1\n"
+         << "VIEWPOINT 0 0 0 1 0 0 0\n"
+         << "POINTS 0\n"
+         << "DATA ascii\n";
+  }
+
+  auto result = PointCloudLoader::LoadToPCL<pcl::PointXYZ>(filename);
+  EXPECT_TRUE(result.first->points.empty());
+  EXPECT_EQ(result.second.point_count, 0u);
+  EXPECT_TRUE(result.second.fields.HasXYZ());
+}
+
 TEST_F(PCLLoaderTest, UnsupportedFormatError) {
   EXPECT_THROW(PointCloudLoader::DetectFormat("test.txt"), 
                UnsupportedFormatException);
